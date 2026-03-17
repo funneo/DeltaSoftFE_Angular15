@@ -1,0 +1,17 @@
+@media (min-width: 850px) {
+  .modal-lg {
+     width: 70%;
+  }
+}
+.column-ten-sm{
+  width: 120px;
+}
+.column-ten-lg{
+  width: 300px;
+}
+.column-ten-md{
+  width: 180px;
+}
+
+thead tr:nth-child(1) th{background: #dcefe5f6; position: sticky;top: 0px;z-index: 10;}
+

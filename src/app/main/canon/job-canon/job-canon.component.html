@@ -1,0 +1,171 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="box-header with-border">
+  <div class="row">
+      <div class="col-md-2">
+        <h3 class="box-title">Lô hàng Canon</h3>
+      </div>
+      <div class="col-md-6">
+
+      </div>
+      <div class="col-md-4 text-right">
+        <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="JOBCANON" appAction="CREATE">
+          <i class="fa fa-plus"></i> Thêm
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+          appFunction="JOBCANON" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="JOBCANON" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+        <!-- <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+          <i class="fa fa-eye"></i> Xem
+        </button> -->
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-2">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+          class="form-control">
+      </div>
+      <div class="col-md-5">
+        <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+          [(ngModel)]="customerId" (change)="changedCustomer($event)" placeholder="Chọn khách hàng...">
+        </ng-select>
+      </div>
+
+      <div class="col-md-2">
+        <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+          [(ngModel)]="_branchId" (change)="changedChiNhanh()" title="Chọn chi nhánh..." [clearable]="false" [readonly]="_auth>0">
+        </ng-select>
+      </div>
+
+      <div class="col-md-3">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa" />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+              <span class="helping-el"></span>
+            </label>
+          </th>
+          <th>Khách hàng</th>
+          <th>JobId</th>
+          <th>Xe vận chuyển</th>
+          <th>Ngày</th>
+          <th>LOT</th>
+          <th>Cung đường</th>
+          <th>#Pallets</th>
+          <th>Ghi chú</th>
+          <th>Trạng thái</th>
+          <th style="width: 80px;">Tác vụ</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listShipment" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>{{item.customerName}}</td>
+          <td>
+            <a [routerLink]="[]" (click)="showModal(item)">{{item.jobId}}</a>
+          </td>
+          <td>{{item.cdsNumber}}</td>
+          <td>{{item.cdsDate|date :'dd-MMM-yy'}}</td>
+          <td>{{item.hawB_HBL}}</td>
+          <td>{{item.mawB_MBL}}</td>
+          <td>{{item.pallets}}</td>
+          <td>{{item.notes }}</td>
+          <td class="trang-thai">
+            <span [ngClass]="
+                item.status && !item.isFinish  ? 'label label-success' : 'label label-danger'
+              ">{{ item.status && !item.isFinish | Status }}
+            </span>
+            <br>
+            <span [ngClass]="
+                item.isDeb ? 'label label-info' : ''
+              ">{{ item.isDeb?'Đã Debit':'' }}</span>
+          </td>
+          <td>
+            <button *ngIf="item.isFinish" type="button" class="btn btn-warning btn-sm action-open-job"
+              title="Đề nghị mở Job" (click)="showOpenJob(item)" appPermission appFunction="SHIPMENT" appAction="OPEN">
+              <i class="fa fa-folder-open-o" aria-hidden="true"></i> Mở Job
+            </button>
+            <button *ngIf="!item.isFinish && item.accept" type="button" class="btn btn-warning btn-sm action-file"
+              title="Khóa lô hàng" (click)="closeJob(item,true)" appPermission appFunction="SHIPMENT"
+              appAction="CLOSING">
+              <i class="fa fa-lock" aria-hidden="true"></i> Khóa Job
+            </button>
+            <button type="button" class="btn btn-info btn-sm action-file" title="Chứng từ đính kèm"
+              (click)="showFiles(item)">
+              <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Chứng từ...
+            </button>
+            <button type="button" class="btn btn-primary btn-sm action-file" title="Copy lô hàng"
+              (click)="copyJobConfirm(item)" appPermission appFunction="SHIPMENT" appAction="COPY">
+              <i class="fa fa-copy" aria-hidden="true"></i> Copy...
+            </button>
+            <button *ngIf="!item.isFinish" class="btn btn-info btn-sm action-file" title="Thanh toán tiền mặt"
+              (click)="showPayment(item.id,2)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
+              <i class="fa fa-money" aria-hidden="true"></i> TT tiền mặt
+            </button>
+            <button *ngIf="!item.isFinish" class="btn btn-warning btn-sm action-file" title="Thanh toán trả sau"
+              (click)="showPayment(item.id,3)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
+              <i class="fa fa-money" aria-hidden="true"></i> TT trả sau
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="listShipment?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listShipment?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+
+<modal-job-canon *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-job-canon>
+<modal-open-shipment *ngIf="viewOpenJob" (SaveSuccess)="saveOpenJob($event)" (CloseModal)="closeOpenJob()">
+</modal-open-shipment>
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>
+<!-- <div [ngBusy]="busy"></div> -->

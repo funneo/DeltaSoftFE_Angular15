@@ -1,0 +1,172 @@
+<div>
+  <tabset>
+    <!-- TAB 1 -->
+    <tab heading="The first draft">
+      <ng-container *ngTemplateOutlet="tableTemplate; context: {
+        data: visibleData,
+        filter: listFilter,
+        total: listFilter?.length,
+        tab: 0
+      }"></ng-container>
+    </tab>
+
+    <!-- TAB 2 -->
+    <tab heading="The second draft">
+      <ng-container *ngTemplateOutlet="tableTemplate; context: {
+        data: visibleData1,
+        filter: listFilter1,
+        total: listFilter1?.length,
+        tab: 1
+      }"></ng-container>
+    </tab>
+
+    <!-- TAB 3 -->
+    <tab heading="Published materials">
+      <ng-container *ngTemplateOutlet="tableTemplate; context: {
+        data: visibleData2,
+        filter: listFilter2,
+        total: listFilter2?.length,
+        tab: 2
+      }"></ng-container>
+    </tab>
+  </tabset>
+</div>
+
+<!-- Template chung cho 3 tab -->
+<ng-template #tableTemplate let-data="data" let-filter="filter" let-total="total" let-tab="tab">
+  <div class="box box-primary box-chieu-cao">
+    <div class="row">
+      <div class="box-header with-border">
+        <div class="col-md-2">
+          <ng-select name="chinhanh"
+            [items]="listBranch" bindLabel="branchCode" bindValue="id"
+            [(ngModel)]="branchIds[tab]"
+            (change)="changedChiNhanh(tab)"
+            title="Chọn chi nhánh..." [clearable]="false" [readonly]="_auth>0">
+          </ng-select>
+        </div>
+        <div class="col-md-2">
+          <ng-select name="supplier[tab]"
+                    [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
+                    [(ngModel)]="employeeIds[tab]"
+                    placeholder="Chọn nhân viên..."
+                    (change)="changedEmployee($event, tab)" [clearable]="true">
+                    </ng-select>
+        </div>
+        <div class="col-md-4">
+          <div class="input-group">
+            <input type="text" class="form-control" name="filter"
+                (keyup.enter)="timKiem(tab)"
+                [(ngModel)]="keywordArr[tab]" placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem(tab)">
+                <i class="fa fa-search"></i>
+              </button>
+                </span>
+              
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding">
+      <table class="table table-bordered table-striped table-hover">
+        <thead>
+          <tr>
+            <th>Mã tài liệu</th>
+            <th>Tên tài liệu</th>
+            <th>Tài liệu bổ sung</th>
+            <th>Nhóm ngiệp vụ</th>
+            <th>Khách hàng</th>
+            <th>Tóm tắt tài liệu</th>
+            <th>Người tạo</th>
+            <th>Người duyệt</th>
+            <th *ngIf="tab<2">Điểm B1</th>
+            <th *ngIf="tab<2">Điểm B2</th>
+            <th *ngIf="tab<2">Điểm quy đổi</th>
+            <th *ngIf="tab<2">Tình trạng</th>
+          </tr>
+          <tr>
+            <th><input type="text" class="form-control" [(ngModel)]="filterColumnsArr[tab].documentCode"
+                (keyup)="filterData(tab)" /></th>
+            <th><input type="text" class="form-control" [(ngModel)]="filterColumnsArr[tab].title" (keyup)="filterData(tab)" />
+            </th>
+            <th></th>
+            <th>
+              <select class="form-control"
+                      [(ngModel)]="filterColumnsArr[tab].groupL2Id"
+                      (change)="filterData(tab)">
+                <option value="">Tất cả</option>
+                <option *ngFor="let nghiepvu of listNghiepvu" [value]="nghiepvu.id">{{ nghiepvu.categoryName }}</option>  
+              </select>
+            </th>
+            <th><input type="text" class="form-control" [(ngModel)]="filterColumnsArr[tab].customerName"
+                (keyup)="filterData(tab)" /></th>
+            <th><input type="text" class="form-control" [(ngModel)]="filterColumnsArr[tab].summary" (keyup)="filterData(tab)" />
+            </th>
+            <th><input type="text" class="form-control" [(ngModel)]="filterColumnsArr[tab].createdByName"
+                (keyup)="filterData(tab)" /></th>
+            <th><input type="text" class="form-control" [(ngModel)]="filterColumnsArr[tab].assigneeName"
+                (keyup)="filterData(tab)" /></th>
+            <th *ngIf="tab<2" colspan="4"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of data"
+            [ngStyle]="{ 'background-color': item.isOfficialVersion ? '#C2D8EE' : 'white' }">
+            <td><a style="color:blueviolet;" [routerLink]="[]" (click)="showModal(item)"><b>{{item.documentCode}}</b></a>
+            </td>
+            <td>{{item.title}}</td>
+            <td><a style="color:blueviolet;" [routerLink]="[]" (click)="showModifiedModal(item.modifiedById)"><b>{{item.modifiedByCode}}</b></a></td>
+            <td>{{item.groupL2Name}}</td>
+            <td>{{item.customerName}}</td>
+            <td>{{item.summary}}</td>
+            <td>{{item.createdByName}}</td>
+            <td>{{item.assigneeName}}</td>
+            <td *ngIf="tab<2" (click)="openScoreDetails(item,1)">{{item.step1EvaluationScore | number:'1.2-2'}}</td>
+            <td *ngIf="tab<2" (click)="openScoreDetails(item,2)">{{item.step2EvaluationScore | number:'1.2-2'}}</td>
+            <td *ngIf="tab<2">{{item.totalScore | number:'1.2-2'}}</td>
+            <td *ngIf="tab<2"><span [ngClass]="item.isOfficialVersion ? 'label label-duyet' :
+            item.status==1? 'label label-primary': item.status==2? 'label label-success' : 'label label-info'">
+                {{item.rStatus}}
+              </span>
+            </td>
+          </tr>
+          <tr *ngIf="filter?.length === 0">
+            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- /.box-footer -->
+    <div class="box-footer no-padding">
+      <div *ngIf="filter?.length > 0" class="col-md-12 footer-phantrang">
+        <div class="row">
+          <div class="col-md-5">
+            <div class="dataTables_info">
+              <span>Tổng số bản ghi: {{ total }}</span>
+            </div>
+          </div>
+          <div class="col-md-7 text-right">
+          <pagination
+            [totalItems]="getFilter(tab)?.length || 0"
+            [(ngModel)]="pageIndexArr[tab]"
+            [maxSize]="9"
+            (pageChanged)="pageChanged($event, tab)"
+            [itemsPerPage]="itemsPerPage"
+            previousText="&lsaquo;" nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
+          </pagination>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<!-- Modals -->
+<modal-training-document *ngIf="viewModal" (SaveSuccess)="saveSuccess()"
+  (CloseModal)="closeModal()"></modal-training-document>
+<modal-view-scope *ngIf="viewScoreModal" (CloseModal)="closeModalScore()"></modal-view-scope>

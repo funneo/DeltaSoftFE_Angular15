@@ -1,0 +1,62 @@
+.column-chuc-nang{
+    width: 80px;
+  }
+  .box-chieu-cao>.box-body {
+    height: calc(100vh - 350px);
+  }
+  .column-ten{
+    min-width: 220px;
+    max-width: auto;
+  }
+  .column-md{
+    min-width: 150px;
+    max-width: auto;
+  }
+  .column-sm{
+    min-width: 100px;
+    max-width: auto;
+  }
+  .column-gia-tri{
+    text-align: right;
+    min-width: 85px;
+    max-width: auto;
+  }
+  .column-min{
+    min-width: 50px;
+    max-width: auto;
+  }
+  .bang-chu{
+    color: red;
+    text-align: right;
+    font-style: italic;
+    font-size: medium;
+  }
+  .table_wrapper{
+    overflow: auto;
+  }
+  .tableFixHead {
+    overflow-y: auto; /* make the table scrollable if height is more than 200 px  */
+    height: 480px; /* gives an initial height of 200px to the table */
+  }
+  .tableFixHead thead th {
+    position: sticky; /* make the table heads sticky */
+    top: 0px; /* table head will be placed from the top of the table and sticks to it */
+  }
+
+  table   {
+    border-collapse: collapse;
+    border: 1px solid rgba(109, 107, 107, 0.445);
+  }
+  table  th,td {
+    border: 1px solid rgba(99, 97, 97, 0.589);
+    padding: 2px;
+  }
+
+  @media (min-width: 850px) {
+  .modal-lg {
+     width: 70%;
+    }
+  }
+  thead tr:nth-child(1) th{background: #dcefe5f6; position: sticky;top: 0px;z-index: 10;}
+  thead tr:nth-child(2) th{background: #dcefe5f6; position: sticky;top: 25px;z-index: 10;}
+  

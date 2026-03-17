@@ -1,0 +1,52 @@
+<!-- Model reset mật khẩu -->
+<div ngDraggable [handle]="myHandle" bsModal #modalEditPass="bs-modal" class="modal fade modal-mg-top-80" tabindex="-1"
+  role="dialog" aria-labelledby="myLargeModalLabel" aria-hidden="true"
+  [config]="{backdrop: 'static'}" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div  #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Reset mật khẩu</h4>
+        <button type="button" class="close pull-right" (click)="modalEditPass.hide()" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditFormMK="ngForm" (ngSubmit)="saveChangePass(addEditFormMK)"
+          *ngIf="entityPass">
+          <div class="box-body">
+            <div class="form-group">
+              <label for="inputEmail3" class="col-sm-4 control-label">Mật khẩu mới</label>
+              <div class="col-sm-8">
+                <input type="password" class="form-control" #password="ngModel"
+                  [(ngModel)]="entityPass.password" required
+                  minlength="6" name="password" placeholder="Nhập mật khẩu mới" />
+                <small [hidden]="password.valid || (password.pristine && !addEditFormMK.submitted)" class="text-danger">
+                  Mật khẩu phải lớn hơn 6 ký tự.
+                </small>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="inputEmail3" class="col-sm-4 control-label">Xác nhận mật khẩu</label>
+              <div class="col-sm-8">
+                <input type="password" class="form-control" #confirmpassword="ngModel"
+                  [(ngModel)]="entityPass.confirmPassword" required validateEqual="password" name="confirmpassword"
+                  placeholder="Nhập lại mật khẩu mới" />
+                <small [hidden]="confirmpassword.valid || (confirmpassword.pristine && !addEditFormMK.submitted)"
+                  class="text-danger">
+                  Xác nhận mật khẩu sai
+                </small>
+              </div>
+            </div>
+          </div>
+          <div class="box-footer text-right">
+            <button type="submit" class="btn btn-primary"
+              [disabled]="!addEditFormMK.form.valid || entityPass.password != entityPass.confirmPassword">Lưu</button>
+            <button type="button" (click)="modalEditPass.hide()" class="btn btn-danger">Hủy</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

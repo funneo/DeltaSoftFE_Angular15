@@ -1,0 +1,72 @@
+<div class="modal fade" bsModal #modalDetail="bs-modal" [config]="{backdrop: 'static'}" tabindex="-1" role="dialog"
+  aria-labelledby="dialog-static-name">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">Chi tiết dư nợ</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="closeModal()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="box box-primary box-chieu-cao">
+          <div class="row">
+            <div class="box-header with-border">
+              <!-- <div class="col-md-4">
+                <h3 class="box-title">Chi tiết dư nợ</h3>
+              </div> -->
+              <div class="col-md-12">
+                <div class="input-group">
+                  <ng-select name="nhanvien" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
+                    [(ngModel)]="_employeeId" (change)="changedEmployee($event)" placeholder="Chọn nhân viên..."
+                    [readonly]="_quyen>=_viewAll">
+                  </ng-select>
+                  <span class="input-group-btn">
+                    <button class="btn btn-success btn-sm" appPermission appFunction="EMPLOYEEDEBIT" appAction="EXPORT"
+                      (click)="exportExcel()" title="Xuất dữ liệu">
+                      <i class="fa fa-file-excel-o"></i>
+                    </button>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-header -->
+          <div class="box-body table-responsive no-padding">
+            <table class="table table-bordered table-striped table-hover">
+              <thead>
+                <tr>
+                  <th>Số chứng từ</th>
+                  <th>Ngày</th>
+                  <th>Phát sinh Nợ</th>
+                  <th>Phát sinh Có</th>
+                  <th>Dư nợ</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of listDatas" class="{{!item.tableId? 'dau-ky':''}}">
+                  <td>
+                    {{item.refNo}}
+                  </td>
+                  <td>{{item.updatedDate| date: 'dd/MM/yyyy'}}</td>
+                  <td class="so-tien" style="color: rgb(58, 32, 231);">{{item.credit|VND}}</td>
+                  <td class="so-tien" style="color: rgb(241, 63, 233);">{{item.debit|VND}}</td>
+                  <td class="so-tien">{{item.debitBalance|VND}}</td>
+                </tr>
+                <tr *ngIf="listDatas?.length == 0">
+                  <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <!-- /.box-body -->
+          <!-- /.box -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" (click)="closeModal()">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- <div [ngBusy]="busy"></div> -->

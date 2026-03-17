@@ -1,0 +1,203 @@
+import { HttpClient, HttpParams } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { FromBodyBase } from '@app/shared/models';
+import { DispatchOrderFcl } from '@app/shared/models/fcl/dispatch-order-fcl';
+import { environment } from '@environments/environment';
+import { map, catchError } from 'rxjs/operators';
+import { AuthService } from '../auth.service';
+import { BaseService } from '../base.service';
+import { JwtService } from '../jwt.service';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class DispatchOrderFclService extends BaseService {
+  private token:string;
+  constructor(private http:HttpClient, jwtServices: JwtService,private authenService:AuthService) {
+    super();
+    this.token=jwtServices.getToken();
+   }
+
+  add(entity: DispatchOrderFcl) {
+    let p: FromBodyBase<DispatchOrderFcl> = {};
+    p.item = entity;
+    p.tokenKey = this.token;
+    Object.keys(entity).forEach(key => entity[key] === null ? delete entity[key] : '');
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/create`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+  update(entity: DispatchOrderFcl) {
+    let p: FromBodyBase<DispatchOrderFcl> = {};
+    p.item = entity;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/update`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+  
+  driverUpdate(entity: DispatchOrderFcl) {
+    let p: FromBodyBase<DispatchOrderFcl> = {};
+    p.item = entity;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/driverUpdate`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+  
+  getExport(params: HttpParams) {
+      let p: FromBodyBase<DispatchOrderFcl> = {item:{}};
+      p.tokenKey = this.token;
+      p.fromDate=params.get('fromDate');
+      p.toDate=params.get('toDate');
+      p.branchId=Number.parseInt(params.get('branchid'));
+      p.gType=params.get('type')
+      return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/getExport`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authenService.logout();
+        else return response;
+      }), catchError(this.handleError));
+    }
+  
+
+  updateEtcFee(entity: DispatchOrderFcl) {
+    let p: FromBodyBase<DispatchOrderFcl> = {};
+    p.item = entity;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/updateEtcFee`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+
+
+  updateState(entity: DispatchOrderFcl,isDeny:boolean,typeDeny:number) {
+    let p: FromBodyBase<DispatchOrderFcl> = {};
+    p.item = entity;
+    p.bValue=isDeny;
+    p.tValue=typeDeny;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/updatestate`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+  getReport03(params: HttpParams, type:number) {
+      let p: FromBodyBase<DispatchOrderFcl> = {item:{}};
+      p.gType=type.toString();
+      p.tokenKey = this.token;
+      p.fromDate=params.get('fromDate');
+      p.toDate=params.get('toDate');
+      p.branchId=Number.parseInt(params.get('branchid'));
+      return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/report03`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authenService.logout();
+        else return response;
+      }), catchError(this.handleError));
+    }
+  
+
+  getDetail(refNo: string) {
+    let p: FromBodyBase<DispatchOrderFcl> = {};
+    let item:DispatchOrderFcl={
+      refNo:refNo
+    }
+    p.item=item;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/getbyrefno`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+
+
+  delete(refNo: string) {
+    let p: FromBodyBase<DispatchOrderFcl> = {item:{}};
+    p.item.refNo= refNo;
+    p.tokenKey = this.token;
+    return this.http.post(environment.apiUrl + `/api/DispatchOrderFcl/delete`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+  getAll(params: HttpParams) {
+    let p: FromBodyBase<DispatchOrderFcl> = {item:{branchId:Number.parseInt(params.get('branchid'))}};
+    p.tokenKey = this.token;
+    p.keyWord = params.get('keyword');
+    p.fromDate=params.get('fromDate');
+    p.toDate=params.get('toDate');
+    p.branchId=Number.parseInt(params.get('branchid'));
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/getPaging`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+  getByDriver(params: HttpParams) {
+    let p: FromBodyBase<DispatchOrderFcl> = {item:{branchId:Number.parseInt(params.get('branchid'))}};
+    p.tokenKey = this.token;
+    p.keyWord = params.get('keyword');
+    p.fromDate=params.get('fromDate');
+    p.toDate=params.get('toDate');
+    p.branchId=Number.parseInt(params.get('branchid'));
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/getByDriver`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+  getPerformance(params: HttpParams) {
+    let p: FromBodyBase<DispatchOrderFcl> = {item:{branchId:Number.parseInt(params.get('branchid'))}};
+    p.tokenKey = this.token;
+    p.keyWord = params.get('keyword');
+    p.fromDate=params.get('fromDate');
+    p.toDate=params.get('toDate');
+    p.branchId=Number.parseInt(params.get('branchid'));
+    p.item.driverId=Number.parseInt(params.get('driverid'));
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/getPerformance`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+  
+  getByJobId(jobId: string) {
+    let p: FromBodyBase<DispatchOrderFcl> = {};
+    p.tokenKey = this.token;
+    p.id=jobId;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/GetByJobId`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+}

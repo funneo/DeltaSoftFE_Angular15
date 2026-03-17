@@ -1,0 +1,90 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalListDispatchOrder="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Danh sách lệnh</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalListDispatchOrder.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" >
+          <div class="form-group">
+                    <div class="table-wrapper-scroll-y my-custom-scrollbar">
+                      <table class="table table-bordered table-striped table-hover" id="style-scroll-1">
+                        <thead>
+                          <tr>
+                            <th></th>
+                            <th>RefNo</th>
+                            <th>Lái xe</th>
+                            <th>Số xe</th>
+                            <th>Loại xe</th>
+                            <th>Số Cont</th>
+                            <th>Cung đường</th>
+                            <th>Tóm tắt lệnh</th>
+                          </tr>
+                          <tr>
+                            <th></th>
+                            <th>
+                              <input class="form-control" #IdInput [(ngModel)]="refNoSearch" (input)="filter()" type="text" name="IdSearch"/>
+                            </th>
+                            <th>
+                              <input class="form-control" #jobIdInput [(ngModel)]="driverNameSearch" (input)="filter()" type="text" name="jobIdSearch"/>
+                            </th>
+                            <th>
+                              <input class="form-control" #vandonInput [(ngModel)]="bksSearch" (input)="filter()" type="text" name="hawB_HBLSearch"/>
+                            </th>
+                            <th>
+                              <input class="form-control" #invoiceInput [(ngModel)]="loaiSearch" (input)="filter()" type="text" name="cdsNumberSearch"/>
+                            </th>
+                            <th>
+                              <input class="form-control" #bookingInput [(ngModel)]="contSearch" (input)="filter()" type="text" name="invoiceNoSearch"/>
+                            </th>
+                            <th>
+                              <input class="form-control" #notgesInput [(ngModel)]="routeSearch" (input)="filter()" type="text" name="bookingNoSearch"/>
+                            </th>
+                            <th>
+                              <input class="form-control" #sumInput [(ngModel)]="sumSearch" (input)="filter()" type="text" name="sumSearch"/>
+                            </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of listFilter; let i=index;" [ngClass]="{'bgColorSkyblue': item.checked}" (click)="clickRow(item)">
+                            <td class="table-checkbox">
+                              <label class="custom-checkbox">
+                                <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                                <span class="helping-el"></span>
+                              </label>
+                            </td>
+                            <td><a style="color: blue;" [routerLink]="[]" (click)="viewDispatchOrder(item.refNo)">
+                                <b>{{item.refNo}}</b></a></td>
+                            <td>{{item.driverName}}</td>
+                            <td >{{item.vihiclelLicensePlates}}</td>
+                            <td>{{item.vehicleTypeName}}</td>
+                            <td>{{item.numberOfCont}}</td>
+                            <td>{{item.fullRoute}}</td>
+                            <td>{{item.dispatchSummarize}}</td>
+                          </tr>
+                          <tr *ngIf="listDispatchorder?.length == 0">
+                            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button type="button" (click)="select()" class="btn btn-success btn-sm" [disabled]="!isSelected">
+              <i class="fa fa-check"></i> Chọn</button>
+            <button type="button" (click)="modalListDispatchOrder.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Đóng</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<modal-dispatchorder *ngIf="viewModal" (CloseModal)="closeModal()">
+</modal-dispatchorder>

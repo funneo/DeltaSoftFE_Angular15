@@ -1,0 +1,97 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="onHidden()" (onShown)="onShow()">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Giá Canon</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity" #aForm>
+          <div class="box-body">
+           <div class="form-group">
+              <label class="col-sm-3 control-label">Khách hàng
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select name="customer" [items]="listCustomers" bindLabel="customerName" bindValue="id"
+                  [readonly]="flagXem" [(ngModel)]="entity.customerId" (change)="changedCustomer($event)" required title="Chọn khách hàng...">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Cung đường
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select name="cungduong" [items]="listRoad" bindLabel="name" bindValue="code"
+                  [(ngModel)]="entity.roadCode" required title="Chọn cung đường" required>
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Phí dịch vụ
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select name="phidv" [items]="listFee" bindLabel="feeName" bindValue="id"
+                  [(ngModel)]="entity.feeId" required title="Chọn loại phí" required>
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label"> Số Pallets
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-3">
+                <input class="form-control so-luong" [(ngModel)]="entity.qty" type="number" name="pallets"
+                  title="Số lượng pallets" placeholder="Nhập số lượng pallets" [readonly]="flagXem" required />
+              </div>
+              <label class="col-sm-3 control-label">Số tiền
+                <span class="error">*</span>
+            </label>
+            <div class="col-sm-3">
+                <input type="text" class="form-control so-tien" #sotien="ngModel" name="sotien"
+                    [(ngModel)]="entity.amount" placeholder="Số tiền..." title="Nhập số tiền" [mask]="maskNumber" required
+                    minLength="3" maxlength="18" [readonly]="flagXem"/>
+                <small [hidden]="sotien.valid || (sotien.pristine && !addEditForm.submitted)"
+                    class="text-danger">
+                    Nhập số tiền
+                </small>
+            </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Ghi chú</label>
+              <div class="col-sm-9">
+                <textarea class="form-control textrea-size" [(ngModel)]="entity.notes" name="groupfeenotes" rows="3"
+                  placeholder="Nhập ghi chú" [readonly]="flagXem"></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label"></label>
+              <div class="col-sm-4">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [(ngModel)]="entity.status" name="status" />
+                  <span class="helping-el"></span>
+                  Trạng thái
+                </label>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

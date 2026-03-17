@@ -1,0 +1,31 @@
+export interface ImportGas {
+    id?: number;
+    refNo?: string;
+    branchId?: number;
+    branchName?:string;
+    createdDate?: string;
+    createdBy?: string;
+    createdByName?:string;
+    gasSiteId?: number;
+    siteName?:string;
+    unitId?: number;
+    unitName?:string;
+    quantity?: number;
+    unitPrice?: number;
+    supplierId?: number;
+    supplierCode?:string;
+    supplierName?:string;
+    licensePlate?: string;
+    driverName?: string;
+    driverTel?: string;
+    finishImportTime?: string;
+    note?: string;
+    status?: number;
+    approvedTime?: string | null;
+    approvedBy?: string | null;
+    approvedNote?:string;
+    approvedByName?:string;
+    checked?:boolean;
+    isFuelClosing?:boolean;
+    rStatus?:string;
+}

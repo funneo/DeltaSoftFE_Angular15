@@ -1,0 +1,550 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Thực hiện lệnh</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group">
+              <label class="col-sm-2 control-label">RefNo</label>
+              <div class="col-sm-3 control-label-text-left">
+                <span style="font-weight: bold; color: blue;"> {{entity.refNo}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Ngày</label>
+              <div class="col-sm-3 control-label-text-left">
+                <span style="font-weight: bold; color: blue;"> {{entity.createdDate | date:'dd/MM/yyyy'}}</span>
+              </div>
+              <div class="col-sm-2">
+                <button type="button" class="btn btn-sm btn-primary" (click)="attachFile()">
+                  <i class="fa fa-upload" aria-hidden="true"></i> Đính kèm
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Cung đường toàn tuyến</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" [(ngModel)]="entity.fullRoute" name="fullRoute" rows="2"
+                  readonly></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Ghi chú</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" [(ngModel)]="entity.note" name="note" rows="2" readonly></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Số kiện</label>
+              <div class="col-sm-1">
+                <input type="number" class="form-control" [(ngModel)]="entity.numberOfPackage" name="numberOfPackage"
+                  placeholder="Số kiện" readonly/>
+              </div>
+              <label class="col-sm-1 control-label">Số pallet</label>
+              <div class="col-sm-1">
+                <input type="number" class="form-control" [(ngModel)]="entity.numberOfPallet" name="numberOfPallet"
+                  placeholder="Số pallet" readonly/>
+              </div>
+              <label class="col-sm-2 control-label">Trọng lượng (kg)</label>
+              <div class="col-sm-1">
+                <input type="number" class="form-control" [(ngModel)]="entity.weight" name="weight"
+                  placeholder="Trọng lượng (kg)" readonly/>
+              </div>
+              <label class="col-sm-1 control-label">Số khối (cbm)</label>
+              <div class="col-sm-1">
+                <input type="number" placeholder="Số khối (cbm)" class="form-control" [(ngModel)]="entity.volume"
+                  name="volume" readonly/>
+              </div>
+              <label class="col-sm-1 control-label">Số cont</label>
+              <div class="col-sm-1">
+                <input type="number" class="form-control" [(ngModel)]="entity.numberOfCont" name="numberOfCont"
+                  placeholder="Số cont" readonly/>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">T/g đến nhà máy</label>
+              <div class="col-sm-3">
+                <label class="form-control">{{entity.inquiryTimeToTheFactory | date:'dd/MM/yyyy HH:mm'}}</label>
+              </div>
+              <label class="col-sm-2 control-label">T/g đến cảng</label>
+              <div class="col-sm-3">
+                <label class="form-control">{{entity.inquiryTimeToThePorts | date:'dd/MM/yyyy HH:mm'}}</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Số hiệu Cont/Seal</label>
+              <div class="col-sm-4">
+                <input class="form-control" [(ngModel)]="entity.documentNumber" type="text"
+                  name="documentNumber" readonly />
+              </div>
+            </div>
+            <div class="form-group" style="margin-top: 10px">
+              <tabset #staticTabs>
+                <tab *ngFor="let item of entity.listDispatchOrderDetailed let i=index" heading={{item.workflowId}}>
+                  <tabset>
+                    <tab heading="Thông tin CS">
+                      <fieldset>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">Họ tên người tạo việc
+                          </label>
+                          <div class="col-sm-9">
+                            <span  class="form-control" >{{item.item.createdByFullName}}</span>
+                          </div>
+                        </div>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">SĐT
+                          </label>
+                          <div class="col-sm-9">
+                            <span class="form-control" >{{item.item.createdByTel}}</span>
+                          </div>
+                        </div>
+                      </fieldset>
+                    </tab>
+                    <tab heading="Nội dung công việc">
+                      <fieldset>
+                        <div class="form-group">
+                          <label class="col-sm-3 control-label">Nội dung công việc</label>
+                          <div class="col-sm-9">
+                            <textarea class="form-control textrea-size" [(ngModel)]="item.item.jobDescription" name="jobdescription{{i}}" rows="8"
+                              placeholder="Nhập nội dung công việc" readonly></textarea>
+                          </div>
+                        </div>
+                      </fieldset>
+                    </tab>
+                    <tab heading="Thông tin giao nhận">
+                    <fieldset>
+                    <div class="form-group">
+                      <div class="col-sm-4">
+                        <button type="button" class="btn btn-link" (click)="showContSealDetail()">Chi tiết
+                          Cont/Seal/Pakage</button>
+                      </div>
+                    </div>
+                    <div *ngIf="_flagContSeal" class="form-group">
+                      <div class="table-wrapper-scroll-y my-custom-scrollbar">
+                        <!-- <p>Thông tin chi tiết container/seal</p> -->
+                        <table class="table table-bordered">
+                          <thead>
+                            <tr>
+                              <th class="column-ten">Loại</th>
+                              <th class="column-ten">Số cont</th>
+                              <th class="column-ten">Số seal</th>
+                              <th class="column-so-tien">GW</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let item of item.item.item.shipmentContSeals; let i = index">
+                              <td class="column-ten">
+                                <ng-select name="tkno{{item.id}}" [items]="listContTypes" bindLabel="categoryName"
+                                  bindValue="categoryCode" [(ngModel)]="item.contType" placeholder="Loại cont" disabled>
+                                </ng-select>
+                              </td>
+                              <td class="column-ten">
+                                {{item.contNo}}
+                              </td>
+                              <td class="column-ten">
+                                {{item.sealNo}}
+                              </td>
+                              <td class="column-so-tien">
+                                {{item.gw}}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="col-sm-2 control-label"> Hàng xuất/nhập
+                      </label>
+                      <div class="col-sm-4">
+                        <ng-select name="exim" [items]="listImportExports" bindLabel="categoryName" bindValue="id"
+                          [(ngModel)]="item.item.item.importExport" placeholder="Hàng xuất/nhập" disabled>
+                        </ng-select>
+                      </div>
+                      <label class="col-sm-2 control-label"> Loại hình
+                      </label>
+                      <div class="col-sm-4">
+                        <ng-select name="currency" [items]="listShipmentType" bindLabel="categoryName" bindValue="id"
+                          [(ngModel)]="item.item.item.shipmentType" placeholder="Loại hình" disabled>
+                        </ng-select>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="col-sm-3 control-label">Nơi Nhận hàng
+                      </label>
+                      <div class="col-sm-9">
+                        <textarea class="form-control textrea-size" [(ngModel)]="item.item.item.pickupPlace"
+                          name="placeOfLoading" [readonly]="flagXem" rows="2"></textarea>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="col-sm-3 control-label">Nơi Giao hàng
+                      </label>
+                      <div class="col-sm-9">
+                        <textarea class="form-control textrea-size" [(ngModel)]="item.item.item.deliveryPlace"
+                          name="placeOfDelivery" [readonly]="flagXem" rows="2"></textarea>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="col-sm-3 control-label">Hạn lệnh/Thời gian cắt máng
+                      </label>
+                      <div class="col-sm-6">
+                        <span class="form-control">{{item.item.closingTime | date:'dd/MM/yyyy HH:mm'}}</span>
+                      </div>
+                    </div>
+                  </fieldset>
+                    </tab>
+                  </tabset>
+
+                </tab>
+              </tabset>
+            </div>
+            <div class="form-group" *ngIf="entity.status>1">
+              <tabset>
+                <tab heading="Tiến trình">
+                  <!-- /.box-header -->
+                  <div class="box-body table-responsive no-padding">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Tên tiến trình</th>
+                          <th style="width:180px">Tác vụ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listDispatchOrderProcedure">
+                          <td>
+                            <span style="color: rgb(0, 68, 255);"><b>{{ item.procedureName }}</b></span>
+                          </td>
+                          <td>
+                            <button class="btn btn-success btn-sm" (click)="done(item.procedureId,true)"
+                              [disabled]="item.isFinish||item.isPass">
+                              Hoàn thành
+                            </button>
+                            <button class="btn btn-danger btn-sm" (click)="done(item.procedureId,false)"
+                              [disabled]="item.isFinish||item.isPass">
+                              Bỏ qua
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listDispatchOrderProcedure?.length == 0">
+                          <td colspan="100%">Không có tiến trình!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </tab>
+                <tab heading="Đánh giá">
+                  <div class="box-body">
+                    <div class="form-group">
+                      <label class="col-sm-3 control-label">Km đầu</label>
+                      <div class="col-sm-3">
+                        <input type="number" class="form-control" [(ngModel)]="entity.startVehicleOdor"
+                          name="startVehicleOdor" [readonly]="entity.finished" />
+                      </div>
+                      <label class="col-sm-3 control-label">Km cuối</label>
+                      <div class="col-sm-3">
+                        <input type="number" class="form-control" [(ngModel)]="entity.finishVehicleOdor"
+                          name="finishVehicleOdor" [readonly]="entity.finished" />
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="col-sm-3 control-label" style="padding-top: 10px;">Đánh giá CS
+                        <span class="error">*</span>
+                      </label>
+                      <div class="col-sm-9" style="margin-top: -10px;">
+                        <bar-rating name="ratingcs" [(rate)]="entity.gradeCs" (rateChange)="checkValue()">
+                        </bar-rating>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="col-sm-3 control-label">
+                        <span class="error">*</span>
+                      </label>
+                      <div class="col-sm-9">
+                        <textarea class="form-control textrea-size" [(ngModel)]="entity.evaluationCs"
+                          name="cSEvaluationByOp" rows="2" placeholder="Nhận xét về công việc mà CS đã tạo"></textarea>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="col-sm-3 control-label" style="padding-top: 10px;">Đánh giá Điều vận
+                        <span class="error">*</span>
+                      </label>
+                      <div class="col-sm-9" style="margin-top: -10px;">
+                        <bar-rating name="ratingop" [(rate)]="entity.gradeOpMan" (rateChange)="checkValue()">
+                        </bar-rating>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="col-sm-3 control-label">Nhận xét Điều vận
+                        <span class="error">*</span>
+                      </label>
+                      <div class="col-sm-9">
+                        <textarea class="form-control textrea-size" [(ngModel)]="entity.evaluationOpMan"
+                          name="opManEvaluationByCS" rows="2" placeholder="Nhận xét về opMan"></textarea>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <label class="col-sm-3 control-label">Ghi chú</label>
+                      <div class="col-sm-9">
+                        <textarea class="form-control textrea-size" [(ngModel)]="entity.noteFinished" name="noteFinish"
+                          rows="2" placeholder="Ghi chú về kết quả công việc"></textarea>
+                      </div>
+                    </div>
+                  </div>
+                </tab>
+                <tab heading="Cầu đường">
+                  <div class="form-group">
+                    <div class="col-sm-2">
+                      <button [disabled]="entity.finished || entity.status==4" type="button"
+                        class="btn btn-sm btn-primary" (click)="newTicket()">Thêm</button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="table-responsive" style="padding-left:15px; padding-right:15px">
+                      <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                          <tr>
+                            <th>Mã phí</th>
+                            <th>Tên phí</th>
+                            <th>Tên trạm</th>
+                            <th>Số hóa đơn</th>
+                            <th>Số tiềm</th>
+                            <th>Vat</th>
+                            <th>Ghi chú</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of entity.listDispatchOrderTicket; let indexOfelement=index;">
+                            <td style="width: 100px;">
+                              <ng-select name="listFeeTicket{{indexOfelement}}" [items]="listFee" bindLabel="feeCode"
+                                bindValue="id" [clearable] = "false" (change)="feeCodeTicketChanged(item,$event)" [(ngModel)]="item.feeId"
+                                required>
+                              </ng-select>
+                              <!-- {{item.feeCode}} -->
+                            </td>
+                            <td style="width: 150px;">
+                              <ng-select name="listFeeTicketName{{indexOfelement}}" [items]="listFee" bindLabel="feeName"
+                              bindValue="id" [clearable] = "false" (change)="feeCodeTicketChanged(item,$event)" [(ngModel)]="item.feeId"
+                              required>
+                            </ng-select>
+                          </td>
+                            <td>{{item.tollStationName}}</td>
+                            <td>{{item.number}}</td>
+                            <td style="text-align: right;">{{item.cost | number}}</td>
+                            <td style="text-align: right;">{{item.vat | number}}</td>
+                            <td style="width:10%">{{item.note}}</td>
+                            <td style="width:10%">
+                              <button [disabled]="entity.finished" type="button" class="btn btn-success btn-sm"
+                                (click)="updateTicket(item,indexOfelement)">
+                                <i class="fa fa-trash"></i> Sửa
+                              </button>
+                              <button [disabled]="entity.finished" type="button" class="btn btn-warning btn-sm"
+                                (click)="deleteTicket(indexOfelement)">
+                                <i class="fa fa-trash"></i> Xóa
+                              </button>
+                            </td>
+                          </tr>
+                          <tr *ngIf="entity.listDispatchOrderTicket?.length == 0">
+                            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </tab>
+                <tab heading="Bến bãi">
+                  <div class="form-group">
+                    <div class="col-sm-2">
+                      <button [disabled]="entity.finished || entity.status==4" type="button"
+                        class="btn btn-sm btn-primary" (click)="newParking()">Thêm</button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="table-responsive" style="padding-left:15px; padding-right:15px">
+                      <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                          <tr>
+                            <th>Mã phí</th>
+                            <th>Tên phí</th>
+                            <th>Tên Bãi đỗ xe</th>
+                            <th>Địa chỉ</th>
+                            <th>Số tiềm</th>
+                            <th>Vat</th>
+                            <th>Ghi chú</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of entity.listDispatchOrderParkingTicket;let indexOfelement=index;">
+                            <td style="width: 100px;">
+                              <ng-select name="listFeeParking{{indexOfelement}}" [items]="listFee" bindLabel="feeCode"
+                                bindValue="id" [clearable] = "false" (change)="feeCodeParkingChanged(item,$event)" [(ngModel)]="item.feeId"
+                                required>
+                              </ng-select>
+                              <!-- {{item.feeCode}} -->
+                            </td>
+                            <td style="width: 150px;">
+                              <ng-select name="listFeeParkingName{{indexOfelement}}" [items]="listFee" bindLabel="feeName"
+                              bindValue="id" [clearable] = "false" (change)="feeCodeParkingChanged(item,$event)" [(ngModel)]="item.feeId"
+                              required>
+                            </ng-select>
+                          </td>
+                            <td style="width: 200px;">
+                              <input type="text" class="form-control" name="ten{{indexOfelement}}"
+                                style="text-align: left;" [(ngModel)]="item.parkingName" placeholder="Tên bãi đỗ xe"
+                                [readonly]="flagXem" required />
+                            </td>
+                            <td tyle="width: 200px;">
+                              <input type="text" class="form-control" name="diachi{{indexOfelement}}"
+                                style="text-align: left;" [(ngModel)]="item.parkingAddress" placeholder="Địa chỉ"
+                                [readonly]="flagXem" />
+                            </td>
+                            <td style="width: 80px;">
+                              <input type="text" class="form-control" name="sotien{{indexOfelement}}"
+                                style="text-align: right;" [(ngModel)]="item.cost" placeholder="Số tiền"
+                                [readonly]="flagXem" [mask]="maskNumber" required />
+                            </td>
+                            <td style="width: 80px;">
+                              <input type="text" class="form-control" name="vat{{indexOfelement}}"
+                                style="text-align: right;" [(ngModel)]="item.vat" placeholder="Vat" [readonly]="flagXem"
+                                [mask]="maskNumber" required />
+                            </td>
+                            <td style="width:20%">
+                              <input class="form-control" [(ngModel)]="item.note" type="text"
+                                name="note{{indexOfelement}}" [readonly]="flagXem" />
+                              <!-- {{item.note}} -->
+                            </td>
+                            <td style="width:10%">
+                              <button [disabled]="entity.finished" type="button" class="btn btn-success btn-sm"
+                                (click)="updateParkingTicket(item,indexOfelement)">
+                                <i class="fa fa-trash"></i> Sửa
+                              </button>
+                              <button [disabled]="entity.finished" type="button" class="btn btn-warning btn-sm"
+                                (click)="deleteParkingTicket(indexOfelement)">
+                                <i class="fa fa-trash"></i> Xóa
+                              </button>
+                            </td>
+                          </tr>
+                          <tr *ngIf="entity.listDispatchOrderEtc?.length == 0">
+                            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </tab>
+                <tab heading="POD">
+                  <div class="form-group">
+                    <div class="col-sm-2">
+                      <input style="display: none" type="file" class="custom-file-input" id="pod" #filePod
+                        (change)="onFileChanged($event)" accept=".jpg,.png,.gif,.pdf">
+                      <button type="button" class="btn btn-sm btn-primary" (click)="filePod.click()"
+                        [disabled]="entity.finished">
+                        <i class="fa fa-upload" aria-hidden="true"></i> Tải POD
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="table-responsive" style="padding-left:15px; padding-right:15px">
+                      <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                          <tr>
+                            <th>Tên File</th>
+                            <th>Kích thước</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of listPod; let i=index;">
+                            <td><a (click)="clickLink(item)">{{item.fileName}}</a></td>
+                            <td style="width:50%">
+                              {{item.size | number}}
+                            </td>
+                          </tr>
+                          <tr *ngIf="listPod?.length == 0">
+                            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </tab>
+                <tab heading="Hình ảnh hiện trường">
+                  <div class="form-group">
+                    <div class="col-sm-2">
+                      <input style="display: none" type="file" class="custom-file-input" id="attackFile" #fileUpload
+                        (change)="onAttachFileChanged($event)" accept=".jpg,.png,.gif,.pdf">
+                      <button type="button" class="btn btn-sm btn-primary" (click)="fileUpload.click()"
+                        [disabled]="entity.finished">
+                        <i class="fa fa-upload" aria-hidden="true"></i> Tải Ảnh hiện trường
+                      </button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="table-responsive" style="padding-left:15px; padding-right:15px">
+                      <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                          <tr>
+                            <th>Tên File</th>
+                            <th>Kích thước (B)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of listAttachFile; let i=index;">
+                            <td><a (click)="clickLink(item)">{{item.fileName}}</a></td>
+                            <td style="width:50%">{{item.size | number}}
+                            </td>
+                            <td style="width:40px">
+                              <button [disabled]="entity.finished" type="button" class="btn btn-warning btn-sm"
+                                (click)="deleteAttachFile(item)">
+                                <i class="fa fa-trash"></i>
+                              </button>
+                            </td>
+                          </tr>
+                          <tr *ngIf="listAttachFile?.length == 0">
+                            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </tab>
+              </tabset>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="entity.status==1" type="button" class="btn btn-mau1 btn-sm" (click)="updateState(2)">
+              <i class="fa fa-share-square-o"></i> Nhận lệnh</button>
+            <button *ngIf="!entity.finished && entity.createdBy===userLoged.id  && entity.status!=4" type="button"
+              class="btn btn-primary btn-sm" (click)="setFinish(addEditForm,false)">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button *ngIf="!entity.finished && flagFinishProcedure && entity.status!=4" type="button"
+              class="btn btn-duyet btn-sm" (click)="setFinish(addEditForm,true)" [disabled]="!addEditForm.form.valid">
+              <i class="fa fa-hand-paper-o "></i> Kết thúc lệnh</button>
+            <button *ngIf="!entity.finished && flagFinishProcedure  && entity.status!=4" type="button"
+              class="btn btn-warning btn-sm" (click)="setCancelDispatchOrder(addEditForm)"
+              [disabled]="!addEditForm.form.valid">
+              <i class="fa fa-hand-paper-o "></i> Dừng lệnh</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<modal-attachfile *ngIf="viewAttachFiles" (CloseModal)="closeModalAttachFiles()">
+</modal-attachfile>
+<modal-dispatchorder-ticket *ngIf="viewTicket" (SaveSuccess)="saveSuccessTicket($event)"
+  (CloseModal)="closeModalTicket()">
+</modal-dispatchorder-ticket>
+<modal-dispatchorder-parking-ticket *ngIf="viewParkingTicket" (SaveSuccess)="saveSuccessParkingTicket($event)"
+  (CloseModal)="closeModalParkingTicket()">
+</modal-dispatchorder-parking-ticket>

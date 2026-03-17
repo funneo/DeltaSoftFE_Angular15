@@ -1,0 +1,185 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="box-header with-border">
+    <div class="row">
+      <div class="col-md-3">
+        <h3 class="box-title">Công nợ phải thu</h3>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id" [(ngModel)]="_branchId"
+          (change)="changedBranch()" placeholder="Chọn chi nhánh..." [clearable]="false" [readonly]="_auth>0">
+        </ng-select>
+      </div>
+      <div class="col-md-3">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+          class="form-control">
+      </div>
+      <div class="col-md-4 text-right">
+        <button *ngIf="closingPermission" class="btn btn-warning btn-sm" (click)="lock()" [disabled]="!itemSelected">
+          <i class="fa fa-lock"></i> Khóa
+        </button>
+        <button style="background-color: chocolate; color: white;" *ngIf="acceptPermission" class="btn btn-sm" (click)="tt()" [disabled]="!itemSelected">
+          <i class="fa fa-cc-visa"></i> Thanh toán
+        </button>
+        <div class="dropdown btn-group" style="padding-left: 5px;">
+          <button class="btn btn-success btn-sm dropbtn" type="button" appPermission appFunction="DEBT1"
+            appAction="CREATE">
+            <i class="fa fa-plus"></i> Thêm
+            <span class="caret"></span></button>
+          <div class="dropdown-content">
+            <li (click)="add(0)">Phát sinh nợ</li>
+            <div class="dropdown-divider"></div>
+            <li (click)="add(1)">Phát sinh có</li>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+          appFunction="DEBT1" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="DEBT1" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+        <button class="btn btn-success btn-sm" (click)="export()" >
+          <i class="fa fa-file-excel-o"></i>
+        </button>
+        <!-- <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+          <i class="fa fa-eye"></i> Xem
+        </button> -->
+      </div>
+    </div>
+    <div class="row"style="margin-top: 3px;">
+        <div class="col-md-3">
+          <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+            [(ngModel)]="_customerId" (change)="changedCustomer($event)" placeholder="Chọn khách hàng...">
+          </ng-select>
+        </div>
+        <div class="col-md-2">
+          <ng-select name="loai" [items]="listTypes" bindLabel="text" bindValue="id"
+            [(ngModel)]="_type" (change)="changedType($event)" placeholder="Chọn hình thức...">
+          </ng-select>
+        </div>
+        <div class="col-md-3">
+          <div class="input-group">
+            <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+              placeholder="Chứng từ/Hóa đơn..." />
+            <span class="input-group-btn">
+              <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                <i class="fa fa-search"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+              <span class="helping-el"></span>
+            </label>
+          </th>
+          <th>Trạng thái</th>
+          <th style="min-width: 150px;">Khách hàng</th>
+          <th>Số chứng từ</th>
+          <th>JobId</th>
+          <th>Số hóa đơn</th>
+          <th style="min-width: 100px;">Người lập</th>
+          <th>Ngày</th>
+          <th>Nội dung</th>
+          <th style="min-width: 100px;">Phát sinh nợ</th>
+          <th style="min-width: 100px;">Phát sinh có</th>
+          <th>Ghi chú</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th style="text-align: left; font-weight: 300;">
+            <ng-select name="filterType" (change)="filter()" [(ngModel)]="selectedtinhtrang" [clearable]="false" [items]="listTinhtrang" bindLabel="text" bindValue="id"></ng-select>
+          </th>
+          <th><input class="form-control" #khSearchInput [(ngModel)]="khSearch" (input)="filter()" type="text" name="khSearch"/></th>
+          <th><input class="form-control" #soctSearchInput [(ngModel)]="soctSearch" (input)="filter()" type="text" name="soctSearch"/></th>
+          <th><input class="form-control" #jobidSearchInput [(ngModel)]="jobidSearch" (input)="filter()" type="text" name="jobidSearch"/></th>
+          <th><input class="form-control" #invoicenoSearchInput [(ngModel)]="invoicenoSearch" (input)="filter()" type="text" name="invoicenoSearch"/></th>
+          <th><input class="form-control" #nguoilapSearchInput [(ngModel)]="nguoilapSearch" (input)="filter()" type="text" name="nguoilapSearch"/></th>
+          <th><input class="form-control" #ngaySearchInput [(ngModel)]="ngaySearch" (input)="filter()" type="text" name="ngaySearch"/></th>
+          <th><input class="form-control" #noidungSearchInput [(ngModel)]="noidungSearch" (input)="filter()" type="text" name="noidungSearch"/></th>
+          <th><input class="form-control" #psnoSearchInput [(ngModel)]="psnoSearch" (input)="filter()" type="text" name="psnoSearch"/></th>
+          <th><input class="form-control" #pscoSearchInput [(ngModel)]="pscoSearch" (input)="filter()" type="text" name="pscoSearch"/></th>
+          <th><input class="form-control" #ghichuSearchInput [(ngModel)]="ghichuSearch" (input)="filter()" type="text" name="ghichuSearch"/></th>
+
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listFilter" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td class="trang-thai">
+            <span *ngIf="item.locked" class="label label-danger">Khóa</span>
+            <br>
+            <span *ngIf="item.isPaid" class="label label-warning">Đã thanh toán</span>
+            <br>
+            <span [ngClass]="
+                item.status  ? 'label label-success' : 'label label-danger'
+              ">{{ item.status | Status }}</span>
+          </td>
+          <td>{{item.customerName}}</td>
+          <td>
+            <a [routerLink]="[]" (click)="showModal(item)">{{item.documentNo}}</a>
+          </td>
+          <td>{{item.jobId}}</td>
+          <td>{{item.invoiceNo}}</td>
+          <td>{{item.createdByName}}</td>
+          <td>{{item.refDate|date: "dd/MM/yyyy"}}</td>
+          <td>{{item.refName}}</td>
+          <td class="so-tien">{{item.totalDebit|VND}}</td>
+          <td class="so-tien">{{item.totalCredit|VND}}</td>
+          <td>{{item.notes }}</td>
+        </tr>
+        <tr *ngIf="listDebt?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listDebt?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="dataTables_info">
+            <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng P/S Nợ: {{ totalPsNo|VND }}</span>
+          </div>
+        </div>
+        <div class="col-md-3">
+          <div class="dataTables_info">
+            <span style="font-weight: bold; color: rgba(0, 4, 255, 0.926);">Tổng P/S Có: {{ totalPsCo|VND }}</span>
+          </div>
+        </div>
+        <!-- <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div> -->
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+<modal-debt *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-debt>
+<!-- <div [ngBusy]="busy"></div> -->

@@ -1,0 +1,81 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="row">
+        <div class="box-header with-border">
+            <div class="col-md-4">
+                <h3 class="box-title">Khách hàng</h3>
+            </div>
+            <!-- <div class="col-md-3"></div> -->
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()"
+                        [(ngModel)]="keyword" placeholder="Từ khóa" />
+                    <span class="input-group-btn">
+                        <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+        <table class="table table-bordered table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Mã khách hàng</th>
+                    <th>Tên khách hàng</th>
+                    <th>Nhóm</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let item of listCustomer; let indexOfelement=index;">
+                    <td>
+                        <span>{{item.customerCode}}</span>
+                    </td>
+                    <td>{{item.customerName}}</td>
+                    <td> 
+                        <ng-select name="team{{indexOfelement}}" [items]="listTeam" bindLabel="categoryName"
+                        bindValue="id"[(ngModel)]="item.teamId">
+                        </ng-select>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-success btn-sm"
+                        (click)="updateteamId(item)">
+                        <i class="fa fa-check"></i> Cập nhật
+                      </button>   
+                    </td>
+                </tr>
+                <tr *ngIf="listCustomer?.length == 0">
+                    <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer no-padding">
+        <div *ngIf="listCustomer?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="dataTables_info">
+                        <span>Tổng số bản ghi: {{ totalRows }}</span>
+                    </div>
+                </div>
+                <div class="col-md-7 text-right">
+                    <div class="page">
+                        <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                            (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;"
+                            nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
+                        </pagination>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.box -->
+</div>
+
+
+ 

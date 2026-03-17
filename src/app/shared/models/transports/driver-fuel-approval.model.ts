@@ -1,0 +1,46 @@
+import { DriverFuelApprovalDetailed } from "./driver-fuel-approval-detailed.model";
+
+export interface DriverFuelApproval {
+    id?: number;
+    branchId?: number;
+    branchName?:string;
+    refNo?: string;
+    supplierId?: number;
+    supplierCode?:string;
+    supplierName?:string;
+    customerId?: number;
+    createdDate?: string;
+    createdBy?: string;
+    createdByName?:string;
+    gasSiteId?: number;
+    siteName?:string;
+    driverId?: number;
+    driverName?: string;
+    vihicleId?: number;
+    licensePlate?: string;
+    quantity?: number;
+    oilPrice?: number;
+    totalCost?: number;
+    totalCostIgas?: number;
+    validTime?: string;
+    igasCode?: string;
+    refuelingTimeIgas?: string;
+    quantityIgas?: number;
+    type?: number;
+    isLocal?: boolean;
+    note?: string;
+    checked?:boolean;
+    isFuelClosing?:boolean;
+    approved?:boolean;
+    approvedBy?:string;
+    approvedDate?:string;
+    status?:number;
+    rStatus?:string;
+    totalRows?:number;
+    isCbt?:boolean;
+    refNoCbt?:string;
+    startKm?:number;
+    finishKm?:number;
+    realOilPrice?:number;
+    detaileds?:DriverFuelApprovalDetailed[];
+}

@@ -1,0 +1,153 @@
+<div class="box box-primary box-chieu-cao">
+  <ngx-spinner
+  [fullScreen]="false"
+  bdOpacity = 0.9
+  bdColor = "#f4f4f9"
+  size = "medium"
+  color = "#1010ee"
+  type = "ball-clip-rotate"
+  size="medium">
+  <p class="loading">Tải dữ liệu ...</p>
+</ngx-spinner>
+  <div class="box-header with-border">
+    <div class="row" style="padding-bottom: 5px;">
+      <div class="col-md-2">
+        <h3 class="box-title">Doanh thu - FILTER</h3>
+      </div>
+      <div class="col-md-4">
+        <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+        [(ngModel)]="_customerId" (change)="changedCustomer()" placeholder="Chọn khách hàng...">
+      </ng-select>
+
+      </div>
+      <div class="col-md-2">
+        <ng-select name="loai" [items]="listTypes" bindLabel="text" bindValue="id"
+          [(ngModel)]="_type" (change)="changedType()" placeholder="Chọn loại..." [clearable]="false">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+        class="form-control" />
+      </div>
+      <div class="col-md-2">
+        <div class="input-group">
+          <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+          [(ngModel)]="_branchId" (change)="changedBranch()" placeholder="Chọn chi nhánh..." [clearable]="false" [readonly]="_quyen>0">
+        </ng-select>
+        <span class="input-group-btn">
+          <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()" title="">
+            <i class="fa fa-search"></i>
+          </button>
+          <button class="btn btn-success btn-sm" appPermission appFunction="REPORTREVENUE" (click)="exportExcel()" appAction="EXPORT" title="Xuất dữ liệu">
+            <i class="fa fa-file-excel-o"></i>
+          </button>
+        </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th rowspan="2">Mã khách hàng</th>
+          <th rowspan="2">Tên khách hàng</th>
+          <th rowspan="2">Lô hàng</th>
+          <th rowspan="2">Tờ khai</th>
+          <th rowspan="2">Vận đơn</th>
+          <th rowspan="2">Số Booking</th>
+          <th rowspan="2">Lượng hàng</th>
+          <th rowspan="1" colspan="5">Doanh thu</th>
+          <th rowspan="1" colspan="5">Chi phí</th>
+          <th rowspan="2">Lợi nhuận</th>
+          </tr>
+          <tr>
+            <th>Hải quan</th>
+            <th>Vận tải</th>
+            <th>Khác</th>
+            <th>Tổng</th>
+            <th>VAT</th>
+            <th>Làm hàng (Ops)</th>
+            <th>Xe nhà</th>
+            <th>Thuê ngoài</th>
+            <th>Tổng</th>
+            <th>VAT</th>
+          </tr>
+          <tr>
+            <th><input class="form-control" #makhInput [(ngModel)]="makhSearch" (input)="filter()" type="text" name="makhSearch"/></th>
+            <th><input class="form-control" #tenkhInput [(ngModel)]="tenkhSearch" (input)="filter()" type="text" name="tenkhSearch"/></th>
+            <th><input class="form-control" #lohangInput [(ngModel)]="lohangSearch" (input)="filter()" type="text" name="sodebitSearch"/></th>
+            <th><input class="form-control" #tokhaiInput [(ngModel)]="tokhaiSearch" (input)="filter()" type="text" name="tokhaiSearch"/></th>
+            <th><input class="form-control" #vandonInput [(ngModel)]="vandonSearch" (input)="filter()" type="text" name="vandonSearch"/></th>
+            <th><input class="form-control" #sobookingInput [(ngModel)]="sobookingSearch" (input)="filter()" type="text" name="sobookingSearch"/></th>
+            <th><input class="form-control" #luonghangInput [(ngModel)]="luonghangSearch" (input)="filter()" type="text" name="luonghangSearch"/></th>
+            <th colspan="11"></th>
+          </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listFilter">
+          <!-- <td>
+            <a [routerLink]="" (click)="showDebt(item)">{{item.customerName}}</a>
+          </td> -->
+          <td >{{item.customerCode}}</td>
+          <td class="column-name">{{item.customerName}}</td>
+          <td >
+            <a [routerLink]="[]" (click)="showJob(item)">{{item.jobId}}</a>
+          </td>
+          <td >{{item.cdsNumber}}</td>
+          <td >{{item.hawB_HBL}}</td>
+          <td >{{item.bookingNo}}</td>
+          <td >{{item.luongHang}}</td>
+          <td class="so-tien">{{item.doanhThuHaiQuan|VND}}</td>
+          <td class="so-tien">{{item.doanhThuVanTai|VND}}</td>
+          <td class="so-tien">{{item.doanhThuKhac|VND}}</td>
+          <td class="so-tien tong">{{item.doanhThuTong|VND}}</td>
+          <td class="so-tien">{{item.doanhThuVat|VND}}</td>
+
+          <td class="so-tien">{{item.chiPhiOps|VND}}</td>
+          <td class="so-tien">{{item.chiPhiVanTai|VND}}</td>
+          <td class="so-tien">{{item.chiPhiVanTaiNgoai|VND}}</td>
+          <td class="so-tien tong">{{item.chiPhiTong|VND}}</td>
+          <td class="so-tien">{{item.chiPhiVat|VND}}</td>
+          <td class="so-tien {{item.loiNhuan>0?'duong':'am'}}">{{item.loiNhuan|VND}}</td>
+        </tr>
+        <tr *ngIf="listData?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listData?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="dataTables_info">
+            <span style="color: rgba(0, 68, 255, 0.926);" title="Doanh thu">Tổng tiền: {{ soTien|VND }}</span>
+            <span style="color: rgb(7, 156, 47);"> - VAT: {{ tienVat|VND }}</span>
+            <span style="color: rgba(255, 77, 0, 0.926);" title="Doanh thu bao gồm VAT"> - Tổng tiền(+VAT): {{ tongTien|VND }}</span>
+          </div>
+        </div>
+        <div class="col-md-3 text-right">
+          <!-- <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div> -->
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+<!-- <div [ngBusy]="busy"></div> -->
+<modal-shipment *ngIf="viewModalJob" (CloseModal)="closeModalJob()">
+</modal-shipment>

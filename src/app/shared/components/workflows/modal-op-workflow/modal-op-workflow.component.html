@@ -1,0 +1,162 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalOpAction="bs-modal"
+  [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" aria-labelledby="dialog-static-name"
+  (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Thực hiện công việc</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalOpAction.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" #modalOpAction="ngForm" *ngIf="entity">
+          <div>
+            <tabset>
+              <tab heading="Tiến trình việc" *ngIf="haveProcedure &&  !entity.isJobFinish" >
+                <!-- /.box-header -->
+                <div class="box-body table-responsive no-padding">
+                  <table class="table table-bordered table-striped table-hover">
+                    <thead>
+                      <tr>
+                        <th>Tên tiến trình</th>
+                        <th>Tác vụ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of listTientrinh">
+                        <td>
+                          <span style="color: rgb(0, 68, 255);"><b>{{ item.procedureName }}</b></span>
+                        </td>
+                        <td>
+                          <button class="btn btn-success btn-sm" (click)="done(item.id,true)" [disabled]="item.isFinish||item.isPass">
+                            Hoàn thành
+                          </button>
+                          <button class="btn btn-danger btn-sm" (click)="done(item.id,false)" [disabled]="item.isFinish||item.isPass">
+                            Bỏ qua
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </tab>
+              <tab heading="Ghi nhận thông tin" *ngIf="!entity.isJobFinish">
+                <div class="box-body">
+                  <div class="form-group">
+                    <label class="col-sm-3 control-label" style="padding-top: 10px;">Đánh giá CS
+                      <span class="error">*</span>
+                    </label>
+                    <div class="col-sm-9" style="margin-top: -10px;">
+                      <bar-rating name="ratingcs" [(rate)]="gradecs" (rateChange)="checkValue()" [required]>
+                      </bar-rating>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="col-sm-3 control-label">Nhận xét CS
+                      <span class="error">*</span>
+                    </label>
+                    <div class="col-sm-9">
+                      <textarea class="form-control textrea-size" [(ngModel)]="evaluationcs" name="cSEvaluationByOp"
+                        rows="2" placeholder="Nhận xét về công việc mà CS đã tạo"></textarea>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="col-sm-3 control-label" style="padding-top: 10px;">Đánh giá OpMan
+                      <span class="error">*</span>
+                    </label>
+                    <div class="col-sm-9" style="margin-top: -10px;">
+                      <bar-rating name="ratingop" [(rate)]="gradeopman" (rateChange)="checkValue()" [required]>
+                      </bar-rating>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="col-sm-3 control-label">Nhận xét OpMan
+                      <span class="error">*</span>
+                    </label>
+                    <div class="col-sm-9">
+                      <textarea class="form-control textrea-size" [(ngModel)]="evaluationopman"
+                        name="opManEvaluationByCS" rows="2" placeholder="Nhận xét về opMan"></textarea>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="col-sm-3 control-label">Ghi chú</label>
+                    <div class="col-sm-9">
+                      <textarea class="form-control textrea-size" [(ngModel)]="noteFinish" name="noteFinish" rows="5"
+                        placeholder="Ghi chú về kết quả công việc"></textarea>
+                    </div>
+                  </div>
+                </div>
+              </tab>
+              <tab heading="Hình ảnh hiện trường">
+                <div class="box-body">
+                  <div class="form-group">
+                    <div class="col-sm-6">
+                        <button type="button" class="btn btn-sm btn-success" (click)="newAttachFile()">
+                            <i class="fa fa-plus" aria-hidden="true"></i> Thêm mới
+                        </button>
+                        <button type="button" class="btn btn-sm btn-info" (click)="viewAll()">
+                          <i class="fa fa-eye" aria-hidden="true"></i> Xem ảnh
+                      </button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="table-responsive" style="padding-left:15px; padding-right:15px">
+                        <table class="table table-bordered table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nội dung</th>
+                                    <th>Tên tập tin</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let item of listFiles; let i=index;">
+                                    <td style="width:20%">
+                                        <input class="form-control" [(ngModel)]="item.title" type="text"
+                                            name="title{{i}}" [disabled]="item.id!=undefined" />
+                                    </td>
+                                    <td><a (click)="clickLink(item)">{{item.fileName}}</a></td>
+                                    <td style="width:100px">
+                                        <input style="display: none" type="file" class="custom-file-input"
+                                            id="customFile" #fileUpload (change)="onFileChanged($event,item)"
+                                            accept=".jpg,.png,.gif,.pdf,.xls,.xlsx,.doc,.docx,.ppt,.pptx">
+                                        <button type="button" class="btn btn-sm btn-primary"
+                                            (click)="fileUpload.click()"
+                                            [disabled]="item.title?.length<1 || (item.title.length>0 && item.checked)">
+                                            <i class="fa fa-upload" aria-hidden="true"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-danger"
+                                            (click)="deleteFile(item)">
+                                            <i class="fa fa-eraser" aria-hidden="true"></i>
+                                        </button>
+                                </tr>
+                                <tr *ngIf="listFiles?.length == 0">
+                                    <td colspan="100%">Không có đính kèm nào được tìm thấy!</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                </div>
+              </tab>
+            </tabset>
+          </div>
+          <!-- /.box-body -->
+          <div class="text-right modal-footer">
+            <button type="button" class="btn btn-info btn-sm" (click)="print()">
+              <i class="fa fa-print"></i> In biên bản</button>
+            <button type="submit" class="btn btn-primary btn-sm" [disabled]="!isOk" (click)="ketthuc()" *ngIf="!entity.isJobFinish">
+              <i class="fa fa-edit"></i> Kết thúc</button>
+            <button type="button" (click)="hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <div id="print-section" hidden> 
+            <print-delivery-op-page [item]="entity"></print-delivery-op-page>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,44 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalList="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Danh sách duyệt thanh toán</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalList.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" >
+          <div class="form-group">
+                    <div class="table-responsive" style="padding-left:15px; padding-right:15px; max-height: 300px; overflow-y: auto;">
+                      <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                          <tr>
+                            <th>Người duyệt</th>
+                            <th>Cấp duyêt</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of listData; let i=index;">
+                            <td>{{item.employeeFullName}}</td>
+                            <td>{{item.paymentLevel}}</td>
+                          </tr>
+                          <tr *ngIf="listData?.length == 0">
+                            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button type="button" (click)="modalList.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Đóng</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

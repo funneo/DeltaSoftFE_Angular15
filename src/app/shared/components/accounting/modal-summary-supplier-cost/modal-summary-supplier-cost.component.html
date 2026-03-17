@@ -1,0 +1,207 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Tổng kết chi phí mua ngoài dịch vụ</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group" *ngIf="!flagNew">
+              <label class="col-sm-3 control-label">Số phiếu</label>
+              <div class="col-sm-3 control-label-text-left">
+                <span style="font-weight: bold; color: blue;"> {{entity.refNo}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Ngày</label>
+              <div class="col-sm-2 control-label-text-left">
+                <span style="font-weight: bold; color: blue;"> {{entity.refDate | date:'dd/MM/yyyy'}}</span>
+              </div>
+              <div class="col-sm-2">
+                <button *ngIf="entity.id" type="button" class="btn btn-info btn-sm" title="Chứng từ đính kèm"
+                  (click)="showFiles()">
+                  <i class="fa fa-file-pdf-o" aria-hidden="true"></i> File đính kèm
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Loại tổng kết
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select name="driver" [items]="listType" bindLabel="text" bindValue="id" [(ngModel)]="entity.type"
+                  required placeholder="Chọn loại tổng kết" [disabled]="flagXem">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Nhà cung cấp <span class="error">*</span></label>
+              <div class="col-sm-9">
+                <ng-select name="licensePlates" [items]="listSupplier" bindLabel="supplierName" bindValue="id"
+                  (change)="supplierChanged($event)" [(ngModel)]="entity.supplierId" required
+                  placeholder="Chọn nhà cung cấp" [disabled]="flagXem">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Nội dung <span class="error">*</span></label>
+              <div class="col-sm-9">
+                <input class="form-control" [(ngModel)]="entity.contents" required type="text" name="quantity"
+                  [readonly]="flagXem" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Tổng tiền: <span class="error">*</span></label>
+              <div class="col-sm-3">
+                <input class="form-control" [(ngModel)]="entity.amount" type="text" required [mask]="mask0"
+                  name="amount" [readonly]="true" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Số hóa đơn <span class="error">*</span></label>
+              <div class="col-sm-3">
+                <input type="text" class="form-control" [(ngModel)]="entity.invoiceNo" required name="sohoadon"
+                  [readonly]="flagXem">
+              </div>
+              <label class="col-sm-3 control-label">Ngày hóa đơn <span class="error">*</span></label>
+              <div class="col-sm-3">
+                <input name="invoiceDate" type="text" daterangepicker [options]="dateTimeOptions" required
+                  [(ngModel)]="entity.invoiceDate" class="form-control" (selected)="selectedNgaybatdau($event)"
+                  (hideDaterangepicker)="closedNgaybatdau($event)" autocomplete="off" [disabled]="flagXem">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Mẫu hóa đơn</label>
+              <div class="col-sm-3">
+                <input type="text" class="form-control" [(ngModel)]="entity.invoicePattern" name="invoicePattern"
+                  [readonly]="flagXem">
+              </div>
+              <label class="col-sm-3 control-label">MST đơn vị bán
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-3">
+                <input type="text" class="form-control" [(ngModel)]="entity.taxNumber" name="taxNumber"
+                  [readonly]="flagXem">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Link tra cứu</label>
+              <div class="col-sm-4">
+                <input type="text" class="form-control" [(ngModel)]="entity.web" name="web" [readonly]="flagXem">
+              </div>
+              <label class="col-sm-2 control-label">Mã tra cứu</label>
+              <div class="col-sm-3">
+                <input type="text" class="form-control" [(ngModel)]="entity.code" name="code" [readonly]="flagXem">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Ghi chú</label>
+              <div class="col-sm-9">
+                <textarea class="form-control" [(ngModel)]="entity.notes" name="notes" rows="2"
+                  placeholder="Nhập ghi chú" [readonly]="flagXem"></textarea>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="entity.status!=0">
+              <label class="col-sm-3 control-label">Phản hồi</label>
+              <div class="col-sm-9">
+                <textarea class="form-control" [(ngModel)]="entity.feedback" name="feedback" rows="2"
+                  placeholder="Nhập phản hồi" [readonly]="!approved_permission"></textarea>
+              </div>
+            </div>
+            <fieldset>
+              <legend style="font-size: 14px; color: blue; font-weight: bold;">Chi tiết</legend>
+              <div class="table-wrapper-scroll-y my-custom-scrollbar">
+                <table class="table table-bordered table-striped table-hover" id="style-scroll-1">
+                  <thead>
+                    <tr>
+                      <th class="text-center" style="width: 40px;">
+                        <input type="checkbox" [checked]="isCheckAll" (change)="toggleCheckAll($event)"
+                          [disabled]="flagXem">
+                      </th>
+                      <th>Số phiếu</th>
+                      <th>Ngày lập</th>
+                      <th>Nội dung</th>
+                      <th>Số tiền</th>
+                      <th>Ghi chú</th>
+                      <th style="width: 50px;"></th>
+                    </tr>
+                    <tr>
+                      <th></th>
+                      <th><input type="text" class="form-control" name="filterRefNo" [(ngModel)]="filter.refNo"
+                          placeholder="..." [disabled]="flagXem"></th>
+                      <th><input type="text" class="form-control" name="filterDate" [(ngModel)]="filter.createdDate"
+                          placeholder="..." [disabled]="flagXem"></th>
+                      <th><input type="text" class="form-control" name="filterContents" [(ngModel)]="filter.contents"
+                          placeholder="..." [disabled]="flagXem"></th>
+                      <th><input type="text" class="form-control" name="filterAmount" [(ngModel)]="filter.amount"
+                          placeholder="..." [disabled]="flagXem"></th>
+                      <th></th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngIf="isLoadingDetails">
+                      <td colspan="100%" class="text-center" style="padding: 20px;">
+                        <i class="fa fa-spinner fa-spin fa-fw fa-2x"></i>
+                        <span class="sr-only">Đang tải...</span>
+                      </td>
+                    </tr>
+                    <ng-container *ngIf="!isLoadingDetails">
+                      <tr *ngFor="let item of filteredDetails;let indexOfelement=index; ">
+                        <td class="text-center">
+                          <input type="checkbox" [(ngModel)]="item.selected" (change)="onItemCheck()"
+                            name="chk_{{indexOfelement}}" [disabled]="flagXem">
+                        </td>
+                        <td>{{item.refNo}}</td>
+                        <td>{{item.createdDate | date:'dd/MM/yyyy'}}</td>
+                        <td>{{item.contents}}</td>
+                        <td>{{item.amount || 0 | VND}}</td>
+                        <td>{{item.notes }}</td>
+                        <td class="text-center">
+                          <button *ngIf="entity.status || 0 <2" [disabled]=" flagXem || (entity.status || 0)>=4"
+                            type="button" class="btn btn-warning btn-sm" (click)="deleteItem(item)">
+                            <i class="fa fa-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      <tr *ngIf="filteredDetails?.length === 0 || !entity.details">
+                        <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                      </tr>
+                    </ng-container>
+                  </tbody>
+                </table>
+              </div>
+            </fieldset>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="approved_permission  && (entity.status==1)" type="button" class="btn btn-warning btn-sm"
+              title="Chi tiền" (click)="showPhieuChi()">
+              <i class="fa fa-usd" aria-hidden="true"></i> Chi tiền
+            </button>
+            <button *ngIf="approved_permission  && (entity.status==1)" type="button" (click)="changeStatus(-1)"
+              class="btn btn-danger btn-sm" [disabled]="(entity.feedback || '').trim().length<1">
+              <i class="fa fa-exclamation-triangle"></i> Từ chối</button>
+            <button *ngIf="!flagXem && (entity.status || 0)<1 && !flagNew" type="button" class="btn btn-warning btn-sm"
+              (click)="changeStatus(1)">
+              <i class="fa fa-random"></i> Đề nghị viết phiếu chi</button>
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave || entity?.details?.length==0 ">
+              <i class="fa fa-edit"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<modal-attachfile *ngIf="viewAttachFiles" (CloseModal)="closeModalFile()">
+</modal-attachfile>
+<modal-phieu-chi *ngIf="viewAccounts" (SaveSuccess)="saveSuccessAccounts($event)" (CloseModal)="closeAccounts()">
+</modal-phieu-chi>

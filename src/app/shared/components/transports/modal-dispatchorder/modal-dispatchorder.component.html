@@ -1,0 +1,1056 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalDispatchOrderAddEdit="bs-modal"
+  [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" aria-labelledby="dialog-static-name"
+  (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Lệnh vận chuyển <a style="font-size: 14px;">{{entity?.createdByName}}</a></h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalDispatchOrderAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <tabset>
+              <tab heading="Thông tin chung">
+                <div class="form-group" *ngIf="!flagNew">
+                  <label class="col-sm-2 control-label">RefNo</label>
+                  <div class="col-sm-3 control-label-text-left">
+                    <span style="font-weight: bold; color: blue;"> {{entity.refNo}}</span>
+                  </div>
+                  <label class="col-sm-2 control-label">Ngày</label>
+                  <div class="col-sm-3 control-label-text-left">
+                    <span style="font-weight: bold; color: blue;"> {{entity.createdDate | date:'dd/MM/yyyy'}}</span>
+                  </div>
+                  <div class="col-sm-2" *ngIf="!flagNew">
+                    <button type="button" class="btn btn-sm btn-primary" (click)="attachFile()">
+                      <i class="fa fa-upload" aria-hidden="true"></i> Đính kèm
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label"></label>
+                  <div class="col-sm-10">
+                    <label class="custom-checkbox">
+                      <input type="checkbox" [(ngModel)]="entity.isSubcontractors" name="isSubcontractors"
+                        (change)="changeSub()" [disabled]="entity.status>0 || flagXem" />
+                      <span class="helping-el"></span>
+                      Xe thuê ngoài
+                    </label>
+                  </div>
+                </div>
+                <div class="form-group" *ngIf="entity.isSubcontractors">
+                  <label class="col-sm-2 control-label">Nhà cung cấp
+                    <span class="error">*</span>
+                  </label>
+                  <div class="col-sm-10">
+                    <ng-select name="shippingUnitId" [items]="listSupplier" bindLabel="supplierName" bindValue="id"
+                      [disabled]="flagXem" [(ngModel)]="entity.shippingUnitId" (change)="changeSupplier($event)"
+                      [required]="entity.isSubcontractors">
+                    </ng-select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Loại xe
+                    <span class="error">*</span>
+                  </label>
+                  <div class="col-sm-4">
+                    <ng-select name="vihicleType" [items]="listVihicleType" bindLabel="categoryName" bindValue="id"
+                      (change)="vihicleTypeChanged($event)" [(ngModel)]="entity.vihicleType" required
+                      [disabled]="flagXem">
+                    </ng-select>
+                  </div>
+                  <label class="col-sm-2 control-label">Loại xe tính phí</label>
+                  <div class="col-sm-4">
+                    <ng-select name="vihicleTypeCharge" [items]="listVihicleType" bindLabel="categoryName"
+                      bindValue="id" [(ngModel)]="entity.vehicleTypeCharge" (change)="vihicleTypeChargeChanged($event)"
+                      [disabled]="flagXem">
+                    </ng-select>
+                  </div>
+                </div>
+                <div class="form-group" *ngIf="!entity.isSubcontractors">
+                  <label class="col-sm-2 control-label">Xe/Mooc
+                    <span class="error">*</span>
+                  </label>
+                  <div class="col-sm-2">
+                    <ng-select name="vihicleId" [items]="listVihicle" bindLabel="licensePlates" bindValue="id"
+                      (change)="changeVihicle($event)" placeholder="Xe" [(ngModel)]="entity.vihicleId"
+                      [disabled]="flagXem" [required]="!entity.isSubcontractors">
+                    </ng-select>
+                  </div>
+                  <div class="col-sm-2">
+                    <ng-select name="moocId" [items]="listMooc" bindLabel="licensePlates" bindValue="id"
+                      [(ngModel)]="entity.moocId" placeholder="Mooc" [disabled]="flagXem">
+                    </ng-select>
+                  </div>
+                  <label class="col-sm-2 control-label">Định mức</label>
+                  <div class="col-sm-1">
+                    <input type="number" #tenNcc="ngModel" [(ngModel)]="entity.oilQuota" name="oilQuota"
+                      class="form-control" focus readonly />
+                  </div>
+                  <label class="col-sm-1 control-label">Giá dầu</label>
+                  <div class="col-sm-2">
+                    <input type="number" [(ngModel)]="entity.oilPrice" name="oilPrice" class="form-control" focus
+                      [disabled]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group" *ngIf="entity.isSubcontractors">
+                  <label class="col-sm-2 control-label">Biến số xe</label>
+                  <div class="col-sm-4">
+                    <input class="form-control" [(ngModel)]="entity.vihiclelLicensePlates" type="text"
+                      name="vihiclelLicensePlates" [disabled]="flagXem" />
+                  </div>
+                  <label class="col-sm-2 control-label">Biến Mooc</label>
+                  <div class="col-sm-4">
+                    <input class="form-control" [(ngModel)]="entity.moocLicensePlates" type="text"
+                      name="moocLicensePlates" [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Lái xe 1 <span class="error">*</span>
+                  </label>
+                  <div class="col-sm-5" *ngIf="!entity.isSubcontractors">
+                    <ng-select name="driverId" [items]="listDriver" bindLabel="employeeFullName" bindValue="id"
+                      [disabled]="entity.status>0 || flagXem" [(ngModel)]="entity.driverId"
+                      [required]="!entity.isSubcontractors" (change)="driver1Change($event)">
+                    </ng-select>
+                  </div>
+                  <div class="col-sm-5" *ngIf="entity.isSubcontractors">
+                    <input class="form-control" [(ngModel)]="entity.driverName" type="text" name="driverName"
+                      [readonly]="flagXem" />
+                  </div>
+                  <label class="col-sm-1 control-label">SĐT</label>
+                  <div class="col-sm-4">
+                    <input class="form-control" [(ngModel)]="entity.driverTel" type="text" name="driverTel"
+                      [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Lái xe 2
+                  </label>
+                  <div class="col-sm-5" *ngIf="!entity.isSubcontractors">
+                    <ng-select name="secondDriverId" [items]="listDriver" bindLabel="employeeFullName"
+                      [disabled]="flagXem" bindValue="id" (change)="driver2Change($event)"
+                      [(ngModel)]="entity.secondDriverId">
+                    </ng-select>
+                  </div>
+                  <div class="col-sm-5" *ngIf="entity.isSubcontractors">
+                    <input class="form-control" [(ngModel)]="entity.secondDriverName" type="text"
+                      name="secondDriverName" [readonly]="flagXem" />
+                  </div>
+                  <label class="col-sm-1 control-label">SĐT</label>
+                  <div class="col-sm-4">
+                    <input class="form-control" [(ngModel)]="entity.secondDriverTel" type="text" name="secondDriverTel"
+                      [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group" *ngIf="!entity.isSubcontractors">
+                  <label class="col-sm-2 control-label">Lái xe ghi nhận dầu <span class="error">*</span>
+                  </label>
+                  <div class="col-sm-5">
+                    <ng-select name="fueldriverId" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
+                      [disabled]="entity.status>3 || flagXem" [(ngModel)]="entity.fuelDriverId"
+                      [required]="!entity.isSubcontractors" (change)="driver3Change($event)">
+                    </ng-select>
+                  </div>
+                  <label class="col-sm-1 control-label">Loại Cont</label>
+                  <div class="col-sm-4">
+                    <ng-select name="contType" [items]="listcontType" bindLabel="categoryName" bindValue="categoryName"
+                      [disabled]=" flagXem" [(ngModel)]="entity.contType">
+                    </ng-select>
+                  </div>
+                </div>
+                <div class="form-group" *ngIf="!entity.isSubcontractors">
+                  <label class="col-sm-2 control-label">Điều chỉnh định mức
+                  </label>
+                  <div class="col-sm-2">
+                    <ng-select name="quotaAdjusted" bindLabel="id" bindValue="id" [items]="listDieuchinh"
+                      (change)="changedKmQuota()" [(ngModel)]="entity.quotaAdjusted" [disabled]="flagXem">
+                    </ng-select>
+                  </div>
+                  <label class="col-sm-2 control-label">Lý do điều chỉnh</label>
+                  <div class="col-sm-6">
+                    <textarea class="form-control" [(ngModel)]="entity.moocLicensePlates" name="moocLicensePlates"
+                      rows="1" [readonly]="flagXem"></textarea>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Cung đường toàn tuyến <span class="error">*</span></label>
+                  <div class="col-sm-10">
+                    <textarea class="form-control" [(ngModel)]="entity.fullRoute" name="fullRoute" rows="1" required
+                      [readonly]="flagXem"></textarea>
+                  </div>
+                </div>
+                <div class="form-group" *ngIf="entity.isSubcontractors">
+                  <label class="col-sm-2 control-label">Mã cung đường tính phí</label>
+                  <div class="col-sm-10">
+                    <ng-select name="listTollRoute" [items]="listTollRoute" bindLabel="tollRouteName"
+                      bindValue="tollRouteCode" [disabled]="entity.status>0"
+                      [(ngModel)]="entity.subcontractorsQuoteRouteCode" (change)="changeTollRouteCode($event)"
+                      [disabled]="flagXem">
+                    </ng-select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Mã tham chiếu</label>
+                  <div class="col-sm-4">
+                    <input name="referCode" type="text" [(ngModel)]="entity.referCode" class="form-control"
+                      [disabled]="flagXem">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Tóm tắt Lệnh</label>
+                  <div class="col-sm-10">
+                    <textarea class="form-control" [(ngModel)]="entity.dispatchSummarize" name="note" rows="4"
+                      [readonly]="flagXem"></textarea>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Ghi chú</label>
+                  <div class="col-sm-10">
+                    <textarea class="form-control" [(ngModel)]="entity.note" name="ghichu" rows="1"
+                      [readonly]="flagXem"></textarea>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Số kiện</label>
+                  <div class="col-sm-1">
+                    <input type="number" class="form-control" [(ngModel)]="entity.numberOfPackage"
+                      name="numberOfPackage" placeholder="Số kiện" [disabled]="flagXem" />
+                  </div>
+                  <label class="col-sm-1 control-label">Số pallet</label>
+                  <div class="col-sm-1">
+                    <input type="number" class="form-control" [(ngModel)]="entity.numberOfPallet" name="numberOfPallet"
+                      placeholder="Số pallet" [disabled]="flagXem" />
+                  </div>
+                  <label class="col-sm-2 control-label">Trọng lượng (kg)</label>
+                  <div class="col-sm-1">
+                    <input type="number" class="form-control" [(ngModel)]="entity.weight" name="weight"
+                      placeholder="Trọng lượng (kg)" [disabled]="flagXem" />
+                  </div>
+                  <label class="col-sm-1 control-label">Số khối (cbm)</label>
+                  <div class="col-sm-1">
+                    <input type="number" placeholder="Số khối (cbm)" [disabled]="flagXem" class="form-control"
+                      [(ngModel)]="entity.volume" name="volume" />
+                  </div>
+                  <label class="col-sm-1 control-label">Số cont</label>
+                  <div class="col-sm-1">
+                    <input type="number" class="form-control" [(ngModel)]="entity.numberOfCont" name="numberOfCont"
+                      [disabled]="flagXem" placeholder="Số cont" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">T/g đến nhà máy</label>
+                  <div class="col-sm-3">
+                    <input name="ngaybd" type="text" daterangepicker [options]="ngaybatdauOption"
+                      [(ngModel)]="entity.inquiryTimeToTheFactory" class="form-control"
+                      (selected)="selectedNgaybatdau($event)" (hideDaterangepicker)="closedNgaybatdau($event)"
+                      autocomplete="off" [disabled]="flagXem">
+                  </div>
+                  <label class="col-sm-2 control-label">T/g đến cảng</label>
+                  <div class="col-sm-3">
+                    <input name="ngayht" type="text" daterangepicker [options]="ngayhoanthanhOption"
+                      [(ngModel)]="entity.inquiryTimeToThePorts" class="form-control"
+                      (selected)="selectedNgayhoanthanh($event)" (hideDaterangepicker)="closedNgayhoanthanh($event)"
+                      autocomplete="off" [disabled]="flagXem">
+
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Số hiệu Cont/Seal</label>
+                  <div class="col-sm-4">
+                    <input class="form-control" [(ngModel)]="entity.documentNumber" type="text" name="documentNumber"
+                      [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group" *ngIf="!entity.isSubcontractors">
+                  <label class="col-sm-2 control-label">Km định mức</label>
+                  <div class="col-sm-1">
+                    <input type="number" class="form-control" [(ngModel)]="entity.kmQuota" name="kmQuota" readonly
+                      (change)="changedKmQuota()" />
+                  </div>
+                  <label *ngIf="!flagNew" class="col-sm-1 control-label">Km đầu</label>
+                  <div class="col-sm-1" *ngIf="!flagNew">
+                    <input type="number" class="form-control" [(ngModel)]="entity.startVehicleOdor"
+                      name="startVehicleOdor" [readonly]="flagXem" />
+                  </div>
+                  <label *ngIf="!flagNew" class="col-sm-1 control-label">Km cuối</label>
+                  <div *ngIf="!flagNew" class="col-sm-1">
+                    <input type="number" class="form-control" [(ngModel)]="entity.finishVehicleOdor"
+                      name="finishVehicleOdor" [readonly]="flagXem" />
+                  </div>
+                  <label *ngIf="!flagNew" class="col-sm-1 control-label">Km</label>
+                  <div *ngIf="!flagNew" class="col-sm-1">
+                    <input type="number" class="form-control" [(ngModel)]="entity.kmOdor" name="kmOdor" readonly />
+                  </div>
+                  <div class="col-sm-1"
+                    *ngIf="accept_permission && !flagXem && ((entity.finished && entity.status<4) || entity.status===4)">
+                    <button type="button" (click)="changedKmConfirm()" class="btn btn-warning btn-sm">
+                      <i class="fa fa-edit"></i> Điều chỉnh</button>
+                  </div>
+                </div>
+                <div class="form-group" *ngIf="entity.finished">
+                  <label class="col-sm-2 control-label">T/g hoàn thành lệnh</label>
+                  <div class="col-sm-3">
+                    <span class="form-control">
+                      {{entity.finishedDate}}
+                    </span>
+                  </div>
+                </div>
+                <div class="form-group" *ngIf="entity.finished">
+                  <label class="col-sm-2 control-label">Tài xế ghi chú</label>
+                  <div class="col-sm-10">
+                    <span class="form-control">
+                      {{entity.noteFinished}}
+                    </span>
+                  </div>
+                </div>
+                <fieldset>
+                  <legend>Chi tiết công việc</legend>
+                  <div class="panel-body">
+                    <div class="form-group">
+                      <div class="col-sm-2">
+                        <button type="button" class="btn btn-sm btn-primary"
+                          [disabled]="(entity.status>=4 || job_locked || flagXem  || entity.locked) && !admin_permission"
+                          (click)="newWorkflow()">Thêm</button>
+                      </div>
+                    </div>
+                    <div class="form-group">
+                      <div class="table-responsive" style="padding-left:15px; padding-right:15px">
+                        <table class="table table-bordered table-striped table-hover ">
+                          <thead>
+                            <tr>
+                              <th>Id công việc</th>
+                              <th>JobId</th>
+                              <th>Mã </th>
+                              <th>Tên khách hàng</th>
+                              <th>ContSeal</th>
+                              <th>JOB</th>
+                              <th>Mã tham chiếu</th>
+                              <th>Ghi chú</th>
+                              <th *ngIf="entity.status<1"></th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let item of entity.listDispatchOrderDetailed">
+                              <td>
+                                <a style="color: blue;" (click)="viewNhanviec(item.workflowId)">
+                                  <b>{{item.workflowId}}</b></a>
+                              </td>
+                              <td>
+                                <a style="color:blueviolet;" (click)="viewJob(item.shipmentId)">{{item.jobId}}</a>
+                              </td>
+                              <td>{{item.customerCode }}</td>
+                              <td>{{item.customerName }}</td>
+                              <td>{{item.contSeal}}</td>
+                              <td>{{item.jobLockedName}}</td>
+                              <td>{{item.referCode}}</td>
+                              <td>{{item.note }}</td>
+                              <td style="width:18%" *ngIf="(!flagXem && entity.status<4) || admin_permission">
+                                <button type="button" class="btn btn-info btn-sm" (click)="editWorkflow(item)">
+                                  <i class="fa fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-warning btn-sm" (click)="deleteWorkflow(item)">
+                                  <i class="fa fa-trash"></i>
+                                </button>
+                              </td>
+                            </tr>
+                            <tr *ngIf="entity.listDispatchOrderDetailed?.length == 0">
+                              <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </fieldset>
+              </tab>
+              <tab heading="Cung đường" *ngIf="!entity.isSubcontractors">
+                <div class="form-group">
+                  <div class="col-sm-2">
+                    <button type="button" [disabled]="entity.status>=4 || job_locked || flagXem  || entity.locked"
+                      class="btn btn-sm btn-primary" (click)="newRoute()">Thêm</button>
+                  </div>
+                  <button class="btn btn-success btn-sm" type="button" (click)="export()">
+                    <i class="fa fa-file-excel-o"></i> Export
+                  </button>
+                </div>
+                <div class="form-group">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Mã</th>
+                          <th>Tên cung đường</th>
+                          <th>km</th>
+                          <th>Số trạm thu phí</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listDispatchOrderRoutes">
+                          <td>{{item.routeCode}}</td>
+                          <td>{{item.routeName}}</td>
+                          <td style="text-align: right;">{{item.distance | number}}</td>
+                          <td style="text-align: right;">{{item.ticketStattions | number}}</td>
+                          <td style="width:10%">
+                            <button *ngIf="entity.status<4 && !flagXem && !job_locked  && !entity.locked" type="button"
+                              class="btn btn-warning btn-sm" (click)="deleteRoute(item)">
+                              <i class="fa fa-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listDispatchOrderRoutes?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab *ngIf="entity.status>1" heading="Vé giấy">
+                <div class="form-group">
+                  <div class="col-sm-2">
+                    <button [disabled]="entity.status>=4 || job_locked || flagXem  || entity.locked" type="button"
+                      class="btn btn-sm btn-primary" (click)="newTicket()">Thêm</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Mã phí</th>
+                          <th hidden>Tên phí</th>
+                          <th>Tên trạm</th>
+                          <th>Số hóa đơn</th>
+                          <th>Số tiềm</th>
+                          <th>Vat</th>
+                          <th>Ghi chú</th>
+                          <th *ngIf="entity.status<4"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listDispatchOrderTicket; let indexOfelement=index;">
+                          <td style="width: 100px;">
+                            <ng-select name="listFeeTicket{{indexOfelement}}" [items]="listFee" bindLabel="feeCode"
+                              bindValue="id" [clearable]="false" (change)="feeCodeTicketChanged(item,$event)"
+                              [(ngModel)]="item.feeId" required>
+                            </ng-select>
+                            <!-- {{item.feeCode}} -->
+                          </td>
+                          <td style="width: 150px;" hidden>
+                            <ng-select name="listFeeTicketName{{indexOfelement}}" [items]="listFee" bindLabel="feeName"
+                              bindValue="id" [clearable]="false" (change)="feeCodeTicketChanged(item,$event)"
+                              [(ngModel)]="item.feeId" required>
+                            </ng-select>
+                          </td>
+                          <td>{{item.tollStationName}}</td>
+                          <td>{{item.number}}</td>
+                          <td style="text-align: right;">{{item.cost | number}}</td>
+                          <td style="text-align: right;">{{item.vat | number}}</td>
+                          <td style="width:20%">{{item.note}}</td>
+                          <td style="width:150px">
+                            <button *ngIf="entity.status<4" [disabled]="job_locked || flagXem  || entity.locked"
+                              type="button" class="btn btn-success btn-sm" (click)="updateTicket(item,indexOfelement)">
+                              <i class="fa fa-trash"></i> Sửa
+                            </button>
+                            <button *ngIf="entity.status<4" [disabled]=" job_locked || flagXem  || entity.locked"
+                              type="button" class="btn btn-warning btn-sm" (click)="deleteTicket(indexOfelement)">
+                              <i class="fa fa-trash"></i> Xóa
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listDispatchOrderTicket?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab *ngIf="entity.status>1" heading="ETC">
+                <div class="form-group">
+                  <div class="col-sm-2">
+                    <button [disabled]="entity.status>=4 || job_locked || flagXem || entity.locked" type="button"
+                      class="btn btn-sm btn-primary" (click)="newEtc()">Thêm</button>
+                    <input style="display: none" type="file" class="custom-file-input" id="customFile" #fileUpload
+                      (change)="onChange($event)" accept=".xlsx">
+                    <button type="button" class="btn btn-sm btn-success" (click)="fileUpload.click()"
+                      [disabled]="entity.status>=4 || job_locked || flagXem || entity.locked">
+                      <i class="fa fa-upload" aria-hidden="true"></i> Import Excel
+                    </button>
+                  </div>
+                  <div class="col-sm-5">
+
+                  </div>
+                  <div class="col-sm-1" style="text-align: right;">
+                    <span>Số lượng:</span>
+                  </div>
+                  <div class="col-sm-1" style="text-align: left;">
+                    {{entity.listDispatchOrderEtc?.length}}
+                  </div>
+                  <div class="col-sm-1" style="text-align: right;">
+                    <span>Tổng tiền:</span>
+                  </div>
+                  <div class="col-sm-2" style="text-align: left; font-weight: 800;">
+                    {{totalEtc | number}}
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Mã phí</th>
+                          <th hidden>Tên phí</th>
+                          <th>Tên trạm</th>
+                          <th>Số tiềm</th>
+                          <th>Vat</th>
+                          <th>Ghi chú</th>
+                          <th *ngIf="entity.status<5"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listDispatchOrderEtc;let indexOfelement=index;">
+                          <td style="width: 150px;">
+                            <ng-select name="listFeeDispatchOrderEtc{{indexOfelement}}" [items]="listFee"
+                              bindLabel="feeCode" bindValue="id" (change)="feeCodeEtcChanged(item,$event)"
+                              [(ngModel)]="item.feeId" required>
+                            </ng-select>
+                            <!-- {{item.feeCode}} -->
+                          </td>
+                          <td style="width: 250px;" hidden>
+                            <ng-select name="listFeeNameDispatchOrderEtc{{indexOfelement}}" [items]="listFee"
+                              bindLabel="feeName" bindValue="id" (change)="feeCodeEtcChanged(item,$event)"
+                              [(ngModel)]="item.feeId" required>
+                            </ng-select>
+                          </td>
+                          <td>
+                            <ng-select name="listDispatchOrderEtc{{indexOfelement}}" [items]="listTollStation"
+                              bindLabel="tollStationName" bindValue="id" [(ngModel)]="item.tollStationId" required>
+                            </ng-select>
+                          </td>
+                          <td style="width: 100px;">
+                            <input type="text" class="form-control" name="sotienEtc{{indexOfelement}}"
+                              style="text-align: right;" [(ngModel)]="item.cost" placeholder="Số tiền"
+                              [readonly]="flagXem" [mask]="maskNumber" [allowNegativeNumbers]="false" required />
+                          </td>
+                          <td style="width: 100px;">
+                            <input type="text" class="form-control" name="vatEtc{{indexOfelement}}"
+                              style="text-align: right;" [(ngModel)]="item.vat" placeholder="Vat" [readonly]="flagXem"
+                              [mask]="maskNumber" [allowNegativeNumbers]="false" required />
+                          </td>
+                          <td style="width:20%">
+                            <input class="form-control" [(ngModel)]="item.note" type="text"
+                              name="note{{indexOfelement}}" [readonly]="flagXem" />
+                            <!-- {{item.note}} -->
+                          </td>
+                          <td style="width:60px">
+                            <button *ngIf="entity.status<4" [disabled]=" job_locked || flagXem  || entity.locked"
+                              type="button" class="btn btn-warning btn-sm" (click)="deleteEtc(indexOfelement)">
+                              <i class="fa fa-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listDispatchOrderEtc?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab *ngIf="entity.status>9  && !entity.isSubcontractors" heading="Vé tháng">
+                <div class="form-group">
+                  <div class="col-sm-2">
+                    <button [disabled]="entity.status>=4 || job_locked || flagXem" type="button"
+                      class="btn btn-sm btn-primary" (click)="newMonthlyTicket()">Thêm</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Mã phí</th>
+                          <th>Tên phí</th>
+                          <th>Tên trạm</th>
+                          <th>Ghi chú</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listDispatchOrderMonthlyTicket; let i=index;">
+                          <td>
+                            <ng-select name="listFeeDispatchOrderMonthlyTicket{{i}}" [items]="listFee"
+                              bindLabel="feeCode" bindValue="id" (change)="feeCodeMonthlyChanged(item,$event)"
+                              [(ngModel)]="item.feeId" required>
+                            </ng-select>
+                            <!-- {{item.feeCode}} -->
+                          </td>
+                          <td style="width: 150px;"><ng-select name="listFeeDispatchOrderMonthlyTicketName{{i}}"
+                              [items]="listFee" bindLabel="feeName" bindValue="id"
+                              (change)="feeCodeMonthlyChanged(item,$event)" [(ngModel)]="item.feeId" required>
+                            </ng-select></td>
+                          <td>
+                            <ng-select name="listDispatchOrderMonthlyTicket{{i}}" [items]="listTollStation"
+                              bindLabel="tollStationName" bindValue="id" [(ngModel)]="item.tollStationId" required>
+                            </ng-select>
+                            <!-- {{item.feeCode}} -->
+                          </td>
+                          <td style="width:50%">
+                            <input class="form-control" [(ngModel)]="item.note" type="text" name="note{{i}}"
+                              [readonly]="flagXem" />
+                            <!-- {{item.note}} -->
+                          </td>
+                          <td style="width:40px">
+                            <button *ngIf="entity.status<4" [disabled]="entity.finished" type="button"
+                              class="btn btn-warning btn-sm" (click)="deleteMonthlyTicket(i)">
+                              <i class="fa fa-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listDispatchOrderMonthlyTicket?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab heading="Bến bãi" *ngIf="entity.status>1 ">
+                <div class="form-group">
+                  <div class="col-sm-2">
+                    <button [disabled]="entity.status>=4 || job_locked || flagXem || entity.locked" type="button"
+                      class="btn btn-sm btn-primary" (click)="newParking()">Thêm</button>
+                  </div>
+                </div>
+                <div class="form-group girlLookAtThatBody">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Mã phí</th>
+                          <th>Tên phí</th>
+                          <th>Tên Bãi đỗ xe</th>
+                          <th>Số tiềm</th>
+                          <th>Vat</th>
+                          <th>Ghi chú</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listDispatchOrderParkingTicket;let indexOfelement=index;">
+                          <td>
+                            <ng-select name="listFeeParking{{indexOfelement}}" [items]="listFee" bindLabel="feeCode"
+                              bindValue="id" (change)="feeCodeParkingChanged(item,$event)" [(ngModel)]="item.feeId"
+                              required>
+                            </ng-select>
+                            <!-- {{item.feeCode}} -->
+                          </td>
+                          <td>
+                            <ng-select name="listFeeParkingName{{indexOfelement}}" [items]="listFee"
+                              [ngStyle]="{'max-width': '180px'}" bindLabel="feeName" bindValue="id"
+                              (change)="feeCodeParkingChanged(item,$event)" [(ngModel)]="item.feeId" required>
+                            </ng-select>
+                          </td>
+                          <td style="width: 300px;">
+                            <input type="text" class="form-control" name="ten{{indexOfelement}}"
+                              [ngStyle]="{'max-width': '150px'}" style="text-align: left;"
+                              [(ngModel)]="item.parkingName" placeholder="Tên bãi đỗ xe" [readonly]="flagXem"
+                              required />
+                          </td>
+                          <td style="width: 100px;">
+                            <input type="text" class="form-control" name="sotien{{indexOfelement}}"
+                              style="text-align: right;" [(ngModel)]="item.cost" placeholder="Số tiền"
+                              [readonly]="flagXem" [mask]="maskNumber" [allowNegativeNumbers]="false" required />
+                          </td>
+                          <td style="width: 100px;">
+                            <input type="text" class="form-control" name="vat{{indexOfelement}}"
+                              style="text-align: right;" [(ngModel)]="item.vat" placeholder="Vat" [readonly]="flagXem"
+                              [mask]="maskNumber" [allowNegativeNumbers]="false" required />
+                          </td>
+                          <td style="width:20%">
+                            <input class="form-control" [(ngModel)]="item.note" type="text"
+                              name="note{{indexOfelement}}" [readonly]="flagXem" />
+                            <!-- {{item.note}} -->
+                          </td>
+                          <td style="width:10%">
+                            <button *ngIf="entity.status<4" [disabled]=" job_locked || flagXem  || entity.locked"
+                              type="button" class="btn btn-warning btn-sm"
+                              (click)="deleteParkingTicket(indexOfelement)">
+                              <i class="fa fa-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listDispatchOrderEtc?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab heading="Phí thuê ngoài" *ngIf="entity.isSubcontractors">
+                <div class="form-group">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Mã phí</th>
+                          <th>Tên phí</th>
+                          <th>Nội dung</th>
+                          <th>Số tiềm</th>
+                          <th>Vat</th>
+                          <th>Ghi chú</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listDispatchOrderPurchasePrice;let indexOfelement=index;">
+                          <td>
+                            <ng-select name="listFee{{indexOfelement}}" [items]="listFee" bindLabel="feeCode"
+                              bindValue="id" (change)="feeCodeChanged(item,$event)" [(ngModel)]="item.feeId" required>
+                            </ng-select>
+                            <!-- {{item.feeCode}} -->
+                          </td>
+                          <td><ng-select name="listFeeName{{indexOfelement}}" [items]="listFee" bindLabel="feeName"
+                              [ngStyle]="{'max-width': '180px'}" bindValue="id" (change)="feeCodeChanged(item,$event)"
+                              [(ngModel)]="item.feeId" required>
+                            </ng-select></td>
+                          <td>
+                            <input class="form-control" [(ngModel)]="item.contents" type="text"
+                              name="contents{{indexOfelement}}" [readonly]="flagXem" />
+                            <!-- {{item.contents}} -->
+                          </td>
+                          <td style="text-align: right;">{{item.cost | number}}</td>
+                          <td style="text-align: right;">{{item.vat | number}}</td>
+                          <td style="width:20%">
+                            <input class="form-control" [(ngModel)]="item.note" type="text"
+                              name="note{{indexOfelement}}" [readonly]="flagXem" />
+                            <!-- {{item.note}} -->
+                          </td>
+                          <td style="width:10%">
+                            <button *ngIf="entity.status<4" type="button" class="btn btn-warning btn-sm"
+                              (click)="deleteRoute(item)">
+                              <i class="fa fa-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listDispatchOrderPurchasePrice?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab heading="Chi phí">
+                <div class="form-group">
+                  <div class="col-sm-2">
+                    <button [disabled]="entity.status>=4 || job_locked || flagXem || entity.locked" type="button"
+                      class="btn btn-sm btn-primary" (click)="newFee()">Thêm</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Mã phí</th>
+                          <th>Số lượng</th>
+                          <th>Chi phí</th>
+                          <th>Vat</th>
+                          <th>Tổng tiền</th>
+                          <th>Ghi chú</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listDispatchOrderFee; let i=index;">
+                          <td>
+                            <ng-select name="feeid{{ i }}" appendTo="body" [items]="listFee" bindLabel="feeName"
+                              bindValue="id" [(ngModel)]="item.feeId" placeholder="Chọn phí..." [readonly]="flagXem"
+                              (change)="onChangeFee($event,item)" [clearable]="false">
+                              <ng-template ng-option-tmp let-item="item">
+                                <span [ngClass]='!item.status?"locked-fee":""'>
+                                  {{ item.feeName }}
+                                </span>
+                              </ng-template>
+                            </ng-select>
+                          </td>
+                          <td>
+                            <input type="text" class="form-control" name="quantityFee{{i}}" style="text-align: right;"
+                              [(ngModel)]="item.quantity" placeholder="Số lượng" [readonly]="flagXem"
+                              [mask]="maskNumber" required />
+                          </td>
+                          <td style="width: 150px;">
+                            <input type="text" class="form-control" name="sotienFee{{i}}" style="text-align: right;"
+                              [allowNegativeNumbers]="false" [(ngModel)]="item.cost" (change)="changeCost(item)"
+                              placeholder="Chi phí" [readonly]="flagXem" [mask]="maskNumber" required />
+                          </td>
+                          <td style="width: 100px;">
+                            <input type="text" class="form-control" name="vatFee{{i}}" style="text-align: right;"
+                              [allowNegativeNumbers]="false" [(ngModel)]="item.vat" (change)="changeCost(item)"
+                              placeholder="Vat" [readonly]="flagXem" [mask]="maskNumber" required />
+                          </td>
+                          <td style="width: 100px;">
+                            <input type="text" class="form-control" name="totlaFeeCost{{i}}" style="text-align: right;"
+                              [(ngModel)]="item.totalCost" placeholder="Tổng tiền" [allowNegativeNumbers]="false"
+                              [readonly]="flagXem" readonly [mask]="maskNumber" required />
+                          </td>
+                          <td>
+                            <input class="form-control" [(ngModel)]="item.note" type="text" name="note{{i}}"
+                              [readonly]="flagXem" />
+                            <!-- {{item.note}} -->
+                          </td>
+                          <td style="width:40px">
+                            <button *ngIf="entity.status<4" [disabled]=" job_locked || flagXem  || entity.locked"
+                              type="button" class="btn btn-warning btn-sm" (click)="deleteFee(item)">
+                              <i class="fa fa-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listDispatchOrderFee?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab *ngIf="entity.status>1   && !entity.isSubcontractors" heading="Phụ phí">
+                <div class="form-group">
+                  <div class="col-sm-2">
+                    <button [disabled]="entity.status>=4 || job_locked || flagXem || entity.locked" type="button"
+                      class="btn btn-sm btn-primary" (click)="newSurcharge()">Thêm</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Phụ phí</th>
+                          <th>Số tiền</th>
+                          <th>Ghi chú</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listDispatchOrderSurcharge; let i=index;">
+                          <td style="width: 250px;">
+                            <ng-select name="listDispatchOrderSurcharge{{i}}" [items]="listSurcharge"
+                              bindLabel="categoryName" bindValue="id" [(ngModel)]="item.surchargeId"
+                              (change)="changedSurcharge(item,$event)" required>
+                            </ng-select>
+                            <!-- {{item.feeCode}} -->
+                          </td>
+                          <td style="width: 150px;">
+                            <input type="text" class="form-control" name="sotienSurcharge{{i}}"
+                              style="text-align: right;" [(ngModel)]="item.cost" placeholder="Số tiền"
+                              [readonly]="flagXem" [mask]="maskNumber" [allowNegativeNumbers]="false" required />
+                          </td>
+                          <td>
+                            <input class="form-control" [(ngModel)]="item.note" type="text" name="note{{i}}"
+                              [readonly]="flagXem" />
+                            <!-- {{item.note}} -->
+                          </td>
+                          <td style="width:40px">
+                            <button *ngIf="entity.status<4" [disabled]=" job_locked || flagXem  || entity.locked"
+                              type="button" class="btn btn-warning btn-sm" (click)="deleteSurcharge(i)">
+                              <i class="fa fa-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listDispatchOrderSurcharge?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab *ngIf="entity.status>1" heading="POD">
+                <div class="form-group">
+                  <div class="col-sm-2">
+                    <input style="display: none" type="file" class="custom-file-input" id="pod" #filePod
+                      (change)="onFileChanged($event)" accept=".jpg,.png,.gif,.pdf">
+                    <button type="button" class="btn btn-sm btn-primary" (click)="filePod.click()"
+                      [disabled]="entity.status>=4 || job_locked ||flagXem">
+                      <i class="fa fa-upload" aria-hidden="true"></i> Tải POD
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Tên File</th>
+                          <th>Kích thước</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of listPod; let i=index;">
+                          <td><a (click)="clickLink(item)">{{item.fileName}}</a></td>
+                          <td style="width:50%">
+                            {{item.size | number}}
+                          </td>
+                        </tr>
+                        <tr *ngIf="listPod?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab *ngIf="entity.status>1" heading="Hình ảnh hiện trường">
+                <div class="form-group">
+                  <div class="col-sm-2">
+                    <input style="display: none" type="file" class="custom-file-input" id="attackFile" #fileUpload
+                      (change)="onAttachFileChanged($event)" accept=".jpg,.png,.gif,.pdf">
+                    <button type="button" class="btn btn-sm btn-primary" (click)="fileUpload.click()"
+                      [disabled]="entity.status>=4 || job_locked ||flagXem">
+                      <i class="fa fa-upload" aria-hidden="true"></i> Tải Ảnh hiện trường
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Tên File</th>
+                          <th>Kích thước (B)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of listAttachFile; let i=index;">
+                          <td><a (click)="clickLink(item)">{{item.fileName}}</a></td>
+                          <td style="width:50%">{{item.size | number}}</td>
+                        </tr>
+                        <tr *ngIf="listAttachFile?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab *ngIf="entity.status>2" heading="Tiến trình">
+                <!-- /.box-header -->
+                <div class="box-body table-responsive  fixed-height no-padding">
+                  <table class="table table-bordered table-striped table-hover">
+                    <thead>
+                      <tr>
+                        <th>Tên tiến trình</th>
+                        <th style="width:180px">Tác vụ</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of entity.listDispatchOrderProcedure">
+                        <td>
+                          <span style="color: rgb(0, 68, 255);"><b>{{ item.procedureName }}</b></span>
+                        </td>
+                        <td>
+                          <input name="isfinish{{item.id}}" type="checkbox" [(ngModel)]="item.isFinish" readonly>
+                        </td>
+                        <td>
+                          <input name="ispass{{item.id}}" type="checkbox" [(ngModel)]="item.isPass" readonly>
+                        </td>
+                        <td>
+                          <span *ngIf="item.isFinish || item.isPass">{{item.handlingTime | date:'dd/MM/yyyy
+                            HH:mm:ss'}}</span>
+                        </td>
+                      </tr>
+                      <tr *ngIf="entity.listDispatchOrderProcedure?.length == 0">
+                        <td colspan="100%">Không có tiến trình!</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </tab>
+              <tab *ngIf="entity.finished" heading="Đánh giá">
+                <div class="box-body">
+                  <div class="form-group">
+                    <label class="col-sm-3 control-label" style="padding-top: 10px;">Đánh giá
+                      <span class="error">*</span>
+                    </label>
+                    <div class="col-sm-9" style="margin-top: -10px;">
+                      <bar-rating name="ratingcs" [(rate)]="_gradeDriver">
+                      </bar-rating>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="col-sm-3 control-label">
+                      <span class="error">*</span>
+                    </label>
+                    <div class="col-sm-9">
+                      <textarea class="form-control textrea-size" [(ngModel)]="_evaluationDriver"
+                        name="cSEvaluationByOp" rows="2" placeholder="Nhận xét lái xe"></textarea>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div class="col-sm-12" style="text-align: end;">
+                      <button *ngIf="entity.status<4" type="button" class="btn btn-success btn-sm"
+                        (click)="evaluation()">
+                        <i class="fa fa-check"></i> Đánh giá</button>
+                    </div>
+                  </div>
+                </div>
+              </tab>
+            </tabset>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem && !flagNew && entity.status==0 && !entity.locked" type="button"
+              class="btn btn-success btn-sm" (click)="updateState(0)">
+              <i class="fa fa-share-square-o"></i> Gửi lệnh</button>
+            <button *ngIf="!flagXem && entity.status==1 && !entity.locked" type="button" class="btn btn-mau1 btn-sm"
+              (click)="updateState(1)">
+              <i class="fa backward"></i> Hủy gửi lệnh</button>
+            <button *ngIf="!flagXem && entity.locked" type="button" class="btn btn-warning btn-sm"
+              (click)="updateState(3)">
+              <i class="fa backward"></i> Mở lệnh</button>
+            <button
+              *ngIf="!flagXem && entity.finished && entity.status<4 && !job_locked && !entity.locked && accept_permission"
+              type="button" class="btn btn-danger btn-sm" (click)="chotlenh()">
+              <i class="fa backward"></i> Duyệt B1</button>
+            <button *ngIf="closing_permission && entity.status==5 " type="button" class="btn btn-duyet btn-sm"
+              (click)="duyetchotlenh()">
+              <i class="fa backward"></i>Chốt lệnh (B2)</button>
+            <button *ngIf="closing_permission && entity.status==5" type="button" class="btn btn-success btn-sm"
+              (click)="huychotlenh()">
+              <i class="fa backward"></i>Từ chối</button>
+            <button *ngIf="!flagXem &&  entity.status<4 && !entity.locked" type="button"
+              (click)="saveAndNew(addEditForm)" class="btn btn-primary btn-sm"
+              [disabled]="!flagOk|| !addEditForm.form.valid || flagSave || job_locked ">
+              <i class="fa fa-save"></i> Lưu & Thêm mới</button>
+            <button *ngIf="!flagXem &&  entity.status<4 && !entity.locked" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!flagOk|| !addEditForm.form.valid || flagSave || (job_locked && !userLoged.isAdmin)">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalDispatchOrderAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<modal-dispatchorder-workflow *ngIf="viewWorkflow" [item]="selectedItem" [listItem]="entity.listDispatchOrderDetailed"
+  (SaveSuccess)="saveSuccess($event)" (CloseModal)="closeModal()"></modal-dispatchorder-workflow>
+<modal-dispatchorder-route *ngIf="viewRoute" (SaveSuccess)="saveSuccessRoute($event)" (CloseModal)="closeModalRoute()">
+</modal-dispatchorder-route>
+<modal-attachfile *ngIf="viewAttachFiles" (CloseModal)="closeModalAttachFiles()">
+</modal-attachfile>
+<modal-dispatchorder-ticket *ngIf="viewTicket" (SaveSuccess)="saveSuccessTicket($event)"
+  (CloseModal)="closeModalTicket()">
+</modal-dispatchorder-ticket>
+<modal-view-workflows *ngIf="viewModalWorkflows">
+</modal-view-workflows>
+<modal-shipment *ngIf="viewJobModal" (CloseModal)="closeModalJob()">
+</modal-shipment>

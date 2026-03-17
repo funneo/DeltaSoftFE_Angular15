@@ -1,0 +1,256 @@
+<tabset>
+  <tab heading="BC04-DT12" (selectTab)="onTabSelect($event)">
+    <div class="box box-primary box-chieu-cao">
+      <div class="box-header with-border">
+        <div class="row" style="padding-bottom: 5px;">
+          <div class="col-md-2">
+            <h3 class="box-title">BÁO CÁO 04 - DT12</h3>
+          </div>
+          <div class="col-md-1">
+            <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+              [(ngModel)]="_branchId" (change)="changedBranch()" placeholder="Chọn chi nhánh..." [clearable]="false"
+              [readonly]="_quyen>0">
+            </ng-select>
+          </div>
+          <div class="col-md-2">
+
+          </div>
+          <div class="col-md-2">
+            <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+              class="form-control" />
+          </div>
+          <div class="col-md-2">
+
+          </div>
+          <div class="col-md-3">
+            <div class="input-group">
+              <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+                placeholder="Từ khóa: DebitNo, JobId" title="Tìm kiến theo: Số Dbeit, JobId, Số tờ khai, Vận đơn..." />
+              <span class="input-group-btn">
+                <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()" title="">
+                  <i class="fa fa-search"></i>
+                </button>
+                <button class="btn btn-success btn-sm" appPermission appFunction="STATEMENT" appAction="EXPORT"
+                  (click)="exportExcel()" title="Xuất dữ liệu">
+                  <i class="fa fa-file-excel-o"></i>
+                </button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- /.box-header -->
+      <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" style="position: relative;"
+        id="div#style-scroll-1">
+        <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f4f4f9" size="medium" color="#1010ee" name="spinnerBC04"
+          type="ball-clip-rotate" size="medium">
+          <p class="loading">Tải dữ liệu ...</p>
+        </ngx-spinner>
+        <table class="table table-bordered table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Mã khách hàng</th>
+              <th>Tên khách hàng</th>
+              <th>Lô hàng</th>
+              <th>Ngày doanh thu</th>
+              <th>Team</th>
+              <th>DT01088</th>
+              <th>CP02123</th>
+              <th>CP02165</th>
+              <th>CP02124</th>
+              <th>DT01088-CP02123/CP02165/CP02124</th>
+              <th>DT01140</th>
+              <th>CP02202</th>
+              <th>DT01140-CP02202</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of listData">
+              <td>{{item.customerCode}}</td>
+              <td>{{item.customerName}}</td>
+              <td>{{item.jobId}}</td>
+              <td>{{item.debitDate|date:'dd/MM/yyyy'}}</td>
+              <td>{{item.team}}</td>
+              <td>{{item.dT01088 | VND}}</td>
+              <td>{{item.cP02123 | VND}}</td>
+              <td>{{item.cP02165 | VND}}</td>
+              <td>{{item.cP02124 | VND}}</td>
+              <td
+                [ngStyle]="{'background-color': item.difF_DT01088 >0 ? 'lightgreen' : item.difF_DT01088 <0? 'lightcoral': 'white'}">
+                {{item.difF_DT01088 | VND}}</td>
+              <td>{{item.dT01140 | VND}}</td>
+              <td>{{item.cP02202 | VND}}</td>
+              <td
+                [ngStyle]="{'background-color': item.difF_DT01140 >0 ? 'lightgreen' :item.difF_DT01140 <0 ? 'lightcoral': 'white'}">
+                {{item.difF_DT01140 | VND}}</td>
+            </tr>
+            <tr *ngIf="listData?.length == 0">
+              <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- /.box-body -->
+      <div class="box-footer no-padding">
+        <div *ngIf="listData?.length > 0" class="col-md-12 footer-phantrang">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="dataTables_info">
+                <span>Tổng số bản ghi: {{ listData?.length }}</span>
+              </div>
+            </div>
+            <div class="col-md-6 text-right">
+
+            </div>
+            <div class="col-md-3 text-right">
+              <div class="page">
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /.box -->
+    </div>
+  </tab>
+  <tab heading="BC05" (selectTab)="onTabSelect($event)">
+    <div class="box box-primary box-chieu-cao">
+      <div class="box-header with-border">
+        <div class="row" style="padding-bottom: 5px;">
+          <div class="col-md-2">
+            <h3 class="box-title">BÁO CÁO 05</h3>
+          </div>
+          <div class="col-md-1">
+            <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+              [(ngModel)]="_branchId05" (change)="changedBranch05()" placeholder="Chọn chi nhánh..." [clearable]="false"
+              [readonly]="_quyen>0">
+            </ng-select>
+          </div>
+          <div class="col-md-2">
+            <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate05($event)"
+              class="form-control" />
+          </div>
+          <div class="col-md-4">
+            <ng-select name="khachhang" [items]="listCustomers" bindLabel="customerName" bindValue="id"
+              [(ngModel)]="_customerId" (change)="changedCustomer()" placeholder="Chọn đơn vị...">
+            </ng-select>
+          </div>
+          <div class="col-md-3">
+            <div class="input-group">
+              <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem05()" [(ngModel)]="keyword05"
+                placeholder="Từ khóa: DebitNo, JobId" title="Tìm kiến theo: Số Dbeit, JobId, Số tờ khai, Vận đơn..." />
+              <span class="input-group-btn">
+                <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem05()" title="">
+                  <i class="fa fa-search"></i>
+                </button>
+                <button class="btn btn-success btn-sm" appPermission appFunction="STATEMENT" appAction="EXPORT"
+                  (click)="exportExcel05()" title="Xuất dữ liệu">
+                  <i class="fa fa-file-excel-o"></i>
+                </button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- /.box-header -->
+      <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" style="position: relative;"
+        id="div#style-scroll-1">
+        <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f4f4f9" size="medium" color="#1010ee" name="spinnerBC05"
+          type="ball-clip-rotate" size="medium">
+          <p class="loading">Tải dữ liệu ...</p>
+        </ngx-spinner>
+        <table class="table table-bordered table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Chi nhánh</th>
+              <th>Id Công việc</th>
+              <th>Lô hàng</th>
+              <th>Tên KH</th>
+              <th>RefNo</th>
+              <th>Mã tham chiếu</th>
+              <th>Ngày tạo</th>
+              <th>Người tạo</th>
+              <th>Xe thuê</th>
+              <th>Thầu phụ</th>
+              <th>Loại xe</th>
+              <th>Biển số xe</th>
+              <th>Lái xe</th>
+              <th>Cung đường toàn tuyến</th>
+              <th>Tóm tắt lênh</th>
+              <th>Cung đường tính phí</th>
+              <th>Nơi giao nhận</th>
+              <th>Cont/Seals</th>
+              <th>Loại Cont</th>
+              <th>Số Container/Seals</th>
+              <th>T/g KH yêu cầu</th>
+              <th>Tổng Km</th>
+              <th>Giá dầu</th>
+              <th>Định mức dầu</th>
+              <th>Ghi chú</th>
+              <th>Tình trạng</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of visibleData">
+              <td>{{item.chinhanh}}</td>
+              <td>{{item.idCv}}</td>
+              <td>{{item.jobId}}</td>
+              <td>{{item.makh + ' - ' + item.tenkh}}</td>
+              <td>{{item.refNo}}</td>
+              <td>{{item.refCode}}</td>
+              <td>{{item.ngaytao}}</td>
+              <td>{{item.nguoitao}}</td>
+              <td>{{item.xethue}}</td>
+              <td>{{item.nhathauphu}}</td>
+              <td>{{item.loaixe }}</td>
+              <td>{{item.bks}}</td>
+              <td>{{item.laixe}}</td>
+              <td>{{item.cungduongtoantuyen}}</td>
+              <td>{{item.tomtatlenh}}</td>
+              <td>{{item.tollRouteCode + ' - ' + item.cungduongtinhphi}}</td>
+              <td>{{item.noigiaonhan}}</td>
+              <td>{{item.contSeals}}</td>
+              <td>{{item.contType}}</td>
+              <td>{{item.containerNumber + ' - ' + item.sealNumber}}</td>
+              <td>{{item.pickupTimes}}</td>
+              <td>{{item.tongKm}}</td>
+              <td>{{item.giadau}}</td>
+              <td>{{item.dinhmucdau}}</td>
+              <td>{{item.ghichu}}</td>
+              <td>{{item.rStatus}}</td>
+            </tr>
+            <tr *ngIf="listBC05?.length == 0">
+              <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <!-- /.box-body -->
+      <div class="box-footer no-padding">
+        <div *ngIf="listBC05?.length > 0" class="col-md-12 footer-phantrang">
+          <div class="row">
+            <div class="col-md-3">
+              <div class="dataTables_info">
+                <span>Tổng số bản ghi: {{ listBC05?.length }}</span>
+              </div>
+            </div>
+            <div class="col-md-3 text-right">
+
+            </div>
+            <div class="col-md-6 text-right">
+            <div class="page">
+              <pagination [totalItems]="listBC05?.length" [(ngModel)]="pageIndex" [maxSize]="9"
+                (pageChanged)="pageChanged($event)" [itemsPerPage]="50" previousText="&lsaquo;" nextText="&rsaquo;"
+                firstText="&laquo;" lastText="&raquo;">
+              </pagination>
+            </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /.box -->
+    </div>
+  </tab>
+</tabset>

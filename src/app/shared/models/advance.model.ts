@@ -1,0 +1,37 @@
+export interface Advance {
+    id?: number;
+    branchId?: number;
+    invoiceBranchId?: number;
+    invoiceBranchCode?: string;
+    employeeId?: number;
+    refNo?: string;
+    refDate?: string;
+    advanceGroupId?: number;
+    type?: number;
+    isTransfer?: boolean;
+    customerId?: number;
+    shipmentId?: number;
+    jobId?: string;
+    customerName?: string;
+    amount?: number;
+    currency?: string;
+    acceptStep?: number;
+    isComplete?: boolean;
+    isPayment?: boolean;
+    reason?: string;
+    feedback?: string;
+    notes?: string;
+    relatedDocuments?: string;
+    status?: boolean;
+    checked?: boolean;
+    employeeName?: string;
+    styleStep?: string;
+    has_accept?: boolean;
+    supplierId?: number;
+    supplierName?: string;
+    accountNumber?: string;
+    bank?: string;
+    bankId?: number;
+    acceptedBy?: string;
+    isEmployeeDebitClosing?: boolean;
+}

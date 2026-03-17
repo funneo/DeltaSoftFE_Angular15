@@ -1,0 +1,125 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="row">
+    <div class="box-header with-border">
+      <div class="col-md-3">
+        <h3 class="box-title">Quản lý phép năm</h3>
+      </div>
+      <div class="col-md-3">
+        <ng-select name="supplier" [items]="listBranch" bindLabel="branchName" bindValue="id" [(ngModel)]="branchId"
+          placeholder="Chọn chi nhánh..." [disabled]="!adminPermission" (change)="changedBranch($event)">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="year" [items]="listYear" bindLabel="year" bindValue="year" [(ngModel)]="year">
+        </ng-select>
+      </div>
+
+      <div class="col-md-4 text-right">
+        <button class="btn btn-success btn-sm" (click)="view()" appPermission appFunction="ONLEAVEMANAGEMENT"
+          appAction="VIEW">
+          <i class="fa fa-eye"></i> View
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="approvedConfirm()" [disabled]="flagXem" appPermission
+          appFunction="ONLEAVEMANAGEMENT" appAction="ACCEPT">
+          <i class="fa fa-check-square-o"></i> Chốt dữ liệu
+        </button>
+        <button class="btn btn-warning btn-sm" (click)="exportExcel()" [disabled]="flagXem" appPermission
+          appFunction="ONLEAVEMANAGEMENT" appAction="VIEW">
+          <i class="fa fa-file-excel-o"></i> Export
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+    <table class="table table-bordered table-striped table-hover table_wrapper">
+      <thead>
+        <tr>
+          <th>Họ và tên <br> Chi nhánh</th>
+          <th>Phép năm</th>
+          <th (click)="sortT1()" [style.background-color]="s1? '#d2d6de':'#dcefe5f6'">Tháng 01</th>
+          <th (click)="sortT2()" [style.background-color]="s2? '#d2d6de':'#dcefe5f6'">Tháng 02</th>
+          <th (click)="sortT3()" [style.background-color]="s3? '#d2d6de':'#dcefe5f6'">Tháng 03</th>
+          <th (click)="sortT4()" [style.background-color]="s4? '#d2d6de':'#dcefe5f6'">Tháng 04</th>
+          <th (click)="sortT5()" [style.background-color]="s5? '#d2d6de':'#dcefe5f6'">Tháng 05</th>
+          <th (click)="sortT6()" [style.background-color]="s6? '#d2d6de':'#dcefe5f6'">Tháng 06</th>
+          <th (click)="sortT7()" [style.background-color]="s7? '#d2d6de':'#dcefe5f6'">Tháng 07</th>
+          <th (click)="sortT8()" [style.background-color]="s8? '#d2d6de':'#dcefe5f6'">Tháng 08</th>
+          <th (click)="sortT9()" [style.background-color]="s9? '#d2d6de':'#dcefe5f6'">Tháng 09</th>
+          <th (click)="sortT10()" [style.background-color]="s10? '#d2d6de':'#dcefe5f6'">Tháng 10</th>
+          <th (click)="sortT11()" [style.background-color]="s11? '#d2d6de':'#dcefe5f6'">Tháng 11</th>
+          <th (click)="sortT12()" [style.background-color]="s12? '#d2d6de':'#dcefe5f6'">Tháng 12</th>
+          <th>Điều chỉnh</th>
+          <th>Còn lại</th>
+          <th>Ghi chú</th>
+        </tr>
+        <tr>
+          <th><input class="form-control" #makhInput [(ngModel)]="nameSearch" (input)="filter()" type="text" name="nameSearch"/></th>
+          <th colspan="16"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listFilter; let indexOfelement=index;">
+          <td style="color: blue;"><b>{{item.employeeFullName}}</b></td>
+          <td style="color: red;"><b>{{item.numberOfLeaveDay}}</b></td>
+          <td [style.background-color]="item.month01>0 ? '#DAA520' : 'white'">
+            {{item.month01}}
+          </td>
+          <td [style.background-color]="item.month02>0 ? '#DAA520' : 'white'">
+            {{item.month02}}
+          </td>
+          <td [style.background-color]="item.month03>0 ? '#DAA520' : 'white'">
+            {{item.month03}}
+          </td>
+          <td [style.background-color]="item.month04>0 ? '#DAA520' : 'white'">
+            {{item.month04}}
+          </td>
+          <td [style.background-color]="item.month05>0 ? '#DAA520' : 'white'">
+            {{item.month05}}
+          </td>
+          <td [style.background-color]="item.month06>0 ? '#DAA520' : 'white'">
+            {{item.month06}}
+          </td>
+          <td [style.background-color]="item.month07>0 ? '#DAA520' : 'white'">
+            {{item.month07}}
+          </td>
+          <td [style.background-color]="item.month08>0 ? '#DAA520' : 'white'">
+            {{item.month08}}
+          </td>
+          <td [style.background-color]="item.month09>0 ? '#DAA520' : 'white'">
+            {{item.month09}}
+          </td>
+          <td [style.background-color]="item.month10>0 ? '#DAA520' : 'white'">
+            {{item.month10}}
+          </td>
+          <td [style.background-color]="item.month11>0 ? '#DAA520' : 'white'">
+            {{item.month11}}
+          </td>
+          <td [style.background-color]="item.month12>0 ? '#DAA520' : 'white'">
+            {{item.month12}}
+          </td>
+          <td style="width: 100px;">
+            <input type="number" class="form-control" name="adjust{{indexOfelement}}" style="text-align: right;"
+              [(ngModel)]="item.adjust" (change)="changeAdjust(item)" [readonly]="flagXem" required />
+          </td>
+          <td>
+            <span>
+              {{item.remaining}}
+            </span>
+          </td>
+          <td>
+            <input type="text" class="form-control" name="notes{{indexOfelement}}"
+                  style="text-align: left;" [(ngModel)]="item.notes" [readonly]="flagXem"/>
+          </td>
+        </tr>
+        <tr *ngIf="listFilter?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="box-footer no-padding">
+  </div>
+
+  <!-- /.box -->
+</div>

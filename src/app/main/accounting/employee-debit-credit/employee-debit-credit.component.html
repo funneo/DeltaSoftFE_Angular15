@@ -1,0 +1,237 @@
+<div>
+  <tabset>
+    <tab heading="Báo cáo lập theo thời điểm">
+      <div class="nav-tabs-custom" style="margin-bottom: 0px; box-shadow: none;">
+        <ul class="nav nav-tabs">
+          <li [class.active]="!isTransfer"><a href="javascript:void(0)" (click)="isTransfer=false; timKiemSingle()"
+              style="font-weight: bold; font-size: 15px;">Tiền mặt</a></li>
+          <li [class.active]="isTransfer"><a href="javascript:void(0)" (click)="isTransfer=true; timKiemSingle()"
+              style="font-weight: bold; font-size: 15px;">Chuyển khoản</a></li>
+        </ul>
+        <div class="tab-content" style="padding: 0;">
+          <div class="box box-primary box-chieu-cao" style="border-top: none; margin-bottom: 0; box-shadow: none;">
+            <div class="row">
+              <div class="box-header with-border">
+                <div class="col-md-1">
+                  <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                    [(ngModel)]="_branchId" (change)="changedBranch()" placeholder="Chọn chi nhánh..."
+                    [clearable]="false" [readonly]="_quyen>0">
+                  </ng-select>
+                </div>
+                <div class="col-md-3">
+                  <ng-select name="nhanvien" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
+                    [(ngModel)]="_employeeId" (change)="changedEmployee()" placeholder="Chọn nhân viên..."
+                    [readonly]="_quyen>0">
+                  </ng-select>
+                </div>
+                <div class="col-md-3">
+                  <input type="text" daterangepicker [options]="dateOptionsSingle"
+                    (selected)="selectedDateSingle($event)" class="form-control">
+                </div>
+                <div class="col-md-3">
+                  <div class="input-group">
+                    <input type="text" class="form-control" name="filter" (keyup.enter)="timKiemSingle()"
+                      [(ngModel)]="keyword" placeholder="Từ khóa" />
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="input-group">
+                    <span class="input-group-btn">
+                      <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiemSingle()">
+                        <i class="fa fa-search"></i>
+                      </button>
+                      <button class="btn btn-success btn-flat btn-sm" type="button" (click)="exportTab1()"
+                        title="Xuất Excel">
+                        <i class="fa fa-file-excel-o"></i>
+                      </button>
+                    </span>
+                  </div>
+                </div>
+                <!-- <div class="col-md-4 text-right">
+        <button class="btn btn-success btn-sm" appPermission appFunction="EMPLOYEEDEBIT" appAction="EXPORT">
+          <i class="fa fa-file-excel-o"></i> Xuất dữ liệu
+        </button>
+      </div> -->
+              </div>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body table-responsive no-padding" style="position: relative;">
+              <ngx-spinner name="spinner-1" [fullScreen]="false" type="ball-clip-rotate" size="medium" bdOpacity="0.9"
+                bdColor="#f4f4f9" color="#1010ee">
+                <p class="loading">Tải dữ liệu ...</p>
+              </ngx-spinner>
+              <table class="table table-bordered table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>Chi nhánh</th>
+                    <th>Nhân viên</th>
+                    <th>Tổng hạn mức</th>
+                    <th>Dư nợ hiện tại</th>
+                    <!-- <th>Ngày phát sinh cuối cùng</th> -->
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of listDebitCredits">
+                    <td>
+                      {{item.branchCode}}
+                    </td>
+                    <td>
+                      {{item.employeeName}}
+                    </td>
+                    <td class="so-tien" style="color: rgb(205, 21, 21);">{{item.hanMucTong|currency:'VND':''}}</td>
+                    <td class="so-tien" style="color: rgb(58, 32, 231);">{{item.debitBalance|currency:'VND':''}}</td>
+                    <!-- <td style="text-align: right;">{{item.updatedDate|date:'dd-MM-yyyy'}}</td> -->
+                  </tr>
+                  <tr *ngIf="listDebitCredits?.length == 0">
+                    <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- /.box-body -->
+            <div class="box-footer no-padding">
+              <div *ngIf="listDebitCredits?.length > 0" class="col-md-12 footer-phantrang">
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="dataTables_info">
+                      <span>Tổng số bản ghi: {{ totalRows }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="dataTables_info">
+                      <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng dư nợ: {{ totalAmount|VND
+                        }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-4 text-right">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- /.box -->
+          </div>
+        </div>
+      </div>
+    </tab>
+    <tab heading="Báo cáo lập theo khoảng thời gian">
+      <div class="nav-tabs-custom" style="margin-bottom: 0px; box-shadow: none;">
+        <ul class="nav nav-tabs">
+          <li [class.active]="!isTransfer"><a href="javascript:void(0)" (click)="isTransfer=false; timKiem()"
+              style="font-weight: bold; font-size: 15px;">Tiền mặt</a></li>
+          <li [class.active]="isTransfer"><a href="javascript:void(0)" (click)="isTransfer=true; timKiem()"
+              style="font-weight: bold; font-size: 15px;">Chuyển khoản</a></li>
+        </ul>
+        <div class="tab-content" style="padding: 0;">
+          <div class="box box-primary box-chieu-cao" style="border-top: none; margin-bottom: 0; box-shadow: none;">
+            <div class="row">
+              <div class="box-header with-border">
+                <div class="col-md-1">
+                  <ng-select name="khachhang" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                    [(ngModel)]="_branckIdTimeRange" (change)="changedBranchTimeRange()" placeholder="Chọn chi nhánh..."
+                    [clearable]="false" [readonly]="_quyen>0">
+                  </ng-select>
+                </div>
+                <div class="col-md-3">
+                  <ng-select name="nhanvien" [items]="listEmployeeTimeRange" bindLabel="employeeFullName" bindValue="id"
+                    [(ngModel)]="_employeeIdTimeRange" (change)="changedEmployeeTimeRange()"
+                    placeholder="Chọn nhân viên..." [readonly]="_quyen>0">
+                  </ng-select>
+                </div>
+                <div class="col-md-3">
+                  <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+                    class="form-control">
+                </div>
+                <div class="col-md-3">
+                  <div class="input-group">
+                    <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()"
+                      [(ngModel)]="keyword" placeholder="Từ khóa" />
+                  </div>
+                </div>
+                <div class="col-md-3">
+                  <div class="input-group">
+                    <span class="input-group-btn">
+                      <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                        <i class="fa fa-search"></i>
+                      </button>
+                      <button class="btn btn-success btn-flat btn-sm" type="button" (click)="exportTab2()"
+                        title="Xuất Excel">
+                        <i class="fa fa-file-excel-o"></i>
+                      </button>
+                    </span>
+                  </div>
+                </div>
+                <!-- <div class="col-md-4 text-right">
+        <button class="btn btn-success btn-sm" appPermission appFunction="EMPLOYEEDEBIT" appAction="EXPORT">
+          <i class="fa fa-file-excel-o"></i> Xuất dữ liệu
+        </button>
+      </div> -->
+              </div>
+            </div>
+            <!-- /.box-header -->
+            <div class="box-body table-responsive no-padding" style="position: relative;">
+              <ngx-spinner name="spinner-2" [fullScreen]="false" type="ball-clip-rotate" size="medium" bdOpacity="0.9"
+                bdColor="#f4f4f9" color="#1010ee">
+                <p class="loading">Tải dữ liệu ...</p>
+              </ngx-spinner>
+              <table class="table table-bordered table-striped table-hover">
+                <thead>
+                  <tr>
+                    <th>Chi nhánh</th>
+                    <th>Nhân viên</th>
+                    <th>Tổng hạn mức</th>
+                    <th>Dư nợ đầu kỳ</th>
+                    <th>Phát sinh Nợ</th>
+                    <th>Phát sinh Có</th>
+                    <th>Dư nợ cuối</th>
+                    <!-- <th>Ngày phát sinh cuối cùng</th> -->
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of listDebitCreditsTimeRange">
+                    <td>
+                      {{item.branchCode}}
+                    </td>
+                    <td>
+                      <a [routerLink]="[]" (click)="showDetail(item)">{{item.employeeName}}</a>
+                    </td>
+                    <td class="so-tien" style="color: rgb(205, 21, 21);">{{item.hanMucTong|currency:'VND':''}}</td>
+                    <td class="so-tien" style="color: rgb(205, 21, 21);">{{item.hanMucCon|currency:'VND':''}}</td>
+                    <td class="so-tien" style="color: rgb(58, 32, 231);">{{item.credit|currency:'VND':''}}</td>
+                    <td class="so-tien" style="color: rgb(58, 32, 231);">{{item.debit|currency:'VND':''}}</td>
+                    <td class="so-tien" style="font-weight: bold;">{{item.debitBalance|currency:'VND':''}}</td>
+                    <!-- <td style="text-align: right;">{{item.updatedDate|date:'dd-MM-yyyy'}}</td> -->
+                  </tr>
+                  <tr *ngIf="listDebitCreditsTimeRange?.length == 0">
+                    <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- /.box-body -->
+            <div class="box-footer no-padding">
+              <div *ngIf="listDebitCreditsTimeRange?.length > 0" class="col-md-12 footer-phantrang">
+                <div class="row">
+                  <div class="col-md-4">
+                    <div class="dataTables_info">
+                      <span>Tổng số bản ghi: {{ totalRows }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-4">
+                    <div class="dataTables_info">
+                      <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng dư nợ: {{ totalAmount|VND
+                        }}</span>
+                    </div>
+                  </div>
+                  <div class="col-md-4 text-right">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- /.box -->
+          </div>
+        </div>
+      </div>
+    </tab>
+  </tabset>
+</div>
+<app-employee-debit-credit-detail #detailModal></app-employee-debit-credit-detail>

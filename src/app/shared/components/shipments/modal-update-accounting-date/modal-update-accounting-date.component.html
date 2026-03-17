@@ -1,0 +1,36 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalConfirm="bs-modal" [config]="{backdrop: 'static'}"
+    tabindex="-1" role="dialog" aria-labelledby="dialog-static-name">
+    <div class="modal-dialog modal-sd">
+        <div class="modal-content">
+            <div #myHandle class="modal-header">
+                <h4 class="modal-title pull-left">{{_type==0?'Cập nhật ngày danh thu':'Cập nhật ngày vận hành'}}</h4>
+                <button type="button" class="close pull-right" aria-label="Close" (click)="modalConfirm.hide()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal">
+                    <div class="box-body">
+                        <div class="form-group">
+                            <label class="col-sm-4 control-label">{{_type==0?'Ngày danh thu':'Ngày vận hành'}}</label>
+                            <div class="col-sm-8 date">
+                              <input name="ngayhachtoan" type="text" daterangepicker [options]="dateTimeOptions2"
+                                [(ngModel)]="_ngayHachtoan" class="form-control" (selected)="selectedNgayHachtoan($event)"
+                                (hideDaterangepicker)="closedNgayHachtoan($event)" autocomplete="off" />
+                            </div>
+                          </div>
+                    </div>
+                    <!-- /.box-body -->
+                    <div class="box-footer text-right">
+
+                        <button type="button" class="btn btn-success btn-sm" (click)="click()" [disabled]="!_ngayHachtoan || _ngayHachtoan.length < 1">
+                            <i class="fa fa-check-o"></i> Cập nhật</button>
+                        <button type="button" (click)="modalConfirm.hide()" class="btn btn-danger btn-sm">
+                            <i class="fa fa-close"></i> Hủy</button>
+                    </div>
+                    <!-- /.box-footer -->
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

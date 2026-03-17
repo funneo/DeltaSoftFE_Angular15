@@ -1,0 +1,101 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Địa điểm giao nhận vận chuyển</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Địa điểm giao nhận
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <textarea #tenvitri="ngModel" [(ngModel)]="entity.address" required  name="address"
+                  class="form-control" rows="2"  focus [readonly]="flagXem"></textarea>
+                <small [hidden]="tenvitri.valid || (tenvitri.pristine && !addEditForm.submitted)"
+                  class="text-danger">
+                  Địa điểm giao nhận không được để trống và không vượt quá 255 kí tự
+                </small>
+              </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Người liên hệ
+                </label>
+                <div class="col-sm-9">
+                  <textarea  [(ngModel)]="entity.contactName"  rows="1" name="contactName"
+                    class="form-control" placeholder="Nhập người liên hệ" focus [readonly]="flagXem" ></textarea>
+                </div>
+              </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">SĐT liên hệ
+                </label>
+                <div class="col-sm-9">
+                  <textarea  [(ngModel)]="entity.contactTel"  rows="1" name="contactTel"
+                    class="form-control" placeholder="Nhập sđt liên hệ" focus [readonly]="flagXem" ></textarea>
+                </div>
+              </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Vị trí
+                </label>
+                <div class="col-sm-9">
+                  <textarea  [(ngModel)]="entity.googleLocations"  rows="1" name="location"
+                    class="form-control" placeholder="Nhập vị trí" focus [readonly]="flagXem" ></textarea>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="inputEmail3" class="col-sm-3 control-label">Kinh độ</label>
+                <div class="col-sm-9">
+                  <input type="number"  [(ngModel)]="entity.longtitude" step="0.0000001"
+                    name="longtitude" class="form-control" placeholder="Nhập kinh độ"
+                    [readonly]="flagXem" />
+                </div>
+            </div>
+              <div class="form-group">
+                <label for="inputEmail3" class="col-sm-3 control-label">Vĩ độ</label>
+                <div class="col-sm-9">
+                  <input type="number"  [(ngModel)]="entity.latitude" step="0.0000001"
+                    name="latitude" class="form-control" placeholder="Nhập kinh độ"
+                    [readonly]="flagXem" />
+                </div>
+            </div>
+              <div class="form-group">
+                <label for="inputEmail3" class="col-sm-3 control-label">K/c đến WB</label>
+                <div class="col-sm-9">
+                  <input type="text"  [(ngModel)]="entity.distanceToWB" [mask]="mask0"
+                    name="distanceToWb" class="form-control" placeholder="Nhập khoảng cách đến ngã 3 World Bank"
+                    [readonly]="flagXem" />
+                </div>
+            </div>
+             <div class="form-group">
+              <label class="col-sm-3 control-label"></label>
+              <div class="col-sm-4">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [(ngModel)]="entity.checked" name="status" />
+                  <span class="helping-el"></span>
+                  Chuyển duyệt
+                </label>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem && entity.status<1 || _accept " type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

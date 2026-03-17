@@ -1,0 +1,160 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="box-header with-border">
+    <div class="row">
+      <div class="col-md-3">
+        <h3 class="box-title">Hợp đồng</h3>
+      </div>
+      <div class="col-md-6"></div>
+      <div class="col-md-3 text-right">
+        <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="CONTRACTCUSTOMER"
+          appAction="CREATE">
+          <i class="fa fa-plus"></i> Thêm
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+          appFunction="CONTRACTCUSTOMER" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="CONTRACTCUSTOMER" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+        <!-- <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagView">
+          <i class="fa fa-eye"></i> Xem
+        </button> -->
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="col-md-2">
+        <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+          [(ngModel)]="_branchId" (change)="changedChiNhanh()" title="Chọn chi nhánh..." [clearable]="true" [readonly]="_auth>_viewAll">
+        </ng-select>
+      </div>
+      <div class="col-md-4">
+        <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+          [(ngModel)]="_customerId" (change)="changedCustomer($event)" placeholder="Chọn khách hàng..." title="Chọn khách hàng"
+          [readonly]="_auth>=5">
+        </ng-select>
+      </div>
+      <div class="col-md-4">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa: Số hợp đồng" title="Tìm kiếm theo số hợp đồng..." />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+              <span class="helping-el"></span>
+            </label>
+          </th>
+          <th  style="min-width: 120px;">Nhân viên Sales</th>
+          <th>Tên khách hàng</th>
+          <th>Mã hợp đồng</th>
+          <th>Số hợp đồng</th>
+          <th>Tên hợp đồng</th>
+          <th>Nội dung</th>
+          <th>Ngày hiệu lực</th>
+          <th>Ngày kết thúc</th>
+          <th>Ghi chú</th>
+          <th>Tình trạng</th>
+          <th style="width: 80px;">Tác vụ</th>
+        </tr>
+        <tr>
+
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listDatas" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>{{item.employeeFullName}}</td>
+          <td>{{item.customerName}}</td>
+          <td><a [routerLink]="[]" (click)="showModal(item)">{{item.contractId}}</a></td>
+          <td>
+            <a [routerLink]="[]" (click)="showModal(item)">{{item.contractNo}}</a>
+          </td>
+          <td>{{item.contractName}}</td>
+          <td>{{item.contents}}</td>
+          <td>{{item.sDate|date:'dd/MM/yyyy'}}</td>
+          <td>{{item.fDate|date:'dd/MM/yyyy'}}</td>
+          <td>{{item.notes }}</td>
+          <td class="trang-thai">
+            <span [ngClass]="
+                item.isFinish ? 'label label-primary':(item.isDeny?'label label-danger' : !item.status?'label label-info':(item.status && item.step==0)?'label label-secondary':item.step==1?'label label-primary':item.step==2?'label label-warning':'label label-success')
+              ">{{ item.isFinish? 'Kết thúc!' : item.isDeny?'Từ chối': (!item.status?'Khởi tạo': (item.status && item.step==0)? 'Xin cấp số': item.step==1?'Đã cấp số': item.step==2?'Chuyển duyệt':'Đã duyệt') }}</span>
+          </td>
+          <td>
+            <!-- <button *ngIf="_accept && item.status && item.step==0" type="button" class="btn btn-success btn-sm action"
+              title="Duyệt" (click)="accept(item,'Ok')">
+              <i class="fa fa-meh-o" aria-hidden="true"></i> Duyệt
+            </button> -->
+
+          <!-- <button *ngIf="_accept && !item.status && !item.isDeny" type="button" class="btn btn-primary btn-sm action"
+            title="Duyệt" (click)="accept(item,'Ok')">
+            <i class="fa fa-meh-o" aria-hidden="true"></i> Duyệt
+          </button>
+          <button *ngIf="_accept && !item.status && !item.isDeny" type="button" class="btn btn-warning btn-sm action"
+            title="Từ chối" (click)="accept(item,'No')">
+            <i class="fa fa-meh-o" aria-hidden="true"></i> Từ chối
+          </button>
+          <span *ngIf="item.isDeny" style="color: red;">{{item.reason}}</span> -->
+            <!-- <button *ngIf="_accept && item.step>0 && !item.isFinish" type="button" class="btn btn-primary btn-sm action"
+              title="Kết thúc" (click)="finish(item,'Finish')">
+              <i class="fa fa-lock" aria-hidden="true"></i> Kết thúc
+            </button> -->
+            <button type="button" class="btn btn-info btn-sm action-file" title="Chứng từ đính kèm"
+              (click)="showFiles(item)">
+              <i class="fa fa-file-pdf-o" aria-hidden="true"></i> File hợp đồng...
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="listDatas?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listDatas?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+<modal-contract-customer *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-contract-customer>
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>
+<!-- <div [ngBusy]="busy"></div> -->

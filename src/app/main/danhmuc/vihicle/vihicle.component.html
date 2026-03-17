@@ -1,0 +1,211 @@
+<div>
+  <tabset>
+    <tab heading="Phương tiện">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-2">
+              <h3 class="box-title">Phương tiện</h3>
+            </div>
+            <div class="col-md-1">
+              <ng-select name="chi nhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id" [(ngModel)]="branchId" (change)="changedBranch($event)"
+              placeholder="Chọn chi nhánh...">
+            </ng-select>
+            </div>
+            <div class="col-md-2">
+              <ng-select name="listTypeVehicle" [items]="listTypeVehicle" bindLabel="categoryName" bindValue="id" [(ngModel)]="vehitypeId" (change)="changedType($event)"
+              placeholder="Loại phương tiện...">
+            </ng-select>
+            </div>
+            <div class="col-md-3">
+              <div class="input-group">
+                <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+                  placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+                <span class="input-group-btn">
+                  <button class="btn btn-success btn-flat btn-sm" appPermission appFunction="VIHICLES" appAction="EXPORT"
+                  (click)="exportExcel()" title="Xuất dữ liệu">
+                  <i class="fa fa-file-excel-o"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+            <div class="col-md-4 text-right">
+              <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="VIHICLES"
+                appAction="CREATE">
+                <i class="fa fa-plus"></i> Thêm
+              </button>
+              <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+                appFunction="VIHICLES" appAction="UPDATE">
+                <i class="fa fa-edit"></i> Sửa
+              </button>
+              <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+                appFunction="VIHICLES" appAction="DELETE">
+                <i class="fa fa-trash"></i> Xóa
+              </button>
+              <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+                <i class="fa fa-eye"></i> Xem
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding">
+          <table class="table table-bordered table-striped table-hover">
+            <thead>
+              <tr>
+                <th class="table-checkbox">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+                    <span class="helping-el"></span>
+                  </label>
+                </th>
+                <th>Biển số xe</th>
+                <th>Loại xe/Loại Bot/Năm sản xuất</th>
+                <th>Kích thước</th>
+                <th>Tải trọng TK/cho phép</th>
+                <th>Hãng SX</th>
+                <th>Định mức dầu</th>
+                <th>Số máy/số khung</th>
+                <th>Hạn đăng kiểm</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of listVihicle" (click)="clickRow(item)">
+                <td class="table-checkbox">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                    <span class="helping-el"></span>
+                  </label>
+                </td>
+                <td>
+                  <a [routerLink]="[]" (click)="showModal(item)">{{item.licensePlates}}</a></td>
+                <td>
+                  <span>{{item.vihicleTypeName}}</span>
+                  <br>
+                  <span>{{item.vihicleTypeBotName}}</span>
+                  <br>
+                  <span style="font-weight: bold; color: blue;">NSX: {{item.yearMade}}</span>
+                  </td>
+                <td>{{item.size}}</td>
+                <td>
+                  <span>
+                      TK: {{item.designedPayload}}
+                  </span>
+                  <br>
+                  <span>
+                      CP: {{item.permissiblePayload}}
+                  </span>
+                  </td>
+                <td>{{item.manufacturer}}</td>
+                <td>{{item.oilQuota}}</td>
+                <td>
+                    <span>
+                        Số khung: {{item.frameNumber}}
+                    </span>
+                    <br>
+                    <span>
+                        Số máy: {{item.engineNumber}}
+                    </span>
+                    </td>
+                <td>{{item.vehicleInspectionDeadline}}</td>
+              </tr>
+              <tr *ngIf="totalRows == 0 ">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listVihicle?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ totalRows }}</span>
+                </div>
+              </div>
+              <div class="col-md-7 text-right">
+                <div class="page">
+                  <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                    (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+                    firstText="&laquo;" lastText="&raquo;">
+                  </pagination>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box -->
+      </div>
+    </tab>
+    <tab heading="Phương tiện đến hạn cần kiểm tra">
+      <div class="box box-primary box-chieu-cao">
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding">
+          <table class="table table-bordered table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Biển số xe</th>
+                <th>Loại xe/Loại Bot/Năm sản xuất</th>
+                <th>Lái xe</th>
+                <th>Hạn đăng kiểm</th>
+                <th>Hạn Bảo hiểm TNDS</th>
+                <th>Hạn Bảo hiểm vật chất</th>
+                <th>Hạn lưu hành ngân hàng</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of listDueSoon">
+
+                <td>
+                  <a [routerLink]="[]" (click)="showModal(item)">{{item.licensePlates}}</a></td>
+                <td>
+                  <span>{{item.vihicleTypeName}}</span>
+                  <br>
+                  <span>{{item.vihicleTypeBotName}}</span>
+                  <br>
+                  <span style="font-weight: bold; color: blue;">NSX: {{item.yearMade}}</span>
+                  </td>
+                <td>{{item.employeeFullName}}</td>
+                <td>
+                  {{item.vehicleInspectionDeadline}}
+                </td>
+                <td>{{item.civilLiabilityInsuranceExpirationDate}}</td>
+                <td>{{item.vehicleDamageInsuranceExpirationDate}}</td>
+                <td>{{item.vehicleLicenseCopyExpirationDate}}</td>
+              </tr>
+              <tr *ngIf="listDueSoon!.length == 0 ">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listVihicle?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ listDueSoon!.length }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box -->
+      </div>
+    </tab>
+  </tabset>
+</div>
+
+
+
+  <modal-vihicle *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+  </modal-vihicle>
+
+  <!-- <div [ngBusy]="busy"></div> -->

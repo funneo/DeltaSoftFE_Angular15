@@ -1,0 +1,163 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="onHidden()">
+  <div class="modal-dialog modal-lg diaglog=debit">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Cập nhật số hóa đơn cho DebitNotes</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+           #aForm>
+          <div class="box-body">
+            <div class="form-group">
+                            <label class="col-sm-2 control-label">Khoảng thời gian
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-10">
+                <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+                class="form-control">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Khách hàng
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-10">
+                <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+                  [(ngModel)]="customerId" required placeholder="Chọn khách hàng..."
+                  (change)="changedCustomer($event)">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Số hóa đơn
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-2">
+                <input type="text" #groupfeename="ngModel" [(ngModel)]="invoiceNo" required maxlength="255" name="invoiceNo"
+                  class="form-control" placeholder="Invoice No."/>
+                <small [hidden]="groupfeename.valid || (groupfeename.pristine && !addEditForm.submitted)"
+                  class="text-danger">
+                  Không được để trống và không vượt quá 255 kí tự
+                </small>
+              </div>
+              <label class="col-sm-2 control-label">Ngày hóa đơn <span class="error">*</span></label>
+              <div class="col-sm-2 date">
+                <input name="ngaydt" type="text" daterangepicker [options]="dateTimeOptions2" required
+                  [(ngModel)]="_ngayHD" class="form-control" (selected)="selectedNgayDoanhThu($event)"
+                  (hideDaterangepicker)="closedNgayDoanhThu($event)" autocomplete="off" />
+              </div>
+              <label class="col-sm-2 control-label">Ngày doanh thu <span class="error">*</span></label>
+              <div class="col-sm-2 date">
+                <input name="ngayht" type="text" daterangepicker [options]="dateTimeOptions2" required
+                  [(ngModel)]="_ngayHT" class="form-control" (selected)="selectedNgayhachtoan($event)"
+                  (hideDaterangepicker)="closedNgayhachtoan($event)" autocomplete="off" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Ghi chú</label>
+              <div class="col-sm-10">
+                <textarea class="form-control textrea-size"  [(ngModel)]="invoiceNotes" name="invoiceNotes" rows="3"
+                  placeholder="Ghi chú" ></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Lọc DebitNotes</label>
+              <div class="col-sm-4">
+                <ng-select name="khachhang" [items]="array" bindLabel="value" bindValue="id"
+                  [(ngModel)]="debitType" 
+                  (change)="changeTypeDebit()">
+                </ng-select>
+              </div>
+              <label class="col-sm-2 control-label">Tổng tiền đã chọn</label>
+              <div class="col-sm-4 text-right">
+                <span class="form-control" style="font-weight: bold; color: red;">{{tongtien | number}}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="table-wrapper-scroll-y my-custom-scrollbar">
+                <table class="table table-bordered table-striped table-hover table_wrapper">
+                  <thead>
+                    <tr>
+                      <th rowspan="2" class="table-checkbox">
+                        <label class="custom-checkbox">
+                          <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+                          <span class="helping-el"></span>
+                        </label>
+                      </th>
+                      <th rowspan="2">Khách hàng</th>
+                      <th rowspan="2">Loại hình</th>
+                      <th rowspan="2">Số Debit</th>
+                      <th rowspan="2">Tổng tiền</th>
+                      <th rowspan="2">Số hóa đơn</th>
+                      <th rowspan="1" colspan="5">Lô hàng</th>
+                      <th rowspan="2">Ghi chú</th>
+                    </tr>
+                    <tr>
+                      <th>JobId</th>
+                      <th>Số tờ khai</th>
+                      <th>H/Bill</th>
+                      <th>Booking</th>
+                      <th>Inv-No</th>
+                    </tr>
+                    <tr>
+                      <th></th>
+                      <th><input class="form-control" #makhInput [(ngModel)]="makhSearch" (input)="filter()" type="text" name="makhSearch"/></th>
+                      <th><input class="form-control" #loaihinhInput [(ngModel)]="loaihinhSearch" (input)="filter()" type="text" name="loaihinhSearch"/></th>
+                      <th><input class="form-control" #sodebitInput [(ngModel)]="sodebitSearch" (input)="filter()" type="text" name="sodebitSearch"/></th>
+                      <th></th>
+                      <th><input class="form-control" #sohoadonInput [(ngModel)]="sohoadonSearch" (input)="filter()" type="text" name="sohoadonSearch"/></th>
+                      <th><input class="form-control" #jobIdInput [(ngModel)]="jobIdSearch" (input)="filter()" type="text" name="jobIdSearch"/></th>
+                      <th><input class="form-control" #tokhaiInput [(ngModel)]="tokhaiSearch" (input)="filter()" type="text" name="tokhaiSearch"/></th>
+                      <th><input class="form-control" #vandonInput [(ngModel)]="vandonSearch" (input)="filter()" type="text" name="vandonSearch"/></th>
+                      <th><input class="form-control" #sobookingInput [(ngModel)]="sobookingSearch" (input)="filter()" type="text" name="sobookingSearch"/></th>
+                      <th><input class="form-control" #invoiceInput [(ngModel)]="invoiceSearch" (input)="filter()" type="text" name="invoiceSearch"/></th>
+                      <th>
+                        <input class="form-control" #ghichuInput [(ngModel)]="ghichuSearch" (input)="filter()" type="text" name="ghichuSearch"/>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of listFilter" (click)="clickRow(item)">
+                      <td class="table-checkbox">
+                        <label class="custom-checkbox">
+                          <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                          <span class="helping-el"></span>
+                        </label>
+                      </td>
+                      <td class="column-name">{{item.customerName}}</td>
+                      <td>{{item.debitType}}</td>
+                      <td> {{item.debitNo}}</td>
+                      <td class="so-tien">{{item.totalAmount|VND}}</td>
+                      <td>{{item.deltaInvoiceNo}}</td>
+                      <td>{{item.shipmentNo }}</td>
+                      <td>{{item.cdsNumber }}</td>
+                      <td>{{item.hawB_HBL }}</td>
+                      <td>{{item.bookingNo }}</td>
+                      <td>{{item.invoiceNo }}</td>
+                      <td>{{item.notes }}</td>
+                    </tr>
+                    <tr *ngIf="listFilter?.length == 0">
+                      <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button [disabled]="!addEditForm.form.valid" type="submit" class="btn btn-primary btn-sm">
+              <i class="fa fa-edit"></i> Cập nhật</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

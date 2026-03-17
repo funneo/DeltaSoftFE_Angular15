@@ -1,0 +1,197 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalFeeAddEdit="bs-modal"
+  [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" aria-labelledby="dialog-static-name"
+  (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Bổ sung chi phí lệnh</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalFeeAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group">
+              <label class="col-sm-3 control-label">RefNo</label>
+              <div class="col-sm-3 control-label-text-left">
+                <span style="font-weight: bold; color: blue;"> {{entity.refNo}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Ngày</label>
+              <div class="col-sm-3 control-label-text-left">
+                <span style="font-weight: bold; color: blue;"> {{entity.createdDate | date:'dd/MM/yyyy'}}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Số lệnh vận chuyển</label>
+              <div class="col-sm-3 control-label-text-left">
+                <span style="font-weight: bold; color: rgb(255, 0, 106);"> {{entity.dispatchOrderRefNo}}</span>
+              </div>
+              <div class="col-sm-3"></div>
+              <div class="col-sm-3" style="text-align:right;">
+                <button *ngIf="entity.id" type="button" class="btn btn-info btn-sm" title="Chứng từ đính kèm" (click)="showFiles()">
+                  <i class="fa fa-file-pdf-o" aria-hidden="true"></i> File đính kèm
+              </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Loại hình
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                  <ng-select [items]="listType"  name="listType" required [readonly]="flagXem || entity.status>0"
+                  bindLabel="value"
+                  bindValue="id"
+                  [(ngModel)]="entity.type">
+                  </ng-select>
+              </div>
+          </div>
+          <!-- <div class="form-group">
+            <label class="col-sm-3 control-label">Người lập phiếu
+            </label>
+            <div class="col-sm-9">
+                <ng-select [items]="listUser"  name="fueldriverId" required disabled
+                bindLabel="employeeFullName"
+                bindValue="id"
+                [ngModel]="userLoged.employeeId">
+                </ng-select>
+            </div>
+        </div> -->
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Lý do bổ sung <span class="error">*</span></label>
+              <div class="col-sm-9">
+                <textarea class="form-control" [(ngModel)]="entity.reason" name="reason" rows="2" required
+                  [readonly]="flagXem || entity.status>0"></textarea>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="entity.status>0 || entity.status==-1">
+              <label class="col-sm-3 control-label">Phản hồi</label>
+              <div class="col-sm-9">
+                <textarea class="form-control" [(ngModel)]="entity.acceptNotes" name="notes" rows="2"
+                  [readonly]="entity.status<1"></textarea>
+              </div>
+            </div>
+            <!-- Đoạn hiển thị các thông tin chi tiết -->
+            <div class="form-group" style="overflow: visible;">
+              <tabset>
+                <tab heading="Chi phí">
+                  <div class="form-group">
+                    <div class="col-sm-2">
+                      <button [disabled]="entity.status>0 || flagXem" type="button"
+                        class="btn btn-sm btn-primary" (click)="newFee()">Thêm</button>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div style="padding-left:15px; padding-right:15px">
+                      <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                          <tr>
+                            <th>Mã phí</th>
+                            <!-- <th>Tên phí</th> -->
+                            <th>Số lượng</th>
+                            <th>Chi phí</th>
+                            <th>Vat</th>
+                            <th>Tổng tiền</th>
+                            <th>Ghi chú</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of entity.detaileds let i=index;">
+                            <td>
+                              <!-- <ng-select name="listFeeDispatchOrderFee{{i}}" [items]="listFee" bindLabel="feeCode"
+                                bindValue="id" (change)="feeCodeChanged(item,$event)" [(ngModel)]="item.feeId"
+                                required [disabled]="flagXem || entity.status>0">
+                              </ng-select> -->
+                              <!-- {{item.feeCode}} -->
+                              <ng-select name="feeid{{ i }}" appendTo="body" [items]="listFee" bindLabel="feeName" bindValue="id"
+                              [(ngModel)]="item.feeId" placeholder="Chọn phí..." [readonly]="flagXem" (change)="onChangeFee($event,item)"
+                               [clearable]="false">
+                              <ng-template ng-option-tmp let-item="item">
+                                <span [ngClass]='!item.status?"locked-fee":""' >
+                                  {{ item.feeName }}
+                                </span>
+                              </ng-template>
+                            </ng-select>
+                            </td>
+                            <!-- <td style="width: 200px;">
+                              <ng-select name="listFeeDispatchOrderName{{i}}" [items]="listFee" bindLabel="feeName"
+                                bindValue="id" (change)="feeCodeChanged(item,$event)" [(ngModel)]="item.feeId"
+                                [ngStyle]="{'max-width': '200px'}" required [disabled]="flagXem || entity.status>0">
+                              </ng-select>
+                            </td> -->
+                            <td style="width: 80px;">
+                              <input type="text" class="form-control" name="quantityFee{{i}}" style="text-align: right;"
+                                [(ngModel)]="item.quantity" placeholder="Số lượng"  required
+                                [readonly]="flagXem || entity.status>0" [mask]="maskNumber" required [allowNegativeNumbers]="true"/>
+                            </td>
+                            <td style="width: 120px;">
+                              <input type="text" class="form-control" name="sotienFee{{i}}" style="text-align: right;"
+                                [(ngModel)]="item.cost" (change)="changeCost(item)"  required
+                                [readonly]="flagXem || entity.status>0" [mask]="maskNumber" required [allowNegativeNumbers]="true"/>
+                            </td>
+                            <td style="width: 120px;">
+                              <input type="text" class="form-control" name="vatFee{{i}}" style="text-align: right;"
+                                [(ngModel)]="item.vat" (change)="changeCost(item)" required
+                                [readonly]="flagXem || entity.status>0" [mask]="maskNumber" required [allowNegativeNumbers]="true"/>
+                            </td>
+                            <td style="width: 120px;">
+                              <input type="text" class="form-control" name="totlaFeeCost{{i}}"
+                                style="text-align: right;" [(ngModel)]="item.totalCost" [ngStyle]="{'max-width': '180px'}" required
+                                 readonly [mask]="maskNumber" required [allowNegativeNumbers]="true"/>
+                            </td>
+                            <td>
+                              <input class="form-control" [(ngModel)]="item.notes" type="text" name="note{{i}}"
+                                [readonly]="flagXem"  />
+                              <!-- {{item.note}} -->
+                            </td>
+                            <td style="width:40px">
+                              <button *ngIf="entity.status<1" [disabled]="flagXem"
+                                type="button" class="btn btn-warning btn-sm" (click)="deleteFee(item)">
+                                <i class="fa fa-trash"></i>
+                              </button>
+                            </td>
+                          </tr>
+                          <tr *ngIf="entity.detaileds?.length == 0">
+                            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </tab>
+              </tabset>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem && !flagNew && entity.status<1 " type="button"
+              class="btn btn-success btn-sm" (click)="updateState(1)">
+              <i class="fa fa-share-square-o"></i> Chuyển duyệt</button>
+            <button *ngIf="entity.type==1 && entity.status==1 && transportConfirmLevel=='1'" type="button"
+              class="btn btn-duyet btn-sm" (click)="duyetchotlenhB(1)">
+              <i class="fa backward"></i>Duyệt B1</button>
+            <button *ngIf="entity.type==1 && entity.status==2 && transportConfirmLevel=='2'" type="button"
+              class="btn btn-duyet btn-sm" (click)="duyetchotlenhB(2)">
+              <i class="fa backward"></i>Duyệt B2</button>
+            <button *ngIf="entity.type !=1 && closing_permission && entity.status==1 " type="button"
+              class="btn btn-duyet btn-sm" (click)="duyetchotlenh()">
+              <i class="fa backward"></i>Duyệt</button>
+            <button *ngIf="closing_permission && (entity.status ==1 || entity.status==2)" type="button"
+              class="btn btn-success btn-sm" (click)="huychotlenh()" [disabled]="entity.acceptNotes?.trim().length<1">
+              <i class="fa backward"></i>Từ chối</button>
+            <button *ngIf="!flagXem &&  entity.status<1" type="submit" class="btn btn-primary btn-sm"
+              [disabled]=" !addEditForm.form.valid || flagSave ">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalFeeAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>
+

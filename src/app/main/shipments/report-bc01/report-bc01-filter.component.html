@@ -1,0 +1,305 @@
+<div class="box box-primary box-chieu-cao">
+  <ngx-spinner
+  [fullScreen]="false"
+  bdOpacity = 0.9
+  bdColor = "#f4f4f9"
+  size = "medium"
+  color = "#1010ee"
+  type = "ball-clip-rotate"
+  size="medium">
+  <p class="loading">Tải dữ liệu ...</p>
+</ngx-spinner>
+  <div class="box-header with-border">
+    <div class="row" style="padding-bottom: 5px;">
+      <div class="col-md-2">
+        <h3 class="box-title">BÁO CÁO 01</h3>
+      </div>
+      <div class="col-md-1">
+        <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id" [(ngModel)]="_branchId"
+          (change)="changedBranch()" placeholder="Chọn chi nhánh..." [clearable]="false" [readonly]="_quyen>0">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="hinhthuc" [items]="listTypes" bindLabel="text" bindValue="id"
+          [(ngModel)]="_type" (change)="changeType()" placeholder="Chọn hính thức...">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+          class="form-control" />
+      </div>
+      <div class="col-md-2">
+        <!-- <ng-select name="ngaybaocao" [items]="listTypes1" bindLabel="text" bindValue="id" [(ngModel)]="_dateType" [clearable]="false"
+          (change)="changedType()" placeholder="Chọn ngày báo cáo">
+        </ng-select> -->
+      </div>
+      <div class="col-md-3">
+
+      </div>
+    </div>
+    <div class="row" style="padding-bottom: 5px;">
+      <div class="col-md-4">
+      </div>
+      <div class="col-md-4">
+        <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+          [(ngModel)]="_customerId" (change)="changedCustomer()" placeholder="Chọn đơn vị...">
+        </ng-select>
+      </div>
+      <div class="col-md-4">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa: DebitNo, JobId" title="Tìm kiến theo: Số Dbeit, JobId, Số tờ khai, Vận đơn..." />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()" title="">
+              <i class="fa fa-search"></i>
+            </button>
+            <button class="btn btn-success btn-sm" appPermission appFunction="STATEMENT" appAction="EXPORT"
+              (click)="exportExcel()" title="Xuất dữ liệu">
+              <i class="fa fa-file-excel-o"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th>Trạng thái</th>
+          <th>Mã khách hàng</th>
+          <th>Chi nhánh</th>
+          <th>Lô hàng</th>
+          <th>Ngày lập</th>
+          <th>Tờ khai</th>
+          <th>Ngày tờ khai</th>
+          <th>Vận đơn</th>
+          <th>Số Booking</th>
+          <th>Số Invoice</th>
+          <th>Loại hình</th>
+          <th>Số phiếu</th>
+          <th>Ngày doanh thu</th>
+          <th>Ngày vận hành</th>
+          <th>Mã phí</th>
+          <th>Nhóm DT</th>
+          <th>Nhóm TT</th>
+          <th>Tên phí</th>
+          <th>Mô tả</th>
+          <th>MÃ tham chiếu</th>
+          <th>Lượng hàng</th>
+          <th>Lượng hàng <br> (Kg)</th>
+          <th>Số khối <br> (cbm)</th>
+          <th>Kiện hàng</th>
+          <th>Số cont</th>
+          <th>ĐVT</th>
+          <th>Số lượng</th>
+          <th>Đơn giá</th>
+          <th>Số tiền</th>
+          <th>VAT</th>
+          <th>Số tiền <br>(+VAT)</th>
+          <th style="background-color: rgb(220, 138, 128);font-weight: bold;">Lợi nhuận</th>
+          <!-- <th>Tiền tệ</th> -->
+          <th>Tỷ giá</th>
+          <th>Số hóa đơn</th>
+          <th>Ghi chú</th>
+          <th>Tk ghi nợ</th>
+          <th>Tk ghi có</th>
+          <th>Nội dung</th>
+          <th>Người lập</th>
+          <th>Tên khách hàng</th>
+
+        </tr>
+        <tr>
+          <th style="text-align: left; font-weight: 300;">
+            <ng-select name="filterType" (change)="filter()" [(ngModel)]="selectedType" [clearable]="false" [items]="array" bindLabel="text" bindValue="value"></ng-select>
+          </th>
+          <th><input class="form-control" #makhSearchInput [(ngModel)]="makhSearch" (input)="filter()" type="text"
+              name="makhSearch" /></th>
+          <th><input class="form-control" #cnSearchInput [(ngModel)]="cnSearch" (input)="filter()" type="text"
+              name="cnSearch" /></th>
+          <th><input class="form-control" #lohangSearchInput [(ngModel)]="lohangSearch" (input)="filter()" type="text"
+              name="lohangSearch" /></th>
+          <th><input class="form-control" #ngaylapSearchInput [(ngModel)]="ngaylapSearch" (input)="filter()" type="text"
+              name="ngaylapSearch" /></th>
+          <th><input class="form-control" #tokhaiSearchInput [(ngModel)]="tokhaiSearch" (input)="filter()" type="text"
+              name="tokhaiSearch" /></th>
+          <th><input class="form-control" #ngaytokhaiSearchInput [(ngModel)]="ngaytokhaiSearch" (input)="filter()" type="text"
+              name="ngaytokhaiSearch" /></th>
+          <th><input class="form-control" #vandonSearchInput [(ngModel)]="vandonSearch" (input)="filter()" type="text"
+              name="vandonSearch" /></th>
+          <th><input class="form-control" #sobookingearchInput [(ngModel)]="sobookingearch" (input)="filter()" type="text"
+              name="sobookingearch" /></th>
+          <th><input class="form-control" #soinvoiceSearchInput [(ngModel)]="soinvoiceSearch" (input)="filter()" type="text"
+              name="soinvoiceSearch" /></th>
+          <th><input class="form-control" #loaihinhSearchInput [(ngModel)]="loaihinhSearch" (input)="filter()" type="text"
+              name="loaihinhSearch" /></th>
+          <th><input class="form-control" #sophieuSearchInput [(ngModel)]="sophieuSearch" (input)="filter()" type="text"
+              name="sophieuSearch" /></th>
+          <th><input class="form-control" #ngaySearchInput [(ngModel)]="ngaySearch" (input)="filter()" type="text"
+              name="ngaySearch" /></th>
+          <th><input class="form-control" #nngayvanhanhSearchInput [(ngModel)]="ngayvanhanhSearch" (input)="filter()" type="text"
+              name="ngayvanhanhSearch" /></th>
+          <th><input class="form-control" #maphiSearchInput [(ngModel)]="maphiSearch" (input)="filter()" type="text"
+              name="maphiSearch" /></th>
+          <th><input class="form-control" #nhomdtSearchInput [(ngModel)]="nhomdtSearch" (input)="filter()" type="text"
+              name="nhomdtSearch" /></th>
+          <th><input class="form-control" #nhomttSearchInput [(ngModel)]="nhomttSearch" (input)="filter()" type="text"
+              name="nhomttSearch" /></th>
+          <th><input class="form-control" #tenphiSearchInput [(ngModel)]="tenphiSearch" (input)="filter()" type="text"
+              name="tenphiSearch" /></th>
+          <th><input class="form-control" #motaSearchInput [(ngModel)]="motaSearch" (input)="filter()" type="text"
+              name="motaSearch" /></th>
+          <th><input class="form-control" #referCodeSearchInput [(ngModel)]="referCodeSearch" (input)="filter()" type="text"
+              name="referCodeSearch" /></th>
+          <th><input class="form-control" #luonghangSearchInput [(ngModel)]="luonghangSearch" (input)="filter()" type="text"
+              name="luonghangSearch" /></th>
+          <th><input class="form-control" #luonghang1Input [(ngModel)]="luonghang1" (input)="filter()" type="text"
+              name="luonghang1" /></th>
+          <th><input class="form-control" #sokhoiSearchInput [(ngModel)]="sokhoiSearch" (input)="filter()" type="text"
+              name="sokhoiSearch" /></th>
+          <th><input class="form-control" #kienhangSearchInput [(ngModel)]="kienhangSearch" (input)="filter()" type="text"
+              name="kienhangSearch" /></th>
+          <th><input class="form-control" #socontSearchInput [(ngModel)]="socontSearch" (input)="filter()" type="text"
+              name="socontSearch" /></th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th><input class="form-control" #sotienSearchInput [(ngModel)]="sotienSearch" (input)="filter()" type="text"
+            name="sotienSearch" /></th>
+            <th><input class="form-control" #vattSearchInput [(ngModel)]="vatSearch" (input)="filter()" type="text"
+              name="vatSearch" /></th>
+              <th><input class="form-control" #tongtienSearchInput [(ngModel)]="sotienvatSearch" (input)="filter()" type="text"
+                name="sotienvatSearch" /></th>
+          <th></th>
+          <!-- <th>Tiền tệ</th> -->
+          <th></th>
+          <th><input class="form-control" #sohoadonSearchInput [(ngModel)]="sohoadonSearch" (input)="filter()" type="text"
+              name="sohoadonSearch" /></th>
+          <th><input class="form-control" #ghichuSearchInput [(ngModel)]="ghichuSearch" (input)="filter()" type="text"
+              name="ghichuSearch" /></th>
+          <th><input class="form-control" #tknoSearchInput [(ngModel)]="tknoSearch" (input)="filter()" type="text"
+              name="tknoSearch" /></th>
+          <th><input class="form-control" #tkcoSearchInput [(ngModel)]="tkcoSearch" (input)="filter()" type="text"
+              name="tkcoSearch" /></th>
+          <th><input class="form-control" #noidungSearchInput [(ngModel)]="noidungSearch" (input)="filter()" type="text"
+              name="noidungSearch" /></th>
+          <th><input class="form-control" #tnkhSearchInput [(ngModel)]="tnkhSearch" (input)="filter()" type="text"
+              name="tnkhSearch" /></th>
+          <th><input class="form-control" #nguoilapSearchInput [(ngModel)]="nguoilapSearch" (input)="filter()" type="text"
+              name="nguoilapSearch" /></th>
+
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of visibleData">
+          <td class="trang-thai">
+            <span [ngClass]="
+              item.duyet? 'label label-success' : 'label label-danger'
+              ">{{ item.duyet ? 'Đã duyệt' : 'Chưa duyệt' }}</span>
+
+          </td>
+          <td>{{item.customerCode}}</td>
+          <td>{{item.chiNhanh}}</td>
+          <td>
+            <a [routerLink]="[]" (click)="showJob(item)">{{item.jobId}}</a>
+          </td>
+          <td>{{item.jobDate|date:'dd/MM/yyyy'}}</td>
+          <td>{{item.cdsNumber}}</td>
+          <td>{{item.cdsDate|date:'dd/MM/yyyy'}}</td>
+          <td>{{item.hawB_HBL}}</td>
+          <td>{{item.bookingNo}}</td>
+          <td>{{item.invoiceNo}}</td>
+          <td>{{item.loaiHinh}}</td>
+          <td>
+            <a [routerLink]="[]" (click)="showDebit(item)">{{item.soPhieu}}</a>
+          </td>
+          <td>{{item.ngay|date:'dd/MM/yyyy'}}</td>
+          <td>{{item.accountingDate|date:'dd/MM/yyyy'}}</td>
+
+          <td>{{item.maPhi}}</td>
+          <td>{{item.revenueGroupCode}}</td>
+          <td>{{item.paymentGroupCode}}</td>
+          <td>{{item.tenPhi}}</td>
+          <td>{{item.noiDung}}</td>
+          <td>{{item.referCode}}</td>
+          <td>{{item.luongHang}}</td>
+          <td>{{item.gw}}</td>
+          <td>{{item.cbm}}</td>
+          <td>{{item.package}}</td>
+          <td>{{item.cont}}</td>
+
+          <td>{{item.unit}}</td>
+          <td>{{item.quantity}}</td>
+          <td class="so-tien">{{item.price|VND}}</td>
+
+          <td class="so-tien {{item.n==0?'doanh-thu':'chi-phi'}}">{{item.soTien|VND}}</td>
+          <td class="so-tien {{item.n==0?'doanh-thu':'chi-phi'}}">{{item.vat|VND}}</td>
+          <td class="so-tien {{item.n==0?'doanh-thu':'chi-phi'}}">{{item.tongTien|VND}}</td>
+          <td
+            class="so-tien {{(item.loiNhuan>0 && item.buoc==1)?'duong cuoi-cung':(item.loiNhuan<0 && item.buoc==1)?'am cuoi-cung':''}}">
+            {{item.loiNhuan|VND}}
+          </td>
+          <!-- <td >{{item.tienTe}}</td> -->
+          <td class="so-tien">{{item.exchangeRate|VND}}</td>
+
+          <td>{{item.soHoaDon}}</td>
+          <td>{{item.note}}</td>
+
+          <td>{{item.debitAccount}}</td>
+          <td>{{item.creditAccount}}</td>
+          <td>{{item.ghiChu}}</td>
+
+          <td>{{item.employeeName}}</td>
+          <td class="column-name">{{item.customerName}}</td>
+
+
+        </tr>
+        <tr *ngIf="listData?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listFilter?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-6 text-right">
+          <div class="dataTables_info">
+            <span style="color: rgba(0, 68, 255, 0.926);" title="Lợi nhuận">Tổng tiền: {{ soTien|VND }}</span>
+            <span style="color: rgb(7, 156, 47);"> - VAT: {{ tienVat|VND }}</span>
+            <span style="color: rgba(255, 77, 0, 0.926);" title="Lợi nhuận bao gồm VAT"> - Tổng tiền(+VAT): {{ tongTien|VND }}</span>
+          </div>
+        </div>
+        <div class="col-md-3 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="8"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="sizeOfPage" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+<modal-shipment *ngIf="viewModalJob" (CloseModal)="closeModalJob()">
+</modal-shipment>
+<modal-dispatchorder *ngIf="viewModal" (CloseModal)="closeModal()">
+</modal-dispatchorder>
+<modal-dispatch-order-additional-fee *ngIf="viewAddFee" (CloseModal)="closeAddFeeModal()">
+</modal-dispatch-order-additional-fee>
+<modal-payment-detail *ngIf="viewPayment" (CloseModal)="closePaymentModal()">
+</modal-payment-detail>
+<modal-debit-notes *ngIf="viewDebitnote" (CloseModal)="closeDebitnote()">
+</modal-debit-notes>
+
+<!-- <div [ngBusy]="busy"></div> -->

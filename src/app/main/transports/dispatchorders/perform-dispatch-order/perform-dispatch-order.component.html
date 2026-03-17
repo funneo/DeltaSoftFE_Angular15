@@ -1,0 +1,253 @@
+<div>
+  <tabset>
+    <tab heading="Lệnh vận chuyển">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-2">
+              <h3 class="box-title">Thực hiện - Lệnh vận chuyển</h3>
+            </div>
+            <div class="col-md-2">
+              <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+                class="form-control">
+            </div>
+            <div class="col-md-2">
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+                  placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding">
+          <table class="table table-bordered table-striped table-hover">
+            <thead>
+              <tr>
+                <th>RefNo</th>
+                <th class="column-ten-sm">Biển số xe</th>
+                <th class="column-ten-lg">Cung đường</th>
+                <th class="column-ten-lg">Tóm tắt lệnh</th>
+                <th class="column-ten-lg">T/g đến nhà máy/cảng</th>
+                <th class="column-ten-lg">Người liên hệ</th>
+                <th>Tình trạng</th>
+                <th>Tác vụ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of listDispatchorder">
+                <td style="font-weight:600; padding-left: 1yem;">
+                  <a [routerLink]="[]" (click)="viewDetailed(item)">{{item.refNo}}</a>
+                </td>
+                <td>{{item.vihiclelLicensePlates}}</td>
+                <td>{{item.fullRoute}}</td>
+                <td>{{item.dispatchSummarize }}</td>
+                <td>
+                  <span>
+                    Nhà máy: {{item.inquiryTimeToTheFactory}}
+                  </span>
+                  <br>
+                  <span><b>Cảng: {{item.inquiryTimeToThePorts}}</b></span>
+                </td>
+                <td>{{item.contactInformation }}</td>
+                <span [ngClass]="{'label label-info': item.status===0,
+              'label label-success': item.status===1,
+              'label label-primary': item.status===2,
+              'label label-default': item.status===3,
+              'label label-danger': (item.status===4||item.status===5)}">
+                  {{item.rStatus}}
+                </span>
+              </tr>
+              <tr *ngIf="listDispatchorder?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listDispatchorder?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ totalRows }}</span>
+                </div>
+              </div>
+              <div class="col-md-7 text-right">
+                <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="9"
+                  (pageChanged)="pageChanged($event)" [itemsPerPage]="50" previousText="&lsaquo;" nextText="&rsaquo;"
+                  firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box -->
+      </div>
+    </tab>
+    <tab heading="Thực hiện lệnh FCL">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-2">
+              <h3 class="box-title">Lệnh vận chuyển FCL</h3>
+            </div>
+            <div class="col-md-2">
+              <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDateFcl($event)"
+                class="form-control">
+            </div>
+            <div class="col-md-2">
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" class="form-control" name="filter" (keyup.enter)="timKiemFcl()" [(ngModel)]="keyword"
+                  placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiemFcl()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding table-wrapper-scroll-y" id="div#style-scroll-1">
+          <table class="table table-bordered table-hover ">
+            <thead>
+              <tr>
+                <th>Tình trạng</th>
+                <th class="column-ten-sm">RefNo</th>
+                <th class="column-ten-sm">Ngày</th>
+                <th class="column-ten-sm">Người lập</th>
+                <th>Tên đơn vị vận chuyển</th>
+                <th class="column-ten-sm">Tên lái xe</th>
+                <th class="column-ten-sm">Biển số xe</th>
+                <th>Mooc</th>
+                <th class="column-ten-sm">Số Cont</th>
+                <th class="column-ten-lg">Điểm giao nhận hàng</th>
+                <th>Tổng Km</th>
+                <th>Tổng dầu</th>
+                <th>Ghi chú</th>
+                <th style="min-width: 80px;">Tác vụ</th>
+              </tr>
+              <tr>
+                <th></th>
+                <th><input class="form-control" #refNoSearchInput [(ngModel)]="refNoSearch" (input)="filter()" type="text"
+                    name="refNoSearch" /></th>
+                <th><input class="form-control" #ngaySearchInput [(ngModel)]="ngaySearch" (input)="filter()" type="text"
+                    name="ngaySearch" /></th>
+                <th><input class="form-control" #nguoilapSearchInput [(ngModel)]="nguoilapSearch" (input)="filter()"
+                    type="text" name="nguoilapSearch" /></th>
+                <th><input class="form-control" #nccSearchInput [(ngModel)]="nccSearch" (input)="filter()" type="text"
+                    name="nccSearch" /></th>
+                <th><input class="form-control" #bksSearchInput [(ngModel)]="bksSearch" (input)="filter()" type="text"
+                    name="bksSearch" /></th>
+                <th><input class="form-control" #laixeSearchInput [(ngModel)]="laixeSearch" (input)="filter()" type="text"
+                    name="laixeSearch" /></th>
+                <th><input class="form-control" #toantuyenSearchInput [(ngModel)]="toantuyenSearch" (input)="filter()"
+                    type="text" name="toantuyenSearch" /></th>
+                <th><input class="form-control" kmdauSearchInput [(ngModel)]="kmdauSearch" (input)="filter()" type="text"
+                    name="kmdauSearch" /></th>
+                <th><input class="form-control" kmcuoiSearchInput [(ngModel)]="kmcuoiSearch" (input)="filter()" type="text"
+                    name="kmcuoiSearch" /></th>
+                <th><input class="form-control" kmSearchInput [(ngModel)]="kmSearch" (input)="filter()" type="text"
+                    name="kmSearch" /></th>
+                <th><input class="form-control" #msumSearchInput [(ngModel)]="sumSearch" (input)="filter()" type="text"
+                    name="sumSearch" /></th>
+                <th><input class="form-control" ghichuSearchInput [(ngModel)]="ghichuSearch" (input)="filter()" type="text"
+                    name="ghichuSearch" /></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of visibleData" [style.background-color]="item.isSubcontractors ? '#DFF6FF' : 'white'">
+                <td>
+                  <span [ngClass]="item.isDeny? 'label label-danger': item.status == 6? ' label label-info': item.status==1 ?
+                  'label label-success': item.status==2? 'label label-primary': item.status==3?
+                  'label label-duyetB1':  (item.status===4)?'label label-duyetB2' :item.status==5 ?
+                  'label label-warning': 'label label-khoitao'">
+                  {{item.rStatus}}
+                </span>
+                </td>
+                <td>
+                  <a [routerLink]="[]" (click)="viewDetailedFcl(item)">{{item.refNo}}</a>
+                </td>
+                <td>
+                  <span>
+                    {{item.createdDate | date:'dd/MM/yyyy'}}
+                  </span>
+                </td>
+                <td class="column-ten-sm">
+                  <span>{{item.createdByName}}</span>
+                </td>
+                <td class="column-ten-lg">
+                  <span><b>{{item.shippingUnitName}}</b></span>
+                </td>
+                <td>
+                  <span><b>{{item.driverName}}</b></span>
+                </td>
+                <td class="column-ten-sm">
+                  <span>
+                    {{item.vehiclelLicensePlates}}
+                  </span>
+                </td>
+                <td>{{item.moocLicensePlates}}</td>
+                <td class="column-ten-sm">
+                  <div *ngIf="item.containerList?.length > 0">
+                    <div *ngFor="let container of item.containerList">{{ '- '+ container }}</div>
+                  </div>
+                </td>
+                <td class="column-ten-lg">
+                  <div *ngIf="item.locationList?.length > 0">
+                    <div *ngFor="let location of item.locationList">{{'- '+ location }}</div>
+                  </div>
+                </td>
+                <td>{{item.tongKm}}</td>
+                <td>{{item.tongdau}}</td>
+                <td>{{item.note}}</td>
+                <td>{{item.rStatus}}</td>
+              </tr>
+              <tr *ngIf="listFilterFcl?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listFilterFcl?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ totalRows }}</span>
+                </div>
+              </div>
+              <div class="col-md-7 text-right">
+                <div class="page">
+                  <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                    (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;"
+                    nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
+                  </pagination>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box -->
+      </div>
+    </tab>
+  </tabset>
+</div>
+
+<modal-perform-dispatch-order *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-perform-dispatch-order>
+<modal-perform-fcl *ngIf="viewModalFcl" (SaveSuccess)="saveSuccessFcl()" (CloseModal)="closeModalFcl()">
+</modal-perform-fcl>

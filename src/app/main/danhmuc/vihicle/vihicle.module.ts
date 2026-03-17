@@ -1,0 +1,31 @@
+import { NgModule } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+import { VihicleRoutingModule } from './vihicle-routing.module';
+import { VihicleComponent } from './vihicle.component';
+import { PaginationModule } from 'ngx-bootstrap/pagination';
+import { NgBusyModule } from 'ng-busy';
+import { FormsModule } from '@angular/forms';
+import { SharedDirectivesModule } from '@app/shared/directives/shared-directives.module';
+import { PipeSharedModule } from '@app/shared/pipes/pipe-shared.module';
+import { NgSelectModule } from '@ng-select/ng-select';
+import { ModalVihicleModule } from '@app/shared/components/danhmuc/modal-vihicle/modal-vihicle.module';
+import { TabsModule } from 'ngx-bootstrap/tabs';
+
+
+@NgModule({
+  declarations: [VihicleComponent],
+  imports: [
+    CommonModule,
+    PaginationModule,
+    NgBusyModule,
+    FormsModule,
+    SharedDirectivesModule,
+    PipeSharedModule,
+    NgSelectModule,
+    VihicleRoutingModule,
+    ModalVihicleModule,
+    TabsModule.forRoot(),
+  ]
+})
+export class VihicleModule { }

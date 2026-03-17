@@ -1,0 +1,269 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="box-header with-border">
+    <div class="row">
+      <div class="col-md-2">
+        <h3 class="box-title">Thanh toán</h3>
+      </div>
+      <div class="col-md-2">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+          class="form-control">
+      </div>
+      <div class="col-md-2">
+        <ng-select name="nhanvien" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
+          [(ngModel)]="_employeeId" (change)="changedEmployee($event)" placeholder="Chọn nhân viên..."
+          [readonly]="_auth>_viewAll" title="Chọn người thanh toán">
+        </ng-select>
+      </div>
+      <div class="col-md-3">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="keyword" title="Tìm kiếm theo: Lô hàng, số phiếu, nội dung thanh toán..." />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="col-md-3 text-right">
+        <button class="btn btn-primary btn-sm" (click)="edit(null,false)" [disabled]="!flagEdit" appPermission
+          appFunction="PAYMENT" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="PAYMENT" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+        <button class="btn btn-success btn-sm" (click)="export()" appFunction="PAYMENT" appAction="EXPORT">
+          <i class="fa fa-file-excel-o" style=" padding-right: 3px;"></i>Export
+        </button>
+      </div>
+    </div>
+    <div class="row" style="padding-top: 5px; padding-top: 5px;">
+      <div class="col-md-2" style="text-align: right; padding-top: 5px;">
+        <span>Chi nhánh:</span>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id" [(ngModel)]="_branchId"
+          (change)="changedChiNhanh()" title="Chọn chi nhánh..." [clearable]="false" [readonly]="_auth>0">
+        </ng-select>
+      </div>
+      <div class="col-md-1" style="text-align: right; padding-top: 5px;">
+        <span>Loại thanh toán:</span>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="loaiphieu" [items]="listType" bindLabel="text" bindValue="id" [(ngModel)]="_type"
+          (change)="timKiem()" title="Chọn loại thanh toán..." [clearable]="false">
+        </ng-select>
+      </div>
+      <div class="col-md-1" style="text-align: right; padding-top: 5px;">
+        <span>Loại hình:</span>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="loaihinh" [items]="listTypePaymentMode" bindLabel="text" bindValue="id"
+          [(ngModel)]="_isDirectPayment" (change)="timKiem()" title="Chọn loại hình thanh toán..." [clearable]="false">
+        </ng-select>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding" style="position: relative;">
+    <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f4f4f9" size="medium" color="#1010ee"
+      type="ball-clip-rotate" size="medium">
+      <p class="loading">Tải dữ liệu ...</p>
+    </ngx-spinner>
+    <table class="table table-bordered table-striped table-hover table_wrapper">
+      <thead>
+        <tr>
+          <th class="table-checkbox"></th>
+          <th>Người thanh toán</th>
+          <th>Số tham chiếu</th>
+          <th>Ngày</th>
+          <th>Tổng tiền</th>
+          <th>Nội dung</th>
+          <th>Khách hàng</th>
+          <th>Chứng từ liên quan</th>
+          <th>Lô hàng</th>
+          <th>Tờ khai</th>
+          <th>H/Bill</th>
+          <th>Booking</th>
+          <th>Lượng hàng</th>
+          <th>Số tạm ứng</th>
+          <th>Loại thanh toán</th>
+          <th style="width: 80px;">Trạng thái</th>
+          <!-- <th style="width: 80px;">Tác vụ</th> -->
+        </tr>
+        <tr>
+          <th></th>
+          <th><input class="form-control" #Input [(ngModel)]="nameSearch" (input)="filter()" type="text"
+              name="nameSearch" /></th>
+          <th><input class="form-control" #Input1 [(ngModel)]="refnoSearch" (input)="filter()" type="text"
+              name="refnoSearch" /></th>
+          <th><input class="form-control" #Input2 [(ngModel)]="ngaySearch" (input)="filter()" type="text"
+              name="ngaySearch" /></th>
+          <th><input class="form-control" #Input3 [(ngModel)]="tongtienSearch" (input)="filter()" type="text"
+              name="tongtienSearch" /></th>
+          <th><input class="form-control" #Input4 [(ngModel)]="noidungSearch" (input)="filter()" type="text"
+              name="noidungSearch" /></th>
+          <th><input class="form-control" #Input10 [(ngModel)]="khachhangSearch" (input)="filter()" type="text"
+              name="khachhangSearch" /></th>
+          <th><input class="form-control" #Input12 [(ngModel)]="chungtuSearch" (input)="filter()" type="text"
+              name="chungtuSearch" /></th>
+          <th><input class="form-control" #Input5 [(ngModel)]="jobidSearch" (input)="filter()" type="text"
+              name="jobidSearch" /></th>
+          <th><input class="form-control" #Input6 [(ngModel)]="tokhaiSearch" (input)="filter()" type="text"
+              name="tokhaiSearch" /></th>
+          <th><input class="form-control" #Input7 [(ngModel)]="hbillSearch" (input)="filter()" type="text"
+              name="hbillSearch" /></th>
+          <th><input class="form-control" #Input8 [(ngModel)]="bookingSearch" (input)="filter()" type="text"
+              name="bookingSearch" /></th>
+          <th><input class="form-control" #Input11 [(ngModel)]="luonghangSearch" (input)="filter()" type="text"
+              name="luonghangSearch" /></th>
+          <th><input class="form-control" #Input9 [(ngModel)]="tamungSearch" (input)="filter()" type="text"
+              name="tamungSearch" /></th>
+          <th></th>
+          <th style="text-align: left; font-weight: 300;">
+            <ng-select name="filterType" (change)="filter()" [(ngModel)]="selectedType" [clearable]="false"
+              [items]="array" bindLabel="text" bindValue="value"></ng-select>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- <tr *ngFor="let item of listFilter" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>{{item.employeeName}}</td>
+          <td>
+            <a [routerLink]="" (click)="edit(item.id,true)">{{item.refNo}}</a>
+          </td>
+          <td>{{item.refDate|date: "dd/MM/yyyy"}}</td>
+          <td class="so-tien">{{item.totalAmount|currency:'VND':''}}</td>
+          <td>{{item.contents }}</td>
+          <td>{{item.customerName }}</td>
+          <td>{{item.relatedDocuments}}</td>
+          <td>{{item.shipmentNo}}</td>
+          <td>{{item.cdsNumber}}</td>
+          <td>{{item.hawB_HBL}}</td>
+          <td>{{item.bookingNo}}</td>
+          <td>{{item.weight}}</td>
+          <td>{{item.advancesRefNo}}</td>
+          <td>{{item.type.toString()|List: listType}}</td>
+          <td class="trang-thai">
+            <span
+              [ngClass]="
+                item.step==2?'label label-success':(item.step==1?'label label-info':(item.step==-1?'label label-danger':(item.status?'label label-warning':'label label-primary')))">
+              {{item.step==2?'Đã duyệt':(item.step==1?'Đang duyệt':(item.step==-1?'Từ chối':(item.status?'Chuyển duyệt':'Khởi tạo'))) }}
+            </span>
+            <button type="button" class="btn btn-primary btn-sm action-file" title="Chứng từ đính kèm"
+              (click)="showFiles(item)">
+              <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Chứng từ...
+            </button>
+          </td>
+        </tr> -->
+        <ng-container *ngFor="let group of groupedItem">
+          <!-- Nhóm -->
+          <tr (click)="toggleGroup(group)" style=" cursor: pointer; background-color: #f9fafc;">
+            <td colspan="16" style="border-top: 1px solid  #ffffff;border-bottom: 1px solid #dadada;">
+              <strong>{{ group.key }}</strong> ({{ group.items.length }} mục)
+            </td>
+          </tr>
+          <!-- Dòng chi tiết -->
+          <ng-container *ngIf="group.isExpanded">
+            <tr *ngFor="let item of group.items" (click)="clickRow(item)">
+              <td class="table-checkbox">
+                <label class="custom-checkbox">
+                  <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                  <span class="helping-el"></span>
+                </label>
+              </td>
+              <td>{{ item.employeeName }}</td>
+              <td>
+                <a [routerLink]="[]" (click)="edit(item.id, true)">{{ item.refNo }}</a>
+              </td>
+              <td>{{ item.refDate | date: 'dd/MM/yyyy' }}</td>
+              <td class="so-tien">{{ item.totalAmount | currency: 'VND' : '' }}</td>
+              <td>{{ item.contents }}</td>
+              <td>{{ item.customerName }}</td>
+              <td>{{ item.relatedDocuments }}</td>
+              <td>{{ item.shipmentNo }}</td>
+              <td>{{ item.cdsNumber }}</td>
+              <td>{{ item.hawB_HBL }}</td>
+              <td>{{ item.bookingNo }}</td>
+              <td>{{ item.weight }}</td>
+              <td>{{ item.advancesRefNo }}</td>
+              <td>{{ item.isDirectPayment?.toString() | List: listTypePayment }}</td>
+              <td class="trang-thai">
+                <span [ngClass]="
+                    item.step == 2
+                      ? 'label label-success'
+                      : item.step == 1
+                      ? 'label label-info'
+                      : item.step == -1
+                      ? 'label label-danger'
+                      : item.status
+                      ? 'label label-warning'
+                      : 'label label-primary'
+                  ">
+                  {{
+                  item.step == 2
+                  ? 'Đã duyệt'
+                  : item.step == 1
+                  ? 'Đang duyệt'
+                  : item.step == -1
+                  ? 'Từ chối'
+                  : item.status
+                  ? 'Chuyển duyệt'
+                  : 'Khởi tạo'
+                  }}
+                </span>
+                <button type="button" class="btn btn-primary btn-sm action-file" title="Chứng từ đính kèm"
+                  (click)="showFiles(item)">
+                  <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Chứng từ...
+                </button>
+              </td>
+            </tr>
+          </ng-container>
+        </ng-container>
+        <tr *ngIf="listFilter?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listFilter?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="dataTables_info">
+            <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng tiền thanh toán: {{ totalAmount|VND
+              }}</span>
+          </div>
+        </div>
+        <div class="col-md-4 text-right">
+          <!-- <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div> -->
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>
+<!-- <modal-repayment-history *ngIf="viewRepaymentHistory" (CloseModal)="closeRepayment()">
+</modal-repayment-history> -->
+<!-- <div [ngBusy]="busy"></div> -->

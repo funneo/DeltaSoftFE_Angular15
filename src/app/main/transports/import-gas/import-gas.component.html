@@ -1,0 +1,124 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="row">
+    <div class="box-header with-border">
+      <div class="col-md-2">
+        <h3 class="box-title">Nhập dầu téc</h3>
+      </div>
+      <div class="col-md-2">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+          class="form-control">
+      </div>
+
+      <div class="col-md-2">
+        <ng-select name="supplier" [items]="listSupplier" bindLabel="supplierName" bindValue="id"
+          [(ngModel)]="supplierId" placeholder="Chọn nhà cung cấp...">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa" />
+          <span class="input-group-btn">
+            <button style="height: 28px;" class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+          <span class="input-group-btn">
+            <button style="height: 28px;" class="btn btn-success btn-flat btn-sm" type="button" (click)="export()">
+              <i class="fa fa-file-excel-o"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="col-md-4 text-right">
+        <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="IMPORTGAS" appAction="CREATE">
+          <i class="fa fa-plus"></i> Thêm
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+          appFunction="IMPORTGAS" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="IMPORTGAS" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+        <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+          <i class="fa fa-eye"></i> Xem
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Kho dầu</th>
+          <th>Sô phiếu</th>
+          <th>Ngày lập phiếu</th>
+          <th>Người lập</th>
+          <th>Tên nhà cung cấp</th>
+          <th>Biển số xe</th>
+          <th>Lái xe</th>
+          <th>Số lượng</th>
+          <th>Đơn giá</th>
+          <th>Ghi chú</th>
+          <th>Tình trạng</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listImportGas" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>{{item.siteName}}</td>
+          <td>{{item.refNo}} </td>
+          <td>{{item.createdDate | date:'dd/MM/yyyy'}}</td>
+          <td>{{item.createdByName}}</td>
+          <td>{{item.supplierName}}</td>
+          <td>{{item.licensePlate}}</td>
+          <td>{{item.driverName}}</td>
+          <td>{{item.quantity | number:'1.2-2'}}</td>
+          <td>{{item.unitPrice |VND}}</td>
+          <td>{{item.note}}</td>
+          <td><span
+              class="label {{item.status==0? 'label label-info':item.status==1? 'label-success':item.status==2? 'label-danger':'label-default'}}">{{item.rStatus}}
+            </span>
+          </td>
+        </tr>
+        <tr *ngIf="listImportGas?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listImportGas?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ listImportGas?.length }}</span>
+          </div>
+        </div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+
+<modal-import-gas *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-import-gas>
+<!-- <div [ngBusy]="busy"></div> -->

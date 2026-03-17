@@ -1,0 +1,154 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Thông tin trạm thu phí</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Tên trạm
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <input type="text" #tenvitri="ngModel" [(ngModel)]="entity.tollStationName" required  name="tenvitri"
+                  class="form-control" rows="3" placeholder="Nhập tên trạm" focus [readonly]="flagXem"/>
+                <small [hidden]="tenvitri.valid || (tenvitri.pristine && !addEditForm.submitted)"
+                  class="text-danger">
+                  Tên trạm không được để trống và không vượt quá 255 kí tự
+                </small>
+              </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Địa chỉ trạm
+                </label>
+                <div class="col-sm-9">
+                  <textarea  [(ngModel)]="entity.tollStationAddress"  rows="2" name="diachi"
+                    class="form-control" placeholder="Nhập địa chỉ" focus [readonly]="flagXem" ></textarea>
+                </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Điểm vào trạm
+              </label>
+              <div class="col-sm-9">
+                  <ng-select [items]="listTollLocations"   name="startLocation"
+                  bindLabel="name"
+                  bindValue="id"
+                  [(ngModel)]="entity.startLocation">
+                  </ng-select>
+              </div>
+          </div>
+          <div class="form-group">
+            <label class="col-sm-3 control-label">Điểm ra trạm
+            </label>
+            <div class="col-sm-9">
+                <ng-select [items]="listTollLocations"   name="endLocation"
+                bindLabel="name"
+                bindValue="id"
+                [(ngModel)]="entity.endLocation">
+                </ng-select>
+            </div>
+        </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Tên nhà thầu
+                </label>
+                <div class="col-sm-9">
+                    <input type="text" #tennt="ngModel" [(ngModel)]="entity.investorName" required  name="investorName"
+                    class="form-control" placeholder="Nhập tên nhà thầu" focus [readonly]="flagXem"/>
+                    <small [hidden]="tennt.valid || (tennt.pristine && !addEditForm.submitted)"
+                        class="text-danger">
+                        Tên nhà thầu không được để trống và không vượt quá 255 kí tự
+                    </small>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">ô nhà thầu
+                </label>
+                <div class="col-sm-9">
+                    <input type="text"  [(ngModel)]="entity.investorAddress"  name="investorAddress"
+                    class="form-control" rows="3" placeholder="Nhập tên nhà thầu" focus [readonly]="flagXem"/>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">Mã số thuế
+                </label>
+                <div class="col-sm-9">
+                    <input type="text" #mst="ngModel"  [(ngModel)]="entity.taxCode" required  name="taxCode"
+                    class="form-control" placeholder="Nhập Mã số thuế" focus [readonly]="flagXem"/>
+                    <small [hidden]="mst.valid || (mst.pristine && !addEditForm.submitted)"
+                        class="text-danger">
+                        Mã số thuế không được để trống và không vượt quá 255 kí tự
+                    </small>
+                </div>
+              </div>
+              <div class="form-group">
+                <fieldset>
+                  <legend>Giá vé thu phí tại trạm</legend>
+                    <div class="form-group">
+                      <div class="col-sm-2">
+                        <button type="button" class="btn btn-sm btn-primary" (click)="new()">Thêm</button>
+                      </div>
+                    </div>
+                    <div class="form-group" style="padding-left:15px; padding-right:15px">
+                      <table class="table table-bordered table-striped table-hover">
+                        <thead>
+                          <tr>
+                            <th>Loại phương tiện</th>
+                            <th>Số tiền</th>
+                            <th>Vat</th>
+                            <th>Tổng tiền</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of entity.listTicketPrices;let indexOfelement=index;">
+                            <td style="width: 40%;">
+                              <ng-select name="listRouteTollStation{{indexOfelement}}" [items]="listVehicleTypeBot"
+                                bindLabel="categoryName"
+                                bindValue="id" [(ngModel)]="item.vehicleTypeBotId" required>
+                              </ng-select>
+                            </td>
+                            <td style="width: 150px">
+                              <input type="text" class="form-control text-right" name="cost{{indexOfelement}}" [mask]="maskNumber0" [(ngModel)]="item.cost">
+                            </td>
+                            <td style="width: 100px; text-align: right;">
+                              <input type="text" class="form-control text-right" name="vat{{indexOfelement}}" [mask]="maskNumber0" [(ngModel)]="item.vat">
+                            </td>
+                            <td style="width: 150px;">
+                              <span class="form-control text-right">{{(item.cost + item.vat) | number}}</span>
+                            </td>
+                            <td style="width:10%;">
+                              <button type="button" class="btn btn-warning btn-sm" (click)="delete(indexOfelement)">
+                                <i class="fa fa-trash"></i> Xóa
+                              </button>
+                            </td>
+                          </tr>
+                          <tr *ngIf="entity.listTicketPrices?.length == 0">
+                            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                </fieldset>
+              </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

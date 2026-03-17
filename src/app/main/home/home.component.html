@@ -1,0 +1,145 @@
+<div class="box box-primary box-chieu-cao">
+  <!-- <div class="delta-bg">
+    <img src="/assets/img/deltabg.jpg" class="delta-bg-img"/>
+</div> -->
+  <div class="box-header with-border">
+    <div class="row">
+      <div class="col-md-2">BÁO CÁO</div>
+      <div class="col-md-2">
+        <ng-select name="chinhanh" [items]="listBranchs" bindLabel="branchCode" bindValue="id" [(ngModel)]="_branchId"
+          placeholder="Chọn chi nhánh..." [readonly]="_quyen>0" (change)="timKiem()">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="type" [items]="listType" bindLabel="text" bindValue="id" [(ngModel)]="_type"
+          placeholder="Chọn kiểu" [readonly]="false" [clearable]="false" (change)="timKiem()">
+        </ng-select>
+      </div>
+      <div class="col-md-3">
+        <div class="input-group">
+          <ng-select name="year" [items]="listNam" bindLabel="text" bindValue="id" [(ngModel)]="_year"
+            placeholder="Chọn năm..." [readonly]="false" [clearable]="false" (change)="timKiem()">
+          </ng-select>
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div class="row" style="padding-left: 25px;">
+      <div class="col-md-11">
+        <canvas baseChart [datasets]="barChartData" [labels]="barChartLabels" [options]="barChartOptions"
+          [plugins]="barChartPlugins" [legend]="barChartLegend" [type]="barChartType">
+        </canvas>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- <div class="box box-primary box-chieu-cao" style="margin-top: 5px;">
+  <div class="box-header with-border">
+
+    <div class="row">
+      <div class="col-md-4">
+        <p style="text-align: center; font-weight: bold;">KẾ HOẠCH KINH DOANH</p>
+        <div style="display: block">
+          <canvas baseChart [datasets]="barChartData" [labels]="barChartLabels" [options]="barChartOptions"
+            [plugins]="barChartPlugins" [legend]="barChartLegend" [chartType]="barChartType">
+          </canvas>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <p style="text-align: center; font-weight: bold;">DOANH THU</p>
+        <div style="display: block;">
+          <canvas baseChart [data]="pieChartData" [labels]="pieChartLabels" [chartType]="pieChartType"
+            [options]="pieChartOptions" [plugins]="pieChartPlugins" [legend]="pieChartLegend">
+          </canvas>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <p style="text-align: center; font-weight: bold;">CHI PHÍ</p>
+        <div style="display: block;">
+          <canvas baseChart [data]="doughnutChartData" [labels]="doughnutChartLabels" [chartType]="doughnutChartType">
+          </canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> -->
+  <!-- <div class="box-body">
+    <div class="row">      -->
+  <!-- <div class="col-md-6">
+        <p style="text-align: center; font-weight: bold;">THÔNG TIN</p>
+        <div style="display: block;">
+          <canvas baseChart [datasets]="lineChartData" [labels]="lineChartLabels" [chartType]="lineChartType"
+            [options]="lineChartOptions" [colors]="lineChartColors" [legend]="lineChartLegend"
+            [plugins]="lineChartPlugins">
+          </canvas>
+        </div>
+      </div> -->
+  <!-- <div class="col-md-12" style="padding-right: 0px;">
+        <agm-map
+        [latitude]="lat"
+        [longitude]="lng"
+        [zoom]="zoom"
+        [disableDefaultUI]="true"
+        (mapClick)="mapClicked($event)">
+        <agm-marker
+            *ngFor="let m of listBranchs; let i = index"
+            (markerClick)="clickedMarker(m.branchName, i)"
+            [latitude]="m.longitude"
+            [longitude]="m.latitude"
+            [markerDraggable]="false"
+            (dragEnd)="markerDragEnd(m, $event)">
+          <agm-info-window>
+            <h3>{{m.branchName}}</h3>
+            <p>Điện thoại: {{m.telNo}}</p>
+            <p>Địa chỉ: {{m.address}}</p>
+          </agm-info-window>
+        </agm-marker>
+      </agm-map>
+      </div> -->
+  <!-- <div class="col-md-6">
+        <h3 style="text-align: center; font-weight: bold;">TỒN KHO CHẤT THẢI NGUY HẠI</h3>
+        <table class="table table-bordered table-striped table-hover">
+          <thead>
+            <tr>
+              <th>Mã chất thải</th>
+              <th>Tên chất thải</th>
+              <th>Đơn vị tính</th>
+              <th>Tồn đầu</th>
+              <th>Phát sinh</th>
+              <th>Xử lý</th>
+              <th>Tồn cuối</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of listData1">
+              <td>{{ item.ma }}</td>
+              <td>{{ item.ten }}</td>
+              <td>Kg</td>
+              <td>{{ item.tonDau}}</td>
+              <td>{{ item.nhap}}</td>
+              <td>{{ item.xuat }}</td>
+              <td>{{ item.tonDau+item.nhap-item.xuat}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div> -->
+  <!-- </div>
+</div> -->
+
+  <!-- <div class="row">
+  <div class="col-md-3 offset">
+  </div>
+  <div class="col-md-6 col-sm-6 col-xs-12">
+    <div style="display: block;">
+      <canvas *ngIf="myLineChart" baseChart [datasets]="barChartData" [labels]="barChartLabels"
+        [legend]="barChartLegend" [chartType]="barChartType" hidden="idLoai == 0">
+      </canvas>
+    </div>
+  </div>
+</div> -->
+</div>

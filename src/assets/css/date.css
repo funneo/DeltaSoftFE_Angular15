@@ -1,0 +1,51 @@
+.date-ngay {
+    font-size: 12px;
+    height: 28px;
+    border-radius: 2px;
+    box-shadow: none;
+}
+
+.date-ngay .form-inline .input-group-addon,
+.date-time .form-inline .input-group-addon {
+    padding: 0px;
+    border-radius: 2px;
+    font-size: 12px;
+    width: 25px;
+}
+
+.date-ngay .form-control {
+    height: 28px;
+    border-radius: 2px;
+    font-size: 12px;
+    padding: 2px 5px;
+}
+
+.date-ngay .date {
+    width: 100%;
+}
+
+.form-horizontal .date-time .date, .date-time .date {
+    margin-left: 0px;
+    margin-right: 0px;
+    width: calc(60% - 2px);
+}
+.form-horizontal .date-time .timepicker, .date-time .timepicker{
+    margin-left: 0px;
+    margin-right: 0px;
+    width: calc(40% - 2px);
+}
+
+#week-picker-wrapper .datepicker .datepicker-days tr td.active~td,
+#week-picker-wrapper .datepicker .datepicker-days tr td.active {
+    color: #fff;
+    background-color: #04c;
+    border-radius: 0;
+}
+
+#week-picker-wrapper .datepicker .datepicker-days tr:hover td,
+#week-picker-wrapper .datepicker table tr td.day:hover,
+#week-picker-wrapper .datepicker table tr td.focused {
+    color: #000!important;
+    background: #e5e2e3!important;
+    border-radius: 0!important;
+}

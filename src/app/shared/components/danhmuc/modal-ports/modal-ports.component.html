@@ -1,0 +1,98 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Thông tin Cảng/Bãi</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Tên cảng/bãi
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-10">
+                <textarea #tenvitri="ngModel" [(ngModel)]="entity.name" required  name="tenvitri"
+                  class="form-control" rows="2" placeholder="Nhập tên vị trí" focus [readonly]="flagXem"></textarea>
+                <small [hidden]="tenvitri.valid || (tenvitri.pristine && !addEditForm.submitted)"
+                  class="text-danger">
+                  Tên vị trí không được để trống và không vượt quá 255 kí tự
+                </small>
+              </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Địa chỉ
+                </label>
+                <div class="col-sm-10">
+                  <textarea  [(ngModel)]="entity.address"  rows="3" name="diachi"
+                    class="form-control" placeholder="Nhập địa chỉ" focus [readonly]="flagXem" ></textarea>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Google Location
+                </label>
+                <div class="col-sm-10">
+                  <input type="text" [(ngModel)]="entity.googleLocations"  maxlength="255" name="googleLocations"
+                    class="form-control" placeholder="Nhập Gôogle Locations" focus [readonly]="flagXem" />
+                </div>
+              </div>
+            
+              <div class="form-group">
+                <label for="inputEmail3" class="col-sm-2 control-label">Kinh độ</label>
+                <div class="col-sm-4">
+                  <input type="number"  [(ngModel)]="entity.longtitude" step="0.000001"
+                    name="longtitude" class="form-control" placeholder="Nhập kinh độ"
+                    [readonly]="flagXem" />
+                </div>
+                <label for="inputEmail3" class="col-sm-2 control-label">Vĩ độ</label>
+                <div class="col-sm-4">
+                  <input type="number"  [(ngModel)]="entity.latitude" step="0.000001"
+                    name="latitude" class="form-control" placeholder="Nhập kinh độ"
+                    [readonly]="flagXem" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Số Km/lượt <span class="error">*</span></label>
+                <div class="col-sm-2">
+                  <input class="form-control" [(ngModel)]="entity.km" type="text" name="quantity" [mask]="mask0" 
+                    [readonly]="flagXem" required />
+                </div>
+                <label class="col-sm-6 control-label">Khoảng cách TB đến Ngã 3 WB <span class="error">*</span></label>
+                <div class="col-sm-2">
+                  <input class="form-control" [(ngModel)]="entity.distance" type="text" name="distance" [mask]="maskNumber"
+                    [readonly]="flagXem" required />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Nhóm cảng
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-2">
+                  <ng-select [items]="listGroupPorts"  #tinh ="ngModel" name="provinceCode"
+                  bindLabel="code"
+                  bindValue="code"
+                  [(ngModel)]="entity.groupPort">
+                  </ng-select>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,19 @@
+{
+  "list": [
+    {
+      "id": 10,
+      "text": "10",
+      "status": true
+    },
+    {
+      "id": 8,
+      "text": "8",
+      "status": false
+    },
+    {
+      "id": 0,
+      "text": "0",
+      "status": false
+    }
+  ]
+}

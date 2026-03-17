@@ -1,0 +1,32 @@
+.column-ten  {
+  width: 350px;
+}
+
+.column-gia-tri  {
+  width: 100px;
+  text-align: right;
+}
+
+.column-ma  {
+  width: 100px;
+}
+
+.lable-title {
+  color: red;
+}
+
+#scrolltable {
+  overflow-y: scroll;
+  overflow-x: scroll;
+}
+
+.my-custom-scrollbar {
+  position: relative;
+  max-height: 250px;
+  overflow: auto;
+}
+
+.table-wrapper-scroll-y {
+  display: block;
+}
+

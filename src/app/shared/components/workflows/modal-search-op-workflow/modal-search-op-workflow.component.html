@@ -1,0 +1,74 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalListWorkflow="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Lựa chọn Id Công việc</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalListWorkflow.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="form-group">
+                <div style="padding-left:15px; padding-right:15px">
+                  <table class="table table-bordered table-hover">
+                    <thead>
+                      <tr>
+                        <th *ngIf="!flagView"></th>
+                        <th >Id</th>
+                        <th>JobId</th>
+                        <th>Chi tiết công việc</th>
+                      </tr>
+                      <tr>
+                        <th *ngIf="!flagView"></th>
+                        <th>
+                          <input class="form-control" #IdInput [(ngModel)]="IdSearch" (input)="filter()" type="text" name="IdSearch"/>
+                        </th>
+                        <th>
+                          <input class="form-control" #jobIdInput [(ngModel)]="jobIdSearch" (input)="filter()" type="text" name="jobIdSearch"/>
+                        </th>
+                        <th>
+                          <input class="form-control" #vandonInput [(ngModel)]="hawB_HBLSearch" (input)="filter()" type="text" name="hawB_HBLSearch"/>
+                        </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of filteredWorkflows" [ngClass]="{'bgColorSkyblue': item.checked}" (click)="clickRow(item)">
+                        <td class="table-checkbox"  *ngIf="!flagView">
+                          <label class="custom-checkbox">
+                            <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                            <span class="helping-el"></span>
+                          </label>
+                        </td>
+                        <td>
+                          <a style="color: blue;" (click)="viewNhanviec(item.id)">
+                            <b>{{item.id}}</b></a>
+                        </td>
+                        <td >{{item.jobId}}</td>
+                        <td>{{item.jobDescription}}</td>
+                      </tr>
+                      <tr *ngIf="filteredWorkflows?.length == 0">
+                        <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+            </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+      <div class="modal-footer">
+        <div class="box-footer text-right">
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="!isSelected" (click)="saveChange()">
+            <i class="fa fa-edit"></i> Chọn</button>
+          <button type="button" (click)="modalListWorkflow.hide()" class="btn btn-danger btn-sm">
+            <i class="fa fa-close"></i> Hủy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<modal-view-workflows *ngIf="viewModalWorkflows">
+</modal-view-workflows>
+

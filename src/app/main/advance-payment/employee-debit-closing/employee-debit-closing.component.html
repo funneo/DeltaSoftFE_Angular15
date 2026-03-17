@@ -1,0 +1,280 @@
+<div>
+  <tabset>
+
+    <!-- ===== TAB TIỀN MẶT ===== -->
+    <tab heading="Tiền mặt">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-2" style="padding-top: 5px;">
+              <h3 class="box-title">Chốt công nợ tiền mặt</h3>
+            </div>
+            <div class="col-md-2">
+              <input type="text" daterangepicker [options]="dateOptionsTM" (selected)="selectedDateTM($event)"
+                class="form-control">
+            </div>
+            <div class="col-md-2">
+              <ng-select name="nhanvienTM" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
+                [(ngModel)]="_employeeIdTM" (change)="changedEmployeeTM($event)" placeholder="Chọn nhân viên..."
+                [readonly]="_auth>_viewAll">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" class="form-control" name="keywordTM" (keyup.enter)="loadDataTM()"
+                  [(ngModel)]="keywordTM" placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="loadDataTM()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+            <div class="col-md-4 text-right">
+              <button class="btn btn-success btn-sm" (click)="addTM()" appPermission appFunction="ADVANCE"
+                appAction="CREATE">
+                <i class="fa fa-plus"></i> Thêm
+              </button>
+              <button class="btn btn-primary btn-sm" (click)="editTM(false)" [disabled]="!flagEditTM" appPermission
+                appFunction="ADVANCE" appAction="UPDATE">
+                <i class="fa fa-edit"></i> Sửa
+              </button>
+              <button class="btn btn-danger btn-sm" (click)="deleteConfirmTM()" [disabled]="!flagDeleteTM" appPermission
+                appFunction="ADVANCE" appAction="DELETE">
+                <i class="fa fa-trash"></i> Xóa
+              </button>
+              <button class="btn btn-success btn-sm" (click)="exportTM()" appFunction="ADVANCE" appAction="EXPORT">
+                <i class="fa fa-file-excel-o"></i> Export
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding">
+          <table class="table table-bordered table-striped table-hover">
+            <thead>
+              <tr>
+                <th class="table-checkbox"></th>
+                <th>Người lập phiếu</th>
+                <th>Số phiếu</th>
+                <th>Ngày lập</th>
+                <th>Dư nợ trước</th>
+                <th style="min-width: 150px;">PS Nợ</th>
+                <th style="min-width: 150px;">PS Có</th>
+                <th style="min-width: 150px;">Dư nợ cuối</th>
+                <th>Nội dung</th>
+                <th>Ghi chú</th>
+                <th>Trạng thái</th>
+              </tr>
+              <tr>
+                <th></th>
+                <th><input class="form-control" [(ngModel)]="nguoiSearchTM" (input)="filterTM()" type="text"
+                    name="nguoiSearchTM" /></th>
+                <th><input class="form-control" [(ngModel)]="soSearchTM" (input)="filterTM()" type="text"
+                    name="soSearchTM" /></th>
+                <th><input class="form-control" [(ngModel)]="ngaySearchTM" (input)="filterTM()" type="text"
+                    name="ngaySearchTM" /></th>
+                <th><input class="form-control" [(ngModel)]="previousSearchTM" (input)="filterTM()" type="text"
+                    name="previousSearchTM" /></th>
+                <th><input class="form-control" [(ngModel)]="debitSearchTM" (input)="filterTM()" type="text"
+                    name="debitSearchTM" /></th>
+                <th><input class="form-control" [(ngModel)]="creditSearchTM" (input)="filterTM()" type="text"
+                    name="creditSearchTM" /></th>
+                <th><input class="form-control" [(ngModel)]="tienSearchTM" (input)="filterTM()" type="text"
+                    name="tienSearchTM" /></th>
+                <th><input class="form-control" [(ngModel)]="noidungSearchTM" (input)="filterTM()" type="text"
+                    name="noidungSearchTM" /></th>
+                <th><input class="form-control" [(ngModel)]="ghichuSearchTM" (input)="filterTM()" type="text"
+                    name="ghichuSearchTM" /></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of listFilterTM" (click)="clickRowTM(item)">
+                <td class="table-checkbox">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                    <span class="helping-el"></span>
+                  </label>
+                </td>
+                <td>{{item.employeeFullName}}</td>
+                <td>
+                  <a [routerLink]="[]" (click)="showModalTM(item)">{{item.refNo}}</a>
+                </td>
+                <td>{{item.createdDate | date: "dd/MM/yyyy"}}</td>
+                <td class="so-tien">{{item.previousDebit | VND}}</td>
+                <td class="so-tien">{{item.debit | VND}}</td>
+                <td class="so-tien">{{item.credit | VND}}</td>
+                <td class="so-tien">{{item.debitBalance | VND}}</td>
+                <td>{{item.contents}}</td>
+                <td>{{item.note}}</td>
+                <td class="trang-thai">
+                  <span
+                    [ngClass]="item.status==0 ? 'label label-primary' : item.status==1 ? 'label label-warning' : item.status<0 ? 'label label-danger' : 'label label-success'">
+                    {{ item.status<0 ? 'Từ chối' : item.status==0 ? 'Khởi tạo' : item.status==1 ? 'Chuyển duyệt'
+                      : 'Duyệt' }} </span>
+                </td>
+              </tr>
+              <tr *ngIf="listFilterTM?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listFilterTM?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ totalRowsTM }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box -->
+      </div>
+    </tab>
+
+    <!-- ===== TAB CHUYỂN KHOẢN ===== -->
+    <tab heading="Chuyển khoản">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-2" style="padding-top: 5px;">
+              <h3 class="box-title">Chốt công nợ chuyển khoản</h3>
+            </div>
+            <div class="col-md-2">
+              <input type="text" daterangepicker [options]="dateOptionsCK" (selected)="selectedDateCK($event)"
+                class="form-control">
+            </div>
+            <div class="col-md-2">
+              <ng-select name="nhanvienCK" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
+                [(ngModel)]="_employeeIdCK" (change)="changedEmployeeCK($event)" placeholder="Chọn nhân viên..."
+                [readonly]="_auth>_viewAll">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" class="form-control" name="keywordCK" (keyup.enter)="loadDataCK()"
+                  [(ngModel)]="keywordCK" placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="loadDataCK()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+            <div class="col-md-4 text-right">
+              <button class="btn btn-success btn-sm" (click)="addCK()" appPermission appFunction="ADVANCE"
+                appAction="CREATE">
+                <i class="fa fa-plus"></i> Thêm
+              </button>
+              <button class="btn btn-primary btn-sm" (click)="editCK(false)" [disabled]="!flagEditCK" appPermission
+                appFunction="ADVANCE" appAction="UPDATE">
+                <i class="fa fa-edit"></i> Sửa
+              </button>
+              <button class="btn btn-danger btn-sm" (click)="deleteConfirmCK()" [disabled]="!flagDeleteCK" appPermission
+                appFunction="ADVANCE" appAction="DELETE">
+                <i class="fa fa-trash"></i> Xóa
+              </button>
+              <button class="btn btn-success btn-sm" (click)="exportCK()" appFunction="ADVANCE" appAction="EXPORT">
+                <i class="fa fa-file-excel-o"></i> Export
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding">
+          <table class="table table-bordered table-striped table-hover">
+            <thead>
+              <tr>
+                <th class="table-checkbox"></th>
+                <th>Người lập phiếu</th>
+                <th>Số phiếu</th>
+                <th>Ngày lập</th>
+                <th>Dư nợ trước</th>
+                <th style="min-width: 150px;">PS Nợ</th>
+                <th style="min-width: 150px;">PS Có</th>
+                <th style="min-width: 150px;">Dư nợ cuối</th>
+                <th>Nội dung</th>
+                <th>Ghi chú</th>
+                <th>Trạng thái</th>
+              </tr>
+              <tr>
+                <th></th>
+                <th><input class="form-control" [(ngModel)]="nguoiSearchCK" (input)="filterCK()" type="text"
+                    name="nguoiSearchCK" /></th>
+                <th><input class="form-control" [(ngModel)]="soSearchCK" (input)="filterCK()" type="text"
+                    name="soSearchCK" /></th>
+                <th><input class="form-control" [(ngModel)]="ngaySearchCK" (input)="filterCK()" type="text"
+                    name="ngaySearchCK" /></th>
+                <th><input class="form-control" [(ngModel)]="previousSearchCK" (input)="filterCK()" type="text"
+                    name="previousSearchCK" /></th>
+                <th><input class="form-control" [(ngModel)]="debitSearchCK" (input)="filterCK()" type="text"
+                    name="debitSearchCK" /></th>
+                <th><input class="form-control" [(ngModel)]="creditSearchCK" (input)="filterCK()" type="text"
+                    name="creditSearchCK" /></th>
+                <th><input class="form-control" [(ngModel)]="tienSearchCK" (input)="filterCK()" type="text"
+                    name="tienSearchCK" /></th>
+                <th><input class="form-control" [(ngModel)]="noidungSearchCK" (input)="filterCK()" type="text"
+                    name="noidungSearchCK" /></th>
+                <th><input class="form-control" [(ngModel)]="ghichuSearchCK" (input)="filterCK()" type="text"
+                    name="ghichuSearchCK" /></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of listFilterCK" (click)="clickRowCK(item)">
+                <td class="table-checkbox">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                    <span class="helping-el"></span>
+                  </label>
+                </td>
+                <td>{{item.employeeFullName}}</td>
+                <td>
+                  <a [routerLink]="[]" (click)="showModalCK(item)">{{item.refNo}}</a>
+                </td>
+                <td>{{item.createdDate | date: "dd/MM/yyyy"}}</td>
+                <td class="so-tien">{{item.previousDebit | VND}}</td>
+                <td class="so-tien">{{item.debit | VND}}</td>
+                <td class="so-tien">{{item.credit | VND}}</td>
+                <td class="so-tien">{{item.debitBalance | VND}}</td>
+                <td>{{item.contents}}</td>
+                <td>{{item.note}}</td>
+                <td class="trang-thai">
+                  <span
+                    [ngClass]="item.status==0 ? 'label label-primary' : item.status==1 ? 'label label-warning' : item.status<0 ? 'label label-danger' : 'label label-success'">
+                    {{ item.status<0 ? 'Từ chối' : item.status==0 ? 'Khởi tạo' : item.status==1 ? 'Chuyển duyệt'
+                      : 'Duyệt' }} </span>
+                </td>
+              </tr>
+              <tr *ngIf="listFilterCK?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listFilterCK?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-4">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ totalRowsCK }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box -->
+      </div>
+    </tab>
+
+  </tabset>
+</div>
+
+<modal-employee-debit-closing *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-employee-debit-closing>

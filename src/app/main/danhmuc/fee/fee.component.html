@@ -1,0 +1,275 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="row">
+    <div class="box-header with-border">
+      <div class="col-md-12">
+        <ul class="nav nav-tabs">
+          <li [class.active]="tab == 1"><a (click)="setTab(1)">Danh mục phí cũ</a></li>
+          <li [class.active]="tab == 2"><a (click)="setTab(2)">Danh mục phí mới (FeeCodes)</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <!-- Sub-Tabs for FeeCodes -->
+  <div class="row" *ngIf="tab == 2" style="margin-top: 10px; margin-bottom: 10px;">
+    <div class="col-md-12">
+      <div class="btn-group sub-tabs-group" style="margin-left: 15px;">
+        <button type="button" class="btn btn-default" [class.btn-primary]="subTab == 1" (click)="setSubTab(1)">Cấp 1 (Lĩnh vực)</button>
+        <button type="button" class="btn btn-default" [class.btn-primary]="subTab == 2" (click)="setSubTab(2)">Cấp 2 (Nhóm)</button>
+        <button type="button" class="btn btn-default" [class.btn-primary]="subTab == 3" (click)="setSubTab(3)">Cấp 3 (Chi tiết)</button>
+      </div>
+    </div>
+  </div>
+  <div class="row" style="margin-top: 10px;">
+    <div class="box-header with-border">
+      <div class="col-md-2">
+        <h3 class="box-title">{{ tab == 1 ? 'Danh mục phí' : 'Danh mục FeeCodes' }}</h3>
+      </div>
+      <div class="col-md-3" *ngIf="tab == 1">
+        <ng-select name="groupfee" [items]="listGFees" bindLabel="groupName" bindValue="id" [(ngModel)]="_gFeeId" (change)="changedGFee($event)"
+        placeholder="Chọn nhóm phí...">
+        </ng-select>
+      </div>
+      <div class="col-md-3" *ngIf="tab == 2">
+        <!-- Sub-tabs indicator or additional controls -->
+      </div>
+      <div class="col-md-3">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa" />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+          <span class="input-group-btn">
+            <button class="btn btn-success btn-flat btn-sm"
+            (click)="exportExcel()" title="Xuất dữ liệu">
+            <i class="fa fa-file-excel-o"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="col-md-4 text-right">
+        <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="FEE"
+          appAction="CREATE">
+          <i class="fa fa-plus"></i> Thêm
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="edit(null,false)" [disabled]="!flagEdit" appPermission
+          appFunction="FEE" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="FEE" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding" [class.sub-tab-active]="tab == 2">
+    <!-- Tab 1: Old Fee -->
+    <table *ngIf="tab == 1" class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+              <span class="helping-el"></span>
+            </label>
+          </th>
+          <th>Kí hiệu</th>
+          <th>Tên phí</th>
+          <th>Nhóm phí</th>
+          <th>Nhóm phí DT</th>
+          <th>Nhóm phí TT</th>
+          <th>Ghi chú</th>
+          <th>Trạng thái</th>
+        </tr>
+        <!-- Filter Row for Old Fee -->
+        <tr>
+          <td></td>
+          <td>
+            <input type="text" class="form-control input-sm" [(ngModel)]="filterFeeCode" (keyup.enter)="timKiem()" placeholder="Mã..." />
+          </td>
+          <td>
+            <input type="text" class="form-control input-sm" [(ngModel)]="filterFeeName" (keyup.enter)="timKiem()" placeholder="Tên..." />
+          </td>
+          <td>
+            <input type="text" class="form-control input-sm" [(ngModel)]="filterGroupFee" (keyup.enter)="timKiem()" placeholder="Nhóm..." />
+          </td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listFee" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>
+            <a [routerLink]="[]" (click)="edit(item,true)">{{item.feeCode}}</a>
+          </td>
+          <td>{{item.feeName}}</td>
+          <td>{{item.groupCode}}</td>
+          <td>{{item.revenueGroupName}}</td>
+          <td>{{item.paymentGroupName}}</td>
+          <td>{{item.notes }}</td>
+          <td class="trang-thai">
+            <button *ngIf="_accept && !item.status" type="button" class="btn btn-success btn-sm action" title="Duyệt"
+            (click)="accept(item)">
+            <i class="fa fa-check-circle-o" aria-hidden="true"></i> Duyệt
+          </button>
+            <span [ngClass]="
+                item.status  ? 'label label-success' : 'label label-danger'
+              ">{{ item.status | Status }}</span>
+          </td>
+        </tr>
+        <tr *ngIf="listFee?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- FeeCode Table (Tabs 2, 3, 4) -->
+    <table *ngIf="tab > 1" class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+              <span class="helping-el"></span>
+            </label>
+          </th>
+          <th *ngIf="subTab >= 2">Lĩnh vực (Cấp 1)</th>
+          <th *ngIf="subTab == 3">Nhóm (Cấp 2)</th>
+          <th>Mã Fee</th>
+          <th>Tên phí (VN)</th>
+          <th>Tên phí (EN)</th>
+          <th *ngIf="subTab == 3">Ánh xạ (Cũ)</th>
+          <th>Ghi chú</th>
+          <th>Trạng thái</th>
+          <th>Thao tác</th>
+        </tr>
+        <!-- Filter Row -->
+        <tr>
+          <td></td>
+          <td *ngIf="subTab >= 2">
+            <ng-select [items]="_listFCLvl1" bindLabel="feeCode" bindValue="id" [(ngModel)]="_selectedFCLvl1" (change)="onFCLvl1Change($event)"
+              placeholder="Tất cả" [clearable]="true">
+              <ng-template ng-option-tmp let-item="item">
+                {{item.feeCode}} - {{item.feeName}}
+              </ng-template>
+            </ng-select>
+          </td>
+          <td *ngIf="subTab == 3">
+            <ng-select [items]="_listFCLvl2" bindLabel="feeCode" bindValue="id" [(ngModel)]="_selectedFCLvl2" (change)="onFCLvl2Change($event)"
+              placeholder="Tất cả" [clearable]="true">
+              <ng-template ng-option-tmp let-item="item">
+                {{item.feeCode}} - {{item.feeName}}
+              </ng-template>
+            </ng-select>
+          </td>
+          <td>
+            <input type="text" class="form-control input-sm" [(ngModel)]="filterFeeCode" (keyup.enter)="timKiem()" placeholder="Lọc mã" />
+          </td>
+          <td>
+            <input type="text" class="form-control input-sm" [(ngModel)]="filterFeeName" (keyup.enter)="timKiem()" placeholder="Lọc tên VN" />
+          </td>
+          <td>
+            <input type="text" class="form-control input-sm" [(ngModel)]="filterFeeNameEn" (keyup.enter)="timKiem()" placeholder="Lọc tên EN" />
+          </td>
+          <td *ngIf="subTab == 3"></td>
+          <td></td>
+          <td>
+            <ng-select [items]="_feeCodeStatusList" bindLabel="name" bindValue="id" [(ngModel)]="_feeCodeStatus" (change)="loadData()"
+              [clearable]="false" style="min-width: 120px;">
+            </ng-select>
+          </td>
+          <td></td>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listFeeCode" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td *ngIf="subTab >= 2">{{item.parentName1}}</td>
+          <td *ngIf="subTab == 3">{{item.parentName2}}</td>
+          <td>
+            <a [routerLink]="[]" (click)="edit(item,true)">{{item.feeCode}}</a>
+          </td>
+          <td>{{item.feeName}}</td>
+          <td>{{item.feeNameEnglish}}</td>
+          <td *ngIf="subTab == 3">{{item.mappedCodes}}</td>
+          <td>{{item.notes}}</td>
+          <td>
+            <span [ngClass]="{
+              'label label-default': item.status == 0,
+              'label label-warning': item.status == 1,
+              'label label-success': item.status == 2,
+              'label label-danger': item.status == 3
+            }">
+              {{ item.status == 0 ? 'Khởi tạo' : item.status == 1 ? 'Chuyển duyệt' : item.status == 2 ? 'Duyệt' : 'Khóa' }}
+            </span>
+          </td>
+          <td class="text-center">
+            <button *ngIf="item.status == 0" class="btn btn-info btn-xs" (click)="changeStatus(item, 1)" title="Chuyển duyệt">
+              <i class="fa fa-paper-plane"></i>
+            </button>
+            <button *ngIf="item.status == 1" class="btn btn-success btn-xs" (click)="changeStatus(item, 2)" title="Duyệt">
+              <i class="fa fa-check"></i>
+            </button>
+            <button *ngIf="item.status == 2" class="btn btn-danger btn-xs" (click)="changeStatus(item, 3)" title="Khóa">
+              <i class="fa fa-lock"></i>
+            </button>
+            <button *ngIf="item.status == 3" class="btn btn-warning btn-xs" (click)="changeStatus(item, 2)" title="Mở khóa">
+              <i class="fa fa-unlock"></i>
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="listFeeCode?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="(tab == 1 ? listFee?.length : listFeeCode?.length) > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+
+<modal-fee *ngIf="viewModal && tab == 1" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-fee>
+<modal-fee-code *ngIf="viewModal && tab > 1 && modalType == 3" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-fee-code>
+<modal-fee-code-lvl1 *ngIf="viewModal && tab > 1 && modalType == 1" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-fee-code-lvl1>
+<modal-fee-code-lvl2 *ngIf="viewModal && tab > 1 && modalType == 2" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-fee-code-lvl2>
+<!-- <div [ngBusy]="busy"></div> -->

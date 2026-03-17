@@ -1,0 +1,80 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalDetailed="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Chi tiết báo giá</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalDetailed.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addDetailedForm="ngForm" (ngSubmit)="saveChange(addDetailedForm)"
+          *ngIf="entity">
+          <div class="form-group" >
+            <label class="col-sm-3 control-label">Loại phương tiện
+              <span class="error">*</span>
+            </label>
+            <div class="col-sm-9">
+              <ng-select name="listTollroute" [items]="listVihicleType" bindLabel="categoryName" bindValue="id" [(ngModel)]="entity.vihicleTypeId" required
+              placeholder="Chọn loại phương tiện" [disabled]="!flagNew" (change)="vihicleTypeChange($event)">
+              </ng-select>
+            </div>
+        </div>
+        <div class="form-group">
+          <label class="col-sm-3 control-label">Đơn giá
+            <span class="error">*</span>
+          </label>
+          <div class="col-sm-4">
+            <input type="text" class="form-control so-tien"  #sotien="ngModel" name="price" [(ngModel)]="entity.price"
+              placeholder="Đơn giá" [mask]="maskNumber" (change)="vatChanged()" required minLength="6" maxlength="12"  [readonly]="flagXem"/>
+              <small [hidden]="sotien.valid || (sotien.pristine && !addDetailedForm.submitted)"
+              class="text-danger">
+              Nhập đơn giá
+            </small>
+          </div>
+          <label class="col-sm-1 control-label">VAT
+          </label>
+          <div class="col-sm-4">
+            <input type="text" class="form-control so-tien"  #vat="ngModel" name="vat" [(ngModel)]="entity.vat"
+              placeholder="VAT" [mask]="maskNumber" (change)="vatChanged()" required minLength="6" maxlength="12"  [readonly]="flagXem"/>
+              <small [hidden]="vat.valid || (vat.pristine && !addDetailedForm.submitted)"
+              class="text-danger">
+              Nhập số tiền
+            </small>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="col-sm-3 control-label">Tổng tiền
+            <span class="error">*</span>
+          </label>
+          <div class="col-sm-4">
+            <input type="text" class="form-control so-tien"  #sotien="ngModel" name="totalprice" [(ngModel)]="entity.totalPrice"
+               [mask]="maskNumber"  maxlength="12"  disabled/>
+          </div>
+
+        </div>
+        <div class="form-group">
+          <label class="col-sm-3 control-label" >Ghi chú</label>
+          <div class="col-sm-9">
+            <textarea class="form-control" [(ngModel)]="entity.note" name="note" rows="3"
+            placeholder="Nhập ghi chú" [readonly]="flagXem" ></textarea>
+          </div>
+        </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+            [disabled]="!addDetailedForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalDetailed.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+

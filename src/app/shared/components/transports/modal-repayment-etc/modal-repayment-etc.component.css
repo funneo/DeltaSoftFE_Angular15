@@ -1,0 +1,35 @@
+.modal-lg{
+  width: 50%;
+}
+.modal-dialog,
+.modal-content {
+  /* 80% of window height */
+  max-height: 720px
+}
+table   {
+  border-collapse: collapse;
+  border: 1px solid rgba(109, 107, 107, 0.445);
+}
+table  th {
+  border: 1px solid rgba(99, 97, 97, 0.589);
+  padding: 2px;
+}
+.modal-body {
+  /* 100% = dialog height, 120px = header + footer */
+  max-height: calc(100% - 120px);
+}
+.my-custom-scrollbar {
+  position: relative;
+  max-height: 250px;
+  overflow: auto;
+}
+.table-wrapper-scroll-y {
+  display: block;
+}
+div#style-scroll-1{
+  overflow-y: scroll;
+  max-height: 250px;
+}
+
+thead tr:nth-child(1) th{background: #dcefe5f6; position: sticky;top: 0px;z-index: 10;}
+

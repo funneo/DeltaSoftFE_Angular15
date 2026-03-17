@@ -1,0 +1,108 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Vị trí</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Tên vị trí
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <textarea #tenvitri="ngModel" [(ngModel)]="entity.locationName" required  name="tenvitri"
+                  class="form-control" rows="3" placeholder="Nhập tên vị trí" focus [readonly]="flagXem"></textarea>
+                <small [hidden]="tenvitri.valid || (tenvitri.pristine && !addEditForm.submitted)"
+                  class="text-danger">
+                  Tên vị trí không được để trống và không vượt quá 255 kí tự
+                </small>
+              </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Địa chỉ
+                </label>
+                <div class="col-sm-9">
+                  <textarea  [(ngModel)]="entity.locationAddress"  rows="3" name="diachi"
+                    class="form-control" placeholder="Nhập địa chỉ" focus [readonly]="flagXem" ></textarea>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">Vùng
+                </label>
+                <div class="col-sm-9">
+                  <input type="text" [(ngModel)]="entity.area"  maxlength="255" name="vung"
+                    class="form-control" placeholder="Nhập vùng" focus [readonly]="flagXem" />
+                </div>
+              </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Tỉnh/thành phố
+                  <span class="error">*</span>
+                </label>
+                <div class="col-sm-9">
+                    <ng-select [items]="listProvince"  #tinh ="ngModel" name="provinceCode"
+                    bindLabel="provinceName"
+                    bindValue="provinceCode"
+                    (change)="changedProvince($event)"
+                    [(ngModel)]="entity.provinceCode">
+                    </ng-select>
+                  <small [hidden]="tinh.valid || (tinh.pristine && !addEditForm.submitted)"
+                    class="text-danger">
+                    Tỉnh/thành phố không được để trống
+                  </small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Quận/huyện
+                  <span class="error">*</span>
+                </label>
+                <div class="col-sm-9">
+                    <ng-select [items]="listDistrict"  #district ="ngModel" name="districtcode"
+                    bindLabel="districtName"
+                    bindValue="districtCode"
+                    [(ngModel)]="entity.districtCode">
+                    </ng-select>
+                  <small [hidden]="district.valid || (district.pristine && !addEditForm.submitted)"
+                    class="text-danger">
+                    Tên thực hiện công việc không được để trống
+                  </small>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="inputEmail3" class="col-sm-3 control-label">Kinh độ</label>
+                <div class="col-sm-9">
+                  <input type="number"  [(ngModel)]="entity.latitude" step="0.0000001"
+                    name="latitude" class="form-control" placeholder="Nhập kinh độ"
+                    [readonly]="flagXem" />
+                </div>
+            </div>
+              <div class="form-group">
+                <label for="inputEmail3" class="col-sm-3 control-label">Vĩ độ</label>
+                <div class="col-sm-9">
+                  <input type="number"  [(ngModel)]="entity.longtitude" step="0.0000001"
+                    name="longtitude" class="form-control" placeholder="Nhập kinh độ"
+                    [readonly]="flagXem" />
+                </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,194 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Công việc Giao nhận vận chuyển</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Khách hàng
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-2">
+                <input class="form-control" type="text" name="makh" [(ngModel)]="customerCode" required
+                  [readonly]="true">
+              </div>
+              <div class="col-sm-8">
+                <span class="form-control">{{entity.customerName}}</span>
+              </div>
+              
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">JobId
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-4">
+                <div class="input-group">
+                  <span class="form-control" style="color: red;"><b>{{entity.jobId}}</b></span>
+                  <span class="input-group-btn">
+                   <button *ngIf=" entity.status<1" type="button" class="btn btn-primary btn-sm " (click)="getJobId()">
+                    <i class="fa fa-edit"></i>...</button>
+                </span>                  
+                </div>
+              </div>
+              <label class="col-sm-2 control-label"> Loại hình</label>
+              <div class="col-sm-4">
+                <ng-select name="shipmentType" [items]="listShipmentType" bindLabel="categoryName" bindValue="id"
+                  [(ngModel)]="entity.shipmentType" placeholder="Loại hình" disabled>
+                </ng-select>
+              </div>
+            </div>
+           
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Nơi nhận hàng<span class="error">*</span></label>
+              <div class="col-sm-10" >
+                    <span class="form-control">{{entity.pickupLocation}}
+                    </span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Nơi giao hàng<span class="error">*</span></label>
+              <div class="col-sm-10">
+                <span class="form-control" >{{entity.deliveryLocation}}</span>
+              </div>
+              
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">T/g KH yêu cầu 
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.pickupTime}}</span>
+              </div>
+              <label class="col-sm-2 control-label" *ngIf="!isEport"> T/g trả cont rỗng <span class="error">*</span></label>
+              <div class="col-sm-4"  *ngIf="!isEport">
+                <span class="form-control">{{entity.detentionTime}}</span>
+              </div>
+              <label class="col-sm-2 control-label" *ngIf="isEport">T/g Cut-off <span class="error">*</span></label>
+              <div class="col-sm-4" *ngIf="isEport">
+                <span class="form-control">{{entity.cutOffTime}}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">T/g pick-up cont tại Cảng <span class="error">*</span></label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.demurageTime}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Mã tham chiếu </label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.referCode}}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Booking</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.billBooking}}</span>
+              </div>
+              <label class="col-sm-2 control-label"> Lượng hàng</label>
+              <div class="col-sm-4 text-right">
+                <span class="form-control so-luong">{{entity.weight}}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Ops làm lệnh</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.operatorName}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Size kiện hàng</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.dimension}}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Số Cont</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.containerNumber}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Số chì</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.sealNumber}}</span>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="col-sm-2 control-label" *ngIf="entity.taskType==0 || entity.taskType==null">Loại Container</label>
+              <div class="col-sm-2">
+                <span class="form-control">{{entity.contType}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Loại lệnh nâng</label>
+              <div class="col-sm-2">
+                <span class="form-control">{{entity.typeOfLiffingOrderName}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Loại lệnh hạ</label>
+              <div class="col-sm-2">
+                <span class="form-control">{{entity.typeOfLiftOffOrderName}}</span>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Hãng tàu</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.shipBandName}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Kho CFS</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.cfsWarehouseName}}</span>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Cảng/bãi nâng</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.portOfLiftingName}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Cảng/bãi hạ</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.portOfLiftOffName}}</span>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Người giao hàng/SĐT</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.deliveryInformaiton}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Người nhận hàng/SĐT</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.receiverInformation}}</span>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="col-sm-2 control-label">T/t xuất HĐ nâng hạ Cont</label>
+              <div class="col-sm-10">
+                <span class="form-control">{{entity.informationOnContainerLiffInvoice}}</span>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Ghi chú</label>
+              <div class="col-sm-10">
+                <span class="form-control">{{entity.note}}</span>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+

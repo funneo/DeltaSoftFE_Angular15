@@ -1,0 +1,124 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Cung đường tiêu chuẩn</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Nhà máy
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select [items]="listLocation" name="locationId" bindLabel="address"
+                  bindValue="id" [(ngModel)]="entity.locationsId" (change)="changeLocation($event)" required>
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Cảng
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select [items]="listPorts" name="groupPortsCode" bindLabel="name"
+                  bindValue="id" [(ngModel)]="entity.portsId" (change)="changePorts($event)" required>
+                </ng-select>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Khoảng cách
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-2">
+                <input type="number" [(ngModel)]="entity.distance" name="distance" class="form-control"
+                 [readonly]="flagXem" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Khoảng cách khi qua bãi
+              </label>
+              <div class="col-sm-2">
+                <input type="number" [(ngModel)]="entity.distanceThrough" name="distanceThrought" class="form-control"
+                 [readonly]="flagXem" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label"></label>
+              <div class="col-sm-4">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [(ngModel)]="entity.checked" name="checked" />
+                  <span class="helping-el"></span>
+                  Chuyển duyệt
+                </label>
+              </div>
+            </div>
+            <div class="form-group" hidden>
+              <tabset>
+                <tab heading="Thông tin trạm thu phí">
+                  <div class="form-group">
+                    <div class="col-sm-2">
+                      <button type="button" class="btn btn-sm btn-primary" (click)="new()">Thêm</button>
+                    </div>
+                  </div>
+                  <div class="form-group" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Tên trạm</th>
+                          <th>Địa chỉ</th>
+                          <th>Ghi chú</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listTollStation;let indexOfelement=index;">
+                          <td style="width: 40%;">
+                            <ng-select name="listRouteTollStation{{indexOfelement}}" [items]="listTollStation"
+                              (change)="changeTollStation($event,indexOfelement)" bindLabel="tollStationName"
+                              bindValue="id" [(ngModel)]="item.tollStationId" required>
+                            </ng-select>
+                          </td>
+                          <td style="width: 48%">
+                            {{item.tollStationAddress}}
+                          </td>
+                          <td style="width: 48%">
+                            <input type="text" class="form-control" name="note{{indexOfelement}}" [(ngModel)]="item.note">
+                          </td>
+                          <td style="width:10%">
+                            <button type="button" class="btn btn-warning btn-sm" (click)="delete(indexOfelement)">
+                              <i class="fa fa-trash"></i> Xóa
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listTollStation?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </tab>
+              </tabset>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

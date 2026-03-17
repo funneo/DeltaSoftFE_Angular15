@@ -1,0 +1,332 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+    tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div #myHandle class="modal-header">
+                <h4 class="modal-title pull-left">Chi tiết thanh toán</h4>
+                <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" *ngIf="entity!=null">
+                <form class="form-horizontal" (ngSubmit)="save(frmUser)" novalidate #frmUser="ngForm">
+                    <div class="box box-primary box-chieu-cao" id="style-scroll-2">
+                        <div class="row">
+                            <div class="modal-body">
+                                <div class="box-body">
+                                    <div class="col-md-8">
+                                        <div class="form-group" hidden>
+                                            <label class="col-sm-3 control-label">Chi nhánh
+                                                <span class="error">*</span>
+                                            </label>
+                                            <div class="col-sm-9">
+                                                <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchName"
+                                                    bindValue="id" [readonly]="true" [(ngModel)]="entity.branchId"
+                                                    required placeholder="Chọn chi nhánh">
+                                                </ng-select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="col-sm-3 control-label">Người thanh toán
+                                                <span class="error">*</span>
+                                            </label>
+                                            <div class="col-sm-9">
+                                                <ng-select name="nhanvien" [items]="listEmployee"
+                                                    bindLabel="employeeFullName" bindValue="id"
+                                                    [(ngModel)]="entity.employeeId" required
+                                                    placeholder="Chọn nhân viên" [readonly]="true" [clearable]="false">
+                                                </ng-select>
+                                            </div>
+                                        </div>
+                                        <div *ngIf="_wfId" class="form-group">
+                                            <label class="col-sm-3 control-label">Công việc
+                                                <span class="error">*</span>
+                                            </label>
+                                            <div class="col-sm-9">
+                                                <div class="input-group" style="width: 100%;">
+                                                    <ng-select name="job" [items]="listWorkflow" bindLabel="jobName"
+                                                        bindValue="id" [(ngModel)]="entity.workflowId" required
+                                                        placeholder="Chọn công việc" [readonly]="entity.id>0"
+                                                        [clearable]="false">
+                                                    </ng-select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="col-sm-3 control-label">Nội dung</label>
+                                            <div class="col-sm-9">
+                                                <input class="form-control" [(ngModel)]="entity.contents" type="text"
+                                                    name="noidung" placeholder="Nội dung" [readonly]="flagXem" />
+                                            </div>
+                                        </div>
+                                        <div *ngIf="entity?.type==1" class="form-group">
+                                            <label class="col-sm-3 control-label">Đơn vị nhận thanh toán
+                                                <span class="error">*</span>
+                                            </label>
+                                            <div class="col-sm-9">
+                                                <ng-select name="nhacungcap" [items]="listSupplier"
+                                                    bindLabel="supplierName" bindValue="id"
+                                                    [(ngModel)]="entity.supplierId" required
+                                                    placeholder="Chọn đơn vị..."
+                                                    title="Chọn đơn vị nhận thanh toán: Nhà cung cấp..."
+                                                    [readonly]="flagXem">
+                                                </ng-select>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="col-sm-3 control-label">Chứng từ liên quan</label>
+                                            <div class="col-sm-9">
+                                                <input class="form-control" [(ngModel)]="entity.relatedDocuments"
+                                                    type="text" name="relatedDocuments" placeholder="Chứng từ liên quan"
+                                                    [readonly]="flagXem" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="col-sm-3 control-label">Ghi chú</label>
+                                            <div class="col-sm-9">
+                                                <textarea class="form-control textrea-size" [(ngModel)]="entity.notes"
+                                                    name="ghichu" rows="4" placeholder="Nhập ghi chú"
+                                                    [readonly]="flagXem"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group text-right" style="padding-right: 15px;">
+                                            <button *ngIf="entity.id" type="button" class="btn btn-info btn-sm"
+                                                title="Chứng từ đính kèm" (click)="showFiles(entity)">
+                                                <i class="fa fa-file-pdf-o" aria-hidden="true"></i> File đính kèm
+                                            </button>
+                                            <button class="btn btn-primary btn-sm" type="button" (click)="save(frmUser)"
+                                                [disabled]="frmUser.form.invalid || listDetail?.length==0 || flagXem || flagSave">
+                                                <i class="fa fa-edit"></i> Lưu
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" type="button"
+                                                (click)="handleCancel()">
+                                                <i class="fa fa-close"></i> Thoát
+                                            </button>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="col-sm-4 control-label">Hình thức
+                                                <span class="error">*</span>
+                                            </label>
+                                            <div class="col-sm-8">
+                                                <ng-select name="type" [items]="listType" bindLabel="text"
+                                                    bindValue="id" [(ngModel)]="entity.type" required
+                                                    placeholder="Loại thanh toán" [readonly]="true">
+                                                </ng-select>
+                                            </div>
+                                        </div>
+                                        <div *ngIf="entity.id" class="form-group">
+                                            <label class="col-sm-4 control-label">Số tham chiếu</label>
+                                            <div class="col-sm-8">
+                                                <input class="form-control" [(ngModel)]="entity.refNo" type="text"
+                                                    name="refno" placeholder="Số phiếu" [readonly]="true" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="col-sm-4 control-label">Ngày lập</label>
+                                            <div class="col-sm-8 date">
+                                                <input name="refdate" type="text" daterangepicker
+                                                    [options]="dateTimeOptions" [(ngModel)]="_ngay" class="form-control"
+                                                    (selected)="selectedDate($event)"
+                                                    (hideDaterangepicker)="closedDate($event)" autocomplete="off"
+                                                    [disabled]="true">
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <label class="col-sm-4 control-label">Tổng tiền
+                                                <!-- <span class="error">*</span> -->
+                                            </label>
+                                            <div class="col-sm-8">
+                                                <input type="text" class="form-control so-tien" #sotien="ngModel"
+                                                    name="sotien" [(ngModel)]="entity.totalAmount"
+                                                    placeholder="Tổng tiền" [mask]="maskNumber" required minLength="3"
+                                                    maxlength="18" [readonly]="true" [allowNegativeNumbers]="true" />
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-12 text-right">
+                                                <label class="custom-checkbox">
+                                                    <input type="checkbox" [(ngModel)]="entity.status" name="status"
+                                                        [disabled]="flagXem || _isChuyeduyet" />
+                                                    <span class="helping-el"></span>
+                                                    Chuyển duyệt
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <br>
+                                        <br>
+                                        <div class="form-group">
+                                            <div class="col-sm-12 text-right">
+                                                <span class="bang-chu">{{_bangchu}}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box-body table-responsive no-padding " id="style-scroll-1">
+                            <table class="table table-bordered table-striped table-hover table_wrapper">
+                                <thead>
+                                    <tr>
+                                        <th rowspan="2">STT</th>
+                                        <th rowspan="2" class="column-chucnang">Tác vụ/ Trạng thái</th>
+                                        <th class="column-ten" rowspan="2">Phí thanh toán</th>
+                                        <th class="column-ten" rowspan="2">Diễn giải</th>
+                                        <th class="column-ten" rowspan="2">Mã tham chiếu</th>
+                                        <th class="column-ten" rowspan="1" colspan="5">Số tiền</th>
+                                        <th rowspan="1" colspan="8">Hóa đơn</th>
+                                        <th rowspan="2">Ghi chú</th>
+                                        <th *ngIf="entity.id" rowspan="2">Lý do từ chối</th>
+
+                                    </tr>
+                                    <tr>
+                                        <!-- <th>Mã phí</th>
+                      <th>Tên phí</th> -->
+                                        <th>Chưa VAT</th>
+                                        <th>VAT</th>
+                                        <th>Sau VAT</th>
+                                        <th>Tiền tệ</th>
+                                        <th>Tỷ giá</th>
+                                        <th>Chứng từ</th>
+                                        <th>Số HĐ</th>
+                                        <th>Ngày HĐ</th>
+                                        <th>MST</th>
+                                        <th>Web</th>
+                                        <th>Mã tra cứu</th>
+                                        <th>Mẫu HĐ</th>
+                                        <th class="column-min">CN</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let item of listDetail; let i = index">
+                                        <td class="column-so-thu-tu">{{i+1}}</td>
+                                        <td class="column-chuc-nang">
+                                            <i *ngIf="!flagXem && item.step<=0" class="fa fa-trash-o" title="Xóa"
+                                                (click)="removeItem(i)">...</i>
+
+                                            <i *ngIf="entity.id && item.step==0 && item.status==0">
+                                                <label class="label label-sm label-success">Khởi tạo</label>
+                                            </i>
+                                            <i
+                                                *ngIf="entity.id && item.step==0 && item.status==1 && (!_accept || !item.hasAccept)">
+                                                <label class="label label-sm label-warning">Chờ duyệt</label>
+                                            </i>
+                                            <i *ngIf="item.step<0">
+                                                <label class="label label-sm label-danger">Từ chối</label>
+                                            </i>
+                                            <i *ngIf="item.step>=2">
+                                                <label class="label label-sm label-success">Đã duyệt</label>
+                                            </i>
+                                            <i *ngIf="item.step==1">
+                                                <label class="label label-sm label-primary">Bước 1</label>
+                                            </i>
+                                        </td>
+                                        <td class="column-ten fee">
+                                            <ng-select name="feeid{{item.tempId}}" [items]="listFee" bindLabel="feeName"
+                                                bindValue="id" [(ngModel)]="item.feeId" placeholder="Chọn phí..."
+                                                [readonly]="flagXem ||item.step>0" (change)="chagedFee(item,$event)"
+                                                (blur)="inputTen()" [clearable]="false">
+                                            </ng-select>
+                                        </td>
+                                        <td class="column-ten">
+                                            <input style='width:auto' type="text" class="form-control"
+                                                name="noidung{{item.tempId}}" [(ngModel)]="item.contents"
+                                                placeholder="Chi tiết nội dung thanh toán" [readonly]="flagXem" />
+                                        </td>
+                                        <td class="column-ten">
+                                            <input style='width:auto' type="text" class="form-control"
+                                                name="referCode{{item.tempId}}" [(ngModel)]="item.referCode"
+                                                placeholder="Mã tham chiếu" [readonly]="flagXem" />
+                                        </td>
+                                        <td class="column-tien">
+                                            <input type="text" class="form-control so-tien" name="sotien{{item.tempId}}"
+                                                [(ngModel)]="item.amount" (change)="onChangeTien(item)"
+                                                [readonly]="flagXem||item.step>0" [mask]="maskNumber"
+                                                [allowNegativeNumbers]="true" />
+                                        </td>
+                                        <td class="column-gia-tri">
+                                            <input type="text" class="form-control so-tien" name="vat{{item.tempId}}"
+                                                [(ngModel)]="item.vat" (change)="onChangeTien(item)"
+                                                [readonly]="flagXem ||item.step>0" [mask]="maskNumber"
+                                                [allowNegativeNumbers]="true" />
+                                        </td>
+                                        <td class="column-tien">
+                                            <input type="text" class="form-control so-tien"
+                                                name="sotiensauvat{{item.tempId}}" [(ngModel)]="item.amountAfterVAT"
+                                                [readonly]="true" [mask]="maskNumber" [allowNegativeNumbers]="true" />
+                                        </td>
+                                        <td class="column-min">
+                                            <ng-select name="currency{{item.tempId}}" [items]="_listCurrency"
+                                                bindLabel="categoryCode" bindValue="categoryCode"
+                                                [(ngModel)]="item.currency" placeholder="Chọn tiền tệ..."
+                                                [readonly]="flagXem ||item.step>0"
+                                                (change)="changeCurrency(item,$event)" [clearable]="false">
+                                            </ng-select>
+                                        </td>
+                                        <td class="column-gia-tri">
+                                            <input type="text" class="form-control so-tien"
+                                                name="exchangeRate{{item.tempId}}" [(ngModel)]="item.exchangeRate"
+                                                [readonly]="flagXem||item.step>0" [mask]="maskNumber" />
+                                        </td>
+                                        <td>
+                                            <ng-select name="hasInvoice{{item.tempId}}" [items]="listInvoice"
+                                                bindLabel="text" bindValue="id" [(ngModel)]="item.hasInvoice"
+                                                [readonly]="flagXem" [clearable]="false"></ng-select>
+                                        </td>
+                                        <td class="column-md">
+                                            <input type="text" class="form-control" name="invoiceno{{item.tempId}}"
+                                                [(ngModel)]="item.invoiceNo" [readonly]="flagXem" />
+                                        </td>
+                                        <td class="column-sm">
+                                            <input name="invoiceDate{{item.tempId}}" type="text" daterangepicker
+                                                [options]="dateTimeOptions" [(ngModel)]="item.invoiceDate"
+                                                class="form-control" (selected)="selectedNgaybatdau(item,$event)"
+                                                (hideDaterangepicker)="closedNgaybatdau(item,$event)" autocomplete="off"
+                                                [disabled]="flagXem">
+                                        </td>
+                                        <td class="column-md">
+                                            <input type="text" class="form-control" name="invoicemst{{item.tempId}}"
+                                                [(ngModel)]="item.taxNumber" [readonly]="flagXem" />
+                                        </td>
+                                        <td class="column-ten">
+                                            <input type="text" class="form-control" name="invoiceweb{{item.tempId}}"
+                                                [(ngModel)]="item.web" [readonly]="flagXem" />
+                                        </td>
+                                        <td class="column-sm">
+                                            <input type="text" class="form-control" name="invoicems{{item.tempId}}"
+                                                [(ngModel)]="item.code" [readonly]="flagXem" />
+                                        </td>
+                                        <td class="column-min">
+                                            <input type="text" class="form-control" name="invoicepattern{{item.tempId}}"
+                                                [(ngModel)]="item.invoicePattern" [readonly]="flagXem" />
+                                        </td>
+                                        <td class="column-min">
+                                            <ng-select name="cn{{item.tempId}}" [items]="listBranch"
+                                                bindLabel="branchCode" bindValue="id" [clearable]="false"
+                                                [(ngModel)]="item.branchId" [readonly]="flagXem">
+                                            </ng-select>
+                                        </td>
+                                        <td class="column-ghi-chu">
+                                            <input style='width:auto' type="text" class="form-control"
+                                                name="ghichu{{item.tempId}}" [(ngModel)]="item.notes"
+                                                [readonly]="flagXem" />
+                                        </td>
+                                        <td *ngIf="entity.id" class="column-ghi-chu">
+                                            <input class="form-control" style="color: red;" type="text"
+                                                name="lydo{{item.tempId}}" [(ngModel)]="item.feedback"
+                                                [readonly]="!_accept" title="{{item.feedback}}" />
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>
