@@ -66,8 +66,8 @@ export class ModalPaymentDetailComponent implements OnInit {
   listWorkflow: Workflow[];
   listShipment: Shipment[];
   listType: any[] = [
-    { id: 0, text: "Tiền mặt" },
-    { id: 1, text: "Chuyển khoản/Trả sau" },
+    { id: 0, text: "Cá nhân" },
+    { id: 1, text: "Nhà cung cấp" },
   ];
   listInvoice: any[] = [
     { id: 0, text: "Không" },

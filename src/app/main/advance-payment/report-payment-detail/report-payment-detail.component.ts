@@ -92,8 +92,8 @@ export class ReportPaymentDetailComponent implements OnInit {
   phapnhanSearch = "";
   array = [
     { value: 0, text: "Tất cả" },
-    { value: 1, text: "Tiền mặt" },
-    { value: 2, text: "Chuyển khoản/Trả sau" },
+    { value: 1, text: "Cá nhân" },
+    { value: 2, text: "Nhà cung cấp" },
   ];
   ngayBatDau: Date = this._utilityService.ngayBanDau;
   ngayKetThuc: Date = this._utilityService.ngayKetThuc;
@@ -109,8 +109,8 @@ export class ReportPaymentDetailComponent implements OnInit {
   ];
   _trangThai = 2;
   listType: any[] = [
-    { id: 0, text: "Tiền mặt" },
-    { id: 1, text: "Trả sau" },
+    { id: 0, text: "Cá nhân" },
+    { id: 1, text: "Nhà cung cấp" },
     { id: 2, text: "Tất cả" },
   ];
   listTypePayment = UtilityService.listTypePayment();

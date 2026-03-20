@@ -66,8 +66,8 @@ export class PaymentAcceptComponent implements OnInit {
   ];
   _trangThai = 2;
   listType: any[] = [
-    { id: 0, text: "Tiền mặt" },
-    { id: 1, text: "Trả sau" },
+    { id: 0, text: "Cá nhân" },
+    { id: 1, text: "Nhà cung cấp" },
     { id: 2, text: "Tất cả" },
   ];
   _type = 2;
@@ -94,6 +94,8 @@ export class PaymentAcceptComponent implements OnInit {
   quantitySeach1?: string;
   grossWeightSeach1?: string;
   selectedType?: number = 0;
+  selectedIsDirect?: number = 2;
+  _isDirectPayment: number = 2;
   _hubConnection: signalR.HubConnection;
   public ngayBatDau: Date = this._utilityService.ngayBanDau;
   public ngayKetThuc: Date = this._utilityService.ngayKetThuc;
@@ -101,7 +103,8 @@ export class PaymentAcceptComponent implements OnInit {
     this.ngayBatDau,
     this.ngayKetThuc
   );
-  array = [{ "value": 0, "text": "Tất cả" }, { "value": 1, "text": "Tiền mặt" }, { "value": 2, "text": "Chuyển khoản/Trả sau" }];
+  array = [{ "value": 0, "text": "Tất cả" }, { "value": 1, "text": "Cá nhân" }, { "value": 2, "text": "Nhà cung cấp" }];
+  arrayD = [{ "id": 2, "text": "Tất cả" }, { "id": 1, "text": "Trực tiếp" }, { "id": 0, "text": "Có tạm ứng" }];
   listTypePayment = UtilityService.listTypePayment();
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
@@ -158,6 +161,7 @@ export class PaymentAcceptComponent implements OnInit {
       this._type = p.type;
       this.keyword = p.keyword;
       this._trangThai = p.trangthai;
+      this._isDirectPayment = p.isDirectPayment ?? 2;
     }
     this.ngayBatDau = new Date(moment().subtract(30, "days").toString());
     this.ngayKetThuc = new Date(
@@ -211,6 +215,7 @@ export class PaymentAcceptComponent implements OnInit {
       .set("keyword", this.keyword)
       .set("type", this._type?.toString())
       .set("step", this._trangThai.toString())
+      .set("isDirectPayment", this._isDirectPayment == 2 ? "" : this._isDirectPayment.toString())
       .set("branchId", this._branchId?.toString());
     this.busy = this.paymentsService
       .getAcceptStep2(params)
@@ -233,6 +238,16 @@ export class PaymentAcceptComponent implements OnInit {
     if (this.selectedType > 0) {
       this.listFilter = this.listFilter.filter((data) => {
         return this.selectedType == 1 ? data.type == 0 : data.type == 1;
+      });
+    }
+    if (this.selectedIsDirect < 2) {
+      this.listFilter = this.listFilter.filter((data) => {
+        return data.isDirectPayment == this.selectedIsDirect;
+      });
+    }
+    if (this._isDirectPayment < 2) {
+      this.listFilter = this.listFilter.filter((data) => {
+        return data.isDirectPayment == this._isDirectPayment;
       });
     }
     if (this.maphiSearch?.length > 0)
@@ -356,6 +371,7 @@ export class PaymentAcceptComponent implements OnInit {
       trangthai: this._trangThai,
       branchId: this._branchId,
       type: this._type,
+      isDirectPayment: this._isDirectPayment,
       keyword: this.keyword,
     };
     UtilityService.setLocalParams(p, this._functionId);

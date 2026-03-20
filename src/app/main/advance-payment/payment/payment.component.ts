@@ -62,8 +62,8 @@ export class PaymentComponent implements OnInit {
   _hubConnection: signalR.HubConnection;
   listBranch: Branch[];
   listType: any[] = [
-    { id: 0, text: 'Tiền mặt' },
-    { id: 1, text: 'Trả sau' },
+    { id: 0, text: 'Cá nhân' },
+    { id: 1, text: 'Nhà cung cấp' },
     { id: 2, text: 'Tất cả' },
   ];
   array = [{ "value": 0, "text": "Tất cả" }, { "value": 1, "text": "Khởi tạo" }, { "value": 2, "text": "Chuyển duyệt" }, { "value": 3, "text": "Đang duyệt" }, { "value": 4, "text": "Đã duyệt" }, { "value": 5, "text": "Từ chối" }];

@@ -19,14 +19,14 @@ import { ModalPhieuChiComponent } from '@app/shared/components/accounting/modal-
   styleUrls: ['./summary-supplier-cost.component.css']
 })
 export class SummarySupplierCostComponent implements OnInit {
-pageIndex = 1;
+  pageIndex = 1;
   pageSize = 9999;
   totalRows = 0;
   flagEdit = false;
   flagDelete = false;
   keyword = '';
   listSummarySupplierCost: SummarySupplierCost[];
-  listFilter:SummarySupplierCost[];
+  listFilter: SummarySupplierCost[];
   listSupplier: Supplier[];
   _supplierId?: number;
   _branchId: number;
@@ -34,28 +34,28 @@ pageIndex = 1;
   viewModal = false;
   ngayBatDau: Date = this._utilityService.ngayBanDau;
   ngayKetThuc: Date = this._utilityService.ngayKetThuc;
-  listTinhtrang=[{id:0,text:"Khởi tạo"},{id:1,text:"Chuyển duyệt"},{id:2,text:"Đã chi"},{id:3,text:"Từ chói"},{id:4,text:"Tất cả"}]
-  listBranch:Branch[];
-  acceptPermission:boolean=false;
-  closingPermission:boolean=false;
-  selectedtinhtrang=4;
+  listTinhtrang = [{ id: 0, text: "Khởi tạo" }, { id: 1, text: "Chuyển duyệt" }, { id: 2, text: "Đã chi" }, { id: 3, text: "Từ chói" }, { id: 4, text: "Tất cả" }]
+  listBranch: Branch[];
+  acceptPermission: boolean = false;
+  closingPermission: boolean = false;
+  selectedtinhtrang = 4;
   filterColumns: { [key: string]: string } = {};
-  userLoged?:Profile;
-  itemSelected=false;
-  totalAmount=0;
-  _auth=5;
-  _acc=false;
-  selectedValue:SummarySupplierCost;
+  userLoged?: Profile;
+  itemSelected = false;
+  totalAmount = 0;
+  _auth = 5;
+  _acc = false;
+  selectedValue: SummarySupplierCost;
   dateOptions = this._utilityService.dateOptionMultis(this.ngayBatDau, this.ngayKetThuc);
   @ViewChild(ModalSummarySupplierCostComponent, { static: false }) modalAddEdit: ModalSummarySupplierCostComponent
   constructor(private notificationService: NotificationService, private _utilityService: UtilityService, private suppliertSerive: SupplierService,
-    public datepipe: DatePipe,private service: SummarySupplierCostsService, private authService: AuthService,private branchService:BranchService,private _export:ExportService) {
-      this.userLoged = this.authService.getLoggedInUser();
-      this._auth = Number.parseInt(this.userLoged.authorisationLevel);
-      this._acc = this.authService.hasPermission('ADVANCE_ACCOUNT') || this.authService.hasPermission('F018_ACCOUNT');
-      this.acceptPermission=authService.hasPermission('F018_ACCEPT')  || this.userLoged .isAdmin;
-    this.closingPermission=authService.hasPermission('F018_CLOSING') || this.userLoged .isAdmin;
-    this._branchId = Number.parseInt(this.userLoged .branchId);
+    public datepipe: DatePipe, private service: SummarySupplierCostsService, private authService: AuthService, private branchService: BranchService, private _export: ExportService) {
+    this.userLoged = this.authService.getLoggedInUser();
+    this._auth = Number.parseInt(this.userLoged.authorisationLevel);
+    this._acc = this.authService.hasPermission('ADVANCE_ACCOUNT') || this.authService.hasPermission('F018_ACCOUNT');
+    this.acceptPermission = authService.hasPermission('F018_ACCEPT') || this.userLoged.isAdmin;
+    this.closingPermission = authService.hasPermission('F018_CLOSING') || this.userLoged.isAdmin;
+    this._branchId = Number.parseInt(this.userLoged.branchId);
   }
 
   ngOnInit(): void {
@@ -83,8 +83,8 @@ pageIndex = 1;
     this.timKiem();
   }
 
-  changedSupplier(event:Supplier){
-    this._supplierId=event?.id;
+  changedSupplier(event: Supplier) {
+    this._supplierId = event?.id;
     this.timKiem();
   }
 
@@ -107,8 +107,8 @@ pageIndex = 1;
 
 
   changedType(event: any): void {
-      // let _id=event?.id;
-      this.timKiem();
+    // let _id=event?.id;
+    this.timKiem();
   }
 
 
@@ -138,18 +138,18 @@ pageIndex = 1;
       return Object.keys(this.filterColumns).every(key => {
         const filterValue = this.filterColumns[key]?.toString().trim().toLowerCase();
         if (!filterValue) return true; // Nếu không có giá trị lọc, bỏ qua
-  
+
         const itemValue = key === "refDate"
           ? this.datepipe.transform(item[key], "dd/MM/yyyy")?.toLowerCase()
           : item[key]?.toString().trim().toLowerCase();
-  
+
         return itemValue?.includes(filterValue);
       });
     });
     this.calculator();
   }
-  
-  calculator(){
+
+  calculator() {
     this.totalAmount = this.listFilter.reduce((sum, item) => sum + (item.amount || 0), 0);
   }
   clickRow(item: SummarySupplierCost): void {
@@ -165,7 +165,7 @@ pageIndex = 1;
     this.loadData();
   }
 
- 
+
   add(): void {
     this.viewModal = true;
     setTimeout(() => {
@@ -184,7 +184,7 @@ pageIndex = 1;
 
   deleteConfirm(): void {
     let item = this.listFilter.filter(x => x.checked);
-    if(item[0].status>1 || item[0].createdBy!=this.userLoged.id)return;
+    if (item[0].status > 1 || item[0].createdBy != this.userLoged.id) return;
     this.notificationService.printConfirmationDialog(MessageContstants.CONFIRM_DELETE_MSG, () => this.delete(item[0].id));
   }
 
@@ -212,17 +212,17 @@ pageIndex = 1;
   icheck() {
     let checks = this.listFilter.filter(x => x.checked);
     if (checks.length == 1) {
-      this.itemSelected=true;
+      this.itemSelected = true;
       this.flagDelete = true;
       this.flagEdit = true;
     }
     else if (checks.length > 1) {
-      this.itemSelected=true;
+      this.itemSelected = true;
       this.flagDelete = true;
       this.flagEdit = false;
     }
     else {
-      this.itemSelected=false;
+      this.itemSelected = false;
       this.flagDelete = false;
       this.flagEdit = false;
     }
@@ -232,7 +232,7 @@ pageIndex = 1;
     this.loadData();
   }
 
-  showModal(item:SummarySupplierCost) {
+  showModal(item: SummarySupplierCost) {
     this.viewModal = true;
     setTimeout(() => {
       this.modalAddEdit.edit(item.id, true);
@@ -242,33 +242,33 @@ pageIndex = 1;
   @ViewChild(ModalPhieuChiComponent, { static: false }) modalPhieuChi: ModalPhieuChiComponent;
 
   showPhieuChi(entity: SummarySupplierCost) {
-      this.selectedValue = entity;
-      let item: any = {};
-      item.groupType = 3;
-      item.supplierId = entity.supplierId;
-      item.amount = entity.amount;
-      item.refNo = entity.refNo;
-      item.notes = entity.contents;
-      item.accountid=entity.id;
-      this.viewAccounts = true;
-      setTimeout(() => {
-        this.modalPhieuChi.add(item);
-      }, 50);
-    }
+    this.selectedValue = entity;
+    let item: any = {};
+    item.groupType = 3;
+    item.supplierId = entity.supplierId;
+    item.amount = entity.amount;
+    item.refNo = entity.refNo;
+    item.notes = entity.contents;
+    item.accountid = entity.id;
+    this.viewAccounts = true;
+    setTimeout(() => {
+      this.modalPhieuChi.add(item);
+    }, 50);
+  }
   saveSuccessAccounts(event: any): void {
-      if (event > 0) {
-        let item=Object.assign({},this.selectedValue);
-        item.status=2;
-        this.service.update(item).subscribe((res: ResponseValue<any>) => {
-          if (res.code == '200' || res.code == '201') {
-            this.loadData();
-          }
-        });
-      }
+    if (event > 0) {
+      let item = Object.assign({}, this.selectedValue);
+      item.status = 2;
+      this.service.update(item).subscribe((res: ResponseValue<any>) => {
+        if (res.code == '200' || res.code == '201') {
+          this.loadData();
+        }
+      });
     }
-    closeAccounts(): void {
-      this.viewAccounts = false;
-    }
+  }
+  closeAccounts(): void {
+    this.viewAccounts = false;
+  }
 
   closeModal(): void {
     this.viewModal = false;

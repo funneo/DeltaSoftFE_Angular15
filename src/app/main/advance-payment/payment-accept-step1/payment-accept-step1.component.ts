@@ -60,11 +60,17 @@ export class PaymentAcceptStep1Component implements OnInit {
   ];
   _trangThai = 2;
   listType: any[] = [
-    { id: 0, text: "Tiền mặt" },
-    { id: 1, text: "Trả sau" },
+    { id: 0, text: "Cá nhân" },
+    { id: 1, text: "Nhà cung cấp" },
     { id: 2, text: "Tất cả" },
   ];
   _type = 2;
+  _isDirectPayment: number = 2;
+  selectedType: number = 0;
+  selectedIsDirect: number = 2;
+  array = [{ "value": 0, "text": "Tất cả" }, { "value": 1, "text": "Cá nhân" }, { "value": 2, "text": "Nhà cung cấp" }];
+  arrayD = [{ "id": 2, "text": "Tất cả" }, { "id": 1, "text": "Trực tiếp" }, { "id": 0, "text": "Có tạm ứng" }];
+  listTypePayment = UtilityService.listTypePayment();
   _functionId = SystemContstants.PA1;
   maphiSearch?: string;
   tenphiSearch?: string;
@@ -95,9 +101,9 @@ export class PaymentAcceptStep1Component implements OnInit {
   constructor(
     private authService: AuthService,
     private paymentsService: PaymentsService,
-    private router: Router,private cdr: ChangeDetectorRef,
+    private router: Router, private cdr: ChangeDetectorRef,
     private notificationService: NotificationService,
-    private branchService: BranchService,private spinner: NgxSpinnerService,
+    private branchService: BranchService, private spinner: NgxSpinnerService,
   ) {
     let user = this.authService.getLoggedInUser();
     this.isAdmin = user.isAdmin;
@@ -138,26 +144,27 @@ export class PaymentAcceptStep1Component implements OnInit {
       this._type = p.type;
       this.keyword = p.keyword;
       this._trangThai = p.trangthai;
+      this._isDirectPayment = p.isDirectPayment ?? 2;
       //this.groupedItemLuu=p.groupedItem
       //Lưu các biến trạng thái filter
-      this.maphiSearch=p.maphiSearch
+      this.maphiSearch = p.maphiSearch
       this.tenphiSearch = p.tenphiSearch,
-      this.diengiaiSearch = p.diengiaiSearch,
-      this.sotienSearch = p.sotienSearch,
-      this.vatSearch = p.vatSearch,
-      this.tongtienSearch = p.tongtienSearch,
-      this.sohoadonSearch = p.sohoadonSearch,
-      this.ngayhdSearch = p.ngayhdSearch,
-      this.mstSearch = p.mstSearch,
-      this.cnSearch = p.cnSearch,
-      this.ghichuSearch = p.ghichuSearch,
-      this.jobidSearch = p.jobidSearch,
-      this.tokhaiSearch = p.tokhaiSearch,
-      this.hbilSearch = p.hbilSearch,
-      this.bookingSearch = p.bookingSearch,
-      this.noidungSearch = p.noidungSearch,
-      this.sophieuSearch = p.sophieuSearch,
-      this.nguoittSearch = p.nguoittSearch
+        this.diengiaiSearch = p.diengiaiSearch,
+        this.sotienSearch = p.sotienSearch,
+        this.vatSearch = p.vatSearch,
+        this.tongtienSearch = p.tongtienSearch,
+        this.sohoadonSearch = p.sohoadonSearch,
+        this.ngayhdSearch = p.ngayhdSearch,
+        this.mstSearch = p.mstSearch,
+        this.cnSearch = p.cnSearch,
+        this.ghichuSearch = p.ghichuSearch,
+        this.jobidSearch = p.jobidSearch,
+        this.tokhaiSearch = p.tokhaiSearch,
+        this.hbilSearch = p.hbilSearch,
+        this.bookingSearch = p.bookingSearch,
+        this.noidungSearch = p.noidungSearch,
+        this.sophieuSearch = p.sophieuSearch,
+        this.nguoittSearch = p.nguoittSearch
     }
     this.loadChiNhanh();
     this.loadData();
@@ -180,8 +187,8 @@ export class PaymentAcceptStep1Component implements OnInit {
   timKiem(): void {
     this.loadData();
   }
-  groupedItem: any[] = [];  
-  groupedItemLuu: any[] = [];  
+  groupedItem: any[] = [];
+  groupedItemLuu: any[] = [];
   // Hàm tách tên thành First Name và Last Name
   splitName(fullName: string): [string, string] {
     const parts = fullName.trim().split(' ');
@@ -199,13 +206,13 @@ export class PaymentAcceptStep1Component implements OnInit {
       result[groupKey].items.push(item);
       return result;
     }, {});
-  
+
     // Chuyển thành mảng và sắp xếp theo tên trước, họ sau
     return Object.values(groups)
       .sort((a: any, b: any) => {
         const [firstNameA, lastNameA] = this.splitName(a.key);
         const [firstNameB, lastNameB] = this.splitName(b.key);
-  
+
         return firstNameA.localeCompare(firstNameB) || lastNameA.localeCompare(lastNameB);
       });
   }
@@ -215,7 +222,9 @@ export class PaymentAcceptStep1Component implements OnInit {
   }
   loadData(): void {
     this.spinner.show();
-    const params = new HttpParams().set("branchId", this._branchId?.toString());
+    const params = new HttpParams()
+      .set("isDirectPayment", this._isDirectPayment == 2 ? "" : this._isDirectPayment.toString())
+      .set("branchId", this._branchId?.toString());
     this.busy = this.paymentsService
       .getAcceptStep1(params)
       .subscribe((res: ResponseValue<PaymentDetail[]>) => {
@@ -227,12 +236,28 @@ export class PaymentAcceptStep1Component implements OnInit {
         } else {
           this.notificationService.printErrorMessage(
             MessageContstants.GETDATA_ERR_MSG + "\n" + res.code
-          );this.spinner.hide();
+          ); this.spinner.hide();
         }
       });
   }
   filter() {
     this.listFilter = Object.assign([], this.listDetail);
+
+    if (this._isDirectPayment < 2) {
+      this.listFilter = this.listFilter.filter((data) => {
+        return data.isDirectPayment == this._isDirectPayment;
+      });
+    }
+    if (this.selectedIsDirect < 2) {
+      this.listFilter = this.listFilter.filter((data) => {
+        return data.isDirectPayment == this.selectedIsDirect;
+      });
+    }
+    if (this.selectedType > 0) {
+      this.listFilter = this.listFilter.filter((data) => {
+        return this.selectedType == 1 ? data.type == 0 : data.type == 1;
+      });
+    }
 
     if (this.maphiSearch?.length > 0)
       this.listFilter = this.listFilter.filter((data) => {
@@ -347,15 +372,15 @@ export class PaymentAcceptStep1Component implements OnInit {
           ?.toLowerCase()
           .includes(this.sophieuSearch.trim().toLocaleLowerCase());
       });
-      // this.groupedItem = this.groupByAndSort(this.listFilter, 'employeeName'); // Nhóm theo cột "customerName"
-      //so sánh các nhóm đã mở ra đã lưu vào storage để set lại sau khi back màn hình
-      // this.groupedItem.forEach(it=>{
-      //   const matchedItem = this.groupedItemLuu.find(x => x.key === it.key);
-      //   if (matchedItem) {
-      //     // Nếu tìm thấy, gán giá trị từ groupedItemLuu sang groupedItem
-      //     it.isExpanded = matchedItem.isExpanded;
-      //   }
-      // })
+    // this.groupedItem = this.groupByAndSort(this.listFilter, 'employeeName'); // Nhóm theo cột "customerName"
+    //so sánh các nhóm đã mở ra đã lưu vào storage để set lại sau khi back màn hình
+    // this.groupedItem.forEach(it=>{
+    //   const matchedItem = this.groupedItemLuu.find(x => x.key === it.key);
+    //   if (matchedItem) {
+    //     // Nếu tìm thấy, gán giá trị từ groupedItemLuu sang groupedItem
+    //     it.isExpanded = matchedItem.isExpanded;
+    //   }
+    // })
   }
 
   viewPayment(id: number) {
@@ -363,8 +388,9 @@ export class PaymentAcceptStep1Component implements OnInit {
       trangthai: this._trangThai,
       branchId: this._branchId,
       type: this._type,
+      isDirectPayment: this._isDirectPayment,
       keyword: this.keyword,
-      maphiSearch:this.maphiSearch,
+      maphiSearch: this.maphiSearch,
       tenphiSearch: this.tenphiSearch,
       diengiaiSearch: this.diengiaiSearch,
       sotienSearch: this.sotienSearch,
@@ -396,7 +422,7 @@ export class PaymentAcceptStep1Component implements OnInit {
 
   submit(entity: PaymentDetail, key: string): void {
     let b = key == "true";
-   // this.groupedItemLuu=this.groupedItem;
+    // this.groupedItemLuu=this.groupedItem;
     let copy = Object.assign({}, entity);
     let _ok = b;
     if (!b) {

@@ -1,10 +1,10 @@
 <div class="box box-primary box-chieu-cao">
   <div class="row">
     <div class="box-header with-border">
-      <div class="col-md-3">
+      <div class="col-md-2">
         <h3 class="box-title">DUYỆT THANH TOÁN</h3>
       </div>
-      <div class="col-md-2">
+      <div class="col-md-1">
         <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
           [(ngModel)]="_branchId" (change)="changedChiNhanh()" title="Chọn chi nhánh..." [clearable]="false" [readonly]="_auth>0">
         </ng-select>
@@ -13,6 +13,10 @@
         <ng-select name="loaiphieu" [items]="listType" bindLabel="text" bindValue="id"
           [(ngModel)]="_type" (change)="timKiem()" title="Chọn loại thanh toán..." [clearable]="false">
         </ng-select>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="tructiep" [items]="arrayD" (change)="timKiem()" [(ngModel)]="_isDirectPayment" [clearable]="false"
+          bindLabel="text" bindValue="id"></ng-select>
       </div>
       <div class="col-md-2">
         <ng-select name="trangthai" [items]="listStep" bindLabel="text" bindValue="id"
@@ -33,7 +37,7 @@
       </div>
     </div>
   </div>
-  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" style="position: relative;" id="div#style-scroll-1">
+  <div class="box-body table-responsive no-padding table_wrapper" style="position: relative;" id="style-scroll-1">
     <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f4f4f9" size="medium" color="#1010ee"
     type="ball-clip-rotate" size="medium">
     <p class="loading">Tải dữ liệu ...</p>
@@ -52,7 +56,8 @@
           <th rowspan="2">Người thanh toán</th>
           <th rowspan="1" colspan="4">Lô hàng</th>
           <th rowspan="2">Nội dung/<br>Ghi chú</th>
-          <th rowspan="3">Loại</th>
+          <th rowspan="2">Loại</th>
+          <th rowspan="2">Hình thức</th>
           <th rowspan="3" class="column-chucnang">Tác vụ</th>
         </tr>
         <tr>
@@ -96,6 +101,14 @@
           <th><input class="form-control" #hbilSearchInput [(ngModel)]="hbilSearch" (input)="filter()" type="text" name="hbilSearch"/></th>
           <th><input class="form-control" #bookingSearchInput [(ngModel)]="bookingSearch" (input)="filter()" type="text" name="bookingSearch"/></th>
           <th><input class="form-control" #noidungSearchInput [(ngModel)]="noidungSearch" (input)="filter()" type="text" name="noidungSearch"/></th>
+          <th>
+            <ng-select name="filterType" (change)="filter()" [(ngModel)]="selectedType" [clearable]="false"
+              [items]="array" bindLabel="text" bindValue="value"></ng-select>
+          </th>
+          <th>
+            <ng-select name="filterDirect" (change)="filter()" [(ngModel)]="selectedIsDirect" [clearable]="false"
+              [items]="arrayD" bindLabel="text" bindValue="id"></ng-select>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -135,6 +148,7 @@
           <td>{{item.bookingNo}}</td>
           <td class="column-ten"> {{item.noiDung}} </td>
           <td>{{item.type?.toString()|List: listType}}</td>
+          <td>{{item.isDirectPayment?.toString()|List: listTypePayment}}</td>
           <td class="column-chuc-nang">
             <button class="btn btn-info btn-sm" type="button" title="Đính kèm"
               (click)="showFiles(item)"><i class="fa fa-download" ></i> Đính kèm

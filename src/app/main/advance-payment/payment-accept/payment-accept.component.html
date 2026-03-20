@@ -20,21 +20,24 @@
         </ng-select>
       </div>
       <div class="col-md-2">
+        <ng-select name="tructiep" [items]="arrayD" (change)="timKiem()" [(ngModel)]="_isDirectPayment" [clearable]="false"
+          bindLabel="text" bindValue="id"></ng-select>
+      </div>
+      <div class="col-md-1">
         <ng-select name="trangthai" [items]="listStep" bindLabel="text" bindValue="id" [(ngModel)]="_trangThai"
           (change)="timKiem()" title="Chọn trạng thái..." [clearable]="false">
         </ng-select>
       </div>
-      <div class="col-md-3">
+      <div class="col-md-2">
         <div class="input-group">
           <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
-            placeholder="Số thanh toán, người thanh toán, lô hàng..."
+            placeholder="Tìm kiếm..."
             title="Tìm kiếm theo: Số thanh toán, người thanh toán, thông tin lô hàng..." />
           <span class="input-group-btn">
             <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
               <i class="fa fa-search"></i>
             </button>
           </span>
-
         </div>
       </div>
     </div>
@@ -58,6 +61,7 @@
           <th rowspan="1" colspan="4">Lô hàng</th>
           <th rowspan="2">Nội dung/<br>Ghi chú</th>
           <th rowspan="2">Loại</th>
+          <th rowspan="2">Hình thức</th>
           <th rowspan="3" class="column-chucnang">Tác vụ/ Trạng thái</th>
         </tr>
         <tr>
@@ -122,6 +126,10 @@
             <ng-select name="filterType" (change)="filter()" [(ngModel)]="selectedType" [clearable]="false"
               [items]="array" bindLabel="text" bindValue="value"></ng-select>
           </th>
+          <th>
+            <ng-select name="filterIsDirect" (change)="filter()" [(ngModel)]="selectedIsDirect" [clearable]="false"
+              [items]="arrayD" bindLabel="text" bindValue="id"></ng-select>
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -163,6 +171,7 @@
           <td>{{item.hawB_HBL}}</td>
           <td>{{item.bookingNo}}</td>
           <td class="column-ten"> {{item.noiDung}} </td>
+          <td>{{item.type?.toString()|List: listType}}</td>
           <td>{{item.isDirectPayment?.toString()|List: listTypePayment}}</td>
           <td class="column-chuc-nang">
             <button class="btn btn-info btn-sm" type="button" title="Đính kèm" (click)="showFiles(item)"><i
@@ -183,14 +192,14 @@
             </button>
             <!-- Phiếu chi -->
             <button
-              *ngIf="item.type==1 && item.isDirectPayment && item.step>=2 && !item.isPaymented && item.amountAfterVAT>=0"
+              *ngIf="item.type==1 && item.isDirectPayment == 1 && item.step>=2 && !item.isPaymented && item.amountAfterVAT>=0"
               type="button" appPermission appFunction="PAYMENTACCEPT" appAction="ACCOUNT"
               class="btn btn-warning btn-sm action" title="Chi tiền" (click)="showPhieuChi(item)">
               <i class="fa fa-usd" aria-hidden="true"></i> Chi tiền
             </button>
             <!-- Phiếu thu -->
             <button
-              *ngIf="!isAdmin && item.isDirectPayment  && item.type==1 && item.step>=2 && !item.isPaymented && item.amountAfterVAT<0"
+              *ngIf="!isAdmin && item.isDirectPayment == 1 && item.type==1 && item.step>=2 && !item.isPaymented && item.amountAfterVAT<0"
               type="button" appPermission appFunction="PAYMENTACCEPT" appAction="ACCOUNT"
               class="btn btn-warning btn-sm action" title="Thu tiền" (click)="showPhieuThu(item)">
               <i class="fa fa-usd" aria-hidden="true"></i> Thu tiền

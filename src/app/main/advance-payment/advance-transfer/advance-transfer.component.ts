@@ -350,6 +350,7 @@ export class AdvanceTransferComponent implements OnInit {
         item.accountid = entity.id;
         item.advanceId = entity.id;
         item.typeAccount = 0;
+        item.isTransfer = true;
         this.viewPhieuchi = true;
         setTimeout(() => {
             this.modalPhieuChi.add(item);

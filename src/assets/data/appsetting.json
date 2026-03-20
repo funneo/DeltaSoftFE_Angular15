@@ -42,12 +42,12 @@
     },
     {
       "id":"PAYMENT-TYPE",
-      "text":"Tiền mặt",
+      "text":"Cá nhân",
       "value":0
     },
     {
       "id":"PAYMENT-TYPE",
-      "text":"Chuyển khoản/Trả sau",
+      "text":"Nhà cung cấp",
       "value":1
     }
   ]

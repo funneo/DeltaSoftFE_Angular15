@@ -181,13 +181,13 @@
               (click)="copyJobConfirm(item)" appPermission appFunction="SHIPMENT" appAction="COPY">
               <i class="fa fa-copy" aria-hidden="true"></i> Copy...
             </button>
-            <button *ngIf="!item.isFinish" class="btn btn-info btn-sm action-file" title="Thanh toán tiền mặt"
+            <button *ngIf="!item.isFinish" class="btn btn-info btn-sm action-file" title="TT Cá nhân"
               (click)="showPayment(item.id,2)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
-              <i class="fa fa-money" aria-hidden="true"></i> TT tiền mặt
+              <i class="fa fa-money" aria-hidden="true"></i> TT Cá nhân
             </button>
-            <button *ngIf="!item.isFinish" class="btn btn-warning btn-sm action-file" title="Thanh toán trả sau"
+            <button *ngIf="!item.isFinish" class="btn btn-warning btn-sm action-file" title="TT Nhà CC"
               (click)="showPayment(item.id,3)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
-              <i class="fa fa-money" aria-hidden="true"></i> TT trả sau
+              <i class="fa fa-money" aria-hidden="true"></i> TT Nhà CC
             </button>
           </td>
         </tr>

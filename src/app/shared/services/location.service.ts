@@ -11,52 +11,52 @@ import { JwtService } from './jwt.service';
 @Injectable({
   providedIn: 'root'
 })
-export class LocationService extends BaseService{
+export class LocationService extends BaseService {
   private token: string;
   constructor(private http: HttpClient, jwtService: JwtService, private authService: AuthService) {
     super();
     this.token = jwtService.getToken();
   }
 
-  add(entity:Locations){
+  add(entity: Locations) {
     let p: FromBodyBase<Locations> = {};
     p.item = entity;
     p.tokenKey = this.token;
     Object.keys(entity).forEach(key => entity[key] === null ? delete entity[key] : '');
     return this.http.post(`${environment.apiUrl}/api/Location/create`, p)
-    .pipe(map((response: any) => {
-      if (response.code == '401')
-        this.authService.logout();
-      else return response;
-    }), catchError(this.handleError));
-   }
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
+  }
 
-   update(entity:Locations){
+  update(entity: Locations) {
     let p: FromBodyBase<Locations> = {};
     p.item = entity;
     p.tokenKey = this.token;
     Object.keys(entity).forEach(key => entity[key] === null ? delete entity[key] : '');
     return this.http.post(`${environment.apiUrl}/api/Location/update`, p)
-    .pipe(map((response: any) => {
-      if (response.code == '401')
-        this.authService.logout();
-      else return response;
-    }), catchError(this.handleError));
-   }
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
+  }
 
-   getDetail(id: number) {
+  getDetail(id: number) {
     let p: FromBodyBase<Locations> = {};
-    let item:Locations={
-      id:id
+    let item: Locations = {
+      id: id
     }
-    p.item=item;
+    p.item = item;
     p.tokenKey = this.token;
     return this.http.post(`${environment.apiUrl}/api/Location/getbyid`, p)
-    .pipe(map((response: any) => {
-      if (response.code == '401')
-        this.authService.logout();
-      else return response;
-    }), catchError(this.handleError));
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
   }
 
 
@@ -65,39 +65,40 @@ export class LocationService extends BaseService{
     p.listId = listId;
     p.tokenKey = this.token;
     return this.http.post(environment.apiUrl + `/api/Location/delete`, p)
-    .pipe(map((response: any) => {
-      if (response.code == '401')
-        this.authService.logout();
-      else return response;
-    }), catchError(this.handleError));
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
   }
 
-  getAll() {
+  getAll(params?: HttpParams) {
     let p: FromBodyBase<Locations> = {};
     p.tokenKey = this.token;
+    p.keyWord = params ? params.get('keyword') : '';
     return this.http.post(`${environment.apiUrl}/api/Location/getall`, p)
-    .pipe(map((response: any) => {
-      if (response.code == '401')
-        this.authService.logout();
-      else return response;
-    }), catchError(this.handleError));
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
   }
- 
-  getPaging(params:HttpParams) {
+
+  getPaging(params: HttpParams) {
     let p: FromBodyBase<Locations> = {};
-    let item:Locations={};
-    item.provinceCode=params.get('provinceCod');
-    item.districtCode=params.get('districtCode');
+    let item: Locations = {};
+    item.provinceCode = params.get('provinceCode');
+    item.districtCode = params.get('districtCode');
     p.tokenKey = this.token;
     p.keyWord = params.get('keyword');
     p.pageIndex = Number.parseInt(params.get('pageIndex'));
     p.pageSize = Number.parseInt(params.get('pageSize'));
-    p.item=item;
+    p.item = item;
     return this.http.post(`${environment.apiUrl}/api/Location/getpaging`, p)
-    .pipe(map((response: any) => {
-      if (response.code == '401')
-        this.authService.logout();
-      else return response;
-    }), catchError(this.handleError));
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
   }
 }

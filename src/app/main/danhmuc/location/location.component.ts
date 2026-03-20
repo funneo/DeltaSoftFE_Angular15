@@ -23,10 +23,15 @@ export class LocationComponent implements OnInit {
   flagDelete = false;
   keyword = '';
   listLocation: Locations[];
-  listProvince:Province[];
-  listDistrict:District[];
-  provinceCode?:string;
-  districtCode?:string;
+  listFilter: Locations[];
+  filterColumns: any = {
+    locationCode: '',
+    locationName: '',
+    locationAddress: '',
+    area: '',
+    provinceName: '',
+    districtName: ''
+  };
   busy: Subscription;
   viewModal = false;
   public flagLinkEdit:boolean = false;
@@ -35,74 +40,45 @@ export class LocationComponent implements OnInit {
   
   constructor(
     private locationService:LocationService, private notificationService: NotificationService
-    ,private provinceService:ProvinceService,private districtService:DistrictService
   ) { }
 
   ngOnInit(): void {
-    this.loadProvince();
     this.loadData();
   }
-
-  loadProvince(): void{
+  loadData(): void {
     const params = new HttpParams()
-      this.busy = this.provinceService.getAll(params).subscribe((res: ResponseValue<Province[]>) => {
-        console.log(res);
-        if (res.code == '200' || res.code == '201') {
-          this.listProvince = res.data
-        }
-      });
-  }
-  loadDistrict():void{
-    this.busy = this.districtService.getbyProvinceCode(this.provinceCode).subscribe((res: ResponseValue<District[]>) => {
-      console.log(res);
+      .set('keyword', this.keyword || '');
+
+    this.busy = this.locationService.getAll(params).subscribe((res: ResponseValue<Locations[]>) => {
       if (res.code == '200' || res.code == '201') {
-        this.listDistrict = res.data
+        this.listLocation = res.data || [];
+        this.filterData();
+      }
+      else {
+        if (res.code == '204') {
+          this.listLocation = [];
+          this.listFilter = [];
+          this.totalRows = 0;
+        }
+        else
+          this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
       }
     });
   }
 
-  loadData(): void {
-    const params = new HttpParams()
-      .set('pageIndex', this.pageIndex.toString())
-      .set('pageSize', this.pageSize.toString())
-      .set('keyword', this.keyword)
-      .set('provinceCode',this.provinceCode)
-      .set('districtCode',this.districtCode)
-      this.busy = this.locationService.getPaging(params).subscribe((res: ResponseValue<Pagination<Locations>>) => {
-        console.log(res);
-        if (res.code == '200' || res.code == '201') {
-          this.listLocation = res.data?.items
-          this.totalRows = res.data?.totalRows;
-        }
-        else {
-          if(res.code == '204')
-          {
-            this.listLocation=[];
-            this.totalRows = 0;
-          }
-          else
-            this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
-        }
+  filterData(): void {
+    this.listFilter = this.listLocation.filter((item) => {
+      return Object.keys(this.filterColumns).every((key) => {
+        const filterValue = (this.filterColumns[key] || '').toString().toLowerCase();
+        const itemValue = (item[key] || '').toString().toLowerCase();
+        return itemValue.includes(filterValue);
       });
+    });
+    this.totalRows = this.listFilter.length;
   }
-  pageChanged(event: PageChangedEvent): void {
-    this.pageIndex = event.page;
-    this.loadData();
-  }
-
-  changedProvince(event:Province){
-    this.provinceCode=event?.provinceCode;
-    this.loadDistrict();
-    this.loadData();
-  }
-  changedDistrict(event:District){
-    this.districtCode=event?.districtCode;
-    this.loadData();
-  }
-
   clickRow(item: Locations): void {
     item.checked = !item.checked;
-    this.listLocation.forEach(it=>{
+    this.listFilter.forEach(it=>{
       if(it!=item)it.checked=false;
     })
     this.icheck();
@@ -122,15 +98,15 @@ export class LocationComponent implements OnInit {
   }
 
   edit(flag: boolean): void {
-    const index = this.listLocation.findIndex(x => x.checked);
+    const index = this.listFilter.findIndex(x => x.checked);
     this.viewModal = true;
     setTimeout(() => {
-      this.modalAddEdit.edit(this.listLocation[index].id.toString(), flag);
+      this.modalAddEdit.edit(this.listFilter[index].id.toString(), flag);
     }, 50);
   }
 
   deleteConfirm(): void {
-    let listChecks = this.listLocation.filter(x => x.checked);
+    let listChecks = this.listFilter.filter(x => x.checked);
     let checks: number[] = [];
     for (let items of listChecks) {
       checks.push(items.id)
@@ -150,17 +126,17 @@ export class LocationComponent implements OnInit {
   }
 
   checkAll(ev) {
-    this.listLocation.forEach(x => x.checked = ev.target.checked)
+    this.listFilter.forEach(x => x.checked = ev.target.checked)
     this.icheck();
   }
 
   isAllChecked() {
-    if (this.listLocation)
-      return this.listLocation.every(_ => _.checked);
+    if (this.listFilter)
+      return this.listFilter.every(_ => _.checked);
   }
 
   icheck() {
-    let checks = this.listLocation.filter(x => x.checked);
+    let checks = this.listFilter.filter(x => x.checked);
     if (checks.length == 1) {
       this.flagDelete = true;
       this.flagEdit = true;
