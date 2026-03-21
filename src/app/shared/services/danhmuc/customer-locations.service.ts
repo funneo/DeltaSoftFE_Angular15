@@ -158,4 +158,33 @@ export class CustomerLocationsService extends BaseService {
     this.cacheService.clearByEntity(CacheConstants.CUSTOMER_LOCATIONS);
   }
 
+  convertMapUrl(url: string) {
+    let p: any = {};
+    p.item = { url: url };
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/GoogleMap/convert-url`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
+  }
+
+  getRoutesWB(originLat: number, originLng: number, destLat: number, destLng: number) {
+    let p: any = {};
+    p.item = { 
+        originLat: originLat,
+        originLng: originLng,
+        destLat: destLat,
+        destLng: destLng
+    };
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/GoogleMap/get-routes`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
+  }
 }
+

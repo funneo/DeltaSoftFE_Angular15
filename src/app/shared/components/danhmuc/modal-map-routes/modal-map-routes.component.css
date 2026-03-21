@@ -54,10 +54,10 @@
     z-index: 2;
 }
 .route-step:last-child .route-step-icon {
-    background: #dc3545; /* Đỏ cho điểm kết thúc */
+    background: #dc3545;
 }
 .route-step:first-child .route-step-icon {
-    background: #28a745; /* Xanh lá cho điểm xuất phát */
+    background: #28a745;
 }
 .route-step-content {
     background: #fff;

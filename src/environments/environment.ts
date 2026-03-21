@@ -23,6 +23,5 @@ export const environment = {
     appId: "1:539641410586:web:384c9c77956e3f475a8da3",
     measurementId: "G-BQ48ZRL93F"
   },
+  googleMap_ApiKey: "[GCP_API_KEY]"
 };
-
-

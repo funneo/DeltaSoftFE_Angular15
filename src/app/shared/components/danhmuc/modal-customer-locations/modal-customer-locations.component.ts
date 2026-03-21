@@ -4,6 +4,7 @@ import { Profile, ResponseValue } from '@app/shared/models';
 import { AuthService, NotificationService, UtilityService } from '@app/shared/services';
 import { CustomerLocationsService } from '@app/shared/services/danhmuc/customer-locations.service';
 import { ModalDirective } from 'ngx-bootstrap/modal';
+import { ModalMapRoutesComponent } from '../modal-map-routes/modal-map-routes.component';
 import { Subscription } from 'rxjs';
 import { MessageContstants } from '@app/shared/constants';
 import { NgForm } from '@angular/forms';
@@ -25,6 +26,10 @@ export class ModalCustomerLocationsComponent implements OnInit {
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter;
   @ViewChild('modalAddEdit', { static: false }) modalAddEdit: ModalDirective;
+  @ViewChild('modalRoutes', { static: false }) modalRoutes: ModalMapRoutesComponent;
+
+
+
   constructor(private _notificationService: NotificationService,private service:CustomerLocationsService,private _authService: AuthService,
   ) { }
 
@@ -101,5 +106,70 @@ export class ModalCustomerLocationsComponent implements OnInit {
 
   OnHidden() {
     this.CloseModal.emit();
+  }
+
+  public googleMapUrl?: string;
+  public flagExtracting: boolean = false;
+
+  convertUrlToCoordinates() {
+    if (!this.googleMapUrl) {
+      this._notificationService.printErrorMessage("Vui lòng nhập đường dẫn Google Maps!");
+      return;
+    }
+    this.flagExtracting = true;
+    this.service.convertMapUrl(this.googleMapUrl).subscribe((res: ResponseValue<any>) => {
+      this.flagExtracting = false;
+      if (res.code == '200' || res.code == '201') {
+        if (res.data) {
+          this.entity.latitude = res.data.latitude;
+          this.entity.longtitude = res.data.longtitude;
+          this._notificationService.printSuccessMessage("Quy đổi tọa độ thành công!");
+          this.googleMapUrl = "";
+        }
+      } else {
+        this._notificationService.printErrorMessage("Không thể quy đổi tọa độ từ đường dẫn này!");
+      }
+    }, () => {
+      this.flagExtracting = false;
+      this._notificationService.printErrorMessage("Có lỗi xảy ra trong quá trình quy đổi!");
+    });
+  }
+
+  viewRoute() {
+    const rawLat = this.entity.latitude;
+    const rawLng = this.entity.longtitude;
+
+    const lat = parseFloat(rawLat?.toString()?.replace(/[^0-9.-]/g, ''));
+    const lng = parseFloat(rawLng?.toString()?.replace(/[^0-9.-]/g, ''));
+
+    if (isNaN(lat) || isNaN(lng)) {
+      this._notificationService.printErrorMessage(`Tọa độ không hợp lệ để tìm lộ trình!`);
+      return;
+    }
+
+    const destLat = 20.835485;
+    const destLng = 106.726535;
+
+    // Call thẳng OpenSource (OSRM) luôn theo yêu cầu
+    this.modalRoutes.show(lat, lng, destLat, destLng);
+
+    /* Lưu lại Google APIs để làm sau khi có api key hợp lệ
+    this.service.getRoutesWB(lat, lng, destLat, destLng).subscribe((res: ResponseValue<any>) => {
+      if ((res.code == '200' || res.code == '201') && res.data && res.data.length > 0) {
+          this.modalRoutes.showGoogle(res.data, lat, lng, destLat, destLng);
+      } else {
+          this.modalRoutes.show(lat, lng, destLat, destLng);
+      }
+    }, () => {
+       this.modalRoutes.show(lat, lng, destLat, destLng);
+    });
+    */
+  }
+
+  selectRoute(eventData: any) {
+    if (eventData && eventData.km !== undefined) {
+      this.entity.distanceToWB = eventData.km;
+    }
+    this._notificationService.printSuccessMessage(`Đã điền tự động khoảng cách lộ trình qua ${eventData.summary}`);
   }
 }

@@ -50,28 +50,51 @@
                     class="form-control" placeholder="Nhập vị trí" focus [readonly]="flagXem" ></textarea>
                 </div>
               </div>
-              <div class="form-group">
-                <label for="inputEmail3" class="col-sm-3 control-label">Kinh độ</label>
+            <div class="form-group" *ngIf="!flagXem">
+                <label class="col-sm-3 control-label">Google Maps URL</label>
                 <div class="col-sm-9">
-                  <input type="number"  [(ngModel)]="entity.longtitude" step="0.0000001"
-                    name="longtitude" class="form-control" placeholder="Nhập kinh độ"
+                  <div class="input-group input-group-sm">
+                    <input type="text" [(ngModel)]="googleMapUrl" name="googleMapUrl" class="form-control"
+                      placeholder="https://maps.app.goo.gl/..." />
+                    <span class="input-group-btn">
+                      <button class="btn btn-warning btn-flat" type="button" (click)="convertUrlToCoordinates()"
+                        [disabled]="flagExtracting">
+                        <i [ngClass]="{'fa-refresh fa-spin': flagExtracting, 'fa-exchange': !flagExtracting}"></i> Quy đổi
+                      </button>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="inputEmail3" class="col-sm-3 control-label">Vĩ độ</label>
+                <div class="col-sm-9">
+                  <input type="text" [(ngModel)]="entity.latitude" name="latitude"
+                    class="form-control" placeholder="Ví dụ: 21.038255"
                     [readonly]="flagXem" />
                 </div>
             </div>
               <div class="form-group">
-                <label for="inputEmail3" class="col-sm-3 control-label">Vĩ độ</label>
+                <label for="inputEmail3" class="col-sm-3 control-label">Kinh độ</label>
                 <div class="col-sm-9">
-                  <input type="number"  [(ngModel)]="entity.latitude" step="0.0000001"
-                    name="latitude" class="form-control" placeholder="Nhập kinh độ"
+                  <input type="text" [(ngModel)]="entity.longtitude" name="longtitude"
+                    class="form-control" placeholder="Ví dụ: 105.832454"
                     [readonly]="flagXem" />
                 </div>
             </div>
               <div class="form-group">
                 <label for="inputEmail3" class="col-sm-3 control-label">K/c đến WB</label>
                 <div class="col-sm-9">
-                  <input type="text"  [(ngModel)]="entity.distanceToWB" [mask]="mask0"
-                    name="distanceToWb" class="form-control" placeholder="Nhập khoảng cách đến ngã 3 World Bank"
-                    [readonly]="flagXem" />
+                  <div class="input-group">
+                    <input type="text" [(ngModel)]="entity.distanceToWB" [mask]="mask0"
+                      name="distanceToWB" class="form-control" placeholder="Nhập khoảng cách"
+                      [readonly]="flagXem" />
+                    <span class="input-group-btn">
+                      <button type="button" class="btn btn-primary btn-flat btn-sm" (click)="viewRoute()" 
+                        title="Xem đường đi trên bản đồ">
+                        <i class="fa fa-map"></i> Vẽ đường
+                      </button>
+                    </span>
+                  </div>
                 </div>
             </div>
              <div class="form-group">
@@ -99,3 +122,5 @@
     </div>
   </div>
 </div>
+
+<modal-map-routes #modalRoutes (RouteSelected)="selectRoute($event)"></modal-map-routes>

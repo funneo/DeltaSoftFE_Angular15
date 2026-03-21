@@ -125,5 +125,4 @@ export class ModalLocationComponent implements OnInit {
   OnHidden() {
     this.CloseModal.emit();
   }
-
 }

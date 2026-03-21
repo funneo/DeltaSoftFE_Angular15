@@ -55,6 +55,7 @@ import { SupplierService } from './supplier.service';
 import { BankService } from './bank.service';
 import { VietQrService } from './viet-qr.service';
 import { OnBehalfPaymentService } from './on-behalf-payment.service';
+import { OpenSourceMapService } from './map/open-source-map.service';
 
 export {
   AuthService,
@@ -113,5 +114,6 @@ export {
   SignalRService,
   BankService,
   VietQrService,
-  OnBehalfPaymentService
+  OnBehalfPaymentService,
+  OpenSourceMapService
 }

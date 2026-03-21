@@ -10,6 +10,7 @@ import { ModalModule } from 'ngx-bootstrap/modal';
 import { TabsModule } from 'ngx-bootstrap/tabs';
 import { NgxMaskModule } from 'ngx-mask';
 import { UtilityService } from '@app/shared/services';
+import { ModalMapRoutesModule } from './../modal-map-routes/modal-map-routes.module';
 
 
 
@@ -25,6 +26,7 @@ import { UtilityService } from '@app/shared/services';
     TabsModule.forRoot(),
     PipeSharedModule,
     NgxMaskModule.forRoot(UtilityService.maskConfig),
+    ModalMapRoutesModule
   ],exports:[ModalCustomerLocationsComponent]
 })
 export class ModalCustomerLocationsModule { }
