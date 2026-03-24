@@ -108,4 +108,11 @@ export class NotificationService {
     }, function () { noCallback() });
   }
 
+  printPromptDialog(message: string, okCallback: (value: string) => any) {
+    this._notifier.prompt(message, "", function (evt, value) {
+      if (evt) {
+        okCallback(value);
+      }
+    });
+  }
 }

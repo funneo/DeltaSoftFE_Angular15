@@ -10,6 +10,8 @@ import { ProvinceService } from '@app/shared/services/province.service';
 import { SupplierService } from '@app/shared/services/supplier.service';
 import { PageChangedEvent } from 'ngx-bootstrap/pagination';
 import { Subscription } from 'rxjs';
+import { Attachfiles } from '@app/shared/models/attachfiles.models';
+import { ModalAttachfileComponent } from '@app/shared/components/systems/modal-attachfile/modal-attachfile.component';
 
 @Component({
   selector: 'app-supplier',
@@ -26,6 +28,8 @@ export class SupplierComponent implements OnInit {
   listSupplier: Supplier[];
   busy: Subscription;
   viewModal = false;
+  viewAttachFiles = false;
+  @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent;
   @ViewChild(ModalSupplierComponent, { static: false }) modalAddEdit: ModalSupplierComponent
 
   constructor(
@@ -168,5 +172,37 @@ export class SupplierComponent implements OnInit {
 
   closeModal(): void {
     this.viewModal = false;
+  }
+
+  showFiles(item?: Supplier) {
+    let supplierCode = '';
+    if (item) {
+      supplierCode = item.supplierCode;
+    } else {
+      const index = this.listSupplier.findIndex(x => x.checked);
+      if (index != -1) {
+        supplierCode = this.listSupplier[index].supplierCode;
+      }
+    }
+
+    if (supplierCode) {
+      let attach: Attachfiles = {
+        frmName: 'SUPPLIER',
+        functionName: 'SUPPLIER',
+        refNo: supplierCode,
+        jobId: ''
+      }
+      this.viewAttachFiles = true;
+      setTimeout(() => {
+        this.modalAttackFiles.edit(attach, false);
+      }, 50);
+    }
+  }
+
+  saveSuccessFile(event: any): void {
+  }
+
+  closeModalFile() {
+    this.viewAttachFiles = false;
   }
 }

@@ -117,3 +117,4 @@ export {
   OnBehalfPaymentService,
   OpenSourceMapService
 }
+export * from './canon-quotationsubcontractors.service';

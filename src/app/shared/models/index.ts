@@ -155,3 +155,5 @@ export {
   DebtInventory, CanonRoad, CanonPrice, SummarySupplierCost,
   OnBehalfPayment, OnBehalfPaymentPayment, OnBehalfPaymentInvoice, OnBehalfPaymentRecovery
 }
+export * from './transports/canon-quotationsubcontractors.model';
+export * from './transports/canon-quotationsubcontractorsdetailed.model';

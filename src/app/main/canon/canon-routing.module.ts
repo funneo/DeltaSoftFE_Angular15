@@ -11,6 +11,7 @@ const routes: Routes = [
   { path: 'price', loadChildren: () => import('./price-canon/price-canon.module').then(m => m.PriceCanonModule), data: { functionCode: 'PRICECANON' }, canActivate: [AuthGuard] },
   { path: 'dbcanon', loadChildren: () => import('./list-debit-note/list-debit-note.module').then(m => m.ListDebitNoteModule), data: { functionCode: 'F036' }, canActivate: [AuthGuard] },
   { path: 'dbchitiet', loadChildren: () => import('./db-chitiet-canon/db-chitiet-canon.module').then(m => m.DbChitietCanonModule), data: { functionCode: 'F036' }, canActivate: [AuthGuard] },
+  { path: 'quotationsubcanon', loadChildren: () => import('./quotation-sub-canon/quotation-sub-canon.module').then(m => m.QuotationSubCanonModule), data: { functionCode: 'F038' }, canActivate: [AuthGuard] }
 ];
 
 @NgModule({

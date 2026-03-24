@@ -36,9 +36,9 @@
           <i class="fa fa-trash"></i> Xóa
         </button>
         <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
-          <i class="fa fa-eye"></i> Xem
-        </button>
-      </div>
+           <i class="fa fa-eye"></i> Xem
+         </button>
+       </div>
     </div>
   </div>
   <!-- /.box-header -->
@@ -61,6 +61,7 @@
           <th>Dịch vụ cung cấp</th>
           <th>Nhân viên</th>
           <th>Tình trạng</th>
+          <th style="width: 80px;">Đính kèm</th>
         </tr>
       </thead>
       <tbody>
@@ -100,7 +101,12 @@
           <td>
             <span [ngClass]="item.lock ? 'label label-danger': 'label label-success'">{{item.lock ? 'Khóa' : 'Hoạt động'
               }}</span>
-
+          </td>
+          <td class="text-center">
+            <button type="button" class="btn btn-info btn-xs" title="Đính kèm"
+              (click)="showFiles(item); $event.stopPropagation()">
+              <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Đính kèm
+            </button>
           </td>
         </tr>
         <tr *ngIf="totalRows == 0 ">
@@ -133,5 +139,8 @@
 </div>
 <modal-supplier *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
 </modal-supplier>
+
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>
 
 <!-- <div [ngBusy]="busy"></div> -->

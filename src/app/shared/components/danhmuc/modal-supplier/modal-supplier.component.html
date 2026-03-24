@@ -8,7 +8,7 @@
           <span aria-hidden="true">&times;</span>
         </button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="min-height: 550px;">
         <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
           *ngIf="entity">
           <div class="box-body">
@@ -297,6 +297,15 @@
                   </div>
                 </div>
               </tab>
+              <tab heading="Đính kèm" *ngIf="entity?.id>0">
+                <div class="form-group">
+                  <div class="col-sm-12">
+                    <button type="button" class="btn btn-info btn-sm" title="Tài liệu đính kèm" (click)="showFiles()">
+                      <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Đính kèm ...
+                    </button>
+                  </div>
+                </div>
+              </tab>
             </tabset>
 
           </div>
@@ -320,3 +329,6 @@
 
 <modal-supplier-vehicle *ngIf="viewVehicles" (SaveSuccess)="saveSuccessVehicle()" (CloseModal)="closeModalVehicle()">
 </modal-supplier-vehicle>
+
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>

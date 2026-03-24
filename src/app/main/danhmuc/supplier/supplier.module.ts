@@ -11,6 +11,8 @@ import { PipeSharedModule } from '@app/shared/pipes/pipe-shared.module';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { ModalSupplierModule } from '@app/shared/components/danhmuc/modal-supplier/modal-supplier.module';
 import { TabsModule } from 'ngx-bootstrap/tabs';
+import { ModalAttachfileModule } from '@app/shared/components/systems/modal-attachfile/modal-attachfile.module';
+
 
 
 @NgModule({
@@ -26,6 +28,7 @@ import { TabsModule } from 'ngx-bootstrap/tabs';
     SupplierRoutingModule,
     ModalSupplierModule,
     TabsModule.forRoot(),
+    ModalAttachfileModule,
   ]
 })
 export class SupplierModule { }

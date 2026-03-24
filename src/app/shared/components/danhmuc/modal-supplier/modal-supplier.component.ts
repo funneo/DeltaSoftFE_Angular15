@@ -38,6 +38,8 @@ import { SupplierDriversService } from "@app/shared/services/danhmuc/supplier-dr
 import { SupplierVehiclesService } from "@app/shared/services/danhmuc/supplier-vehicles.service";
 import { SupplierDrivers } from "@app/shared/models/danhmuc/supplier-drivers.model";
 import { SupplierVehicles } from "@app/shared/models/danhmuc/supplier-vehicles.model";
+import { Attachfiles } from "@app/shared/models/attachfiles.models";
+import { ModalAttachfileComponent } from "../../systems/modal-attachfile/modal-attachfile.component";
 
 
 @Component({
@@ -60,6 +62,8 @@ export class ModalSupplierComponent implements OnInit {
   public userLoged: Profile;
   public busy: Subscription;
   approvedPermission = false;
+  viewAttachFiles = false;
+  @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent;
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
   @ViewChild("modalAddEdit", { static: false }) modalAddEdit: ModalDirective;
@@ -365,5 +369,23 @@ export class ModalSupplierComponent implements OnInit {
 
   OnHidden() {
     this.CloseModal.emit();
+  }
+
+  showFiles() {
+    this.viewAttachFiles = true;
+    let item: Attachfiles = {
+      frmName: 'SUPPLIER',
+      functionName: 'SUPPLIER',
+      refNo: this.entity.supplierCode,
+      jobId: ''
+    }
+    setTimeout(() => {
+      this.modalAttackFiles.edit(item, false);
+    }, 50);
+  }
+  saveSuccessFile(event: any): void {
+  }
+  closeModalFile() {
+    this.viewAttachFiles = false;
   }
 }
