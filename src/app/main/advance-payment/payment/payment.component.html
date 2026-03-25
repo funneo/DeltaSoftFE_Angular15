@@ -90,6 +90,7 @@
           <th>Lượng hàng</th>
           <th>Số tạm ứng</th>
           <th>Loại thanh toán</th>
+          <th>Loại hình</th>
           <th style="width: 80px;">Trạng thái</th>
           <!-- <th style="width: 80px;">Tác vụ</th> -->
         </tr>
@@ -121,7 +122,14 @@
               name="luonghangSearch" /></th>
           <th><input class="form-control" #Input9 [(ngModel)]="tamungSearch" (input)="filter()" type="text"
               name="tamungSearch" /></th>
-          <th></th>
+          <th>
+            <ng-select name="filterLoaiTT" (change)="filter()" [(ngModel)]="selectedLoaiTT" [clearable]="false"
+              [items]="arrayLoaiTT" bindLabel="text" bindValue="value"></ng-select>
+          </th>
+          <th>
+            <ng-select name="filterDirect" (change)="filter()" [(ngModel)]="selectedIsDirect" [clearable]="false"
+              [items]="arrayD" bindLabel="text" bindValue="id"></ng-select>
+          </th>
           <th style="text-align: left; font-weight: 300;">
             <ng-select name="filterType" (change)="filter()" [(ngModel)]="selectedType" [clearable]="false"
               [items]="array" bindLabel="text" bindValue="value"></ng-select>
@@ -167,7 +175,7 @@
         <ng-container *ngFor="let group of groupedItem">
           <!-- Nhóm -->
           <tr (click)="toggleGroup(group)" style=" cursor: pointer; background-color: #f9fafc;">
-            <td colspan="16" style="border-top: 1px solid  #ffffff;border-bottom: 1px solid #dadada;">
+            <td colspan="17" style="border-top: 1px solid  #ffffff;border-bottom: 1px solid #dadada;">
               <strong>{{ group.key }}</strong> ({{ group.items.length }} mục)
             </td>
           </tr>
@@ -195,6 +203,7 @@
               <td>{{ item.bookingNo }}</td>
               <td>{{ item.weight }}</td>
               <td>{{ item.advancesRefNo }}</td>
+              <td>{{ item.type?.toString() | List: listType }}</td>
               <td>{{ item.isDirectPayment?.toString() | List: listTypePayment }}</td>
               <td class="trang-thai">
                 <span [ngClass]="

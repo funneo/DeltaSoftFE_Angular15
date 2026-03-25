@@ -90,6 +90,10 @@ export class PaymentComponent implements OnInit {
   chungtuSearch = '';
   tamungSearch = '';
   selectedType = 0;
+  selectedLoaiTT = 0;
+  selectedIsDirect = 2;
+  arrayLoaiTT = [{ "value": 0, "text": "Tất cả" }, { "value": 1, "text": "Cá nhân" }, { "value": 2, "text": "Nhà cung cấp" }];
+  arrayD = [{ "id": 2, "text": "Tất cả" }, { "id": 1, "text": "Trực tiếp" }, { "id": 0, "text": "Có tạm ứng" }];
   khachhangSearch = '';
   luonghangSearch = '';
   @ViewChild(ModalPhieuChiComponent, { static: false }) modalAccounts: ModalPhieuChiComponent
@@ -227,6 +231,16 @@ export class PaymentComponent implements OnInit {
     if (this.selectedType > 0) {
       this.listFilter = this.listFilter.filter((data) => {
         return this.selectedType == 4 ? data.step == 2 : this.selectedType == 3 ? data.step == 1 : this.selectedType == 5 ? data.step == -1 : this.selectedType == 2 ? (data.status && data.step == 0) : !data.status;
+      });
+    }
+    if (this.selectedLoaiTT > 0) {
+      this.listFilter = this.listFilter.filter((data) => {
+        return this.selectedLoaiTT == 1 ? data.type == 0 : data.type == 1;
+      });
+    }
+    if (this.selectedIsDirect < 2) {
+      this.listFilter = this.listFilter.filter((data) => {
+        return data.isDirectPayment == this.selectedIsDirect;
       });
     }
     if (this._isDirectPayment < 2) {

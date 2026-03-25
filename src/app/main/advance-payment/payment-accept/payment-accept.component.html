@@ -192,14 +192,14 @@
             </button>
             <!-- Phiếu chi -->
             <button
-              *ngIf="item.type==1 && item.isDirectPayment == 1 && item.step>=2 && !item.isPaymented && item.amountAfterVAT>=0"
+              *ngIf="item.isDirectPayment == 1 && item.step>=2 && !item.isPaymented && item.amountAfterVAT>=0"
               type="button" appPermission appFunction="PAYMENTACCEPT" appAction="ACCOUNT"
               class="btn btn-warning btn-sm action" title="Chi tiền" (click)="showPhieuChi(item)">
               <i class="fa fa-usd" aria-hidden="true"></i> Chi tiền
             </button>
             <!-- Phiếu thu -->
             <button
-              *ngIf="!isAdmin && item.isDirectPayment == 1 && item.type==1 && item.step>=2 && !item.isPaymented && item.amountAfterVAT<0"
+              *ngIf="!isAdmin && item.isDirectPayment == 1 && item.step>=2 && !item.isPaymented && item.amountAfterVAT<0"
               type="button" appPermission appFunction="PAYMENTACCEPT" appAction="ACCOUNT"
               class="btn btn-warning btn-sm action" title="Thu tiền" (click)="showPhieuThu(item)">
               <i class="fa fa-usd" aria-hidden="true"></i> Thu tiền
