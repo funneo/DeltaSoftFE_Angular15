@@ -7,6 +7,7 @@ import { ExportService } from '@app/shared/services/export-excel.service';
 import { NgxSpinnerService } from 'ngx-spinner';
 import { PageChangedEvent } from 'ngx-bootstrap/pagination';
 import { Subscription } from 'rxjs';
+import { finalize } from 'rxjs/operators';
 import * as moment from 'moment';
 import { Router } from '@angular/router';
 import { EmployeeDebitService } from '@app/shared/services/employee-debit.service';
@@ -31,7 +32,8 @@ export class EmployeeDebitCreditComponent implements OnInit {
   keyword = '';
   listDebitCredits: EmployeeDebit[];
   listDebitCreditsTimeRange: EmployeeDebit[];
-  busy: Subscription;
+  busyTab1: Subscription;
+  busyTab2: Subscription;
   viewModal = false;
   _branchId: number;
   _branckIdTimeRange: number;
@@ -150,18 +152,23 @@ export class EmployeeDebitCreditComponent implements OnInit {
       params = params.set('employeeId', this._employeeId.toString());
     }
     params = params.set('isTransfer', this.isTransfer ? 'true' : 'false');
+    
     this.spinner.show('spinner-1');
-    this.busy = this.employeeDebitService.report01(params).subscribe((res: ResponseValue<EmployeeDebit[]>) => {
-      if (res.code == '200' || res.code == '201') {
-        this.listDebitCredits = res.data;
-        this.totalRows = this.listDebitCredits?.length;
-        this.totalAmount = this.listDebitCredits?.reduce((sum, current) => sum + (current.debitBalance ?? 0), 0);
-      }
-      else {
-        this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
-      }
-      this.spinner.hide('spinner-1');
-    });
+    if (this.busyTab1) {
+      this.busyTab1.unsubscribe();
+    }
+    this.busyTab1 = this.employeeDebitService.report01(params)
+      .pipe(finalize(() => this.spinner.hide('spinner-1')))
+      .subscribe((res: ResponseValue<EmployeeDebit[]>) => {
+        if (res.code == '200' || res.code == '201') {
+          this.listDebitCredits = res.data;
+          this.totalRows = this.listDebitCredits?.length;
+          this.totalAmount = this.listDebitCredits?.reduce((sum, current) => sum + (current.debitBalance ?? 0), 0);
+        }
+        else {
+          this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
+        }
+      });
   }
   loadDataByTimeRange(): void {
     let tuNgay = moment(this.ngayBatDau).format('YYYYMMDD');
@@ -174,18 +181,23 @@ export class EmployeeDebitCreditComponent implements OnInit {
       params = params.set('employeeId', this._employeeIdTimeRange.toString());
     }
     params = params.set('isTransfer', this.isTransfer ? 'true' : 'false');
+    
     this.spinner.show('spinner-2');
-    this.busy = this.employeeDebitService.report02(params).subscribe((res: ResponseValue<EmployeeDebit[]>) => {
-      if (res.code == '200' || res.code == '201') {
-        this.listDebitCreditsTimeRange = res.data;
-        this.totalRowsTimeRange = this.listDebitCreditsTimeRange?.length;
-        this.totalAmountTimeRange = this.listDebitCreditsTimeRange?.reduce((sum, current) => sum + (current.debitBalance ?? 0), 0);
-      }
-      else {
-        this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
-      }
-      this.spinner.hide('spinner-2');
-    });
+    if (this.busyTab2) {
+      this.busyTab2.unsubscribe();
+    }
+    this.busyTab2 = this.employeeDebitService.report02(params)
+      .pipe(finalize(() => this.spinner.hide('spinner-2')))
+      .subscribe((res: ResponseValue<EmployeeDebit[]>) => {
+        if (res.code == '200' || res.code == '201') {
+          this.listDebitCreditsTimeRange = res.data;
+          this.totalRowsTimeRange = this.listDebitCreditsTimeRange?.length;
+          this.totalAmountTimeRange = this.listDebitCreditsTimeRange?.reduce((sum, current) => sum + (current.debitBalance ?? 0), 0);
+        }
+        else {
+          this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
+        }
+      });
   }
 
   timKiemSingle(): void {
@@ -213,7 +225,7 @@ export class EmployeeDebitCreditComponent implements OnInit {
       this.notificationService.printErrorMessage('Không tìm thấy thông tin nhân viên!');
       return;
     }
-    this.detailModal.show(empId, moment(this.ngayBatDau).format('YYYYMMDD'), moment(this.ngayKetThuc).format('YYYYMMDD'));
+    this.detailModal.show(empId, moment(this.ngayBatDau).format('YYYYMMDD'), moment(this.ngayKetThuc).format('YYYYMMDD'), this.isTransfer);
   }
 
   closeModal(): void {

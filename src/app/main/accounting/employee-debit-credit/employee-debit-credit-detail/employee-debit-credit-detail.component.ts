@@ -11,6 +11,8 @@ import { Router } from '@angular/router';
 import { EmployeeDebitService } from '@app/shared/services/employee-debit.service';
 import { environment } from '@environments/environment';
 import { SystemContstants } from '@app/shared/constants/SystemConstants';
+import { NgxSpinnerService } from 'ngx-spinner';
+import { finalize } from 'rxjs/operators';
 
 @Component({
   selector: 'app-employee-debit-credit-detail',
@@ -36,9 +38,10 @@ export class EmployeeDebitCreditDetailComponent implements OnInit {
   _functionId = SystemContstants.EMPLOYEEDEBIT;
   ngayBatDau: string;
   ngayKetThuc: string;
+  isTransfer = false;
 
   constructor(private employeeDebitService: EmployeeDebitService, private notificationService: NotificationService, private _utilityService: UtilityService,
-     private authService: AuthService, private employeeService: EmployeeService, private router: Router) {
+     private authService: AuthService, private employeeService: EmployeeService, private router: Router, private spinner: NgxSpinnerService) {
     let user = this.authService.getLoggedInUser();
     this._branchId = Number.parseInt(user.branchId);
     this._quyen = Number.parseInt(user.authorisationLevel);
@@ -48,11 +51,12 @@ export class EmployeeDebitCreditDetailComponent implements OnInit {
    
   }
 
-  show(id: number, fromDate: string, toDate: string) {
-    console.log('[DetailModal] show() called - id:', id, 'fromDate:', fromDate, 'toDate:', toDate);
+  show(id: number, fromDate: string, toDate: string, isTransfer: boolean = false) {
+    console.log('[DetailModal] show() called - id:', id, 'fromDate:', fromDate, 'toDate:', toDate, 'isTransfer:', isTransfer);
     this._employeeId = id;
     this.ngayBatDau = fromDate;
     this.ngayKetThuc = toDate;
+    this.isTransfer = isTransfer;
     this.listDatas = [];
     this.loadEmployee();
     this.loadDataDetail();
@@ -85,17 +89,25 @@ export class EmployeeDebitCreditDetailComponent implements OnInit {
       .set('fromDate', this.ngayBatDau)
       .set('toDate', this.ngayKetThuc)
       .set('employeeId', this._employeeId?.toString())
-    this.busy = this.employeeDebitService.reportDetail(params).subscribe((res: ResponseValue<EmployeeDebit[]>) => {
-      if (res.code == '200' || res.code == '201') {
-        this.listDatas = res.data;
-      }
-      else if (res.code == '204') {
-        this.listDatas = [];
-      }
-      else {
-        this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
-      }
-    });
+      .set('isTransfer', this.isTransfer ? 'true' : 'false');
+    
+    this.spinner.show('spinner-detail');
+    if (this.busy) {
+      this.busy.unsubscribe();
+    }
+    this.busy = this.employeeDebitService.reportDetail(params)
+      .pipe(finalize(() => this.spinner.hide('spinner-detail')))
+      .subscribe((res: ResponseValue<EmployeeDebit[]>) => {
+        if (res.code == '200' || res.code == '201') {
+          this.listDatas = res.data;
+        }
+        else if (res.code == '204') {
+          this.listDatas = [];
+        }
+        else {
+          this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
+        }
+      });
   }
 
   timKiem(): void {
@@ -127,7 +139,8 @@ export class EmployeeDebitCreditDetailComponent implements OnInit {
       .set('fromDate', tuNgay)
       .set('toDate', denNgay)
       .set('employeeId', this._employeeId?.toString())
-      .set('branchId', this._branchId.toString());
+      .set('branchId', this._branchId.toString())
+      .set('isTransfer', this.isTransfer ? 'true' : 'false');
     this.busy = this.employeeDebitService.exportExcel(params).subscribe((res: ResponseValue<EmployeeDebit[]>) => {
       if (res.code == '200' || res.code == '201') {
         var a = document.createElement("a");

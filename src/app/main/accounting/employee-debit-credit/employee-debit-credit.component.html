@@ -24,7 +24,7 @@
                     [readonly]="_quyen>0">
                   </ng-select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                   <input type="text" daterangepicker [options]="dateOptionsSingle"
                     (selected)="selectedDateSingle($event)" class="form-control">
                 </div>
@@ -76,7 +76,7 @@
                       {{item.branchCode}}
                     </td>
                     <td>
-                      {{item.employeeName}}
+                      <a [routerLink]="[]" (click)="showDetail(item)">{{item.employeeName}}</a>
                     </td>
                     <td class="so-tien" style="color: rgb(205, 21, 21);">{{item.hanMucTong|currency:'VND':''}}</td>
                     <td class="so-tien" style="color: rgb(58, 32, 231);">{{item.debitBalance|currency:'VND':''}}</td>
@@ -137,17 +137,17 @@
                     placeholder="Chọn nhân viên..." [readonly]="_quyen>0">
                   </ng-select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                   <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
                     class="form-control">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                   <div class="input-group">
                     <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()"
                       [(ngModel)]="keyword" placeholder="Từ khóa" />
                   </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                   <div class="input-group">
                     <span class="input-group-btn">
                       <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
@@ -213,12 +213,12 @@
                 <div class="row">
                   <div class="col-md-4">
                     <div class="dataTables_info">
-                      <span>Tổng số bản ghi: {{ totalRows }}</span>
+                      <span>Tổng số bản ghi: {{ totalRowsTimeRange }}</span>
                     </div>
                   </div>
                   <div class="col-md-4">
                     <div class="dataTables_info">
-                      <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng dư nợ: {{ totalAmount|VND
+                      <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng dư nợ: {{ totalAmountTimeRange|VND
                         }}</span>
                     </div>
                   </div>

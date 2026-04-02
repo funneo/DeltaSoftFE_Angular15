@@ -4,7 +4,7 @@ import { Pipe } from '@angular/core';
     name: 'VND'
 })
 export class VNDFormat {
-    transform(value: number,
+    transform(value: any,
         currencySign: string = '',//tên tiền tệ
         decimalLength: number = 0,
         chunkDelimiter: string = ',',
@@ -12,17 +12,20 @@ export class VNDFormat {
         chunkLength: number = 3): string {
         // console.log(value);
         // debugger
-        if (value) {
-            if (value != null) {
-                // let valueString = value.toString().replace(/[.]+/g, '');
-                let valueString = value.toString();
-                value = parseFloat(valueString.replace(/[.]+/g, ','));
+        if (value !== null && value !== undefined) {
+            let numericValue: number;
+            if (typeof value === 'string') {
+                numericValue = parseFloat(value.replace(/[.]+/g, ','));
+            } else {
+                numericValue = value as number;
             }
-            //value /= 100;
+            
+            // Handle NaN if parsing fails
+            if (isNaN(numericValue)) return "0";
+            
             let result = '\\d(?=(\\d{' + chunkLength + '})+' + (decimalLength > 0 ? '\\D' : '$') + ')'
-            let num = value.toFixed(Math.max(0, ~~decimalLength));
+            let num = numericValue.toFixed(Math.max(0, ~~decimalLength));
             let so = currencySign + (decimalDelimiter ? num.replace(',', decimalDelimiter) : num).replace(new RegExp(result, 'g'), '$&' + chunkDelimiter);
-            // return so.replace(',00', '');
             return so;
         }
         return "";

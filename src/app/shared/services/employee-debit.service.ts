@@ -83,6 +83,9 @@ export class EmployeeDebitService extends BaseService {
     p.fromDate = params.get('fromDate');
     p.toDate = params.get('toDate');
     p.item.employeeId = Number.parseInt(params.get('employeeId'));
+    if (params.has('isTransfer')) {
+      p.item.isTransfer = params.get('isTransfer') === 'true';
+    }
     return this.http.post(`${environment.apiUrl}/api/employeedebit/GetReportDetail`, p)
       .pipe(map((response: any) => {
         if (response.code == '401')
@@ -119,6 +122,9 @@ export class EmployeeDebitService extends BaseService {
     p.pageSize = Number.parseInt(params.get('pageSize'));
     p.fromDate = params.get('fromDate');
     p.toDate = params.get('toDate');
+    if (params.has('isTransfer')) {
+      p.item.isTransfer = params.get('isTransfer') === 'true';
+    }
     return this.http.post(`${environment.apiUrl}/api/employeedebit/export-excel-detail`, p)
       .pipe(map((response: any) => {
         if (response.code == '401')

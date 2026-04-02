@@ -3,7 +3,7 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h4 class="modal-title pull-left">Chi tiết dư nợ</h4>
+        <h4 class="modal-title pull-left">Chi tiết dư nợ <span class="label {{isTransfer ? 'label-warning' : 'label-success'}}">{{isTransfer ? 'Chuyển khoản' : 'Tiền mặt'}}</span></h4>
         <button type="button" class="close pull-right" aria-label="Close" (click)="closeModal()">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -32,7 +32,11 @@
             </div>
           </div>
           <!-- /.box-header -->
-          <div class="box-body table-responsive no-padding">
+          <div class="box-body table-responsive no-padding" style="position: relative; min-height: 200px;">
+            <ngx-spinner name="spinner-detail" [fullScreen]="false" type="ball-clip-rotate" size="medium" bdOpacity="0.9"
+              bdColor="#f4f4f9" color="#1010ee">
+              <p class="loading">Tải dữ liệu ...</p>
+            </ngx-spinner>
             <table class="table table-bordered table-striped table-hover">
               <thead>
                 <tr>
