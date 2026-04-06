@@ -1,0 +1,216 @@
+<div class="box box-primary box-chieu-cao">
+  <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f4f4f9" size="medium" color="#1010ee"
+    type="ball-clip-rotate" size="medium">
+    <p class="loading">Tải dữ liệu ...</p>
+  </ngx-spinner>
+  <div class="row">
+    <div class="box-header with-border">
+      <div class="col-md-2">
+        <h3 class="box-title">Lệnh vận chuyển CBT</h3>
+      </div>
+      <div class="col-md-2">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+          class="form-control">
+      </div>
+      <div class="col-md-1">
+        <ng-select name="chi nhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id" [(ngModel)]="branchId"
+          (change)="changedBranch($event)" placeholder="Chọn chi nhánh..." [disabled]="!adminPermission">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+      </div>
+      <div class="col-md-2">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa" />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="col-md-3 text-right">
+        <div class="dropdown btn-group">
+          <button class="btn btn-success btn-sm" type="button" appPermission appFunction="F003" (click)="export()"
+            appAction="EXPORT">
+            <i class="fa fa-file-excel-o"></i> Export</button>
+        </div>
+        <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="F003" appAction="CREATE">
+          <i class="fa fa-plus"></i> Thêm
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+          appFunction="F003" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="F003" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+        <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+          <i class="fa fa-eye"></i> Xem
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y" id="div#style-scroll-1">
+    <table class="table table-bordered table-hover ">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Tình trạng</th>
+          <th class="column-ten-sm">RefNo</th>
+          <th class="column-ten-sm">Ngày</th>
+          <th class="column-ten-sm">Người lập</th>
+          <th class="column-ten-lg">Khách hàng</th>
+          <th class="column-ten-lg">JobId</th>
+          <th class="column-ten-sm">Biển số xe</th>
+          <th class="column-ten-sm">Tên lái xe</th>
+          <th class="column-ten-lg">Cung toàn tuyến</th>
+          <th class="column-ten-lg">Tóm tắt lệnh</th>
+          <th class="column-ten-sm">Ghi chú</th>
+          <th class="column-ten-sm">Tác vụ</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th>
+            <ng-select name="filterType" (change)="filter()" [(ngModel)]="tinhtrang" [clearable]="false" [items]="array"
+              bindLabel="text" bindValue="value"></ng-select>
+          </th>
+          <th><input class="form-control" #refNoSearchInput [(ngModel)]="refNoSearch" (input)="filter()" type="text"
+              name="refNoSearch" /></th>
+          <th><input class="form-control" #ngaySearchInput [(ngModel)]="ngaySearch" (input)="filter()" type="text"
+              name="ngaySearch" /></th>
+          <th><input class="form-control" #nguoilapSearchInput [(ngModel)]="nguoilapSearch" (input)="filter()"
+              type="text" name="nguoilapSearch" /></th>
+          <th><input class="form-control" #khachhangSearchInput [(ngModel)]="khachhangSearch" (input)="filter()"
+              type="text" name="khachhangSearch" /></th>
+          <th><input class="form-control" #jobidSearchInput [(ngModel)]="jobidSearch" (input)="filter()" type="text"
+              name="jobidSearch" /></th>
+          <th><input class="form-control" #bksSearchInput [(ngModel)]="bksSearch" (input)="filter()" type="text"
+              name="bksSearch" /></th>
+          <th><input class="form-control" #laixeSearchInput [(ngModel)]="laixeSearch" (input)="filter()" type="text"
+              name="laixeSearch" /></th>
+          <th><input class="form-control" #toantuyenSearchInput [(ngModel)]="toantuyenSearch" (input)="filter()"
+              type="text" name="toantuyenSearch" /></th>
+          <th><input class="form-control" #msumSearchInput [(ngModel)]="sumSearch" (input)="filter()" type="text"
+              name="sumSearch" /></th>
+          <th><input class="form-control" ghichuSearchInput [(ngModel)]="ghichuSearch" (input)="filter()" type="text"
+              name="ghichuSearch" /></th>
+          <th colspan="1"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of visibleData" (click)="clickRow(item)"
+          [style.background-color]="item.isSubcontractors ? '#DFF6FF' : 'white'"
+          [ngClass]="{'bgColorSkyblue': item.checked}" style="cursor: pointer;">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" (click)="$event.stopPropagation()"
+                disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>
+            <span [ngClass]="item.status == 3? '  label label-info': item.status==2 ?
+                'label label-success': item.status==1? 'label label-warning': item.status==-1?
+                'label label-danger': 'label label-khoitao'">
+              {{item.rStatus}}
+            </span>
+          </td>
+          <td><b>{{item.refNo}}</b></td>
+          <td>
+            <span>
+              {{item.createdDate | date:'dd/MM/yyyy'}}
+            </span>
+          </td>
+          <td class="column-ten-sm">
+            <span>{{item.createdByName}}</span>
+          </td>
+          <td>
+            <span><b>{{item.customerName}}</b></span>
+          </td>
+          <td>
+            <span><b>{{item.jobId}}</b></span>
+          </td>
+          <td class="column-ten-sm">
+            <span>
+              {{item.vihiclelLicensePlates}}
+            </span>
+          </td>
+          <td class="column-ten-sm">
+            <br>
+            <span>{{item.driverName}}</span>
+          </td>
+          <td>{{item.fullRoute}}</td>
+          <td>{{item.dispatchSummarize }}</td>
+          <td>{{item.note}}</td>
+          <td>
+            <button *ngIf="item.status<1" type="button" class="btn btn-duyet btn-sm action-file" title="Tạm ứng"
+              (click)="showAdvances(item)" appPermission appFunction="ADVANCE" appAction="CREATE">
+              <i class="fa fa-copy" aria-hidden="true"></i> Tạm ứng
+            </button>
+            <button *ngIf="item.status<1" type="button" class="btn btn-success btn-sm action-file" title="Thanh toán"
+              (click)="showPayment(item)" appPermission appFunction="PAYMENT" appAction="CREATE">
+              <i class="fa fa-copy" aria-hidden="true"></i> Thanh toán
+            </button>
+            <button *ngIf="item.status<1" class="btn btn-danger btn-sm action-file" title="Cấp dầu cây dầu nhà"
+              (click)="showDriverFuelApproval(item)" appPermission appFunction="DRIVERFUELAPPROVAL" appAction="CREATE">
+              <i class="fa fa-money" aria-hidden="true"></i> Cấp dầu
+            </button>
+            <button *ngIf="item.status<1" class="btn btn-warning btn-sm action-file" title="Mua dầu ngoài bằng tiền mặt"
+              (click)="showExternalOilPurchased(item)" appPermission appFunction="EXTERNALOILPURCHASED"
+              appAction="CREATE">
+              <i class="fa fa-money" aria-hidden="true"></i> Mua dầu tiền mặt
+            </button>
+            <button type="button" class="btn btn-info btn-sm action-file" title="Chứng từ đính kèm"
+              (click)="showFiles(item)">
+              <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Đính kèm
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="listDispatchorder?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listFilter?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ listFilter?.length }}</span>
+          </div>
+        </div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="9"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="50" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+
+<modal-dispatch-order-cbt *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-dispatch-order-cbt>
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>
+<modal-advance-cbt *ngIf="viewAdvances" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-advance-cbt>
+<modal-payment-cbt *ngIf="viewPayment" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-payment-cbt>
+<modal-driver-fuel-approval *ngIf="viewDriverFuelApproval" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-driver-fuel-approval>
+<modal-external-oil-purchased *ngIf="viewExternalOilPurchased" (SaveSuccess)="saveSuccessFile($event)"
+  (CloseModal)="closeModalFile()">
+</modal-external-oil-purchased>
+
+<!-- <div [ngBusy]="busy"></div> -->

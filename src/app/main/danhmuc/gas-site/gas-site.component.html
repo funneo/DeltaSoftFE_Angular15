@@ -1,0 +1,90 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="row">
+      <div class="box-header with-border">
+        <div class="col-md-2">
+          <h3 class="box-title">Danh mục Kho dầu nhà</h3>
+        </div>
+        <div class="col-md-3"></div>
+        <div class="col-md-3"></div>
+        <div class="col-md-4 text-right">
+          <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="GASSITES"
+            appAction="CREATE">
+            <i class="fa fa-plus"></i> Thêm
+          </button>
+          <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+            appFunction="GASSITES" appAction="UPDATE">
+            <i class="fa fa-edit"></i> Sửa
+          </button>
+          <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+            appFunction="GASSITES" appAction="DELETE">
+            <i class="fa fa-trash"></i> Xóa
+          </button>
+          <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+            <i class="fa fa-eye"></i> Xem
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding">
+      <table class="table table-bordered table-striped table-hover">
+        <thead>
+          <tr>
+            <th class="table-checkbox">
+              <label class="custom-checkbox">
+                <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+                <span class="helping-el"></span>
+              </label>
+            </th>
+            <th>Chi nhánh</th>
+            <th>Tên Kho dầu</th>
+            <th>Dung lượng (lit)/Tồn đầu kỳ</th>
+            <th>Loại nhiên liệu</th>
+            <th>Id Trạm</th>
+            <th>Id Khách hàng</th>
+            <th>Id Phương tiện</th>
+            <th>DriverId</th>
+            <th>NextTime</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of listGasSite" (click)="clickRow(item)">
+            <td class="table-checkbox">
+              <label class="custom-checkbox">
+                <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                <span class="helping-el"></span>
+              </label>
+            </td>
+            <td>{{item.branchName}}</td>
+            <td>{{item.siteName}}</td>
+            <td>
+              <span>
+                Dung lượng: {{item.capacity |number}}
+              </span>
+              <br>
+              <span><b>Tồn đầu:  {{item.startInventory |number}}</b></span>
+            </td>
+
+            <td>{{item.gasTypeName}}</td>
+            <td>{{item.stationId}}</td>
+            <td>{{item.nozzleCode}}</td>
+            <td>{{item.customerId}}</td>
+            <td>{{item.vehicleId}}</td>
+            <td>{{item.driverId}}</td>
+            <td>{{item.nextTime}}</td>
+          </tr>
+          <tr *ngIf="listGasSite?.length == 0 ">
+            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- /.box-body -->
+    <!-- /.box -->
+  </div>
+  
+  <modal-gas-site *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+  </modal-gas-site>
+  
+  <!-- <div [ngBusy]="busy"></div> -->
+  

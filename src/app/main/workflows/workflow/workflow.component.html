@@ -1,0 +1,328 @@
+<div>
+  <tabset>
+    <tab heading="Công việc đang thực hiện">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-1">
+              <h3 class="box-title">Công việc</h3>
+            </div>
+            <div class="col-md-2">
+              <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+                class="form-control">
+            </div>
+            <div class="col-md-2">
+              <ng-select class="auto-grow" name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                [(ngModel)]="branchId" (change)="changedBranch($event)" [readonly]="!adminPermission">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+              <ng-select class="auto-grow" name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+                [(ngModel)]="customerId" (change)="changedCustomer($event)" placeholder="Chọn khách hàng...">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+                  placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+            <div class="col-md-3 text-right">
+              <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="WORKFLOW"
+                appAction="CREATE">
+                <i class="fa fa-plus"></i> Thêm
+              </button>
+              <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+                appFunction="WORKFLOW" appAction="UPDATE">
+                <i class="fa fa-edit"></i> Sửa
+              </button>
+              <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagEdit" appPermission
+                appFunction="WORKFLOW" appAction="DELETE">
+                <i class="fa fa-trash"></i> Xóa
+              </button>
+              <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+                <i class="fa fa-eye"></i> Xem
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding" style="position: relative;">
+          <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f4f4f9" size="medium" color="#1010ee" name="spinner1"
+          type="ball-clip-rotate" size="medium">
+          <p class="loading">Tải dữ liệu ...</p>
+        </ngx-spinner>
+          <table class="table table-bordered table-hover">
+            <thead>
+              <tr>
+                <th class="table-checkbox">
+                  <label class="custom-checkbox"> ID</label>
+                </th>
+                <th class="column-ten-md">Khách hàng/Tên CV</th>
+                <th class="column-ten-hg">Nhóm thực hiện/Nội dung Công việc</th>
+                <th>Số tờ khai</th>
+                <th>HAWB_HBL</th>
+                <th>Mã tham chiếu</th>
+                <th class="column-ten-sm">Người tạo việc/SĐT</th>
+                <th class="column-ten-sm">Người nhận việc/SĐT</th>
+                <th class="column-ten-sm">T/g CS yêu cầu</th>
+                <th>T/g OpMan điều chỉnh</th>
+                <th>OpMan Ghi chú</th>
+                <th>Người thực hiện/SĐT/BKS</th>
+                <th>Trạng thái</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of listWorkflow" (click)="clickRow(item)" [style.background-color]="item.status>0 ? '#DFF6FF' : 'white'">
+                <td class="table-checkbox">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                    <span class="helping-el"></span>
+                    <span><b> {{ item.id }}</b></span>
+                  </label>
+                </td>
+                <td>
+                  <span>
+                    {{item.customerName}}
+                  </span>
+                  <br>
+                  <span style="font-weight: bold;">{{item.jobId}}</span>
+                  <br>
+                  <span><b>{{item.jobName}}</b></span>
+                </td>
+                <td>
+                  <span style="color:blue;">
+                     <b>Nhóm TH: {{item.handlingGroupName}}</b>
+                  </span>
+                  <br>
+                    CV: {{item.jobDescription}}
+                </td>
+                <td>{{item.item.cdsNumber}}</td>
+                <td>{{item.item.hawB_HBL}}</td>
+                <td>{{item.referCode}}</td>
+                <td>{{item.createdByFullName}}</td>
+                <td>{{item.jobAssigningUserFullName}}</td>
+                <td>
+                  <span>
+                    S: {{item.estimatedStartTime | date:'dd/MM/yyyy HH:mm'}}
+                  </span>
+                  <br>
+                  <span>
+                    E: {{item.estimatedFinishTime | date:'dd/MM/yyyy HH:mm'}}
+                  </span>
+                </td>
+                <td>
+                  <span>
+                    S: {{item.opManChangedEstimatedStartTime | date:'dd/MM/yyyy HH:mm'}}
+                  </span>
+                  <br>
+                  <span>
+                    E: {{item.opManChangedEstimatedFinishTime | date:'dd/MM/yyyy HH:mm'}}
+                  </span>
+                </td>
+                <td>{{item.opManUpdateNotes }}</td>
+                <td>{{item.jobAssignedUserFullName }}
+                  <br *ngIf="item.jobGroupId==14">
+                  <span *ngIf="item.jobGroupId==14">{{item.driverTel}}</span>
+                  <br *ngIf="item.jobGroupId==14">
+                  <span *ngIf="item.jobGroupId==14">{{item.vihiclelLicensePlates}}</span>
+                </td>
+                <td> 
+                  <span [ngClass]="item.status==0? 'label label-khoitao': 'label label-primary'">
+                    {{item.rStatus}}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-warning btn-sm"
+                  (click)="copy(item)">Copy
+                </button>
+                  <button *ngIf="item.isJobFinish && item.createdBy==userLoged.id" class="btn btn-success btn-sm"
+                    (click)="grade(item.id)">Đánh giá
+                  </button>
+                  <button class="btn btn-primary btn-sm" (click)="viewimage(item.id)">
+                    <i class="fas fa-image"></i> Ảnh/POD
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="listWorkflow?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listWorkflow?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ totalRows }}</span>
+                </div>
+              </div>
+              <div class="col-md-7 text-right">
+                <div class="page">
+                  <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                    (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;"
+                    nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
+                  </pagination>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box -->
+      </div>
+    </tab>
+    <tab heading="Công việc đã kết thúc">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-2">
+              <h3 class="box-title">Công việc Kết thúc</h3>
+            </div>
+            <div class="col-md-2">
+              <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDateFinish($event)"
+                class="form-control">
+            </div>
+            <div class="col-md-2">
+              <ng-select class="auto-grow" name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                [(ngModel)]="branchIdKetthuc" (change)="changedBranchKetthuc($event)" [readonly]="!adminPermission">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+              <ng-select name="listType" [items]="listType" [clearable]="false"  bindLabel="name" bindValue="id"
+                [(ngModel)]="selectedType" (change)="changedType($event)">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+              <ng-select class="auto-grow" name="khachhangkt" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+                [(ngModel)]="customerIdFinish" (change)="changedCustomerFinish($event)" placeholder="Chọn khách hàng...">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" class="form-control" name="filterFinish" (keyup.enter)="timKiemFinish()"
+                  [(ngModel)]="keywordFinish" placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiemFinish()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding" style="position: relative;">
+          <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f4f4f9" size="medium" color="#1010ee" name="spinner2"
+          type="ball-clip-rotate" size="medium">
+          <p class="loading">Tải dữ liệu ...</p>
+        </ngx-spinner>
+          <table class="table table-bordered  table-hover">
+            <thead>
+              <tr>
+                <th class="column-ten-md">ID/Khách hàng/Tên CV</th>
+                <th class="column-ten-hg">Nội dung Công việc</th>
+                <th class="column-ten-sm">Người tạo việc/SĐT</th>
+                <th class="column-ten-sm">Ngày tạo</th>
+                <th >Người nhận việc/SĐT</th>
+                <th>Người thực hiện/SĐT</th>
+                <th>Đánh giá/Nhận xét OpMan</th>
+                <th>Đánh giá/Nhận xét Op</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of listWorkflowFinish" [ngClass]="{'bgColorSkyblue': item.opGradeByCS>0 && item.opManGradeByCS>0}">
+                <td>
+                  <span><b> {{ item.id }}</b></span>
+                  <br>
+                  <span>
+                    {{item.customerName}}
+                  </span>
+                  <br>
+                  <span style="font-weight: bold;">{{item.jobId}}</span>
+                  <br>
+                  <span><b>{{item.jobName}}</b></span>
+                </td>
+                <td>{{item.jobDescription}}</td>
+                <td>{{item.createdByFullName}}</td>
+                <td>{{item.createdDate | date:'dd-MM-yyyy HH:mm'}}</td>
+                <td>{{item.jobAssigningUserFullName}}</td>
+                <td>{{item.jobAssignedUserFullName }}</td>
+                <td>
+                  <span>
+                    {{item.opManGradeByCS}}
+                  </span>
+                  <br>
+                  <span>
+                    {{item.opManEvaluationByCS}}
+                  </span>
+                </td>
+                <td>
+                  <span>
+                    {{item.opGradeByCS}}
+                  </span>
+                  <br>
+                  <span>
+                    {{item.opEvaluationByCS}}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn btn-warning btn-sm"
+                    (click)="copy(item)">Copy
+                  </button>
+                  <button *ngIf="item.createdBy==userLoged.id ||adminPermission" class="btn btn-success btn-sm"
+                    (click)="grade(item.id)">Đánh giá
+                  </button>
+                  <button class="btn btn-primary btn-sm" (click)="viewimage(item.id)">
+                    <i class="fas fa-image"></i> Ảnh/POD
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="listWorkflowFinish?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listWorkflowFinish?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ totalRowsFinish }}</span>
+                </div>
+              </div>
+              <div class="col-md-7 text-right">
+                <div class="page">
+                  <pagination [totalItems]="totalRowsFinish" [(ngModel)]="pageIndex" [maxSize]="5"
+                    (pageChanged)="pageChangedFinish($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;"
+                    nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
+                  </pagination>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box -->
+      </div>
+    </tab>
+  </tabset>
+</div>
+
+
+<modal-workflow *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-workflow>
+<modal-grade-workflow *ngIf="viewGrade" (SaveSuccess)="gradeSuccess($event)" (CloseModal)="closeGradeModal()">
+</modal-grade-workflow>
+<modal-workflow-images *ngIf="viewImagePod" (CloseModal)="closeImagePodModal()">
+</modal-workflow-images>
+<!-- <div [ngBusy]="busy"></div> -->

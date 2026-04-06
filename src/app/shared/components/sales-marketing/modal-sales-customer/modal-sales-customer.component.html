@@ -1,0 +1,221 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">THÔNG TIN KHÁCH HÀNG</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="col-sm-12">
+              <div class="col-sm-7">
+                <div class="form-group" *ngIf="entity.customerId">
+                  <label class="col-sm-3 control-label">Mã khách hàng</label>
+                  <div class="col-sm-3">
+                    <input class="form-control" [(ngModel)]="entity.customerCode" type="text" name="code" [readonly]="true" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-3 control-label">Tên khách hàng
+                    <span class="error">*</span>
+                  </label>
+                  <div class="col-sm-9">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.customerName" required
+                      maxlength="255" name="tenpkh" class="form-control" placeholder="Nhập tên khách hàng..." focus
+                      [readonly]="flagXem" />
+                    <small [hidden]="tennhomquyen.valid || (tennhomquyen.pristine && !addEditForm.submitted)"
+                      class="text-danger">
+                      Tên không được để trống và không vượt quá 255 kí tự
+                    </small>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-3 control-label">Tên tiếng Anh
+                  </label>
+                  <div class="col-sm-9">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.nameE" name="nameen"
+                      class="form-control" placeholder="Nhập tên tiếng Anh" focus [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-3 control-label">Địa chỉ</label>
+                  <div class="col-sm-9">
+                    <textarea class="form-control" [(ngModel)]="entity.address" type="text" name="add" rows="3"
+                      placeholder="Nhập địa chỉ" [readonly]="flagXem"></textarea>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-5">
+                <fieldset>
+                  <legend>Người liên hệ</legend>
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">Họ tên
+                    </label>
+                    <div class="col-sm-8">
+                      <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.contact" name="contact"
+                        class="form-control" placeholder="Họ tên" focus [readonly]="flagXem" />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">Chức vụ</label>
+                    <div class="col-sm-8">
+                      <input class="form-control" [(ngModel)]="entity.contactPosition" type="text" name="contactPosition"
+                        placeholder="Chức vụ" [readonly]="flagXem" />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="col-sm-4 control-label">Điện thoại
+                    </label>
+                    <div class="col-sm-8">
+                      <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.contactTel" name="contactTel" class="form-control"
+                        placeholder="Điện thoại" focus [readonly]="flagXem" />
+                    </div>
+                  </div>
+                </fieldset>
+              </div>
+            </div>
+            <fieldset>
+              <legend>Thông tin chi tiết</legend>
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Điện thoại
+                  </label>
+                  <div class="col-sm-8">
+                    <input type="text" #tel="ngModel" [(ngModel)]="entity.tel" name="tel" class="form-control"
+                      placeholder="Điện thoại" focus [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Fax
+                  </label>
+                  <div class="col-sm-8">
+                    <input type="text" #fax="ngModel" [(ngModel)]="entity.fax" name="fax" class="form-control"
+                      placeholder="Điện thoại" focus [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Email</label>
+                  <div class="col-sm-8">
+                    <input class="form-control" [(ngModel)]="entity.email" type="text" name="email"
+                      placeholder="Nhập email" [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Website</label>
+                  <div class="col-sm-8">
+                    <input class="form-control" [(ngModel)]="entity.website" type="text" name="website"
+                      placeholder="Nhập email" [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Quốc gia
+                  </label>
+                  <div class="col-sm-8">
+                    <ng-select name="countryCode" [items]="listCountrys" bindLabel="countryName" bindValue="countryCode"
+                      [(ngModel)]="entity.countryCode" [readonly]="flagXem">
+                    </ng-select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Lĩnh vực hoạt động
+                  </label>
+                  <div class="col-sm-8">
+                    <ng-select name="scopeofOperationId" [items]="listTypes" bindLabel="categoryName" bindValue="id"
+                      [(ngModel)]="entity.scopeofOperationId" [readonly]="flagXem">
+                    </ng-select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-6">
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Quản lý bán hàng
+                  </label>
+                  <div class="col-sm-8">
+                    <ng-select name="manager" [items]="listEmployees" bindLabel="employeeFullName" bindValue="id"
+                      [readonly]="true" [(ngModel)]="entity.managerSalesId" [readonly]="true">
+                    </ng-select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Nhân viên Sales
+                  </label>
+                  <div class="col-sm-8">
+                    <ng-select name="employee" [items]="listEmployees" bindLabel="employeeFullName" bindValue="id"
+                      [readonly]="flagXem" [(ngModel)]="entity.salesId" placeholder="Chọn nhân viên...">
+                    </ng-select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Mã số thuế
+                  </label>
+                  <div class="col-sm-8">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.taxCode" name="taxCode"
+                      class="form-control" placeholder="Nhập mã số thuế" focus [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Số tài khoản
+                  </label>
+                  <div class="col-sm-8">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.account" name="taxcode"
+                      class="form-control" placeholder="Nhập mã số thuế" focus [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Ngân hàng
+                  </label>
+                  <div class="col-sm-8">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.account" name="bank"
+                      class="form-control" placeholder="Nhập mã số thuế" focus [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-4 control-label">Tỉnh
+                  </label>
+                  <div class="col-sm-8">
+                    <ng-select name="tinh" [items]="listProvinces" bindLabel="provinceName" bindValue="provinceCode"
+                      [(ngModel)]="entity.provinceCode" [readonly]="flagXem">
+                    </ng-select>
+                  </div>
+                </div>
+              </div>
+              <div class="col-sm-12">
+                <div class="form-group">
+                <label class="col-sm-2 control-label">Ghi chú</label>
+                <div class="col-sm-10">
+                  <textarea class="form-control textrea-size" [(ngModel)]="entity.notes" name="ghichu" rows="10"
+                    placeholder="Nhập ghi chú" [readonly]="flagXem"></textarea>
+                </div>
+              </div>
+              </div>
+
+            </fieldset>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="_accept && entity.customerType==2 && !entity.lock  && !entity.ok" [disabled]="flagSave"  (click)="lock()" type="button" class="btn btn-warning btn-sm">
+              <i class="fa fa-lock"></i> Khóa</button>
+              <button *ngIf="_accept && entity.customerType ==2 && !entity.lock  && !entity.ok" [disabled]="flagSave" (click)="acceptdk05(true)" type="button" class="btn btn-success btn-sm">
+                <i class="fa-solid fa-file-export"></i> Export -> DK05</button>
+            <button *ngIf="_accept && entity.customerType<1 && !entity.lock" type="button" (click)="accept()" [disabled]="flagSave"  class="btn btn-success btn-sm">
+              <i class="fa fa-check"></i> Duyệt</button>
+              <button *ngIf="_accept && entity.customerType<1  && !entity.lock" type="button" (click)="lock()"  class="btn btn-warning btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-lock"></i> Khóa</button>
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

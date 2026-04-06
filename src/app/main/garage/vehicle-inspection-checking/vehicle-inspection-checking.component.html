@@ -1,0 +1,71 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="row">
+      <div class="box-header with-border">
+        <div class="col-md-2">
+          <h3 class="box-title">Giám sát kiểm tra phương tiên</h3>
+        </div>
+        <div class="col-md-2">
+            <input name="ngaybd" type="text" daterangepicker [options]="ngaybatdauOption"
+            [(ngModel)]="ngayBatDau" class="form-control" (selected)="selectedNgaybatdau($event)" (hideDaterangepicker)="closedNgaybatdau($event)" autocomplete="off">
+
+        </div>
+        <div class="col-md-2">
+            <ng-select name="khachhang" [items]="listEmployee" bindLabel="employeeFullName" bindValue="userId"
+            [(ngModel)]="_userId" (change)="changedEmployee($event)" placeholder="Chọn nhân viên...">
+          </ng-select>
+        </div>
+        <div class="col-md-2">
+        </div>
+        <div class="col-md-4 text-right">
+
+        </div>
+      </div>
+    </div>
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding">
+      <table class="table table-bordered table-striped table-hover">
+        <thead>
+          <tr>
+            <th>Biển số xe</th>
+            <th>RefNo</th>
+            <th>Ngày lập</th>
+            <th>Người lập</th>
+          </tr>
+          
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of listData" [style.background-color]="item.refNo?.length<1? '#EFB495':'white'">
+            <td>
+              <span>
+                {{item.licensePlates }}
+              </span>
+            </td>
+            <td>
+                <span>
+                  <a style="color: blueviolet;" [routerLink]="[]" (click)="showModal(item)"><b>{{item.refNo}}</b></a>
+                </span>
+              </td>
+            <td>
+              <span>
+                {{item.refNo?.length<1? '': item.createdDate | date:'dd/MM/yyyy'}}
+              </span>
+            </td>
+            <td>
+              {{item.createdByName}}
+            </td>
+          </tr>
+          <tr *ngIf="listData?.length == 0">
+            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer no-padding">
+    </div>
+    <!-- /.box -->
+  </div>
+  
+  <modal-vehicle-inspection *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+  </modal-vehicle-inspection>
+  

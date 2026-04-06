@@ -1,0 +1,131 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="box-header with-border">
+        <div class="row">
+            <div class="col-md-3">
+                <h3 class="box-title">Thanh toán Trả hộ</h3>
+            </div>
+            <div class="col-md-9 text-right">
+                <button class="btn btn-success btn-sm" (click)="add()">
+                    <i class="fa fa-plus"></i> Thêm mới
+                </button>
+                <button class="btn btn-primary btn-sm ml-1" (click)="edit()" [disabled]="!flagEdit">
+                    <i class="fa fa-edit"></i> Sửa
+                </button>
+                <button class="btn btn-danger btn-sm ml-1" (click)="deleteConfirm()" [disabled]="!flagDelete">
+                    <i class="fa fa-trash"></i> Xóa
+                </button>
+                <button class="btn btn-success btn-sm ml-1" (click)="exportExcel()" title="Xuất Excel">
+                    <i class="fa fa-file-excel-o"></i> Xuất Excel
+                </button>
+            </div>
+        </div>
+        <div class="row" style="padding-top: 5px;">
+            <div class="col-md-2">
+                <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+                    class="form-control input-sm" placeholder="Khoảng thời gian">
+            </div>
+            <div class="col-md-3">
+                <ng-select [items]="listSupplier" bindLabel="supplierName" bindValue="id" [(ngModel)]="supplierId"
+                    (change)="timKiem()" placeholder="Chọn nhà cung cấp..." class="input-sm-select">
+                </ng-select>
+            </div>
+            <div class="col-md-3">
+                <ng-select [items]="listEmployee" bindLabel="fullName" bindValue="id" [(ngModel)]="employeeId"
+                    (change)="timKiem()" placeholder="Người lập phiếu..." class="input-sm-select">
+                </ng-select>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" class="form-control input-sm" placeholder="Tìm theo Job ID, nội dung..."
+                        [(ngModel)]="keyword" (keyup.enter)="timKiem()">
+                    <span class="input-group-btn">
+                        <button class="btn btn-info btn-flat btn-sm" style="height: 30px;" type="button"
+                            (click)="timKiem()">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="box-body table-responsive no-padding table-wrapper">
+        <ngx-spinner [fullScreen]="false" bdColor="rgba(255,255,255,0.7)" size="medium" color="#3c8dbc"
+            type="ball-clip-rotate" [fullScreen]="false">
+            <p style="color: #333"> Đang tải dữ liệu... </p>
+        </ngx-spinner>
+
+        <table class="table table-bordered table-striped table-hover">
+            <thead>
+                <tr>
+                    <th style="width: 40px;">
+                        <input type="checkbox" [checked]="isAllChecked()" (change)="checkAll($event)">
+                    </th>
+                    <th style="width: 120px;">Ngày lập</th>
+                    <th style="width: 150px;">Job ID</th>
+                    <th>Nội dung / Diễn giải</th>
+                    <th style="width: 120px;">Số tiền dự tính</th>
+                    <th style="width: 120px;">Số tiền thực chi</th>
+                    <th style="width: 130px;">Trạng thái trả</th>
+                    <th style="width: 130px;">Hóa đơn</th>
+                    <th style="width: 80px;">Tác vụ</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let item of listData" (click)="clickRow(item)" [class.selected]="item.checked"
+                    style="cursor: pointer;">
+                    <td class="text-center" (click)="$event.stopPropagation()">
+                        <input type="checkbox" [(ngModel)]="item.checked" (change)="icheck()">
+                    </td>
+                    <td class="text-center">{{item.createdDate | date:'dd/MM/yyyy'}}</td>
+                    <td><strong class="text-primary">{{item.jobId}}</strong></td>
+                    <td>{{item.description}}</td>
+                    <td class="text-right text-bold">{{item.estimatedAmount | number}} {{item.currency}}</td>
+                    <td class="text-right text-bold text-danger">{{item.actualAmount | number}} {{item.currency}}</td>
+                    <td class="text-center">
+                        <span class="label"
+                            [ngClass]="{'label-default': item.paymentStatus==0, 'label-info': item.paymentStatus==2, 'label-success': item.paymentStatus==3}">
+                            {{item.paymentStatus == 3 ? 'Đã trả' : (item.paymentStatus == 2 ? 'Trả một phần' : 'Chưa
+                            trả')}}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span class="label"
+                            [ngClass]="{'label-default': item.invoiceStatus==0, 'label-warning': item.invoiceStatus==1, 'label-success': item.invoiceStatus==2}">
+                            {{item.invoiceStatus == 2 ? 'Đủ HĐ' : (item.invoiceStatus == 1 ? 'Thiếu HĐ' : 'Chưa có
+                            HĐ')}}
+                        </span>
+                    </td>
+                    <td class="text-center" (click)="$event.stopPropagation()">
+                        <button class="btn btn-xs btn-primary" (click)="edit(item.id)" title="Chi tiết">
+                            <i class="fa fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+                <tr *ngIf="listData.length == 0">
+                    <td colspan="9" class="text-center">Không tìm thấy bản ghi nào</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="box-footer no-padding">
+        <div class="col-md-12 footer-phantrang">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="dataTables_info">
+                        Tổng số bản ghi: <strong>{{ totalRows }}</strong>
+                    </div>
+                </div>
+                <div class="col-md-6 text-right">
+                    <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                        (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;"
+                        nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;" class="pagination-sm">
+                    </pagination>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<modal-on-behalf-payment #modalAddEdit (SaveSuccess)="loadData()"></modal-on-behalf-payment>

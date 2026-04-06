@@ -1,0 +1,76 @@
+.column-chuc-nang{
+  width: 80px;
+}
+/* .box-chieu-cao>.box-body {
+  height: calc(100vh - 400px);
+} */
+.box-chieu-cao-tm {
+  max-height: calc(100vh - 400px);
+}
+.box-chieu-cao-ck {
+  height: calc(100vh - 430px); /* hoặc cao hơn tùy ý */
+}
+.column-ten{
+  min-width: 220px;
+  max-width: auto;
+}
+.column-tien {
+  min-width: 120px;
+  max-width: auto;
+}
+.column-md{
+  min-width: 150px;
+  max-width: auto;
+}
+.column-sm{
+  min-width: 100px;
+  max-width: auto;
+}
+.column-gia-tri{
+  min-width: 85px;
+  max-width: auto;
+}
+.column-min{
+  min-width: 50px;
+  max-width: auto;
+}
+.bang-chu{
+  color: red;
+  text-align: right;
+  font-style: italic;
+  font-size: medium;
+}
+.editbutton {
+  cursor: pointer; /* Hiển thị con trỏ bàn tay */
+}
+.table_wrapper{
+  height: 100%;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 650px) {
+  .box-chieu-cao>.box-body {
+    height:350px;
+  }
+  div#style-scroll-1{
+    overflow-x: auto;
+    overflow-y: scroll;
+    height: 350px;
+  }
+  div#style-scroll-2{
+    overflow-x: scroll;
+    overflow-y: scroll;
+    height: calc(100vh - 150px);
+  }
+  .table_wrapper{
+    height: calc(100vh - 450px);
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+}
+
+
+

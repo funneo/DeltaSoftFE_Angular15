@@ -1,0 +1,116 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="box-header with-border">
+    <div class="row">
+      <div class="col-md-2">
+        <h3 class="box-title">Báo cáo Công nợ</h3>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-1">
+        <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+          [(ngModel)]="_branchId" (change)="timKiem()" placeholder="Chọn chi nhánh..." [clearable]="false" [readonly]="_auth>0">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+          class="form-control">
+      </div>
+      <div class="col-md-2">
+        <ng-select name="loai" [items]="listTypes" bindLabel="text" bindValue="id"
+          [(ngModel)]="_type" (change)="changedType($event)" placeholder="Chọn loại..." [clearable]="false">
+        </ng-select>
+      </div>
+      <div *ngIf="_type==0" class="col-md-3">
+        <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+          [(ngModel)]="_customerId" (change)="changedCustomer($event)" placeholder="Chọn đơn vị...">
+        </ng-select>
+      </div>
+      <div *ngIf="_type==1" class="col-md-3">
+        <ng-select name="ncc" [items]="listSupplier" bindLabel="supplierName" bindValue="id"
+          [(ngModel)]="_customerId" (change)="changedSupplier($event)" placeholder="Chọn đơn vị...">
+        </ng-select>
+      </div>
+      <div class="col-md-3">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Chứng từ/Hóa đơn..." />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="col-md-1">
+        <button class="btn btn-success btn-sm" (click)="export()">
+          <i class="fa fa-file-excel-o"></i>
+        </button>
+      </div>
+    </div>
+    </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th>Đơn vị</th>
+          <th>Đầu kỳ</th>
+          <th>Phát sinh nợ</th>
+          <th>Phát sinh có</th>
+          <th>Cuối kỳ</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th style="font-weight: bold; text-align: end; color: blue;">{{totalDauky | number:'1.0-0'}}</th>
+          <th style="font-weight: bold; text-align: end;color: blueviolet;">{{totalPsNo | number:'1.0-0'}}</th>
+          <th style="font-weight: bold; text-align: end; color: brown;">{{totalPsCo | number:'1.0-0'}}</th>
+          <th style="font-weight: bold; text-align: end;color: rebeccapurple;">{{totalCuoiky | number:'1.0-0'}}</th>
+        </tr>
+        <tr>
+          <th><input class="form-control" #khSearchInput [(ngModel)]="khSearch" (input)="filter()" type="text" name="khSearch"/></th>
+          <th><input class="form-control" #psNoSearchInput [(ngModel)]="psNoSearch" (input)="filter()" type="text" name="psNoSearch"/></th>
+          <th><input class="form-control" #daukySearchInput [(ngModel)]="daukySearch" (input)="filter()" type="text" name="daukySearch"/></th>
+          <th><input class="form-control" #psCoSearchInput [(ngModel)]="psCoSearch" (input)="filter()" type="text" name="psCoSearch"/></th>
+          <th><input class="form-control" #cuoikySearchInput [(ngModel)]="cuoikySearch" (input)="filter()" type="text" name="cuoikySearch"/></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listFilter">
+          <!-- <td>
+            <a [routerLink]="" (click)="showDebt(item)">{{item.customerName}}</a>
+          </td> -->
+          <td >{{item.customerName}}</td>
+          <td class="so-tien">{{item.dauKy|VND}}</td>
+          <td class="so-tien">{{item.psn|VND}}</td>
+          <td class="so-tien">{{item.psc|VND}}</td>
+          <td class="so-tien">{{item.cuoiKy|VND}}</td>
+        </tr>
+        <tr *ngIf="listFilter?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listFilter?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <!-- <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div> -->
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+<!-- <div [ngBusy]="busy"></div> -->

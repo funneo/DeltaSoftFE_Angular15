@@ -1,0 +1,171 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Dầu mua ngoài bằng tiền mặt</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group" *ngIf="!flagNew">
+              <label class="col-sm-3 control-label">Số phiếu</label>
+              <div class="col-sm-3 control-label-text-left">
+                <span style="font-weight: bold; color: blue;"> {{entity.refNo}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Ngày</label>
+              <div class="col-sm-2 control-label-text-left">
+                <span style="font-weight: bold; color: blue;"> {{entity.refDate | date:'dd/MM/yyyy'}}</span>
+              </div>
+              <div class="col-sm-2">
+                <button *ngIf="entity.id" type="button" class="btn btn-info btn-sm" title="Chứng từ đính kèm"
+                  (click)="showFiles()">
+                  <i class="fa fa-file-pdf-o" aria-hidden="true"></i> File đính kèm
+                </button>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="entity.isCbt">
+              <div class="col-sm-3 control-label">Lệnh vận chuyển
+              </div>
+              <div class="col-sm-9">
+                <span class="form-control" style="font-weight: bold; color: blue;">{{entity.refNoCbt}}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Lái xe
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select name="driver" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
+                  [(ngModel)]="entity.employeeId" required placeholder="Chọn lái xe"
+                  [disabled]="flagXem || entity.isCbt">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Biền số xe</label>
+              <div class="col-sm-9">
+                <ng-select name="licensePlates" [items]="listVihicle" bindLabel="licensePlates" bindValue="id"
+                  [(ngModel)]="entity.vihicleId" required placeholder="Chọn phương tiện"
+                  [disabled]="flagXem || entity.isCbt">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Số lượng <span class="error">*</span></label>
+              <div class="col-sm-2">
+                <input class="form-control" [(ngModel)]="entity.quantity" type="text" [mask]="mask3Number"
+                  [allowNegativeNumbers]="true" name="quantity" [readonly]="flagXem" (change)="calculate()" />
+              </div>
+              <label class="col-sm-2 control-label">Đơn giá <span class="error">*</span></label>
+              <div class="col-sm-2">
+                <input class="form-control" [(ngModel)]="entity.unitPrice" type="text" [mask]="maskNumber"
+                  name="unitPrice" [readonly]="flagXem" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Tổng tiền chưa VAT <span class="error">*</span></label>
+              <div class="col-sm-2">
+                <input class="form-control" [(ngModel)]="entity.amount" type="text" [mask]="maskNumber"
+                  [allowNegativeNumbers]="true" name="amount" [readonly]="flagXem" />
+              </div>
+              <label class="col-sm-1 control-label">VAT: <span class="error">*</span></label>
+              <div class="col-sm-2">
+                <input class="form-control" [(ngModel)]="entity.vat" type="text" [mask]="maskNumber"
+                  [allowNegativeNumbers]="true" name="vat" [readonly]="flagXem" />
+              </div>
+              <label class="col-sm-1 control-label">Tổng: <span class="error">*</span></label>
+              <div class="col-sm-3">
+                <input class="form-control" [(ngModel)]="entity.amountAfterVat" type="text" [mask]="maskNumber"
+                  [allowNegativeNumbers]="true" name="amountAfterVat" [readonly]="flagXem" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Nhà cung cấp</label>
+              <div class="col-sm-9">
+                <ng-select name="supplier" [items]="listSupplier" bindLabel="supplierName" bindValue="id"
+                  [(ngModel)]="entity.supplierId" placeholder="Chọn nhà cung cấp" [disabled]="flagXem">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Số hóa đơn</label>
+              <div class="col-sm-3">
+                <input type="text" class="form-control" [(ngModel)]="entity.invoiceNo" name="taxNumber"
+                  [readonly]="flagXem">
+              </div>
+              <label class="col-sm-3 control-label">Ngày hóa đơn</label>
+              <div class="col-sm-3">
+                <input name="invoiceDate" type="text" daterangepicker [options]="dateTimeOptions"
+                  [(ngModel)]="entity.invoiceDate" class="form-control" (selected)="selectedNgaybatdau($event)"
+                  (hideDaterangepicker)="closedNgaybatdau($event)" autocomplete="off" [disabled]="flagXem">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Mẫu hóa đơn</label>
+              <div class="col-sm-3">
+                <input type="text" class="form-control" [(ngModel)]="entity.invoicePattern" name="invoicePattern"
+                  [readonly]="flagXem">
+              </div>
+              <label class="col-sm-3 control-label">MST đơn vị bán
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-3">
+                <input type="text" class="form-control" [(ngModel)]="entity.taxNumber" name="taxNumber"
+                  [readonly]="flagXem">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Link tra cứu</label>
+              <div class="col-sm-4">
+                <input type="text" class="form-control" [(ngModel)]="entity.web" name="web" [readonly]="flagXem">
+              </div>
+              <label class="col-sm-2 control-label">Mã tra cứu</label>
+              <div class="col-sm-3">
+                <input type="text" class="form-control" [(ngModel)]="entity.code" name="code" [readonly]="flagXem">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Ghi chú</label>
+              <div class="col-sm-9">
+                <textarea class="form-control" [(ngModel)]="entity.notes" name="notes" rows="3"
+                  placeholder="Nhập ghi chú" [readonly]="flagXem"></textarea>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="entity.status!=0">
+              <label class="col-sm-3 control-label">Phản hồi</label>
+              <div class="col-sm-9">
+                <textarea class="form-control" [(ngModel)]="entity.feedback" name="feedback" rows="3"
+                  placeholder="Nhập phản hồi" [readonly]="!hasPermissionApproved"></textarea>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="hasPermissionApproved && (entity.status==1 ||entity.status==2)" type="button"
+              (click)="changeStatus(entity.status==1?2:3)" class="btn btn-success btn-sm">
+              <i class="fa fa-check"></i> Duyệt</button>
+            <button *ngIf="hasPermissionApproved  && (entity.status==1 ||entity.status==2)" type="button"
+              (click)="changeStatus(entity.status==1?-1:-2)" class="btn btn-warning btn-sm">
+              <i class="fa fa-exclamation-triangle"></i> Từ chối</button>
+            <button *ngIf="!flagXem && entity.status<1" type="button" class="btn btn-duyet btn-sm"
+              (click)="changeStatus(1)">
+              <i class="fa fa-random"></i>Chuyển duyệt</button>
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave || entity.quantity==0 || entity.unitPrice<=0">
+              <i class="fa fa-edit"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>

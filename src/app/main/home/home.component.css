@@ -1,0 +1,83 @@
+.info-box {
+  display: block;
+  min-height: 70px;
+  background: #fff;
+  width: 100%;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+  margin-bottom: 15px;
+}
+
+.info-box-icon {
+  border-top-left-radius: 2px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+  border-bottom-left-radius: 2px;
+  display: block;
+  float: left;
+  height: 70px;
+  width: 10px;
+  text-align: center;
+  font-size: 45px;
+  line-height: 90px;
+  background: rgba(0, 0, 0, 0.2);
+}
+.info-box-content {
+  padding: 5px 10px;
+  margin-left: 50px;
+}
+.info-box-text {
+  display: block;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+.info-box-number {
+  display: block;
+  font-weight: bold;
+  font-size: 18px;
+}
+.bg-primary {
+  background-color: darkslategray;
+}
+.bg-secondary {
+  background-color: darkturquoise;
+}
+.bg-success {
+  background-color: lightskyblue;
+}
+.bg-info {
+  background-color: palegreen;
+}
+.bg-danger {
+  background-color: papayawhip;
+}
+.bg-warning {
+  background-color: rebeccapurple;
+}
+.bg-light {
+  background-color: seashell;
+}
+.bg-dark {
+  background-color: darkblue;
+}
+.bg-white {
+  background-color: ghostwhite;
+}
+agm-map {
+  height: calc(100vh - 110px);
+}
+
+.delta-bg {
+  height: calc(100vh - 110px);
+}
+
+.delta-bg-img {
+  height: 100%;
+  width: 100%;
+}
+.box-chieu-cao>.box-body {
+  height: calc(100vh - 200px);
+}

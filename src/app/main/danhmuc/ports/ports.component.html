@@ -1,0 +1,115 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="row">
+      <div class="box-header with-border">
+        <div class="col-md-4">
+          <h3 class="box-title">Danh mục Cảng/bãi/Kho CFS</h3>
+        </div>
+        <div class="col-md-1">
+
+        </div>
+        <div class="col-md-3">
+          <div class="input-group">
+            <input
+              type="text"
+              class="form-control"
+              name="filter"
+              (keyup.enter)="timKiem()"
+              [(ngModel)]="keyword"
+              placeholder="Từ khóa"
+            />
+            <span class="input-group-btn">
+              <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                <i class="fa fa-search"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+        <div class="col-md-4 text-right">
+          <button
+            class="btn btn-success btn-sm"
+            (click)="add()"
+            appPermission
+            appFunction="PORTS"
+            appAction="CREATE"
+          >
+            <i class="fa fa-plus"></i> Thêm
+          </button>
+          <button
+            class="btn btn-primary btn-sm"
+            (click)="edit(false)"
+            [disabled]="!flagEdit"
+            appPermission
+            appFunction="PORTS"
+            appAction="UPDATE"
+          >
+            <i class="fa fa-edit"></i> Sửa
+          </button>
+          <button
+            class="btn btn-danger btn-sm"
+            (click)="deleteConfirm()"
+            [disabled]="!flagDelete"
+            appPermission
+            appFunction="PORTS"
+            appAction="DELETE"
+          >
+            <i class="fa fa-trash"></i> Xóa
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="box-body table-responsive no-padding">
+      <table class="table table-bordered table-striped table-hover">
+        <thead>
+          <tr>
+            <th class="table-checkbox">
+              <label class="custom-checkbox">
+                <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+                <span class="helping-el"></span>
+              </label>
+            </th>
+            <th>Mã Cảng</th>
+            <th>Tên Cảng</th>
+            <th>Địa chỉ</th>
+            <th>Vị trí Google</th>
+            <th>Khoảng cách</th>
+            <th>Nhóm cảng</th>
+          </tr>
+          <tr>
+            <th></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.code" (input)="filterData()" /></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.name" (input)="filterData()" /></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.address" (input)="filterData()" /></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.googleLocations" (input)="filterData()" /></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.distance" (input)="filterData()" /></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.groupPort" (input)="filterData()" /></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of filteredData" (click)="clickRow(item)">
+            <td class="table-checkbox">
+              <label class="custom-checkbox">
+                <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                <span class="helping-el"></span>
+              </label>
+            </td>
+            <td>{{ item.code }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.address }}</td>
+            <td class="google-locations" [title]="item.googleLocations">
+              {{ item.googleLocations }}
+            </td>
+            <td>{{ item.distance }}</td>
+            <td>{{ item.groupPort }}</td>
+          </tr>
+          <tr *ngIf="filteredData?.length === 0">
+            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  
+<modal-ports *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-ports>
+  

@@ -1,0 +1,122 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Thông tin lái xe thầu phụ</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Họ tên
+                  <span class="error">*</span>
+                </label>
+                <div class="col-sm-10">
+                  <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.driverName" required
+                    maxlength="255" name="tennv" class="form-control" placeholder="Nhập họ tên" focus
+                    [readonly]="flagXem" />
+                  <small [hidden]="tennhomquyen.valid || (tennhomquyen.pristine && !addEditForm.submitted)"
+                    class="text-danger">
+                    Tên không được để trống và không vượt quá 255 kí tự
+                  </small>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Ngày sinh
+                </label>
+                <div class="col-sm-4">
+                  <input name="ngaysinh" type="text" daterangepicker [options]="dateTimeOptions"
+                    [(ngModel)]="entity.dateOfBirth" class="form-control" (selected)="selectedNgaysinh($event)"
+                    (hideDaterangepicker)="closedNgaysinh($event)" autocomplete="off" [disabled]="flagXem">
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Điện thoại
+                </label>
+                <div class="col-sm-4">
+                  <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.telephone" name="tel"
+                    class="form-control" placeholder="Điện thoại" focus [readonly]="flagXem" />
+                </div>
+                <label class="col-sm-2 control-label">Email</label>
+                <div class="col-sm-4">
+                  <input class="form-control" [(ngModel)]="entity.email" type="text" name="email"
+                    placeholder="Nhập email" [readonly]="flagXem" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Địa chỉ</label>
+                <div class="col-sm-10">
+                    <textarea class="form-control textrea-size" [(ngModel)]="entity.address" name="address" rows="2"
+                    placeholder="Nhập địa chỉ" [readonly]="flagXem"></textarea>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Số CMT/CCCD
+                  <span class="error">*</span>
+                </label>
+                <div class="col-sm-4">
+                    <input class="form-control" [(ngModel)]="entity.idNumber" required type="text" name="idNumber"[readonly]="flagXem" />
+                </div>
+                <label class="col-sm-2 control-label">Số bằng lái xe <span class="error">*</span></label>
+                  <div class="col-sm-4">
+                      <input class="form-control" [(ngModel)]="entity.driversLicenseNo" required type="text" name="driversLicenseNo" [readonly]="flagXem" />
+                  </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Ngày cấp
+                </label>
+                <div class="col-sm-4">
+                  <input name="issuedDate" type="text" daterangepicker [options]="dateTimeOptions"
+                    [(ngModel)]="entity.issuedDate" class="form-control" (selected)="selectedissuedDate($event)"
+                    (hideDaterangepicker)="closedissuedDate($event)" autocomplete="off" [disabled]="flagXem">
+                </div>
+                <label class="col-sm-2 control-label">Ngày hết hạn
+                </label>
+                <div class="col-sm-4">
+                  <input name="expiredDate" type="text" daterangepicker [options]="dateTimeOptions"
+                    [(ngModel)]="entity.expiredDate" class="form-control" (selected)="selectedexpiredDate($event)"
+                    (hideDaterangepicker)="closedexpiredDate($event)" autocomplete="off" [disabled]="flagXem">
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Ghi chú</label>
+                <div class="col-sm-10">
+                  <textarea class="form-control textrea-size" [(ngModel)]="entity.note" name="ghichu" rows="5"
+                    placeholder="Nhập ghi chú" [readonly]="flagXem"></textarea>
+                </div>
+              </div>
+              <div class="form-group" *ngIf="entity.status<1">
+                <label class="col-sm-2 control-label"></label>
+                <div class="col-sm-4">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" [(ngModel)]="entity.checked" name="checked" />
+                    <span class="helping-el"></span>
+                    Chuyển duyệt
+                  </label>
+                </div>
+              </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <div class="col-md-8">
+            </div>
+            <div class="col-md-4" style="text-align: right;">
+              <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+                [disabled]="!addEditForm.form.valid || flagSave">
+                <i class="fa fa-save"></i> Lưu</button>
+              <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+                <i class="fa fa-close"></i> Hủy</button>              
+            </div>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

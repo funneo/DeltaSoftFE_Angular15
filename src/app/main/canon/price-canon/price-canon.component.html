@@ -1,0 +1,127 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="row">
+    <div class="box-header with-border">
+      <div class="col-md-2">
+        <h3 class="box-title">Bảng giá</h3>
+      </div>
+      <div class="col-md-3">
+        <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+          [(ngModel)]="customerId" (change)="changedCustomer($event)" placeholder="Chọn khách hàng...">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa" title="Tìm kiếm theo tên mã cung đường, số Plt..." />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="col-md-5 text-right">
+        <input type="file" #fileInput style="display: none" (change)="importExcel($event)" accept=".xlsx, .xls" />
+        <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="PRICECANON"
+          appAction="CREATE">
+          <i class="fa fa-plus"></i> Thêm
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="edit(null,false)" [disabled]="!flagEdit" appPermission
+          appFunction="PRICECANON" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="PRICECANON" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+        <button class="btn btn-warning btn-sm" (click)="exportExcel()" appPermission appFunction="PRICECANON"
+          appAction="UPDATE">
+          <i class="fa fa-download"></i> Export
+        </button>
+        <button class="btn btn-info btn-sm" (click)="fileInput.click()" appPermission appFunction="PRICECANON"
+          appAction="UPDATE">
+          <i class="fa fa-upload"></i> Import
+        </button>
+        <!-- <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+          <i class="fa fa-eye"></i> Xem
+        </button> -->
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+              <span class="helping-el"></span>
+            </label>
+          </th>
+          <th>Khách hàng</th>
+          <th>Tên cung đường</th>
+          <th>Kí hiệu</th>
+          <th>Số lượng</th>
+          <th>Giá tiền</th>
+          <th>Ghi chú</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listCanonPrice" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>{{item.customerCode}}-{{item.customerName}}</td>
+          <td>
+            {{item.roadCode}}
+          </td>
+          <td>{{item.roadName}}</td>
+          <td>
+            <a [routerLink]="[]" (click)="edit(item,true)"> {{item.qty}}-{{item.unit}}</a>
+
+          </td>
+          <td class="so-tien">{{item.amount|VND}}</td>
+          <td>{{item.notes }}</td>
+          <td class="trang-thai">
+            <span [ngClass]="
+                item.status  ? 'label label-success' : 'label label-danger'
+              ">{{ item.status | Status }}</span>
+          </td>
+        </tr>
+        <tr *ngIf="listCanonPrice?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listCanonPrice?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+
+<modal-price-canon *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-price-canon>
+<!-- <div [ngBusy]="busy"></div> -->

@@ -1,0 +1,84 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Thông tin giá dầu</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Loại dầu
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select name="accountlist" [items]="listGasType" bindLabel="categoryName" bindValue="categoryName" [(ngModel)]="entity.gasName" required
+                [readonly]="flagXem">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Ngày hiệu lực
+                  <span class="error">*</span>
+                </label>
+                <div class="col-sm-9">
+                  <input name="ngaybd" type="text" daterangepicker [options]="ngaybatdauOption"
+                  [(ngModel)]="entity.effectiveDate" class="form-control" (selected)="selectedNgaybatdau($event)"
+                  (hideDaterangepicker)="closedNgaybatdau($event)" autocomplete="off" [disabled]="flagXem">
+                </div>
+              </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Giá dầu
+                <span class="error">*</span>
+              </label>
+                <div class="col-sm-4">
+                  <input type="text" class="form-control so-tien"  #sotien="ngModel" name="cost" [(ngModel)]="entity.cost" (change)="changeCost()"
+                    placeholder="Giá dầu" [mask]="maskNumber" required  maxlength="15"  [readonly]="flagXem"/>
+                    <small [hidden]="sotien.valid || (sotien.pristine && !addEditForm.submitted)"
+                    class="text-danger">
+                    Nhập giá dầu
+                  </small>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Giá cũ</label>
+                  <div class="col-sm-4">
+                    <input type="text" class="form-control so-tien"   name="oldValue" [ngModel]="entity.oldCost"
+                      [mask]="maskNumber" readonly/>
+                  </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">Chênh lêch</label>
+                  <div class="col-sm-4">
+                    <input type="text" class="form-control so-tien"   name="chenhlech" [ngModel]="entity.changed"
+                      [mask]="maskNumber" readonly/>
+                  </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-3 control-label">Tỷ lệ (%)</label>
+                  <div class="col-sm-4">
+                    <input type="text" class="form-control so-tien"  name="tyle" [ngModel]="entity.rate"
+                      [mask]="maskNumber" readonly/>
+                  </div>
+              </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-edit"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

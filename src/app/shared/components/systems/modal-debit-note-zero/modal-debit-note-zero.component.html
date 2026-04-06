@@ -1,0 +1,64 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAttachFiles="bs-modal"
+    [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" aria-labelledby="dialog-static-name"
+    (onHidden)="OnHidden()">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div #myHandle class="modal-header">
+                <h4 class="modal-title pull-left">Lên DebitNote = 0 hàng loạt</h4>
+                <button type="button" class="close pull-right" aria-label="Close" (click)="modalAttachFiles.hide()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" novalidate #addEditForm="ngForm">
+                    <div class="form-group">
+                        <label class="col-sm-3 control-label">File Upload</label>
+                        <div class="col-sm-9">
+                            <input type="file" class="file-upload form-control" accept=".xlsx"
+                                (change)="onFileChange($event)">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="table-responsive" style="padding-left:15px; padding-right:15px;max-height:500px">
+                            <table class="table table-bordered table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width:200px">JobId</th>
+                                        <th >Id</th>
+                                        <th style="min-width:30px">DK05</th>
+                                        <th style="min-width:20px">BranhId</th>
+                                        <th style="min-width:20px">IsDebit</th>
+                                        <th>Tình trạng</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let item of listFiles; let i=index;">
+                                        <td style="min-width:200px">
+                                            {{item.jobId}}
+                                        </td>
+                                        <td>{{item.id}}</td>
+                                        <td>{{item.dk}}</td>
+                                        <td>{{item.branchId}}</td>
+                                        <td>{{item.isDebit}}</td>
+                                        <td>{{item.status}}</td>
+                                    </tr>
+                                    <tr *ngIf="listFiles?.length == 0">
+                                        <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- /.box-body -->
+                    <div class="box-footer text-right">
+                        <button *ngIf="listFiles?.length > 0" type="button" class="btn btn-warning btn-sm" (click)="createDebitNote()">
+                        <i class="fa fa-upload"></i> Tạo DebitNote=0</button>
+                        <button type="button" (click)="modalAttachFiles.hide()" class="btn btn-danger btn-sm">
+                            <i class="fa fa-close"></i> Đóng</button>
+                    </div>
+                    <!-- /.box-footer -->
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,147 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="row">
+    <div class="box-header with-border">
+      <div class="col-md-2">
+        <h3 class="box-title">Mở Debit</h3>
+      </div>
+      <div class="col-md-1">
+        <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+          [(ngModel)]="_branchId" (change)="timKiem()" title="Chọn chi nhánh..." [clearable]="false" [readonly]="_auth>2">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <input type="text" name="datesel" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+        class="form-control" />
+      </div>
+      <div class="col-md-2">
+        <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id" [(ngModel)]="customerId" (change)="changedCustomer($event)"
+        placeholder="Chọn khách hàng..."  >
+        </ng-select>
+      </div>
+      <div class="col-md-3">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa" />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="col-md-2 text-right">
+        <!-- <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="SHIPMENT"
+          appAction="CREATE">
+          <i class="fa fa-plus"></i> Thêm
+        </button> -->
+        <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+          appFunction="OPENDEBITNOTE" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="OPENDEBITNOTE" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+        <button class="btn btn-info btn-sm" (click)="export()">
+          <i class="fa fa-eye"></i> Export
+        </button>
+        <!-- <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+          <i class="fa fa-eye"></i> Xem
+        </button> -->
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+              <span class="helping-el"></span>
+            </label>
+          </th>
+          <th>khách hàng</th>
+          <th>JobId</th>
+          <th>Số Debit</th>
+          <th>Ngày tạo</th>
+          <th>Người đề nghị</th>
+          <th>Lý do</th>
+          <th>Trạng thái</th>
+          <th style="width: 80px;">Tác vụ</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th><input class="form-control" #input2 [(ngModel)]="tenkhSearch" (input)="filter()" type="text" name="tenkhSearch"/></th>
+          <th><input class="form-control" #input3 [(ngModel)]="jobidSearch" (input)="filter()" type="text" name="jobidSearch"/></th>
+          <th><input class="form-control" #input7 [(ngModel)]="debitNoSearch" (input)="filter()" type="text" name="debitNoSearch"/></th>
+          <th><input class="form-control" #input4 [(ngModel)]="ngaySearch" (input)="filter()" type="text" name="ngaySearch"/></th>
+          <th><input class="form-control" #input5 [(ngModel)]="nguoiSearch" (input)="filter()" type="text" name="nguoiSearch"/></th>
+          <th><input class="form-control" #input6 [(ngModel)]="lydoSearch" (input)="filter()" type="text" name="lydoSearch"/></th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listFilter" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>{{item.customerName}}</td>
+          <td>
+            <a [routerLink]="[]" (click)="showModal(item)">{{item.jobId}}</a>
+          </td>
+          <td>
+            <a [routerLink]="[]" (click)="editDebit(item.debitNoteId,true)">{{item.debitNo}}</a>
+          </td>
+          <td>{{item.createdDate | date:'dd/MM/yyyy'}}</td>
+          <td>{{item.createdByName}}</td>
+          <td>{{item.notes }}</td>
+          <td class="trang-thai">
+            <span class="{{item.step.toString() | List: listLabelTrangThai}}">
+              {{item.step.toString()| List: listTrangThai}}</span>
+          </td>
+          <td>
+            <button *ngIf="item.step==0 && item.accept" type="button" class="btn btn-primary btn-sm action-open-job" title="Duyệt mở Job" (click)="accept(item,true)">
+              <i class="fa  fa-meh-o" aria-hidden="true"></i> Duyệt mở
+          </button>
+          <button *ngIf="item.step==0 && item.accept" type="button" class="btn btn-warning btn-sm action-open-job" title="Từ chối" (click)="accept(item,false)">
+            <i class="fa fa-frown-o" aria-hidden="true"></i> Từ chối
+        </button>
+          </td>
+        </tr>
+        <tr *ngIf="listFilter?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listFilter?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ listFilter?.length }}</span>
+          </div>
+        </div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+<modal-open-debit-note *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-open-debit-note>
+<!-- <div [ngBusy]="busy"></div> -->

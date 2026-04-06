@@ -1,0 +1,29 @@
+.modal-lg {
+  width: 65%;
+}
+
+.dau-ky {
+  font-weight: bold;
+}
+
+.box-chieu-cao>.box-body {
+  height: calc(100vh - 220px);
+}
+
+@media (max-width: 650px) {
+  .box-chieu-cao>.box-body {
+    height: calc(100vh - 350px);
+  }
+
+  div#style-scroll-1 {
+    overflow-y: scroll;
+    height: 250px;
+  }
+}
+
+thead tr:nth-child(1) th {
+  background: #dcefe5f6;
+  position: sticky;
+  top: 0px;
+  z-index: 10;
+}

@@ -1,0 +1,110 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="box-header with-border">
+      <div class="row">
+        <div class="col-md-3">
+          <h3 class="box-title">Gia hạn Hợp đồng</h3>
+        </div>
+        <div class="col-md-2">
+            <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+            class="form-control">
+        </div>
+        <div class="col-md-3 text-right">
+          <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="CE"
+            appAction="CREATE">
+            <i class="fa fa-plus"></i> Thêm
+          </button>
+          <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+            appFunction="CE" appAction="UPDATE">
+            <i class="fa fa-edit"></i> Sửa
+          </button>
+          <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+            appFunction="CE" appAction="DELETE">
+            <i class="fa fa-trash"></i> Xóa
+          </button>
+          <!-- <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagView">
+            <i class="fa fa-eye"></i> Xem
+          </button> -->
+        </div>
+      </div>
+
+    </div>
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding table-wrapper-scroll-y" id="div#style-scroll-1">
+      <table class="table table-bordered table-striped table-hover">
+        <thead>
+          <tr>
+            <th class="table-checkbox">
+            </th>
+            <th>Người đề nghị</th>
+            <th  style="min-width: 120px;">Số hợp đồng</th>
+            <th>Khách hàng</th>
+            <th>Nội dung</th>
+            <th>Ngày gia hạn</th>
+            <th>Trạng thái</th>
+            <th style="width: 80px;">Tác vụ</th>
+          </tr>
+          <tr>
+  
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of listDatas" >
+            <td class="table-checkbox">
+              <label class="custom-checkbox">
+                <input type="checkbox" value="{{ item.id }}" [checked]="item.checked"  (click)="clickRow(item)"/>
+                <span class="helping-el"></span>
+              </label>
+            </td>
+            <td>{{item.createdByName}}</td>
+            <td>
+              <a [routerLink]="[]" (click)="showModal(item)">{{item.contractNo}}</a>
+            </td>
+            <td>{{item.customerName}}</td>
+            <td>{{item.notes}}</td>
+            <td>{{item.newExpiryDate|date:'dd/MM/yyyy'}}</td>
+            <td><span [ngClass]="item.status<0?'label label-danger':item.status==0?'lable label-primary':item.status==1?'label label-warning':'label label-success'">
+              {{item.rStatus}}
+            </span></td>
+            <td>
+              <button type="button" class="btn btn-info btn-sm action-file" title="Chứng từ đính kèm"
+                (click)="showContract(item)">
+                <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Hợp đồng
+              </button>
+            </td>
+          </tr>
+          <tr *ngIf="listDatas?.length == 0">
+            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer no-padding">
+      <div *ngIf="listDatas?.length > 0" class="col-md-12 footer-phantrang">
+        <div class="row">
+          <div class="col-md-5">
+            <div class="dataTables_info">
+              <span>Tổng số bản ghi: {{ totalRows }}</span>
+            </div>
+          </div>
+          <div class="col-md-7 text-right">
+            <div class="page">
+              <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+                firstText="&laquo;" lastText="&raquo;">
+              </pagination>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /.box -->
+  </div>
+  <modal-contract-customer *ngIf="viewContractModal" (CloseModal)="closeContractModal()">
+  </modal-contract-customer>
+  <modal-contract-extension *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+  </modal-contract-extension>
+  <modal-attachfile *ngIf="viewAttach"  (CloseModal)="closeModalFile()">
+  </modal-attachfile>
+  <!-- <div [ngBusy]="busy"></div> -->
+  

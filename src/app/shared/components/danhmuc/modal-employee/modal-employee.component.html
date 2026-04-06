@@ -1,0 +1,175 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Nhân viên</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="col-sm-9">
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Họ tên
+                  <span class="error">*</span>
+                </label>
+                <div class="col-sm-10">
+                  <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.employeeFullName" required
+                    maxlength="255" name="tennv" class="form-control" placeholder="Nhập họ tên" focus
+                    [readonly]="flagXem" />
+                  <small [hidden]="tennhomquyen.valid || (tennhomquyen.pristine && !addEditForm.submitted)"
+                    class="text-danger">
+                    Tên không được để trống và không vượt quá 255 kí tự
+                  </small>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Ngày sinh
+                </label>
+                <div class="col-sm-4">
+                  <input name="ngaysinh" type="text" daterangepicker [options]="dateTimeOptions"
+                    [(ngModel)]="entity.dateOfBirth" class="form-control" (selected)="selectedNgaysinh($event)"
+                    (hideDaterangepicker)="closedNgaysinh($event)" autocomplete="off" [disabled]="flagXem">
+                </div>
+                <label class="col-sm-2 control-label">Giới tính</label>
+                <div class="col-sm-4">
+                  <ng-select name="sex" [items]="listSex" bindLabel="name" bindValue="id" [(ngModel)]="entity.sex"
+                    required>
+                  </ng-select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Điện thoại
+                </label>
+                <div class="col-sm-4">
+                  <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.telephone" name="tel"
+                    class="form-control" placeholder="Điện thoại" focus [readonly]="flagXem" />
+                </div>
+                <label class="col-sm-2 control-label">Email</label>
+                <div class="col-sm-4">
+                  <input class="form-control" [(ngModel)]="entity.email" type="text" name="email"
+                    placeholder="Nhập email" [readonly]="flagXem" />
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Địa chỉ</label>
+                <div class="col-sm-10">
+                    <textarea class="form-control textrea-size" [(ngModel)]="entity.address" name="address" rows="2"
+                    placeholder="Nhập địa chỉ" [readonly]="flagXem"></textarea>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Chi nhánh
+                  <span class="error">*</span>
+                </label>
+                <div class="col-sm-10">
+                  <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchName" bindValue="id"
+                    [(ngModel)]="entity.branchId" required>
+                  </ng-select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Phòng
+                  <span class="error">*</span>
+                </label>
+                <div class="col-sm-10">
+                  <ng-select name="donvi" [items]="listDepartment" bindLabel="categoryName" bindValue="id"
+                    [(ngModel)]="entity.departmentId" required>
+                  </ng-select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Vị trí
+                  <span class="error">*</span>
+                </label>
+                <div class="col-sm-10">
+                  <ng-select name="categoryName" [items]="listTitle" bindLabel="categoryName" bindValue="id"
+                    [(ngModel)]="entity.titleId" required>
+                  </ng-select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label">Ghi chú</label>
+                <div class="col-sm-10">
+                  <textarea class="form-control textrea-size" [(ngModel)]="entity.note" name="ghichu" rows="5"
+                    placeholder="Nhập ghi chú" [readonly]="flagXem"></textarea>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="col-sm-2 control-label"></label>
+                <div class="col-sm-4">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" [(ngModel)]="entity.status" name="status" />
+                    <span class="helping-el"></span>
+                    Trạng thái
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div class="col-sm-3">
+              <div class="img_employee">
+                  <img src="{{pathImage}}" alt="Ảnh chân dung">
+              </div>
+              <div class="form-group">
+                <div style="text-align: center;" *ngIf="!flagXem && _hr ">
+                  <input style="display: none" type="file" class="custom-file-input" id="pod" #filePod
+                  (change)="onFileChanged($event)" accept=".jpg,.png,.gif,.jpeg">
+                  <button type="button" class="btn btn-sm btn-primary" (click)="filePod.click()"
+                        [disabled]="flagXem">
+                        <i class="fa fa-upload" aria-hidden="true"></i> Tải ảnh
+                  </button>
+                </div>
+              </div><br>
+              <div class="form-group">
+                <div class="form-group">
+                  <label class="col-sm-6 control-label">Ngày vào công ty</label>
+                  <div class="col-sm-6">
+                    <input name="ngaybd" type="text" daterangepicker [options]="ngaybatdauOption"
+                      [(ngModel)]="entity.startDate" class="form-control" (selected)="selectedNgaybatdau($event)"
+                      (hideDaterangepicker)="closedNgaybatdau($event)" autocomplete="off" [disabled]="flagXem">
+                  </div>
+
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-6 control-label">Ngày hợp đồng</label>
+                  <div class="col-sm-6">
+                    <input name="ngayht" type="text" daterangepicker [options]="ngayhoanthanhOption"
+                      [(ngModel)]="entity.contractDate" class="form-control" (selected)="selectedNgayhoanthanh($event)"
+                      (hideDaterangepicker)="closedNgayhoanthanh($event)" autocomplete="off" [disabled]="flagXem">
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <div class="col-md-4" style="text-align: left;" > 
+              <button *ngIf="entity.id && _hr" type="button" class="btn btn-info btn-sm" title="Chứng từ đính kèm" (click)="showFiles()">
+                <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Hồ sơ đính kèm ...
+            </button>
+            </div> 
+            <div class="col-md-4">
+
+            </div>
+            <div class="col-md-4" style="text-align: right;">
+              <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+                [disabled]="!addEditForm.form.valid || flagSave">
+                <i class="fa fa-save"></i> Lưu</button>
+              <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+                <i class="fa fa-close"></i> Hủy</button>              
+            </div>
+
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>

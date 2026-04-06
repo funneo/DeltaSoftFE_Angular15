@@ -1,0 +1,152 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+    tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div #myHandle class="modal-header">
+                <h4 class="modal-title pull-left">{{title}}</h4>
+                <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+                    *ngIf="entity">
+                    <div class="box-body">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">{{entity.type==0?'Tổng ngày phép':''}}</label>
+                            <div class="col-sm-1">
+                                <input class="form-control" [(ngModel)]="entity.numberOfLeaveDay" type="number" *ngIf="entity.type==0"
+                                    name="numberOfLeaveDay" readonly />
+                            </div>
+                            <label class="col-sm-3 control-label">{{entity.type==0?'Số ngày phép còn lại':''}}</label>
+                            <div class="col-sm-1">
+                                <input class="form-control" [(ngModel)]="entity.remainingOfLeaveDay" type="number" *ngIf="entity.type==0"
+                                    name="remainingOfLeaveDay" readonly />
+                            </div>
+                            <label class="col-sm-2 control-label " *ngIf="!flagNew">Ngày lập</label>
+                            <div class="col-sm-2 control-label-text-left" *ngIf="!flagNew">
+                                <span style="font-weight: bold; color: blue;"> {{entity.createdDate |
+                                    date:'dd/MM/yyyy'}}</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Nhóm đối tượng
+                                <span class="error">*</span>
+                            </label>
+                            <div class="col-sm-5">
+                                <ng-select name="gasSiteId" [items]="listDepartment" bindLabel="categoryName"
+                                    bindValue="id" [(ngModel)]="entity.departmentId" required
+                                    placeholder="Chọn nhóm đối tượng" [disabled]="flagXem || entity.status>0">
+                                </ng-select>
+                            </div>
+                            <label class="col-sm-2 control-label" *ngIf="!flagNew && entity.type==0">Tổng phép xin nghỉ</label>
+                            <div class="col-sm-2 control-label-text-left" *ngIf="!flagNew && entity.type==0">
+                                <input class="form-control" [(ngModel)]="entity.total" type="number" name="total"
+                                    readonly />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Lý do </label>
+                            <div class="col-sm-9">
+                                <textarea class="form-control" [(ngModel)]="entity.reason" required
+                                    placeholder="Nhập lý do" name="reason"
+                                    [readonly]="flagXem || entity.status>0"></textarea>
+                            </div>
+                        </div>
+                        <!-- <div class="form-group" *ngIf="entity.status <1">
+                            <label class="col-sm-3 control-label"></label>
+                            <div class="col-sm-4">
+                                <label class="custom-checkbox" style="color: rgb(17, 46, 239);">
+                                    <input type="checkbox" [(ngModel)]="entity.isChuyenduyet" name="isChuyenduyet" />
+                                    <span class="helping-el"></span>
+                                    Chuyển duyệt
+                                </label>
+                            </div>
+                        </div> -->
+                        <div class="form-group" *ngIf="!flagNew">
+                            <label class="col-sm-3 control-label">Nhận xét</label>
+                            <div class="col-sm-9">
+                                <textarea class="form-control" [(ngModel)]="entity.approvedNotes" name="approvedNotes"
+                                    rows="3" placeholder="Nhập nhận xét"
+                                    [readonly]="(entity.status!=1) || !hasPermissionApproved "></textarea>
+                            </div>
+                        </div>
+                        <tabset>
+                            <tab heading="{{entity.type==0?'Danh sach ngày nghỉ phép':'Danh sách ngày làm việc Online'}}">
+                                <div class="form-group">
+                                    <div class="col-sm-2">
+                                        <button [disabled]="entity.status>0 || flagXem" type="button"
+                                            class="btn btn-sm btn-primary" (click)="newOnleave()">Thêm</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <div style="padding-left:15px; padding-right:15px">
+                                        <table class="table table-bordered table-striped table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>Ngày</th>
+                                                    <th>Khung thời gian</th>
+                                                    <th>Ghi chú</th>
+                                                    <th *ngIf="entity.status<1"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr
+                                                    *ngFor="let item of entity.listOnLeaveDetailed; let indexOfelement=index;">
+                                                    <td style="width: 100px;">
+                                                        <input name="onLeaveDate{{indexOfelement}}" type="text" daterangepicker [options]="ngaybatdauOption"
+                                                        [(ngModel)]="item.onLeaveDate" class="form-control" (selected)="selectedNgaybatdau(item,$event)"
+                                                        (hideDaterangepicker)="closedNgaybatdau(item,$event)" autocomplete="off" [disabled]="flagXem || entity.status>0" required>
+                                                    </td>
+                                                    <td style="width: 150px;">
+                                                        <ng-select name="type{{indexOfelement}}" [items]="listType"
+                                                            bindLabel="label" bindValue="label" [clearable]="false"
+                                                            [(ngModel)]="item.type" required>
+                                                        </ng-select>
+                                                    </td>
+                                                    <td style="width: 200px;">
+                                                        <input type="text" class="form-control"
+                                                            name="notes{{indexOfelement}}" [(ngModel)]="item.notes">
+                                                        <!-- {{item.feeCode}} -->
+                                                    </td>
+                                                    <td style="width:50px">
+                                                        <button *ngIf="entity.status<1" [disabled]="flagXem"
+                                                            type="button" class="btn btn-warning btn-sm"
+                                                            (click)="deleteOnleave(indexOfelement)">
+                                                            <i class="fa fa-trash"></i> Xóa
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <tr *ngIf="entity.listOnLeaveDetailed?.length == 0">
+                                                    <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </tab>
+                        </tabset>
+                    </div>
+                    <!-- /.box-body -->
+                    <div class="box-footer text-right">
+                        <button *ngIf="entity.status <=0 && entity.createdBy==userLoged.id" type="button" (click)="approved(1)"
+                        class="btn btn-success btn-sm">
+                        <i class="fa fa-random"></i> Chuyển duyệt</button>
+                        <button *ngIf="hasPermissionApproved && entity.status ==1" type="button" (click)="approved(2)"
+                            class="btn btn-success btn-sm">
+                            <i class="fa fa-check"></i> Duyệt</button>
+                        <button *ngIf="hasPermissionApproved  && entity.status==1" type="button" (click)="approved(-1)"
+                            class="btn btn-warning btn-sm" [disabled]="entity.approvedNotes?.trim().length<1">
+                            <i class="fa fa-exclamation-triangle"></i> Từ chối</button>
+                        <button *ngIf="!flagXem && entity.status<1" type="submit" class="btn btn-primary btn-sm"
+                            [disabled]="!addEditForm.form.valid || flagSave  ">
+                            <i class="fa fa-edit"></i> Lưu</button>
+                        <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+                            <i class="fa fa-close"></i> Hủy</button>
+                    </div>
+                    <!-- /.box-footer -->
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

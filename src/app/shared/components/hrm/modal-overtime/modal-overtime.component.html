@@ -1,0 +1,181 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Đăng ký ngoài giờ</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Nhóm đối tường
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-4">
+                <ng-select name="gasSiteId" [items]="listDepartment" bindLabel="categoryName" bindValue="id"
+                  [(ngModel)]="entity.departmentId" required placeholder="Chọn nhóm đối tượng" [disabled]="flagXem || entity.status>0">
+                </ng-select>
+              </div>
+              <div *ngIf="entity.status>1" class="col-sm-2">
+                <button  type="button" class="btn btn-primary btn-sm"
+                  (click)="attachFile()">
+                  <i class="fa fa-download"></i> Đính kèm</button>
+              </div>
+              <label class="col-sm-1 control-label" *ngIf="!flagNew">Ngày</label>
+              <div class="col-sm-2 control-label-text-left" *ngIf="!flagNew">
+                <span style="font-weight: bold; color: blue;"> {{entity.createdDate | date:'dd/MM/yyyy'}}</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Lý do <span class="error">*</span></label>
+              <div class="col-sm-9">
+                <textarea class="form-control" [(ngModel)]="entity.reason" required placeholder="Nhập lý do"
+                  name="reason" [readonly]="flagXem || entity.status>0"></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Id công việc </label>
+              <div class="col-sm-9">
+                <div class="input-group">
+                  <input class="form-control" [(ngModel)]="_idpccv" required readonly name="idpccv">
+                  <span class="input-group-btn" *ngIf="this.entity!.status>0">
+                    <button class="btn btn-warning btn-flat btn-sm" type="button" (click)="viewDetails()">
+                      <i class="fa fa-eye"></i>
+                    </button>
+                  </span>
+                  <span class="input-group-btn"  *ngIf="this.entity!.status<1">
+                    <button class="btn btn-info btn-flat btn-sm" type="button" (click)="viewSearch()" [disabled]="flagXem || (!flagNew && entity.createdBy!=userLoged.id)">
+                      <i class="fa fa-search"></i>
+                    </button>
+                  </span>
+                </div>
+              </div>
+          </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Thời gian dự kiến <span class="error">*</span>
+              </label>
+              <div class="col-sm-3">
+                <input name="estimatedStartTime" type="text" daterangepicker [options]="ngaybatdauOption" required
+                  [(ngModel)]="entity.estimatedStartTime" class="form-control" (selected)="selectedNgaybatdau($event)"
+                  (hideDaterangepicker)="closedNgaybatdau($event)" autocomplete="off" [disabled]="flagXem || entity.status>0">
+
+              </div>
+              <label class="col-sm-1 control-label">đến <span class="error">*</span>
+              </label>
+              <div class="col-sm-3">
+                <input name="estimatedFinishTime" type="text" daterangepicker [options]="ngayketthucOption" required
+                  [(ngModel)]="entity.estimatedFinishTime" class="form-control" (selected)="selectedNgayketthuc($event)"
+                  (hideDaterangepicker)="closedNgayketthuc($event)" autocomplete="off" [disabled]="flagXem || entity.status>0">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Gián đoạn <span class="error">*</span></label>
+              <div class="col-sm-2">
+                <input class="form-control" [(ngModel)]="entity.discontinuityTime" type="number"
+                  name="discontinuityTime" [readonly]="flagXem || entity.status>0" required />
+              </div>
+              <label class="col-sm-1 control-label">(phút)</label>
+            </div>
+            <!-- <div class="form-group" *ngIf="flagNew">
+              <label class="col-sm-3 control-label"></label>
+              <div class="col-sm-4">
+                <label class="custom-checkbox" style="color: red;">
+                  <input type="checkbox" [(ngModel)]="entity.isChuyenduyet" name="isChuyenduyet" />
+                  <span class="helping-el"></span>
+                  Đăng ký
+                </label>
+              </div>
+            </div> -->
+            <div class="form-group" *ngIf="entity.status>1">
+              <label class="col-sm-3 control-label">T/g bắt đầu thực tế
+              </label>
+              <div class="col-sm-2">
+                <label class="form-control">{{entity.startedTime | date:'dd/MM/yyyy HH:mm'}}</label>
+              </div>
+              <label class="col-sm-2 control-label">T/g kết thúc thực tế
+              </label>
+              <div class="col-sm-2">
+                <label class="form-control">{{entity.finishedTime | date:'dd/MM/yyyy HH:mm'}}</label>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="entity.status>1">
+              <label class="col-sm-3 control-label">Ghi chú</label>
+              <div class="col-sm-9">
+                <textarea class="form-control" [(ngModel)]="entity.notes" name="moocLicensePlates" rows="3"
+                  placeholder="Nhập ghi chú" [readonly]="flagXem || entity.status>2"></textarea>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="entity.status>2">
+              <label class="col-sm-3 control-label">Thời gian điều chỉnh
+              </label>
+              <div class="col-sm-3">
+                <input name="adjustStartedTime" type="text" daterangepicker [options]="ngaydieuchinhbatdauOption"
+                  [(ngModel)]="entity.adjustStartedTime" class="form-control" (selected)="selectedNgaybatdauDieuchinh($event)"
+                  (hideDaterangepicker)="closedNgaybatdauDieuchinh($event)" autocomplete="off" [disabled]="!hasPermissionApproved || entity.status!=3">
+              </div>
+              <label class="col-sm-1 control-label">đến
+              </label>
+              <div class="col-sm-3">
+                <input name="adjustFinishedTime" type="text" daterangepicker [options]="ngaydieuchinhketthucOption"
+                  [(ngModel)]="entity.adjustFinishedTime" class="form-control" (selected)="selectedNgayketthucDieuchinh($event)"
+                  (hideDaterangepicker)="closedNgayketthucDieuchinh($event)" autocomplete="off" [disabled]="!hasPermissionApproved || entity.status!=3">
+              </div>
+            </div>
+            <div class="form-group" *ngIf="entity.status>2">
+              <label class="col-sm-3 control-label">Nghỉ gián đoạn</label>
+              <div class="col-sm-2">
+                <input class="form-control" [(ngModel)]="entity.adjustDiscontinuityTime" type="number"
+                  name="adjustDiscontinuityTime" [readonly]="!hasPermissionApproved || entity.status!=3" />
+              </div>
+              <label class="col-sm-1 control-label">(phút)</label>
+            </div>
+            <div class="form-group" *ngIf="!flagNew">
+              <label class="col-sm-3 control-label">Nhận xét</label>
+              <div class="col-sm-9">
+                <textarea class="form-control" [(ngModel)]="entity.acceptedNotes" name="acceptedNotes" rows="3"
+                  placeholder="Nhập nhận xét" [readonly]="!hasPermissionApproved || (entity.status!=1 && entity.status!=3)"></textarea>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="entity.status ==2 && !flagXem " type="button" (click)="startStop(0)"
+              class="btn btn-success btn-sm" [disabled]="entity.isStarted">
+              <i class="fa fa-play"></i> Bắt đầu</button>
+              <button *ngIf="entity.status ==2 && !flagXem " type="button" (click)="startStop(1)"
+                class="btn btn-success btn-sm"  [disabled]="entity.isFinished">
+                <i class="fa fa-stop"></i> Kết thúc</button>
+              <button *ngIf="!flagXem && entity.status<1 &&!flagNew" type="button" class="btn btn-warning btn-sm"
+              (click)="changeStatus(1)">
+              <i class="fa fa-random"></i> Đăng ký</button>
+            <button *ngIf="hasPermissionApproved && (entity.status ==1 || entity.status==3) " type="button" (click)="changeStatus(entity.status ==1?2:4)"
+              class="btn btn-success btn-sm">
+              <i class="fa fa-check"></i> Duyệt</button>
+            <button *ngIf="hasPermissionApproved  && (entity.status==1 || entity.status==3)" type="button" (click)="changeStatus(entity.status ==1?-1:2)"
+              class="btn btn-warning btn-sm" [disabled]="entity.acceptedNotes?.trim().length<1">
+              <i class="fa fa-exclamation-triangle"></i> Từ chối</button>
+            <button *ngIf="!flagXem && entity.status==2 && entity.isStarted && entity.isFinished " type="button" class="btn btn-duyet btn-sm"
+              (click)="changeStatus(3)">
+              <i class="fa fa-random"></i> Chuyển duyệt</button>
+            <button *ngIf="!flagXem && entity.status<1" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave  ">
+              <i class="fa fa-edit"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<modal-attachfile *ngIf="viewAttachFiles" (CloseModal)="closeModalAttachFiles()">
+</modal-attachfile>
+<modal-search-op-workflow *ngIf="viewSearchModal" (CloseModal)="closeSearch()" (SaveSuccess)="saveSuccess($event)" >
+</modal-search-op-workflow>

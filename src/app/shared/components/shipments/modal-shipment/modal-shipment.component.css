@@ -1,0 +1,89 @@
+.column-ten {
+  width: 100px;
+}
+
+.clicks-disabled {
+  pointer-events: none;
+}
+
+@media (min-width: 850px) {
+  .modal-lg {
+    width: 70%;
+  }
+}
+
+.so-luong {
+  text-align: right;
+}
+
+.column-ten {
+  min-width: 180px;
+  max-width: 250px;
+  width: 200px;
+}
+
+.column-gia-tri {
+  min-width: 120px;
+  max-width: 180px;
+  width: 120px;
+  text-align: right;
+}
+
+.column-ghi-chu {
+  width: 120px;
+}
+
+#scrolltable {
+  overflow-y: scroll;
+  overflow-x: scroll;
+}
+
+.my-custom-scrollbar {
+  position: relative;
+  max-height: 180px;
+  overflow: auto;
+}
+
+.table-wrapper-scroll-y {
+  display: block;
+}
+
+div#style-scroll-1 {
+  overflow-y: scroll;
+  height: 450px;
+}
+
+::ng-deep .ng-dropdown-panel {
+  z-index: 9999999 !important;
+}
+
+::ng-deep .modal-content {
+  border-radius: 8px;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2), 0 5px 15px rgba(0, 0, 0, 0.1);
+  border: none;
+  overflow: hidden;
+  /* Ensures child elements don't overflow rounded corners */
+  transition: transform 0.3s ease-in-out;
+}
+
+::ng-deep .modal-header {
+  background: white;
+  /* Or a slight gradient if preferred */
+  border-bottom: 1px solid #eee;
+  padding: 15px 20px;
+}
+
+::ng-deep .modal-footer {
+  background: #f9f9f9;
+  border-top: 1px solid #eee;
+}
+
+/* Optional: Slight animation on open - although bs-modal handles this, this helps static feel */
+::ng-deep .modal.fade .modal-dialog {
+  transform: translate(0, -25%);
+  transition: transform 0.3s ease-out;
+}
+
+::ng-deep .modal.in .modal-dialog {
+  transform: translate(0, 0);
+}

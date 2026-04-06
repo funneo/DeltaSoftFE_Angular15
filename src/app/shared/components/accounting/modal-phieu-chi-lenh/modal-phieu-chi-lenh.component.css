@@ -1,0 +1,19 @@
+table {
+    border-collapse: collapse;
+    border: 1px solid rgba(109, 107, 107, 0.445);
+}
+
+table th {
+    border: 1px solid rgba(99, 97, 97, 0.589);
+    padding: 2px;
+}
+
+.column-tai-khoan {
+    width: 100px;
+}
+
+@media (min-width: 850px) {
+    .modal-lg {
+        width: 70%;
+    }
+}

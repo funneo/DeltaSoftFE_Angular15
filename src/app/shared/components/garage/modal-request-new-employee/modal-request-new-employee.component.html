@@ -1,0 +1,103 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Đề nghị tạo mới tài khoản xưởng</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Họ tên
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-10">
+                <span class="form-control">{{entity.employeeFullName}}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Ngày sinh
+              </label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.dateOfBirth | date: 'dd/MM/yyyy'}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Giới tính</label>
+              <div class="col-sm-4">
+                <ng-select name="sex" [items]="listSex" bindLabel="name" bindValue="id" [(ngModel)]="entity.sex"
+                  [readonly]="true">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Điện thoại
+              </label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.telephone}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Email</label>
+              <div class="col-sm-4">
+                <span class="form-control">{{entity.email}}></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Địa chỉ</label>
+              <div class="col-sm-10">
+                <textarea class="form-control textrea-size" [(ngModel)]="entity.address" name="address" rows="2"
+                  placeholder="Nhập địa chỉ" [readonly]="true"></textarea>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Ghi chú</label>
+              <div class="col-sm-10">
+                <textarea class="form-control textrea-size" [(ngModel)]="entity.note" name="ghichu" rows="5"
+                  placeholder="Nhập ghi chú" [readonly]="true"></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Tài khoản Delta</label>
+              <div class="col-sm-4" *ngIf="entity.status==0">
+                <ng-select name="status" placeholder="Chọn tài khoản Delta ERP" [items]="listAccount" (change)="changeAccount($event)"
+                  bindLabel="userName" bindValue="id" [(ngModel)]="entity.deltaERP_UserId">
+                </ng-select>
+              </div>
+              <div class="col-sm-3" *ngIf="entity.status==0">
+                <div class="input-group">
+                  <input [type]="showPassword ? 'text' : 'password'" class="form-control" name="password" [readOnly]="true"
+                    [(ngModel)]="entity.deltaERP_Password" placeholder="Mật khẩu" />
+                  <span class="input-group-btn" (click)="showPassword = !showPassword" style="cursor:pointer">
+                    <button class="btn btn-info btn-flat btn-sm" type="button">
+                      <i class="fa" [ngClass]="showPassword ? 'fa-eye' : 'fa-eye-slash'"></i>
+                    </button>
+                  </span>
+                </div>
+              </div>
+              <div class="col-sm-4" *ngIf="entity.status>0">
+                <span class="form-control">{{entity.deltaERP_Username}}</span>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <div class="col-md-8"></div>
+            <div class="col-md-4" style="text-align: right;">
+              <button *ngIf="_acceptPermission && entity.status==0" type="button" class="btn btn-primary btn-sm"
+                [disabled]="entity.deltaERP_Username?.length<1 || entity.deltaERP_Password?.length<1" (click)="accept()">
+                <i class="fa fa-save"></i> Cấp tài khoản</button>
+              <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+                <i class="fa fa-close"></i> Hủy</button>
+            </div>
+
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

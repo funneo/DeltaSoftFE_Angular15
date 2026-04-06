@@ -1,0 +1,83 @@
+.route-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    border-left: 4px solid transparent;
+}
+.route-item:not(.expanded):hover {
+    background-color: #f4f4f4;
+}
+.route-item.expanded {
+    background-color: #f7faff !important;
+    border-left: 4px solid #007bff;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.08);
+    z-index: 10;
+}
+.route-timeline {
+    position: relative;
+    padding: 0;
+    list-style: none;
+    margin-left: 20px;
+    margin-bottom: 0;
+}
+.route-timeline:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 9px;
+    width: 2px;
+    background: #e9ecef;
+}
+.route-step {
+    position: relative;
+    margin-bottom: 20px;
+    padding-left: 35px;
+}
+.route-step:last-child {
+    margin-bottom: 0;
+}
+.route-step-icon {
+    position: absolute;
+    left: 0;
+    top: 5px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #007bff;
+    color: white;
+    text-align: center;
+    line-height: 18px;
+    font-size: 10px;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #e9ecef;
+    z-index: 2;
+}
+.route-step:last-child .route-step-icon {
+    background: #dc3545;
+}
+.route-step:first-child .route-step-icon {
+    background: #28a745;
+}
+.route-step-content {
+    background: #fff;
+    padding: 12px 15px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    font-size: 14px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+}
+.route-step-content b {
+    color: #333;
+    font-weight: 600;
+}
+.route-step-distance {
+    display: inline-block;
+    background: #e9ecef;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    color: #495057;
+    margin-top: 8px;
+    font-weight: 600;
+}

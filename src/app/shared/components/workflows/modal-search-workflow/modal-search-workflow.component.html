@@ -1,0 +1,87 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalListWorkflow="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Lựa chọn Id Công việc</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalListWorkflow.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="form-group">
+                <div style="padding-left:15px; padding-right:15px" class="table-wrapper-scroll-y my-custom-scrollbar">
+                  <table class="table table-bordered table-hover">
+                    <thead>
+                      <tr>
+                        <th >Id <i class="fa fa-sort" style="padding-left: 10px;" (click)="sortData('id')"></i></th>
+                        <th>JobId <i class="fa fa-sort" style="padding-left: 10px;" (click)="sortData('jobId')"></i></th>
+                        <th style="min-width: 120px;">Vận đơn H <i class="fa fa-sort" style="padding-left: 10px;" (click)="sortData('hBL')"></i></th>
+                        <th style="min-width: 120px;">Số tờ khai <i class="fa fa-sort" style="padding-left: 10px;" (click)="sortData('cDSNumber')"></i></th>
+                        <th style="min-width: 120px;">Số Invoice <i class="fa fa-sort" style="padding-left: 10px;" (click)="sortData('invoiceNo')"></i></th>
+                        <th style="min-width: 120px;">Số Booking <i class="fa fa-sort" style="padding-left: 10px;" (click)="sortData('mBL')"></i></th>
+                        <th style="min-width: 120px;">Số Cont <i class="fa fa-sort" style="padding-left: 10px;" (click)="sortData('contNo')"></i></th>
+                        <th style="min-width: 180px;">Nôi dung <i class="fa fa-sort" style="padding-left: 10px;" (click)="sortData('jobDescription')"></i></th>
+                      </tr>
+                      <tr>
+                        <th>
+                          <input type="text" class="form-control" [(ngModel)]="filterColumns.id" (input)="filterData()" name="id" >
+                        </th>
+                        <th>
+                          <input type="text" class="form-control" [(ngModel)]="filterColumns.jobId" (input)="filterData()" name="jobId" >
+                        </th>
+                        <th>
+                          <input type="text" class="form-control" [(ngModel)]="filterColumns.hBL" (input)="filterData()" name="hBL" >
+                        </th>
+                        <th>
+                          <input type="text" class="form-control" [(ngModel)]="filterColumns.cDSNumber"  (input)="filterData()" name="cDSNumber" >
+                        </th>
+                        <th>
+                          <input type="text" class="form-control" [(ngModel)]="filterColumns.invoiceNo"  (input)="filterData()" name="invoiceNo" >
+                        </th>
+                        <th>
+                          <input type="text" class="form-control" [(ngModel)]="filterColumns.mBL"  (input)="filterData()" name="mBL" >
+                        </th>
+                        <th>
+                          <input type="text" class="form-control" [(ngModel)]="filterColumns.contNo"  (input)="filterData()" name="contNo" >
+                        </th>
+                        <th>
+                          <input type="text" class="form-control" [(ngModel)]="filterColumns.jobDescription"  (input)="filterData()" name="jobDescription" >
+                        </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of filteredWorkflows" [ngClass]="{'bgColorSkyblue': item.checked}" (click)="clickRow(item)">
+                        <td>{{item.id}}</td>
+                        <td >{{item.jobId}}</td>
+                        <td>{{item.hBL}}</td>
+                        <td>{{item.cDSNumber}}</td>
+                        <td >{{item.invoiceNo}}</td>
+                        <td>{{item.mBL}}</td>
+                        <td>{{item.contNo}}</td>
+                        <td>{{item.jobDescription}}</td>
+                      </tr>
+                      <tr *ngIf="filteredWorkflows?.length == 0">
+                        <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+            </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+      <div class="modal-footer">
+        <div class="box-footer text-right">
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="!isSelected" (click)="saveChange()">
+            <i class="fa fa-edit"></i> Chọn</button>
+          <button type="button" (click)="modalListWorkflow.hide()" class="btn btn-danger btn-sm">
+            <i class="fa fa-close"></i> Hủy</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+

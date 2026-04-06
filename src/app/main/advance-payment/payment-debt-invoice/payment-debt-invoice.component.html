@@ -1,0 +1,147 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="box-header with-border">
+        <div class="row" style="padding-bottom: 3px;">
+            <div class="col-md-4">
+                <h3 class="box-title">Thanh toán NỢ hóa đơn</h3>
+            </div>
+            <div class="col-md-4">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()"
+                        [(ngModel)]="keyword" placeholder="keyword:"
+                        title="Tìm kiếm theo mã phí, lô hàng, số thanh toán, hóa đơn..." />
+                    <span class="input-group-btn">
+                        <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()" title="">
+                            <i class="fa fa-search"></i>
+                        </button>
+                        <!-- <button class="btn btn-success btn-sm" appPermission appFunction="REPORTPAYMENT" appAction="EXPORT" (click)="exportExcel()" title="Xuất dữ liệu">
+              <i class="fa fa-file-excel-o"></i>
+            </button> -->
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-4 text-right">
+                <button class="btn btn-warning btn-sm" (click)="updateInvoice()" [disabled]="!isSelected">
+                    <i class="fa fa-edit"></i> Cập nhật Hóa đơn
+                </button>
+                <button class="btn btn-success btn-sm" (click)="export()">
+                    <i class="fa fa-file-excel-o" style=" padding-right: 3px;"></i> Export
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" style="position: relative;"id="div#style-scroll-1">
+        <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f4f4f9" size="medium" color="#1010ee"
+            type="ball-clip-rotate" size="medium">
+            <p class="loading">Tải dữ liệu ...</p>
+        </ngx-spinner>
+        <table class="table table-bordered table-striped table-hover">
+            <thead>
+                <tr>
+                    <th class="table-checkbox"></th>
+                    <th>Id</th>
+                    <th  class="column-sm">Số cập nhật HĐ</th>
+                    <th  class="column-sm">Số thanh toán</th>
+                    <th class="column-md" >Nhà cung cấp</th>
+                    <th>Mã phí</th>
+                    <th>Tên phí</th>
+                    <th>Diễn giải</th>
+                    <th>Số tiền</th>
+                    <th>VAT</th>
+                    <th>Số tiền <br>(+VAT)</th>
+                    <th>Nội dung</th>
+                    <th>Ghi chú</th>
+                    <th class="column-sm">Người thanh toán</th>
+                    <!-- <th>Tên khách hàng</th> -->
+                </tr>
+                <tr>
+                    <th></th>
+                    <th><input class="form-control" #bookingInput [(ngModel)]="IdSearch" (input)="filter()" type="text"
+                            name="bookingSearch" /></th>
+                    <th><input class="form-control" #invoiceInput [(ngModel)]="invoiceSearch" (input)="filter()"
+                            type="text" name="invoiceSearch" /></th>
+                    <th><input class="form-control" #sottInput [(ngModel)]="sottSearch" (input)="filter()" type="text"
+                            name="sottSearch" /></th>
+                    <th><input class="form-control" #nccInput [(ngModel)]="nccSearch" (input)="filter()" type="text"
+                            name="nccSearch" /></th>
+                    <th><input class="form-control" #maphiInput [(ngModel)]="maphiSearch" (input)="filter()" type="text"
+                            name="maphiSearch" /></th>
+                    <th><input class="form-control" #tenphiInput [(ngModel)]="tenphiSearch" (input)="filter()"
+                            type="text" name="tenphiSearch" /></th>
+                    <th><input class="form-control" #diengiaiInput [(ngModel)]="diengiaiSearch" (input)="filter()"
+                            type="text" name="diengiaiSearch" /></th>
+                    <th><input class="form-control" #sotienInput [(ngModel)]="sotienSearch" (input)="filter()"
+                            type="text" name="sotienSearch" /></th>
+                    <th><input class="form-control" #vatInput [(ngModel)]="vatSearch" (input)="filter()" type="text"
+                            name="vatSearch" /></th>
+                    <th><input class="form-control" #sotienvatInput [(ngModel)]="sotienvatSearch" (input)="filter()"
+                            type="text" name="sotienvatSearch" /></th>
+                    <th><input class="form-control" #noidungInput [(ngModel)]="noidungSearch" (input)="filter()"
+                            type="text" name="noidungSearch" /></th>
+                    <th><input class="form-control" #ghichuInput [(ngModel)]="ghichuSearch" (input)="filter()"
+                            type="text" name="ghichuSearch" /></th>
+                    <th><input class="form-control" #nguoittInput [(ngModel)]="nguoittSearch" (input)="filter()"
+                            type="text" name="nguoittSearch" /></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let item of listFilter" (click)="clickRow(item)">
+                    <td class="table-checkbox" >
+                        <label class="custom-checkbox">
+                          <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                          <span class="helping-el"></span>
+                        </label>
+                      </td>
+                    <td>{{item.id}}</td>
+                    <td class="column-md">{{item.a_RefNo}}</td>
+                    <td class="column-md">
+                        <a [routerLink]="[]" (click)="showPayment(item)">{{item.refNo}}</a>
+                    </td>
+                    <td>{{item.supplierName}}</td>
+                    <td>{{item.feeCode}}</td>
+                    <td class="column-ten">{{item.feeName}}</td>
+                    <td class="column-ten" >{{item.contents}}</td>
+                    <td class="so-tien">{{item.amount|VND}}</td>
+                    <td class="so-tien">{{item.vat|VND}}</td>
+                    <td class="so-tien">{{item.amountAfterVAT|VND}}</td>
+                    <td class="column-ten">{{item.noiDung}}</td>
+                    <td class="column-ten">{{item.ghiChu}}</td>
+                    <td class="column-ten">{{item.employeeName}}</td>
+                </tr>
+                <tr *ngIf="listFilter?.length == 0">
+                    <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer no-padding">
+        <div *ngIf="listFilter?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="dataTables_info">
+                        <span>Tổng số bản ghi: {{ listFilter?.length }}</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="dataTables_info">
+                        <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng tiền: {{ tongtien|VND }}</span>
+                    </div>
+                </div>
+                <!-- <div class="col-md-3 text-right">
+            <div class="page">
+              <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+                firstText="&laquo;" lastText="&raquo;">
+              </pagination>
+            </div>
+          </div> -->
+            </div>
+        </div>
+    </div>
+    <!-- /.box -->
+</div>
+<modal-additional-invoice-information *ngIf="viewModal" (SaveSuccess)="saveSuccess($event)" (CloseModal)="closeModal()">
+</modal-additional-invoice-information>
+<!-- <div [ngBusy]="busy"></div> -->

@@ -1,0 +1,15 @@
+.modal-lg {
+    width: 70%;
+}
+.form-control {
+    display: block; /* Đảm bảo span hiển thị như một block */
+    width: 100%; /* Giữ nguyên chiều rộng */
+    min-height: 34px; /* Giữ nguyên chiều cao của input cũ */
+    height: auto; /* Cho phép chiều cao tự động tăng khi có nhiều dòng */
+    padding: 6px 12px; /* Thêm padding để giống input */
+    border: 1px solid #ccc; /* Định dạng viền giống input */
+    border-radius: 4px; /* Bo góc nhẹ */
+    background-color: #f8f8f8; /* Tạo nền giống input readonly */
+    white-space: pre-wrap; /* Giúp chữ dài tự động xuống dòng */
+    word-wrap: break-word; /* Ngắt từ khi cần thiết */
+  }

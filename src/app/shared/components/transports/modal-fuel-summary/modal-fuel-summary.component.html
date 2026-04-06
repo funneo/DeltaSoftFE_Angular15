@@ -1,0 +1,205 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Tổng kết dầu xe nhà</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group" *ngIf="!flagNew">
+              <label class="col-sm-2 control-label">Số phiếu:</label>
+              <div class="col-sm-2 control-label-text-left">
+                <span style="font-weight: bold; color: blue;"> {{entity.refNo}}</span>
+              </div>
+              <label class="col-sm-1 control-label" *ngIf="entity.isLocal">IGAS: </label>
+              <div class="col-sm-1" *ngIf="entity.isLocal">
+                <input class="form-control" [(ngModel)]="entity.igasCode" name="igasCode"
+                [readonly]="flagXem || entity.status>0"/>
+                <!-- <span style="font-weight: bold; color: blue;"> {{entity.igasCode}}</span> -->
+              </div>
+              <label class="col-sm-2 control-label">Ngày:</label>
+              <div class="col-sm-2 control-label-text-left">
+                <span style="font-weight: bold; color: blue;"> {{entity.createdDate | date:'dd/MM/yyyy'}}</span>
+              </div>
+              <div class="col-sm-2">
+                <button *ngIf="entity.id" type="button" class="btn btn-info btn-sm" title="Chứng từ đính kèm" (click)="showFiles()">
+                  <i class="fa fa-file-pdf-o" aria-hidden="true"></i> File đính kèm
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label"></label>
+              <div class="col-sm-4">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [(ngModel)]="entity.isLocal" name="isLocal" [disabled]="entity.status>0" />
+                  <span class="helping-el"></span>
+                  Cây dầu Delta
+                </label>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="entity.isLocal">
+              <label class="col-sm-2 control-label">Kho dầu
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select name="gasSiteId" [items]="listGasSite" bindLabel="siteName" bindValue="id"
+                  [(ngModel)]="entity.gasSiteId" placeholder="Chọn kho dầu" [disabled]="flagXem  || entity.status>0">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="!entity.isLocal">
+              <label class="col-sm-2 control-label">Nhà cung cấp
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select name="supplierId" [items]="listSupplier" bindLabel="supplierName" bindValue="id"
+                  [(ngModel)]="entity.supplierId" [required]="!entity.isLocal" placeholder="Chọn nhà cung cấp"
+                  [disabled]="flagXem  || entity.status>0">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Biển kiểm soát</label>
+              <div class="col-sm-6">
+                <ng-select name="vihicleId" [items]="listVihicle" bindLabel="licensePlates" bindValue="id"
+                  [(ngModel)]="entity.vihicleId" (change)="vihicleChanged($event)" placeholder="Chọn biển số xe"
+                  [disabled]="flagXem">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+                <label class="col-sm-2 control-label">Lái xe
+                  <span class="error">*</span>
+                </label>
+                <div class="col-sm-6">
+                  <ng-select name="driverId" [items]="listDriver" bindLabel="employeeFullName" bindValue="id"
+                    [(ngModel)]="entity.driverId" (change)="driverChanged($event)" required placeholder="Chọn lái xe"
+                    [disabled]="flagXem">
+                  </ng-select>
+                </div>
+              </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Số lượng <span class="error">*</span></label>
+              <div class="col-sm-2">
+                <input class="form-control" [(ngModel)]="entity.quantity" type="text" name="quantity" [mask]="maskNumber"
+                  [readonly]="true" required />
+              </div>
+              <label class="col-sm-1 control-label">Đơn giá<span class="error">*</span></label>
+              <div class="col-sm-2">
+                <input class="form-control" [(ngModel)]="entity.oilPrice" type="text" name="oilPrice" [mask]="mask0"
+                  [readonly]="flagXem || entity.status>0" required />
+              </div>
+              <label class="col-sm-1 control-label" *ngIf="!flagNew && entity.isLocal">Hạn đổ:
+              </label>
+              <div class="col-sm-3" style="color:blue ;" *ngIf="!flagNew && entity.isLocal">
+                <span class="form-control"><b>{{entity.validTime | date:'dd/MM/yyyy HH:mm'}}</b></span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Ghi chú</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" [(ngModel)]="entity.note" name="moocLicensePlates" rows="3"
+                  placeholder="Nhập ghi chú" [readonly]="flagXem"></textarea>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="entity.status>0">
+              <label class="col-sm-2 control-label">Thời gian đổ thực tế:
+              </label>
+              <div class="col-sm-3" style="color:blue ;">
+                <input name="refuelingTimeIgas" type="text" daterangepicker [options]="ngaybatdauOption"
+                  [(ngModel)]="entity.refuelingTimeIgas" class="form-control" (selected)="selectedNgaybatdau($event)"
+                  (hideDaterangepicker)="closedNgaybatdau($event)" autocomplete="off"
+                  [disabled]="flagXem || entity.approved">
+              </div>
+              <label class="col-sm-2 control-label">S/L thực tế</label>
+              <div class="col-sm-1">
+                <input class="form-control" [(ngModel)]="entity.quantityIgas" type="text" name="quantityIgas" [mask]="maskNumber"
+                  [readonly]="flagXem || entity.approved"/>
+              </div>
+              <label class="col-sm-2 control-label">Giá thực tế</label>
+              <div class="col-sm-1">
+                <input class="form-control" [(ngModel)]="entity.realOilPrice" type="text" [mask]="mask0" name="realOilPrice"
+                  [readonly]="flagXem" required />
+              </div>
+            </div>
+            <fieldset>
+                <legend style="font-size: 14px; color: blue; font-weight: bold;">Chi tiết</legend>
+                <div class="table-wrapper-scroll-y my-custom-scrollbar">
+                  <table class="table table-bordered table-striped table-hover" id="style-scroll-1">
+                    <thead>
+                      <tr>
+                        <th>Số phiếu</th>
+                        <th>JobId</th>
+                        <th>Lái xe</th>
+                        <th>Biển số xe</th>
+                        <th>Ngày lập</th>
+                        <th>Km đầu</th>
+                        <th>Km cuối</th>
+                        <th>SL dầu</th>
+                      </tr>
+  
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of entity.detaileds ">
+                        <td>{{item.refNo}}</td>
+                        <td>{{item.mergeJobId}}</td>
+                        <td>{{item.driverName}}</td>
+                        <td>{{item.vehicleLicensePlates }}</td>
+                        <td>{{item.createdDate | date:'dd/MM/yyyy'}}</td>
+                        <td style="text-align: right;">{{item.startVehicleOdor | number}}</td>
+                        <td style="text-align: right;">{{item.finishVehicleOdor | number}}</td>
+                        <td style="text-align: right;">{{item.quantity | number : '1.2-2'  }}</td>
+                      </tr>
+                      <tr *ngIf="entity.detaileds?.length == 0">
+                        <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </fieldset>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button class="btn btn-success btn-sm" type="button" (click)="export()">
+            <i class="fa fa-file-excel-o"></i> Export
+          </button>
+            <button *ngIf="!flagNew && entity.isLocal && entity.status==0" type="button" (click)="getIgasCode()"
+              class="btn btn-success btn-sm">
+              <i class="fa fa-check"></i> Xuất phiếu IGAS</button>
+            <button *ngIf="!flagNew && entity.status==0 && !entity.isLocal" type="button" class="btn btn-success btn-sm"
+                (click)="xuatPhieu()">
+              <i class="fa fa-success"></i> Xuất phiếu</button>
+            <button *ngIf="entity.status==1 && entity.isLocal" type="button" class="btn btn-warning btn-sm"
+              (click)="huyPhieu()">
+            <i class="fa fa-success"></i> Hủy phiếu</button>
+            <!-- <button *ngIf="entity.status>0 && !entity.isLocal" class="btn btn-primary btn-sm" type="button" (click)="inPhieu()">
+              <i class="fa fa-info"></i> In phiếu</button> -->
+              <button *ngIf="entity.status>0 && !entity.isLocal" class="btn btn-primary btn-sm" type="button" (click)="print(entity)">
+                <i class="fa fa-info"></i> In phiếu</button>
+            <button *ngIf="apprved_permission && !entity.approved && entity.status>0" type="button"
+              class="btn btn-danger btn-sm" (click)="chotPhieu()">
+              <i class="fa fa-ambulance"></i> Chốt dữ liệu</button>
+            <button *ngIf="entity.status==1 && !entity.approved" class="btn btn-success btn-sm" type="button"
+              (click)="updateIgas()">
+              <i class="fa fa-success"></i> Cập nhật Igas</button>
+            <button *ngIf="!flagXem && entity.status==0" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-edit"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<modal-attachfile *ngIf="viewAttachFiles"  (CloseModal)="closeModalFile()">
+</modal-attachfile>
+<iframe id="printf" name="printf"></iframe>

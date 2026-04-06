@@ -1,0 +1,167 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Cung đường</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Chi nhánh
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select [items]="listBranch" name="branchId" bindLabel="branchName" bindValue="id"
+                  [(ngModel)]="entity.branchId" required>
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Tên cung đường
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <textarea #tenvitri="ngModel" [(ngModel)]="entity.routeName" required name="tenvitri"
+                  class="form-control" rows="2" placeholder="Nhập tên cung đường" focus [readonly]="flagXem"></textarea>
+                <small [hidden]="tenvitri.valid || (tenvitri.pristine && !addEditForm.submitted)" class="text-danger">
+                  Tên cung đường không được để trống và không vượt quá 255 kí tự
+                </small>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Mô tả
+              </label>
+              <div class="col-sm-9">
+                <textarea [(ngModel)]="entity.description" rows="2" name="diachi" class="form-control"
+                  placeholder="Nhập địa chỉ" focus [readonly]="flagXem"></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Điểm bắt đầu
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select [items]="listLocation" #tinh="ngModel" name="startlocation" bindLabel="locationName"
+                  bindValue="locationCode" [(ngModel)]="entity.startLocationCode">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Điểm kết thúc
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <ng-select [items]="listLocation" #district="ngModel" name="endlocation" bindLabel="locationName"
+                  bindValue="locationCode" [(ngModel)]="entity.endLocationCode">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="inputEmail3" class="col-sm-3 control-label">Khoảng cách
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-2">
+                <input type="number" [(ngModel)]="entity.distance" name="latitude" class="form-control"
+                  placeholder="Nhập khoảng cách" [readonly]="flagXem" required />
+              </div>
+              <label for="inputEmail3" class="col-sm-3 control-label">Khoảng cách theo Google</label>
+              <div class="col-sm-2">
+                <input type="number" [(ngModel)]="entity.distanceGoogle" name="longtitude" class="form-control"
+                  placeholder="Khoảng cách theo Google" [readonly]="flagXem" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Phụ phí đi đường</label>
+              <div class="col-sm-3">
+                <input type="number" [(ngModel)]="entity.routeSurcharge" name="routeSurcharge" class="form-control"
+                  placeholder="Số trạm vé" [readonly]="flagXem" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Ghi chú
+              </label>
+              <div class="col-sm-9">
+                <textarea [(ngModel)]="entity.note" rows="3" name="ghichu" class="form-control"
+                  placeholder="Nhập ghi chú" focus [readonly]="flagXem"></textarea>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="entity.status<1">
+              <div class="col-sm-2"></div>
+              <div class="col-sm-10">
+                <label class="custom-checkbox" style="color: blue;">
+                  <input type="checkbox" [(ngModel)]="checked" name="status" [disabled]="flagXem" />
+                  <span class="helping-el"></span>
+                  Chuyển duyệt
+                </label>
+              </div>
+            </div>
+            <div class="form-group">
+              <tabset>
+                <tab heading="Thông tin trạm thu phí">
+                  <div class="form-group">
+                    <div class="col-sm-2">
+                      <button type="button" class="btn btn-sm btn-primary" (click)="new()">Thêm</button>
+                    </div>
+                  </div>
+                  <div class="form-group" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Tên trạm</th>
+                          <th>Địa chỉ</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listRouteTollStation;let indexOfelement=index;">
+                          <td style="width:40%">
+                            <ng-select name="listRouteTollStation{{indexOfelement}}" [items]="listTollStation"
+                              (change)="changeTollStation($event,indexOfelement)" bindLabel="tollStationName"
+                              bindValue="id" [(ngModel)]="item.tollStationId" required>
+                            </ng-select>
+                          </td>
+                          <td style="width: 48%">
+                            {{item.tollStationAddress}}
+                          </td>
+                          <td style="width:10%">
+                            <button type="button" class="btn btn-warning btn-sm" (click)="delete(indexOfelement)">
+                              <i class="fa fa-trash"></i> Xóa
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listRouteTollStation?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </tab>
+              </tabset>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="approvedPermission && this.entity.status==1" type="button" class="btn btn-success btn-sm"
+              (click)="approved(true)">
+              <i class="fa fa-save"></i> Duyệt</button>
+            <button *ngIf="approvedPermission && this.entity.status==1" type="button" class="btn btn-danger btn-sm"
+              (click)="approved(false)">
+              <i class="fa fa-save"></i> Từ chối</button>
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

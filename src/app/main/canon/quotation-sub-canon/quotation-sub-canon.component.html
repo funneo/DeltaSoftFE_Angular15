@@ -1,0 +1,126 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="row">
+    <div class="box-header with-border">
+      <div class="col-md-2">
+        <h3 class="box-title">Báo giá Thầu phụ Canon</h3>
+      </div>
+      <div class="col-md-1" *ngIf="adminPermission">
+        <ng-select name="branch" [items]="listBranch" bindLabel="branchCode" bindValue="id" [(ngModel)]="branchId"
+          placeholder="Chọn chi nhánh..." (change)="changedBranch($event)">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="supplier" [items]="listSupplier" bindLabel="supplierName" bindValue="id" [(ngModel)]="supplierId"
+          placeholder="Chọn thầu phụ..." (change)="search()">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="search()" [(ngModel)]="keyword" placeholder="Từ khóa" />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="search()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="col-md-5 text-right">
+        <button *ngIf="permission.CREATE" type="button" class="btn btn-success btn-sm ml-2" (click)="add()">
+          <i class="fa fa-plus"></i> Thêm
+        </button>
+        <button type="button" class="btn btn-primary btn-sm ml-2" (click)="edit(false)" [disabled]="!flagEdit" *ngIf="permission.UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button type="button" class="btn btn-danger btn-sm ml-2" (click)="deleteConfirm()" [disabled]="!flagDelete" *ngIf="permission.DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+        <button type="button" class="btn btn-info btn-sm ml-2" (click)="edit(true)" [disabled]="!flagEdit" *ngIf="permission.VIEW">
+          <i class="fa fa-eye"></i> Xem
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="box-body table-responsive no-padding">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Tình trạng</th>
+          <th>Khóa</th>
+          <th>Người tạo</th>
+          <th>Số báo giá</th>
+          <th>Tên thầu phụ</th>
+          <th>Loại phương tiện</th>
+          <th>Giá dầu</th>
+          <th style="min-width: 100px;">Có giá trị đến</th>
+          <th>Ghi chú</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th><input class="form-control" [(ngModel)]="quotationCodeSearch" (input)="filterLocal()" type="text"/></th>
+          <th><input class="form-control" [(ngModel)]="supplierSearch" (input)="filterLocal()" type="text"/></th>
+          <th><input class="form-control" [(ngModel)]="vihicleSearch" (input)="filterLocal()" type="text"/></th>
+          <th></th>
+          <th></th>
+          <th><input class="form-control" [(ngModel)]="noteSearch" (input)="filterLocal()" type="text"/></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listFilter" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>
+            <span class="label label-success" *ngIf="item.status==1 && item.isApproved">Đã duyệt</span>
+            <span class="label label-warning" *ngIf="item.status==1 && !item.isApproved">Chờ duyệt</span>
+            <span class="label label-danger" *ngIf="item.status==-1" [title]="item.reason">Từ chối</span>
+            <span class="label label-info" *ngIf="item.status==0">Nháp</span>
+          </td>
+          <td>
+            <span class="label label-danger" *ngIf="item.isLocked">Đã khóa</span>
+            <span class="label label-success" *ngIf="!item.isLocked">Mở</span>
+          </td>
+          <td>{{ item.createdByName }}</td>
+          <td>{{ item.quotationCode }}</td>
+          <td>{{ item.supplierName }}</td>
+          <td>{{ item.vihicleTypeName }}</td>
+          <td class="text-right">{{ item.oilPrice | number }}</td>
+          <td>{{ item.validUntil }}</td>
+          <td>{{ item.note }}</td>
+        </tr>
+        <tr *ngIf="listFilter?.length == 0">
+          <td colspan="100%" class="text-center">Không tìm thấy bản ghi nào!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  
+  <div class="box-footer no-padding" *ngIf="totalRow > 0">
+    <div class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRow }}</span>
+          </div>
+        </div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [boundaryLinks]="true" [totalItems]="totalRow" [itemsPerPage]="pageSize" [(ngModel)]="pageIndex"
+              (pageChanged)="pageChanged($event)" previousText="&lsaquo;" nextText="&rsaquo;" firstText="&laquo;"
+              lastText="&raquo;" class="pagination-sm" [maxSize]="5"></pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<modal-canon-quotationsubcontractors *ngIf="viewModal" (SaveSuccess)="saveSuccess($event)" (CloseModal)="closeModal()">
+</modal-canon-quotationsubcontractors>

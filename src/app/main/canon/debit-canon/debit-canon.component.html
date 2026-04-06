@@ -1,0 +1,138 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="box-header with-border">
+    <div class="row">
+      <div class="col-md-2">
+        <h3 class="box-title">Debit Canon</h3>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id" [(ngModel)]="_branchId"
+          (change)="changedChiNhanh()" title="Chọn chi nhánh ghi nhận doanh thu..." [clearable]="false">
+        </ng-select>
+      </div>
+
+      <div class="col-md-3">
+        <ng-select name="vanchuyen" [items]="listTrucking" bindLabel="text" bindValue="id" [(ngModel)]="_trucking"
+          (change)="changedRoad()" title="Trạng thái vận chuyển" [clearable]="false">
+        </ng-select>
+      </div>
+
+      <div class="col-md-3">
+        <div class="input-group">
+          <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+            class="form-control">
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()" title="Tìm kiếm">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+
+      <div class="col-md-2 text-right">
+        <button class="btn btn-warning btn-sm" (click)="debitConfirm()" appPermission appFunction="DEBITCANON"
+          appAction="CREATE">
+          <i class="fa fa-plus"></i> Tạo Debit
+        </button>
+      </div>
+    </div>
+    <div class="row" style="margin-top: 3px;">
+      <div class="col-md-2"></div>
+      <div class="col-md-5">
+        <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+          [(ngModel)]="_customerId" (change)="changedCustomer($event)" [clearable]="false"
+          placeholder="Chọn khách hàng...">
+        </ng-select>
+      </div>
+      <div class="col-md-3">
+        <ng-select name="cungduong" [items]="listRoad" bindLabel="name" bindValue="code" [(ngModel)]="_cungDuong"
+          title="Chọn cung đường..." [clearable]="true" (change)="changedRoad()">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="vatxx" [items]="listVAT" bindLabel="text" bindValue="id" [(ngModel)]="_vat" required
+          placeholder="Chọn mức thuế VAT" title="Chọn mức thuế VAT" [clearable]="false">
+        </ng-select>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+              <span class="helping-el"></span>
+            </label>
+          </th>
+          <!-- <th>Khách hàng</th> -->
+          <th>JobId</th>
+          <th>Xe vận chuyển</th>
+          <th>Ngày</th>
+          <th>LOT</th>
+          <th>Cung đường</th>
+          <th>#Pallets</th>
+          <th>Ghi chú</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listShipment" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <!-- <td>{{item.customerName}}</td> -->
+          <td>
+            <a [routerLink]="[]" (click)="showModal(item)">{{item.jobId}}</a>
+          </td>
+          <td>{{item.cdsNumber}}</td>
+          <td>{{item.cdsDate|date :'dd/MM/yyyy'}}</td>
+          <td>{{item.hawB_HBL}}</td>
+          <td>{{item.mawB_MBL}}</td>
+          <td>{{item.pallets}}</td>
+          <td>{{item.notes }}</td>
+          <td class="trang-thai">
+            <span [ngClass]="
+                item.status? 'label label-success' : 'label label-warning'
+              ">{{ item.status?'Đã vận chuyển':'Chưa vận chuyển'}}</span>
+            <br>
+            <span [ngClass]="
+                  item.isDeb ? 'label label-info' : ''
+                ">{{ item.isDeb?'Đã Debit':'' }}</span>
+          </td>
+        </tr>
+        <tr *ngIf="!listShipment || listShipment.length === 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listShipment && listShipment.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+<modal-job-canon *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-job-canon>
+<!-- <div [ngBusy]="busy"></div> -->

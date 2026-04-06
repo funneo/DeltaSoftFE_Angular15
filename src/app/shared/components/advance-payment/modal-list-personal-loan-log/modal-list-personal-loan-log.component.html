@@ -1,0 +1,54 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Lịch sử duyệt vay cá nhân</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal">
+          <div class="box-body">
+            <div class="form-group">
+              <div class="table-wrapper-scroll-y my-custom-scrollbar">
+                <table class="table table-bordered table-striped table-hover table_wrapper">
+                  <thead>
+                    <tr>
+                      <th style="width: 200px;">Người duyệt</th>
+                      <th style="width: 150px;">Ngày duyệt</th>
+                      <th>Phản hồi/Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of listData">
+                      <td class="column-name">{{item.approvedByName}}</td>
+                      <td>{{item.approvedDate | date:'dd/MM/yyyy HH:mm'}}</td>
+                      <td>
+                        <span *ngIf="item.status==1" class="label label-success">Duyệt bước 1</span>
+                        <span *ngIf="item.status==2" class="label label-success">Duyệt bước 2</span>
+                        <span *ngIf="item.status==-1" class="label label-danger">Từ chối bước 1</span>
+                        <span *ngIf="item.status==-2" class="label label-danger">Từ chối bước 2</span>
+                        <span *ngIf="item.feedback"> - <i>{{item.feedback}}</i></span>
+                      </td>
+                    </tr>
+                    <tr *ngIf="listData?.length == 0">
+                      <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-default btn-sm">
+              <i class="fa fa-close"></i> Đóng</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

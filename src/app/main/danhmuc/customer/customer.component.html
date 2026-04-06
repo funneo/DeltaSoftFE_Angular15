@@ -1,0 +1,219 @@
+<div>
+  <tabset>
+    <tab heading="Hoạt động">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-4">
+              <h3 class="box-title">Khách hàng</h3>
+            </div>
+            <!-- <div class="col-md-3"></div> -->
+            <div class="col-md-4">
+              <div class="input-group">
+                <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+                  placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+                <span class="input-group-btn">
+                  <button class="btn btn-success btn-flat btn-sm" appPermission appFunction="CUSTOMER"
+                    appAction="EXPORT" (click)="exportExcel()" title="Xuất dữ liệu">
+                    <i class="fa fa-file-excel-o"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+            <div class="col-md-4 text-right">
+              <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="CUSTOMER"
+                appAction="CREATE">
+                <i class="fa fa-plus"></i> Thêm
+              </button>
+              <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+                appFunction="CUSTOMER" appAction="UPDATE">
+                <i class="fa fa-edit"></i> Sửa
+              </button>
+              <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+                appFunction="CUSTOMER" appAction="DELETE">
+                <i class="fa fa-trash"></i> Xóa
+              </button>
+              <!-- <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+          <i class="fa fa-eye"></i> Xem
+        </button> -->
+            </div>
+          </div>
+        </div>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+          <table class="table table-bordered table-striped table-hover">
+            <thead>
+              <tr>
+                <th class="table-checkbox">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+                    <span class="helping-el"></span>
+                  </label>
+                </th>
+                <th>Mã khách hàng</th>
+                <th>Tên khách hàng</th>
+                <th>Điện thoại</th>
+                <th>Địa chỉ</th>
+                <th>Người đại diện</th>
+                <th>Chức vụ</th>
+                <th>Điện thoại</th>
+                <th>Ghi chú</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of listCustomer" (click)="clickRow(item)">
+                <td class="table-checkbox">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                    <span class="helping-el"></span>
+                  </label>
+                </td>
+                <td>
+                  <a [routerLink]="[]" (click)="showModal(item)">{{item.customerCode}}</a>
+                </td>
+                <td>{{item.customerName}}</td>
+                <td>{{item.tel}}</td>
+                <td>{{item.address}}</td>
+                <td>{{item.contact}}</td>
+                <td>{{item.contactPosition}}</td>
+                <td>{{item.contactTel}}</td>
+                <td>{{item.notes }}</td>
+                <td class="trang-thai">
+                  <span [ngClass]="
+                item.status  ? 'label label-success' : 'label label-danger'
+              ">{{item.isDeny?'Từ chối': item.status?'Đã duyệt': 'Chờ duyệt' }}</span>
+                </td>
+              </tr>
+              <tr *ngIf="listCustomer?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listCustomer?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ totalRows }}</span>
+                </div>
+              </div>
+              <div class="col-md-7 text-right">
+                <div class="page">
+                  <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                    (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;"
+                    nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
+                  </pagination>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box -->
+      </div>
+    </tab>
+    <tab heading="Khóa">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-4">
+              <h3 class="box-title">Khách hàng đang bị Khóa</h3>
+            </div>
+            <!-- <div class="col-md-3"></div> -->
+            <div class="col-md-4">
+              <div class="input-group">
+                <input type="text" class="form-control" name="filter" (keyup.enter)="timKiemLocked()"
+                  [(ngModel)]="keyword" placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiemLocked()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+                <!-- <span class="input-group-btn">
+                  <button class="btn btn-success btn-flat btn-sm" appPermission appFunction="CUSTOMER" appAction="EXPORT"
+                  (click)="exportExcel()" title="Xuất dữ liệu">
+                  <i class="fa fa-file-excel-o"></i>
+                  </button>
+                </span> -->
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+          <table class="table table-bordered table-striped table-hover">
+            <thead>
+              <tr>
+                <th class="table-checkbox">
+                </th>
+                <th>Mã khách hàng</th>
+                <th>Tên khách hàng</th>
+                <th>Điện thoại</th>
+                <th>Địa chỉ</th>
+                <th>Người đại diện</th>
+                <th>Chức vụ</th>
+                <th>Điện thoại</th>
+                <th>Ghi chú</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of listLocked" (click)="clickRow(item)">
+                <td class="table-checkbox">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                    <span class="helping-el"></span>
+                  </label>
+                </td>
+                <td>
+                  <a [routerLink]="[]" (click)="showModal(item)">{{item.customerCode}}</a>
+                </td>
+                <td>{{item.customerName}}</td>
+                <td>{{item.tel}}</td>
+                <td>{{item.address}}</td>
+                <td>{{item.contact}}</td>
+                <td>{{item.contactPosition}}</td>
+                <td>{{item.contactTel}}</td>
+                <td>{{item.notes }}</td>
+              </tr>
+              <tr *ngIf="listLocked?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listLocked?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ listLocked?.length }}</span>
+                </div>
+              </div>
+              <div class="col-md-7 text-right">
+                <div class="page">
+                  <pagination [totalItems]="totalRowsLocked" [(ngModel)]="pageIndex" [maxSize]="5"
+                    (pageChanged)="pageLockedChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;"
+                    nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
+                  </pagination>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box -->
+      </div>
+    </tab>
+  </tabset>
+</div>
+
+<modal-customer *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-customer>
+<!-- <div [ngBusy]="busy"></div> -->

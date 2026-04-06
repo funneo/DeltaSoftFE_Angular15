@@ -1,0 +1,69 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Danh mục Nhóm Công việc</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group">
+                <label class="col-sm-3 control-label">Nhóm công việc
+                  <span class="error">*</span>
+                </label>
+                <div class="col-sm-9">
+                    <ng-select [items]="listJobGroup"  #nhomId ="ngModel" name="jobgroupid"
+                    bindLabel="jobGroupName"
+                    bindValue="id"
+                    [(ngModel)]="entity.jobGroupId">
+                    </ng-select>
+                  <small [hidden]="nhomId.valid || (nhomId.pristine && !addEditForm.submitted)"
+                    class="text-danger">
+                    Nhóm thực hiện công việc không được để trống
+                  </small>
+                </div>
+              </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Tên công việc
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <input type="text" #tennhom="ngModel" [(ngModel)]="entity.optionName" required maxlength="255" name="jobgroupname"
+                  class="form-control" placeholder="Nhập tên công việc" focus [readonly]="flagXem" />
+                <small [hidden]="tennhom.valid || (tennhom.pristine && !addEditForm.submitted)"
+                  class="text-danger">
+                  Tên công việc không được để trống và không vượt quá 255 kí tự
+                </small>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Mô tả
+              </label>
+              <div class="col-sm-9">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [(ngModel)]="entity.includeProcedure" name="includeprocedure" />
+                  <span class="helping-el"></span>
+                  Công việc có tiến trình
+                </label>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,43 @@
+.sidebar-menu>li {
+    border-top: 1px solid #ffffff;
+    border-bottom: 1px solid #dadada;
+}
+.active>a{
+    color: #2e5b87;
+}
+.sidebar-menu .treeview-menu {
+    padding: 0px;
+}
+.sidebar-menu .treeview-menu>li>a{
+    padding-left: 35px;
+    border-top: 1px solid #d6d6d6;
+}
+.active {
+    color: #2e5b87;
+}
+.sidebar-menu>li>a>i{
+    font-size: 14px;
+}
+.sidebar-menu .active{
+    background: #14c54c;
+    color: white;
+}
+/* .sidebar-menu>.active>a{
+    background: #1e22f5;
+    color: white;
+} */
+.sidebar-menu>li>a:hover, .treeview-menu>li>a:hover{
+    background: #14c54c;
+    color: white;
+}
+.treeview-menu>li>a:hover>span{
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.sidebar-mini.sidebar-collapse .sidebar-menu>li:hover>.treeview-menu{
+    display: block !important;
+    position: absolute;
+    width: 220px;
+    left: 50px;
+}

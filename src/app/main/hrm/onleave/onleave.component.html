@@ -1,0 +1,146 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="row">
+      <div class="box-header with-border">
+        <div class="col-md-2">
+          <h3 class="box-title">Đăng ký phép, làm Online</h3>
+        </div>
+        <div class="col-md-2">
+            <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+              class="form-control">
+          </div>
+        <div class="col-md-2">
+          <ng-select name="supplier" [items]="listBranch" bindLabel="branchName" bindValue="id" [(ngModel)]="branchId"
+          placeholder="Chọn chi nhánh..." [disabled]="!adminPermission" change="changedBranch($event)" >
+          </ng-select>
+        </div>
+        <div class="col-md-2">
+          <div class="input-group">
+            <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+              placeholder="Từ khóa" />
+            <span class="input-group-btn">
+              <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                <i class="fa fa-search"></i>
+              </button>
+            </span>
+            <span class="input-group-btn">
+              <button class="btn btn-success btn-flat btn-sm" appPermission appFunction="ONLEAVE"
+                appAction="EXPORT" (click)="exportExcel()" title="Xuất dữ liệu">
+                <i class="fa fa-file-excel-o"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+        <div class="col-md-4 text-right">
+          <div class="dropdown btn-group">
+            <button class="btn btn-success btn-sm" type="button" appPermission appFunction="ONLEAVE"
+              appAction="CREATE">
+              <i class="fa fa-plus"></i> Thêm <span class="caret"></span></button>
+            <div class="dropdown-content">
+              <li (click)="add(0)">Nghỉ phép</li>
+              <div class="dropdown-divider"></div>
+              <li (click)="add(1)">Làm việc Online</li>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+            appFunction="ONLEAVE" appAction="UPDATE">
+            <i class="fa fa-edit"></i> Sửa
+          </button>
+          <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+            appFunction="ONLEAVE" appAction="DELETE">
+            <i class="fa fa-trash"></i> Xóa
+          </button>
+          <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+            <i class="fa fa-eye"></i> Xem
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding">
+      <table class="table table-bordered table-striped table-hover">
+        <thead>
+          <tr>
+            <th class="table-checkbox">
+              <label class="custom-checkbox"> ID</label>
+            </th>
+            <th>Người lập phiếu/Nhóm</th>
+            <th>Loại phiếu</th>
+            <th>Thời gian</th>
+            <th>Người duyệt</th>
+            <th>Ghi chú/Nhận xét</th>
+            <th>Tình trạng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of listOnLeave" [style.background-color]="item.type==0 ? 'white': '#C7F3E9'">
+            <td class="table-checkbox">
+              <label class="custom-checkbox">
+                <input type="checkbox" value="{{ item.id }}" (click)="clickRow(item)" [checked]="item.checked"/> 
+                <span class="helping-el"></span>
+              </label>
+            </td>
+            <td>
+              <span>
+                <a style="color:blueviolet;" [routerLink]="[]" (click)="showModal(item)"><b>{{item.createdByName}}</b></a>
+              </span>
+              <br>
+              <span>
+                Nhóm đối tượng: {{item.departmentName}}
+              </span>
+            </td>
+            <td>
+              <span>
+                {{item.type==0 ? 'Nghỉ phép': 'Làm việc Online'}}
+              </span>
+            </td>   
+            <td>
+                {{item.total}}
+            </td>       
+            <td>
+                {{item.approvedByName}}
+            </td>
+            <td>
+                <span>
+                  Ghi chú: {{item.reason}}
+                </span>
+                <br>
+                <span><b>Nhận xét:  {{item.approvedNotes}}</b></span>
+            </td>
+            <td><span [ngClass]="
+              item.status==-1 ? 'label label-danger' : item.status==1? 'label label-primary': item.status==2? 'label label-success' : 'label label-info'">
+              {{item.rStatus}}
+            </span>
+              </td>
+          </tr>
+          <tr *ngIf="listOnLeave?.length == 0">
+            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer no-padding">
+      <div *ngIf="totalRows > 0" class="col-md-12 footer-phantrang">
+        <div class="row">
+          <div class="col-md-5">
+            <div class="dataTables_info">
+              <span>Tổng số bản ghi: {{ totalRows }}</span>
+            </div>
+          </div>
+          <div class="col-md-7 text-right">
+            <div class="page">
+              <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+                firstText="&laquo;" lastText="&raquo;">
+              </pagination>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /.box -->
+</div>
+  
+  <modal-onleave *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+  </modal-onleave>
+  

@@ -1,0 +1,109 @@
+<div>
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-1">
+              <h3 class="box-title">Công việc</h3>
+            </div>
+            <div class="col-md-2">
+              <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+                class="form-control">
+            </div>
+            <div class="col-md-2">
+              <ng-select class="auto-grow" name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                [(ngModel)]="branchId" (change)="changedBranch($event)">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+                  placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+            <div class="col-md-3 text-right">
+              <button class="btn btn-success btn-sm" (click)="export()" appPermission appFunction="WORKFLOW"
+                appAction="EXPORT">
+                <i class="fa fa-file-excel-o"></i> Export
+              </button>
+            </div>
+          </div>
+        </div>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding" style="position: relative;">
+          <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f4f4f9" size="medium" color="#1010ee"
+          type="ball-clip-rotate" size="medium">
+          <p class="loading">Tải dữ liệu ...</p>
+        </ngx-spinner>
+          <table class="table table-bordered table-hover">
+            <thead>
+              <tr>
+                <th  class="column-ten-sm" >CN Quản lý</th>
+                <th  class="column-ten-sm" >Mã KH</th>
+                <th>Tên khách hàng</th>
+                <th class="column-ten-sm">CN Tạo việc</th>
+                <th>JobID</th>
+                <th class="column-ten-sm">Id Công việc</th>
+                <th>Tên công việc</th>
+                <th>Người tạo</th>
+                <th>Ngày tạo/th>
+                <th  class="column-ten-sm">CN Thực hiện</th>
+                <th>Nhóm thực hiện</th>
+                <th>Người nhận việc</th>
+                <th>Người thực hiện</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of listData">
+                <td>{{item.cnQuanlyKH}}</td>
+
+                <td>{{item.makh }}</td>
+                <td>{{item.tenKh }}</td>
+                <td>{{item.cnTaoviec}}</td>
+                <td>{{item.jobId}}</td>
+                <td>{{item.idCv }}</td>
+                <td>{{item.tenCongviec }}</td>
+                <td>{{item.nguoitao}}</td>
+                <td>{{item.ngaytao | date:'dd/MM/yyyy' }}</td>
+                <td>{{item.cnThuchien }}</td>
+                <td>{{item.tenNhomthuchien}}</td>
+                <td>{{item.nguoiNhanviec }}</td>
+                <td>{{item.nguoiThuchien}}</td>
+              </tr>
+              <tr *ngIf="listData?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listData?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ totalRows }}</span>
+                </div>
+              </div>
+              <div class="col-md-7 text-right">
+                <div class="page">
+                  <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                    (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;"
+                    nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
+                  </pagination>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box -->
+      </div>
+
+</div>
+

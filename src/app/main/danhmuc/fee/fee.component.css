@@ -1,0 +1,102 @@
+table {
+  border-collapse: collapse;
+  border: 1px solid rgba(109, 107, 107, 0.445);
+}
+
+table th {
+  border: 1px solid rgba(99, 97, 97, 0.589);
+  padding: 2px;
+}
+
+.box-chieu-cao>.box-body {
+  height: calc(100vh - 235px); /* Tăng lên để an toàn cho Tab 1 */
+  overflow-y: auto;
+  position: relative;
+}
+
+.box-chieu-cao>.box-body.sub-tab-active {
+  height: calc(100vh - 305px); /* Tăng lên để bù cho phần Sub-Tabs */
+}
+
+/* .table_wrapper{
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+} */
+.column-ten-sm {
+  width: 120px;
+}
+
+.column-ten-lg {
+  width: 300px;
+}
+
+.column-gia-tri {
+  width: 120px;
+}
+
+@media (max-width: 650px) {
+  .box-chieu-cao>.box-body {
+    height: calc(100vh - 350px);
+  }
+
+  div#style-scroll-1 {
+    overflow-y: scroll;
+    height: 250px;
+  }
+}
+
+thead tr:nth-child(1) th {
+  background: #e8f1f4 !important;
+  position: sticky;
+  top: 0px;
+  z-index: 10;
+  color: #333;
+  font-weight: 600;
+  border-bottom: 2px solid #ddd !important;
+  height: 35px;
+}
+
+thead tr:nth-child(2) th {
+  background: #f9f9f9 !important;
+  position: sticky;
+  top: 35px;
+  z-index: 10;
+  height: 35px;
+}
+
+.sub-tabs-group {
+  background: #eee;
+  padding: 5px;
+  border-radius: 6px;
+  display: inline-flex;
+}
+
+.sub-tabs-group .btn {
+  border: none !important;
+  background: transparent;
+  color: #555;
+  padding: 8px 25px;
+  font-weight: 500;
+  border-radius: 4px !important;
+  transition: all 0.2s;
+}
+
+.sub-tabs-group .btn-primary {
+  background-color: #337ab7 !important;
+  color: #fff !important;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+.sub-tabs-group .btn:hover:not(.btn-primary) {
+  background-color: #ddd;
+}
+
+.form-control.input-sm {
+  height: 30px;
+  border-color: #ccc;
+}
+
+ng-select.input-sm .ng-select-container {
+  min-height: 30px !important;
+}

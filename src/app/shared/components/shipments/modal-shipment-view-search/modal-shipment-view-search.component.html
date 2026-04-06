@@ -1,0 +1,86 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalListShipment="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Lựa chọn JobID</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalListShipment.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="form-group">
+              <div class="table-wrapper-scroll-y my-custom-scrollbar">
+                <table class="table table-bordered table-hover" id="style-scroll-1">
+                    <thead>
+                      <tr>
+                        <th style="min-width: 120px;">JobId</th>
+                        <th style="min-width:80px ;" >Loại DV</th>
+                        <th style="min-width: 140px;">Vận đơn H</th>
+                        <th style="min-width: 180px;">Số tờ khai</th>
+                        <th >Số Invoice</th>
+                        <th >Số Booking</th>
+                        <th style="min-width: 180px;">Ghi chú</th>
+                      </tr>
+                      <tr>
+                        <th>
+                          <input class="form-control" #jobIdInput [(ngModel)]="jobIdSearch" (input)="filter()" type="text" name="jobIdSearch"/>
+                        </th>
+                        <th >
+                          <input class="form-control" #loaiDvInput [(ngModel)]="loaiDv" (input)="filter()" type="text" name="loaiDv"/>
+                        </th>
+                        <th >
+                          <input class="form-control" #vandonInput [(ngModel)]="hawB_HBLSearch" (input)="filter()" type="text" name="hawB_HBLSearch"/>
+                        </th>
+                        <th >
+                          <input class="form-control" #invoiceInput [(ngModel)]="cdsNumberSearch" (input)="filter()" type="text" name="cdsNumberSearch"/>
+                        </th>
+                        <th>
+                          <input class="form-control" #bookingInput [(ngModel)]="invoiceNoSearch" (input)="filter()" type="text" name="invoiceNoSearch"/>
+                        </th>
+                        <th>
+                          <input class="form-control" #notgesInput [(ngModel)]="bookingNoSearch" (input)="filter()" type="text" name="bookingNoSearch"/>
+                        </th>
+                        <th >
+                          <input class="form-control" #notgesInput [(ngModel)]="noteSearch" (input)="filter()" type="text" name="noteSearch"/>
+                        </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+
+                      <tr *ngFor="let item of filteredShipment" [ngClass]="{'bgColorSkyblue': item.checked}" class="{{item.isDeb? 'is-deb':''}}" (click)="clickRow(item)">
+                        <td style="width: 200px;">
+                        <a
+                        [routerLink]="[]" (click)="onSelect(item)">{{item.jobId}}
+                        </a>
+                      </td>
+                        <td>{{item.shipmentTypeName}}</td>
+                        <td>{{item.hawB_HBL}}</td>
+                        <td>{{item.cdsNumber}}</td>
+                        <td>{{item.invoiceNo}}</td>
+                        <td>{{item.bookingNo}}</td>
+                        <td>{{item.notes}}</td>
+                      </tr>
+                      <tr *ngIf="filteredShipment?.length == 0">
+                        <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+            </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button type="button" class="btn btn-primary btn-sm" [disabled]="!isSelected" (click)="saveChange()">
+              <i class="fa fa-edit"></i> Chọn</button>
+            <button type="button" (click)="modalListShipment.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+

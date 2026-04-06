@@ -1,0 +1,41 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modaProgress="bs-modal"
+    [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" aria-labelledby="dialog-static-name">
+    <div class="modal-dialog modal-md">
+        <div class="modal-content">
+            <div #myHandle class="modal-header">
+                <h4 class="modal-title pull-left">Chốt lệnh vận chuyển FCL</h4>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" novalidate #modaChangedDriver="ngForm" *ngIf="1==1">
+                    <div class="box-body">
+                        <div class="form-group">
+                            <label class="col-sm-3 control-label">Tổng số bản ghi:</label>
+                            <div class="col-sm-2"><span class="form-control">
+                                {{ listFcl?.length }}
+                            </span>
+                            </div>
+                            <label class="col-sm-3 control-label">Chốt xong:</label>
+                            <div class="col-sm-2 "><span class="form-control"> {{ isDone }}</span>
+                            </div>
+                            <label class="col-sm-1 control-label">Lỗi:</label>
+                            <div class="col-sm-1 "><span class="form-control"> {{ isFail }}</span>
+                            </div>
+                        </div>
+                        <!-- Progress bar -->
+                        <div class="form-group">
+                            <div class="col-sm-12">
+                                <div class="progress">
+                                    <div class="progress-bar bg-info" role="progressbar" [attr.aria-valuenow]="isDone"
+                                        [attr.aria-valuemin]="0" [attr.aria-valuemax]="listFcl?.length || 1"
+                                        [style.width.%]="(isDone / (listFcl?.length || 1)) * 100">
+                                        {{ (isDone / (listFcl?.length || 1) * 100) | number:'1.0-0' }}%
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,290 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Công việc Giao nhận vận chuyển</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Khách hàng</label>
+              <div class="col-sm-2">
+                <input class="form-control" type="text" name="makh" [(ngModel)]="customerCode" required disabled
+                  [readonly]="flagXem" (keydown.enter)="searchCustomer()">
+              </div>
+              <div class="col-sm-6">
+                <ng-select [items]="listCustomer" name="customercode" required bindLabel="customerName" bindValue="id"
+                  [disabled]="flagXem" (change)="changedCustomer($event)" [(ngModel)]="entity.customerId" disabled>
+                </ng-select>
+              </div>
+              <div class="col-sm-2" style="justify-content: flex-end; display: flex;">
+                <button *ngIf="entity.id!=undefined" type="button" class="btn btn-primary btn-sm" (click)="attack()">
+                  <i class="fa fa-file"></i> Đính kèm</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">JobId</label>
+              <div class="col-sm-4">
+                <div class="input-group">
+                  <span class="form-control" style="color: red;"><b>{{entity.jobId}}</b></span>                 
+                </div>
+              </div>
+              <label class="col-sm-2 control-label"> Loại hình</label>
+              <div class="col-sm-4">
+                <ng-select name="shipmentType" [items]="listShipmentType" bindLabel="categoryName" bindValue="id"
+                  [(ngModel)]="entity.shipmentType" placeholder="Loại hình" disabled>
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Nhóm thực hiên công việc</label>
+              <div class="col-sm-4">
+                <ng-select [items]="listHandlingGroup" name="hadlinggroupid" required bindLabel="handlingGroupName"
+                  bindValue="id" disabled [(ngModel)]="entity.handlingGroupId">
+                </ng-select>
+              </div>
+              <label class="col-sm-2 control-label">Mức độ phức tạp</label>
+              <div class="col-sm-4">
+                <ng-select [items]="listToughness" #tougnessId="ngModel" name="tougnessId" required
+                  bindLabel="categoryName" bindValue="id" [disabled]="flagXem" (change)="toughessChanged($event)"
+                  [(ngModel)]="entity.jobToughness">
+                </ng-select>
+              </div>
+            </div>
+            <!-- <div class="form-group">
+              <label class="col-sm-2 control-label">Thời gian dự kiến</label>
+              <div class="col-sm-4">
+                <input name="ngaybd" type="text" daterangepicker [options]="ngaybatdauOption"
+                  [(ngModel)]="entity.estimatedStartTime" class="form-control" autocomplete="off" disabled>
+              </div>
+              <label class="col-sm-2 control-label">Hoàn thành trước
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-4">
+                <input name="ngayht" type="text" daterangepicker [options]="ngayhoanthanhOption"
+                  [(ngModel)]="entity.estimatedFinishTime" class="form-control" disabled>
+              </div>
+            </div> -->
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Thời gian lấy hàng<span class="error">*</span></label>
+              <div class="col-sm-4">
+                <input name="pickupTime" type="text" daterangepicker [options]="ngaybatdauOption"
+                  [(ngModel)]="entity.pickupTime" class="form-control" disabled>
+              </div>
+              <label class="col-sm-2 control-label">Thời gian giao hàng<span class="error">*</span></label>
+              <div class="col-sm-4">
+                <input name="deliveryTime" type="text" daterangepicker [options]="ngayhoanthanhOption" 
+                  [(ngModel)]="entity.deliveryTime" class="form-control" disabled>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Địa điểm lấy hàng</label>
+              <div class="col-sm-10">
+                <input class="form-control" [(ngModel)]="entity.pickupLocation" type="text" disabled
+                  name="pickupLocation" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Địa điểm giao hàng</label>
+              <div class="col-sm-10">
+                <input class="form-control" [(ngModel)]="entity.deliveryLocation" type="text" disabled
+                  name="deliveryLocation" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Thời gian Cutoff/hạ hàng</label>
+              <div class="col-sm-4">
+                <input name="cutOffTime" type="text" daterangepicker [options]="ngayhoanthanhOption"
+                  [(ngModel)]="entity.cutOffTime" class="form-control" disabled>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Thời hạn pick-up cont tại Cảng</label>
+              <div class="col-sm-4">
+                <input name="cutOffTime" type="text" daterangepicker [options]="ngayhoanthanhOption" required
+                  [(ngModel)]="entity.demurageTime" class="form-control" (selected)="selectedcontainerStoragePeriod($event)"
+                  (hideDaterangepicker)="closedcontainerStoragePeriod($event)" autocomplete="off" [disabled]="flagXem">
+              </div>
+              <label class="col-sm-2 control-label"> Thời hạn trả cont rỗng</label>
+              <div class="col-sm-4">
+                <input name="containerStoragePeriod" type="text" daterangepicker [options]="ngaybatdauOption" required
+                  [(ngModel)]="entity.detentionTime" class="form-control"
+                  (selected)="selecteddetentionTime($event)"
+                  (hideDaterangepicker)="closeddetentionTime($event)" autocomplete="off" [disabled]="flagXem">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label"> Loại hàng</label>
+              <div class="col-sm-2">
+                <ng-select name="taskType" [items]="listType" bindLabel="value" bindValue="id" disabled
+                  [(ngModel)]="entity.taskType" >
+                </ng-select>
+              </div>
+              <label class="col-sm-4 control-label">Số Bill/Bookinng</label>
+              <div class="col-sm-4">
+                <input name="billBooking" type="text" [(ngModel)]="entity.billBooking" class="form-control" disabled
+                  [disabled]="flagXem">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Ops làm lệnh</label>
+              <div class="col-sm-3">
+                <ng-select name="nhanvien" [items]="listEmployee" disabled bindLabel="employeeFullName" bindValue="id" [(ngModel)]="entity.operatorId">
+                </ng-select>
+              </div>
+              <label class="col-sm-3 control-label">Size kiện hàng</label>
+              <div class="col-sm-4">
+                <input class="form-control" [(ngModel)]="entity.dimension" type="text"  disabled
+                  name="dimension" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Số Cont theo kế hoạch</label>
+              <div class="col-sm-4">
+                <input name="containerNumberAccordingToPlan" disabled type="text" [(ngModel)]="entity.containerNumber" class="form-control"
+                  [disabled]="flagXem" />
+              </div>
+              <label class="col-sm-2 control-label">Số chì theo kế hoạch</label>
+              <div class="col-sm-4">
+                <input name="sealNumberAccordingToPlan" disabled type="text" [(ngModel)]="entity.sealNumber" class="form-control"
+                  [disabled]="flagXem" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Số Cont gắp/label</label>
+              <div class="col-sm-4">
+                <input name="containerNumber" type="text" [(ngModel)]="entity.containerNumber" class="form-control"/>
+              </div>
+              <label class="col-sm-2 control-label">Số chì gắp</label>
+              <div class="col-sm-4">
+                <input name="sealNumber" type="text" [(ngModel)]="entity.sealNumber" class="form-control"
+                  [disabled]="true" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label" *ngIf="entity.taskType==1"> Lượng hàng
+              </label>
+              <div class="col-sm-4 text-right" *ngIf="entity.taskType==1">
+                <input class="form-control so-luong" [(ngModel)]="entity.weight"  name="weight" [readonly]="flagXem"/>
+              </div>
+              <label class="col-sm-2 control-label" *ngIf="entity.taskType==0 || entity.taskType==null">Loại Container</label>
+              <div class="col-sm-4" *ngIf="entity.taskType==0 || entity.taskType==null">
+                <ng-select [items]="listContTypes" name="listContTypes" bindLabel="categoryName" bindValue="id"
+                  [disabled]="flagXem" [(ngModel)]="entity.contType">
+                </ng-select>
+              </div>
+              <label class="col-sm-2 control-label">Loại lệnh nâng/hạ</label>
+              <div class="col-sm-2">
+                <ng-select [items]="listTypeOfLiffingOrder" name="typeOfLiffingOrder"  bindLabel="value" bindValue="id"
+                  [disabled]="flagXem" [(ngModel)]="entity.typeOfLiffingOrder">
+                </ng-select>
+              </div>
+              <div class="col-sm-2">
+                <ng-select [items]="listTypeOfLiffingOrder" name="typeOfLiftOffOrder"  bindLabel="value" bindValue="id"
+                  [disabled]="flagXem" [(ngModel)]="entity.typeOfLiftOffOrder">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Hãng tàu</label>
+              <div class="col-sm-4">
+                <ng-select [items]="listShipBrand" name="shipBrand"  bindLabel="categoryName" bindValue="id"
+                  [disabled]="flagXem" [(ngModel)]="entity.shipBrand">
+                </ng-select>
+              </div>
+              <label class="col-sm-2 control-label">Kho CFS</label>
+              <div class="col-sm-4">
+                <ng-select [items]="listCFS" name="cFSWarehouse"  bindLabel="categoryName" bindValue="id"
+                  [disabled]="flagXem" [(ngModel)]="entity.cfsWarehouse">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Cảng/bãi nâng</label>
+              <div class="col-sm-4">
+                <ng-select [items]="listPort" name="portOfLiffting"  bindLabel="categoryName" bindValue="id"
+                  [disabled]="flagXem" [(ngModel)]="entity.portOfLiffting" disabled>
+                </ng-select>
+              </div>
+              <label class="col-sm-2 control-label">Cảng/bãi hạ</label>
+              <div class="col-sm-4">
+                <ng-select [items]="listPort" name="portOfLiffoff" bindLabel="categoryName" bindValue="id"
+                  [disabled]="flagXem" [(ngModel)]="entity.portOfLiftOff" disabled>
+                </ng-select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Người giao hàng/SĐT</label>
+              <div class="col-sm-4">
+                <input class="form-control" [(ngModel)]="entity.deliveryInformaiton" type="text" disabled
+                  name="deliveryReturnLocation" />
+              </div>
+              <label class="col-sm-2 control-label">Người nhận hàng/SĐT</label>
+              <div class="col-sm-4">
+                <input class="form-control" [(ngModel)]="entity.receiverInformation" type="text" disabled
+                  name="deliveryReturnLocation" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">T/t xuất HĐ nâng hạ Cont</label>
+              <div class="col-sm-10">
+                <input class="form-control" [(ngModel)]="entity.informationOnContainerLiffInvoice" type="text" disabled
+                  name="deliveryReturnLocation" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">T/t xuất HĐ ngoài</label>
+              <div class="col-sm-10">
+                <input class="form-control" [(ngModel)]="entity.externalInformationOnContainerLiffInvoice" type="text" disabled
+                  name="deliveryReturnLocation" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">T/t xuất HĐ phụ phí khác</label>
+              <div class="col-sm-10">
+                <input class="form-control" [(ngModel)]="entity.informationOfSurchargeInvoice" type="text" disabled
+                  name="informationOfSurchargeInvoice" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Ghi chú</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" [(ngModel)]="entity.note" rows="1" disabled
+                  name="note"></textarea>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Tình trạng vận chuyển</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" [(ngModel)]="entity.shippingStatus" rows="2"
+                  name="shippingStatus"></textarea>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="entity!.status<1" type="button" class="btn btn-success btn-sm" (click)="assign(true)">
+              <i class="fa fa-check"></i>Nhận việc</button>
+            <button *ngIf="entity!.status<1" type="button" class="btn btn-warning btn-sm" (click)="assign(false)">
+              <i class="fa fa-save"></i>Từ chối</button>
+            <button *ngIf="!flagXem || entity!.status<1" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<modal-attachfile *ngIf="viewAttackFiles" (CloseModal)="closeAttackModal()">
+</modal-attachfile>

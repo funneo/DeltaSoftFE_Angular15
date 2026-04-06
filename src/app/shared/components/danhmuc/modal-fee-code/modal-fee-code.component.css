@@ -1,0 +1,10 @@
+.modal-header {
+    background-color: #3c8dbc;
+    color: white;
+}
+.modal-title {
+    font-weight: bold;
+}
+.control-label {
+    font-weight: normal;
+}

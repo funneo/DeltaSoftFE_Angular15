@@ -1,0 +1,187 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+    tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div #myHandle class="modal-header">
+                <h4 class="modal-title pull-left">Tài liệu Đào tạo {{level==1?'cấp 1':'cấp 2'}}</h4>
+                <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+                    *ngIf="entity">
+                    <div class="box-body">
+                        <div class="form-group" *ngIf="!flagNew">
+                            <label class="col-sm-2 control-label">Mã tài liệu</label>
+                            <div class="col-sm-2 control-label-text-left">
+                                <span>
+                                    <strong style="color: blue;">{{entity.documentCode}}</strong>
+                                </span>
+                            </div>
+                            <label class="col-sm-1 control-label">Người tạo</label>
+                            <div class="col-sm-2 control-label-text-left">
+                                <span>
+                                    <strong style="color: blue;">{{entity.createdByName}}</strong>
+                                </span>
+                            </div>
+                            <label class="col-sm-1 control-label" *ngIf="!flagNew">Ngày tạo</label>
+                            <div class="col-sm-2 control-label-text-left" *ngIf="!flagNew">
+                                <span style="font-weight: bold; color: blue;"> {{entity.createdDate |
+                                    date:'dd/MM/yyyy'}}</span>
+                            </div>
+                            <div class="col-sm-2 text-right">
+                              <button *ngIf="entity.id" type="button" class="btn btn-info btn-sm" title="Chứng từ đính kèm" (click)="showFiles()">
+                                <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Đính kèm ...
+                            </button>
+                            </div>
+                        </div>
+                         <div class="form-group">
+                            <label class="col-sm-2 control-label">Nhóm tài liệu
+                                <span class="error">*</span>
+                            </label>
+                            <div class="col-sm-4">
+                                <ng-select name="groupL1Id" [items]="groupL1Array" bindLabel="name" (change)="onChangeGroupL1($event)"
+                                    bindValue="id" [(ngModel)]="entity.groupL1Id" required
+                                    placeholder="Chọn Nhón tài liệu" [disabled]="flagXem || !flagNew">
+                                </ng-select>
+                            </div>
+                            <label class="col-sm-2 control-label" *ngIf="entity.groupL1Id && entity.groupL1Id === 2">Nhóm nghiệp vụ
+                                <span class="error">*</span>
+                            </label>
+                            <div class="col-sm-4" *ngIf="entity.groupL1Id && entity.groupL1Id === 2">
+                                <ng-select name="groupL2Id" [items]="listNghiepvu" bindLabel="categoryName"
+                                    bindValue="id" [(ngModel)]="entity.groupL2Id" required (change)="onChangeNghiepvu($event)"
+                                    placeholder="Chọn Nhóm nghiệp vụ" [disabled]="flagXem || !flagNew">
+                                </ng-select>
+                            </div>
+                        </div>
+                        <div class="form-group" *ngIf="level==2">
+                            <label class="col-sm-2 control-label">Khách hàng
+                                <span class="error">*</span>
+                            </label>
+                            <div class="col-sm-10">
+                                <ng-select name="customerId" [items]="listCustomer" bindLabel="customerName"
+                                    bindValue="id" [(ngModel)]="entity.customerId" required
+                                    placeholder="Chọn khách hàng" [disabled]="flagXem || entity.status>0">
+                                </ng-select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">Tiêu đề
+                                <span class="error">*</span>
+                            </label>
+                            <div class="col-sm-10">
+                                <input class="form-control" [(ngModel)]="entity.title" type="text" name="text" required
+                                    placeholder="Nhập tiêu đề tài liệu" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label">Tóm tắt
+                                <span class="error">*</span>
+                            </label>
+                            <div class="col-sm-10">
+                                <textarea class="form-control" [(ngModel)]="entity.summary" rows="3" name="noidung"
+                                    required placeholder="Nhập tóm tắt tài liệu"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group" *ngIf="entity?.steps<2 ">
+                            <label class="col-sm-2 control-label">Người duyệt
+                                <span class="error">*</span>
+                            </label>
+                            <div class="col-sm-2">
+                            <ng-select name="assigneeId"
+                                [items]="listApproval"
+                                bindLabel="userName"
+                                bindValue="userId"
+                                [(ngModel)]="entity.assigneeId"
+                                placeholder="Chọn người duyệt"
+                                [disabled]="flagXem || entity.status > 0 || entity.steps>0">
+                            </ng-select>
+                            </div>
+                        </div>
+                        <div class="form-group" *ngIf="entity.groupL1Id&& entity.groupL1Id <2 || entity.groupL2Id&& entity.groupL1Id===2">
+                            <h4 style="text-align: center; color: blue;">NỘI DUNG CHI TIẾT</h4>
+                        </div>
+                        <div class="form-group" *ngIf="entity.groupL1Id&& entity.groupL1Id <2 || entity.groupL2Id&& entity.groupL1Id===2">
+                            <table class="table table-bordered">
+                                <tbody>
+                                    <ng-container *ngFor="let group of entity.contents, let i = index">
+                                        <tr (click)="toggleGroup(group)"
+                                            style=" cursor: pointer;">
+                                            <td colspan="16"
+                                                style="border-top: 1px solid  #ffffff;border-bottom: 1px solid #dadada;">
+                                                <strong>{{ group.templateName }}</strong>
+                                            </td>
+                                        </tr>
+                                        <ng-container *ngIf="group.isExpanded">
+                                            <tr>
+                                                <td>
+                                                    <editor
+                                                        [(ngModel)]="group.contents" 
+                                                        apiKey="" 
+                                                        [init]="{
+                                                            base_url: '/tinymce',
+                                                            suffix: '.min',
+                                                            height: 400,
+                                                            menubar: false,
+                                                            plugins: 'lists link image table',
+                                                            toolbar: 'undo redo | bold italic underline | bullist numlist | link table | forecolor backcolor| alignleft aligncenter alignright'
+                                                        }"
+                                                        
+                                                        [disabled]="flagXem || entity.status > 0" name="editor{{ i }}">
+                                                    </editor>
+                                                </td>
+                                            </tr>
+                                        </ng-container>
+                                    </ng-container>
+
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- /.box-body -->
+                    <div class="box-footer text-right">
+                        <button *ngIf="hasPermissionApproved && entity.status===1" type="button" (click)="receiving()"
+                            class="btn btn-duyet btn-sm">
+                            <i class="fa fa-check"></i> Chấp nhận</button>
+                        <button *ngIf="hasPermissionApproved && entity.status===1" type="button" (click)="showAssignment()"
+                            class="btn btn-waning btn-sm">
+                            <i class="fa fa-check"></i> Ủy quyền nhận</button>
+                        <button *ngIf="entity.isOfficialVersion && (hasPermissionApproved || hasCSPermission)" type="button" (click)="modified()"
+                            class="btn btn-warning btn-sm">
+                            <i class="fa fa-undo"></i> Bổ sung tài liệu</button>
+                        <button *ngIf="!flagNew " type="button" (click)="download(0)"  [disabled]="flagSave  "
+                            class="btn btn-success btn-sm">
+                            <i class="fa fa-check"></i> Tải PDF</button>
+                        <button *ngIf="!flagNew " type="button" (click)="download(1)"  [disabled]="flagSave  "
+                            class="btn btn-success btn-sm">
+                            <i class="fa fa-check"></i> Tải Word</button>
+                        <button *ngIf="!flagXem && entity.status===0 && !flagNew && (entity.steps===0 || (entity.steps===1 && entity.isShortInput)) " type="button" (click)="chuyenduyet()"
+                            class="btn btn-warning btn-sm">
+                            <i class="fa fa-check"></i> Chuyển duyệt</button>
+                        <button *ngIf="!flagXem && entity.status===0  && !flagNew && (entity.steps>0 && !entity.isShortInput || entity.steps===2 )" type="button" (click)="approved()"
+                            class="btn btn-warning btn-sm">
+                            <i class="fa fa-check"></i> {{entity.steps===1?'Grading & Submit':'Grading & Archiving'}}</button>
+                        <!-- <button *ngIf="hasPermissionStep2" type="button" (click)="acceptB2()"
+                            class="btn btn-duyet btn-sm">
+                            <i class="fa fa-check"></i> Duyệt B2</button> -->
+                        <button *ngIf="!flagXem && entity.status<1" type="submit" class="btn btn-primary btn-sm"
+                            [disabled]="!addEditForm.form.valid || flagSave  ">
+                            <i class="fa fa-edit"></i> Lưu</button>
+                        <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+                            <i class="fa fa-close"></i> Hủy</button>
+                    </div>
+                    <!-- /.box-footer -->
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>
+<modal-training-document-assigments *ngIf="viewAssignment" (SaveSuccess)="saveSuccessAssignment($event)" (CloseModal)="closeModalAssignment()">
+</modal-training-document-assigments>
+<modal-training-document-accept *ngIf="viewAccept" (SaveSuccess)="saveSuccessAccept($event)" (CloseModal)="closeModalAccept()">
+</modal-training-document-accept>

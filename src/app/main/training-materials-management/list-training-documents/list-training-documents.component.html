@@ -1,0 +1,140 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="row">
+    <div class="box-header with-border">
+      <div class="col-md-4">
+        <h3 class="box-title">Quản lý tài liệu đào tạo</h3>
+      </div>
+      <div class="col-md-4">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa" />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+          <span class="input-group-btn">
+          </span>
+        </div>
+      </div>
+      <div class="col-md-4 text-right">
+        <div class="dropdown btn-group">
+            <button class="btn btn-success btn-sm" type="button" appPermission appFunction="F024"
+              appAction="CREATE">
+              <i class="fa fa-file-excel-o"></i> Thêm <span class="caret"></span></button>
+            <div class="dropdown-content">
+              <li (click)="add(1)">Tài liệu cấp 1</li>
+              <div class="dropdown-divider"></div>
+              <li (click)="add(2)">Tài liệu cấp 2</li>
+            </div>
+          </div>
+        <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+          appFunction="F024" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="F024" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="table-checkbox">
+            <label class="custom-checkbox"> Id</label>
+          </th>
+          <th>Mã tài liệu</th>
+          <th>Tên tài liệu</th>
+          <th>Cấp tài liệu</th>
+          <th>Khách hàng</th>
+          <th>Tóm tắt tài liệu</th>
+          <th>Người duyệt</th>
+        </tr>
+        <tr>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.id" (keyup)="filterData()" /></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.documentCode" (keyup)="filterData()" /></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.title" (keyup)="filterData()" /></th>
+          <th>
+            <select class="form-control" [(ngModel)]="filterColumns.level" (change)="filterData()">
+              <option value="">Tất cả</option>
+              <option value="1">Cấp 1</option>
+              <option value="2">Cấp 2</option>
+            </select>
+          </th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.customerName" (keyup)="filterData()" /></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.summary" (keyup)="filterData()" /></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.assigneeName" (keyup)="filterData()" /></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of visibleData" [ngStyle]="{ 'background-color': item.isOfficialVersion ? '#C2D8EE' : 'white' }">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" (click)="clickRow(item)" [checked]="item.checked"/> 
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>
+            <span>
+              <a style="color:blueviolet;" [routerLink]="[]" (click)="showModal(item)"><b>{{item.documentCode}}</b></a>
+            </span>
+            <br>
+          </td> 
+          <td>
+            <span>
+             {{item.title}}
+            </span>
+          </td>   
+          <td>
+              {{item.level}}
+          </td>  
+          <td>
+            <span>
+             {{item.customerName}}
+            </span>
+          </td>       
+          <td>
+              {{item.summary}}
+          </td>
+          <td>
+              {{item.assigneeName}}
+          </td>
+          
+        </tr>
+        <tr *ngIf="listFilter?.length  === 0">
+           <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listFilter?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ listFilter?.length }}</span>
+          </div>
+        </div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="9"
+                (pageChanged)="pageChanged($event)" [itemsPerPage]="50" previousText="&lsaquo;" nextText="&rsaquo;"
+                firstText="&laquo;" lastText="&raquo;">
+              </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+
+<modal-training-document *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-training-document>
+<modal-view-scope *ngIf="viewScoreModal"  (CloseModal)="closeModalScore()">
+</modal-view-scope>

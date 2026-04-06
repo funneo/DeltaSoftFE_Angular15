@@ -1,0 +1,12 @@
+.my-custom-scrollbar {
+    position: relative;
+    max-height: 400px;
+    overflow: auto;
+}
+.table-wrapper-scroll-y {
+    display: block;
+}
+.column-name {
+    font-weight: bold;
+    color: #3c8dbc;
+}

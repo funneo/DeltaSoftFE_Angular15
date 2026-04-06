@@ -1,0 +1,17 @@
+.alertify .ajs-header {
+  margin: -24px;
+  margin-bottom: 0;
+  padding: 16px 24px;
+  background-color: rgb(250, 201, 181);
+}
+.alertify .ajs-ok  {
+  font-family: inherit;
+  background-color: #5448f3;
+  border-color: #021d94;
+  display: inline-block;
+  font-weight: normal;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  color: #fff;
+}

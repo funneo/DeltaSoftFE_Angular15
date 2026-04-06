@@ -1,0 +1,53 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Nhóm quyền</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Mã nhóm
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.name" required maxlength="255"
+                  name="tennhomquyen" class="form-control" placeholder="Nhập tên nhóm quyền" focus
+                  [readonly]="flagXem || entity.id" />
+                <small [hidden]="tennhomquyen.valid || (tennhomquyen.pristine && !addEditForm.submitted)"
+                  class="text-danger">
+                  Tên không được để trống và không vượt quá 255 kí tự
+                </small>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Mô tả</label>
+              <div class="col-sm-9">
+                <textarea class="form-control textrea-size" [(ngModel)]="entity.description" name="description" rows="3"
+                  placeholder="Nhập mô tả" [readonly]="flagXem"></textarea>
+              </div>
+            </div>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Simple syntax -->
+<div [ngBusy]="busy"></div>

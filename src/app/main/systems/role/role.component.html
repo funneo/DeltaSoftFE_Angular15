@@ -1,0 +1,102 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="row">
+        <div class="box-header with-border">
+            <div class="col-md-2">
+                <h3 class="box-title">Nhóm quyền</h3>
+            </div>
+            <div class="col-md-3">
+            </div>
+            <div class="col-md-3">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()"
+                    [(ngModel)]="keyword" placeholder="Từ khóa">
+                    <span class="input-group-btn">
+                        <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+            <div class="col-md-4 text-right">
+                <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="ROLE"
+                    appAction="CREATE">
+                    <i class="fa fa-plus"></i> Thêm
+                </button>
+                <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+                    appFunction="ROLE" appAction="UPDATE">
+                    <i class="fa fa-edit"></i> Sửa
+                </button>
+                <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+                    appFunction="ROLE" appAction="DELETE">
+                    <i class="fa fa-trash"></i> Xóa
+                </button>
+                <!-- <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+                    <i class="fa fa-eye"></i> Xem
+                </button> -->
+            </div>
+        </div>
+    </div>
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding">
+        <table class="table table-bordered table-striped table-hover">
+            <thead>
+                <tr>
+                    <th class="table-checkbox">
+                        <label class="custom-checkbox">
+                            <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+                            <span class="helping-el"></span>
+                        </label>
+                    </th>
+                    <th>Tên</th>
+                    <th>Mô tả</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let item of listRoles" (click)="clickRow(item)">
+                    <td class="table-checkbox">
+                        <label class="custom-checkbox">
+                            <input type="checkbox" value="{{item.id}}" [checked]="item.checked" disabled />
+                            <span class="helping-el"></span>
+                        </label>
+                    </td>
+                    <td>
+                      <a [routerLink]="[]" (click)="edit(false,item)">{{item.name}}</a>
+
+                    </td>
+                    <td>{{item.description}}</td>
+                </tr>
+                <tr *ngIf="listRoles?.length == 0">
+                    <td colspan="100%">
+                        Không có bản ghi nào được tìm thấy!
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer no-padding">
+        <div *ngIf="listRoles?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+                <div class="col-md-5">
+                    <div class="dataTables_info">
+                        <span>Tổng số bản ghi: {{totalRows}}</span>
+                    </div>
+                </div>
+                <div class="col-md-7 text-right">
+                    <div class="page">
+                        <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                            (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;"
+                            nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
+                        </pagination>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.box -->
+</div>
+
+<app-modal-role *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()"></app-modal-role>
+
+<!-- Simple syntax -->
+<div [ngBusy]="busy"></div>

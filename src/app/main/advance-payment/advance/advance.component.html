@@ -1,0 +1,187 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="box-header with-border">
+    <div class="row" style="padding-bottom: 5px;">
+      <div class="col-md-2">
+        <h3 class="box-title">Tạm ứng</h3>
+      </div>
+      <div class="col-md-4">
+
+      </div>
+      <div class="col-md-6 text-right">
+        <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="ADVANCE" appAction="CREATE">
+          <i class="fa fa-plus"></i> Thêm
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+          appFunction="ADVANCE" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="ADVANCE" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+        <button class="btn btn-success btn-sm" (click)="export()" appFunction="ADVANCE" appAction="EXPORT">
+          <i class="fa fa-file-excel"></i> Export
+        </button>
+        <!-- <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagView">
+            <i class="fa fa-eye"></i> Xem
+          </button> -->
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-2">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+          class="form-control">
+      </div>
+      <div class="col-md-3">
+        <ng-select name="nhanvien" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
+          [(ngModel)]="_employeeId" (change)="changedEmployee($event)" placeholder="Chọn nhân viên..."
+          [readonly]="_auth>_viewAll">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="trangthai" [items]="listStep" bindLabel="text" bindValue="id" [(ngModel)]="_step"
+          (change)="changedChiNhanh()" title="Chọn trạng thái..." [clearable]="false">
+        </ng-select>
+      </div>
+
+      <div class="col-md-3">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa" />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id" [(ngModel)]="_branchId"
+          (change)="changedChiNhanh()" title="Chọn chi nhánh..." [clearable]="false" [readonly]="_auth>0">
+        </ng-select>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+              <span class="helping-el"></span>
+            </label>
+          </th>
+          <th style="min-width: 150px;">Người tạn ứng</th>
+          <th style="min-width: 150px;">Số tham chiếu</th>
+          <th>Ngày tạm ứng</th>
+          <th>Pháp nhân</th>
+          <th>Đối tượng thanh toán</th>
+          <th>Lý do</th>
+          <th style="min-width: 150px;">Chứng từ liên quan</th>
+          <th style="min-width: 130px; white-space: nowrap;">Số tiền</th>
+          <th style="min-width: 80px;">Tiền tệ</th>
+          <!-- <th>Hoàn ứng</th> -->
+          <th>Trạng thái</th>
+          <th style="width: 80px;">Tác vụ</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th><input class="form-control" #nguoiSearchInput [(ngModel)]="nguoiSearch" (input)="filter()" type="text"
+              name="nguoiSearch" /></th>
+          <th><input class="form-control" #soSearchInput [(ngModel)]="soSearch" (input)="filter()" type="text"
+              name="soSearch" /></th>
+          <th><input class="form-control" #ngaySearchInput [(ngModel)]="ngaySearch" (input)="filter()" type="text"
+              name="ngaySearch" /></th>
+          <th><input class="form-control" #phapnhanSearchInput [(ngModel)]="phapnhanSearch" (input)="filter()"
+              type="text" name="phapnhanSearch" /></th>
+          <th><input class="form-control" #rydoSearchInput [(ngModel)]="lydoSearch" (input)="filter()" type="text"
+              name="lydoSearch" /></th>
+          <th><input class="form-control" #chungtuSearchInput [(ngModel)]="chungtuSearch" (input)="filter()" type="text"
+              name="chungtuSearch" /></th>
+          <th><input class="form-control" #tienSearchInput [(ngModel)]="tienSearch" (input)="filter()" type="text"
+              name="tienSearch" /></th>
+          <th colspan="3"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listFilter" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>{{item.employeeName}}</td>
+          <td>
+            <a [routerLink]="[]" (click)="showModal(item)">{{item.refNo}}</a>
+          </td>
+          <td>{{item.refDate|date: "dd/MM/yyyy"}}</td>
+          <td>{{item.invoiceBranchCode}}</td>
+          <td>{{item.supplierName}}</td>
+          <td>{{item.reason }}</td>
+          <td>{{item.relatedDocuments}}</td>
+          <td class="so-tien" style="white-space: nowrap;">{{item.amount|VND}}</td>
+          <td>{{item.currency }}</td>
+          <td class="trang-thai">
+            <span class="{{item.styleStep | List: listLables}}">
+              {{item.styleStep| List: listStatus}}</span>
+          </td>
+          <td>
+            <button *ngIf="item.status && _accept && item.acceptStep==0 && item.has_accept" type="button"
+              class="btn btn-success btn-sm action" title="Duyệt" (click)="accept(item,true)">
+              <i class="fa fa-meh-o" aria-hidden="true"></i> Duyệt
+            </button>
+            <button *ngIf="item.status && _accept && item.acceptStep==0 && item.has_accept" type="button"
+              class="btn btn-danger btn-sm action" title="Từ chối" (click)="accept(item,false)">
+              <i class="fa fa-frown-o" aria-hidden="true"></i> Từ chối
+            </button>
+            <!-- Phiếu chi -->
+            <button *ngIf="_acc && item.acceptStep>=1 && !item.isComplete && item.amount>0" type="button"
+              class="btn btn-warning btn-sm action" title="Chi tiền" (click)="showPhieuChi(item)">
+              <i class="fa fa-usd" aria-hidden="true"></i> Chi tiền
+            </button>
+            <!-- Phiếu thu -->
+            <button *ngIf="_acc && item.acceptStep>=1 && !item.isComplete && item.amount<0" type="button"
+              class="btn btn-warning btn-sm action" title="Thu tiền" (click)="showPhieuThu(item)">
+              <i class="fa fa-usd" aria-hidden="true"></i> Thu tiền
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="listFilter?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listFilter?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="dataTables_info">
+            <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng tiền tạm ứng: {{ totalAmount|VND
+              }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+
+<modal-advance *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-advance>
+<modal-phieu-chi *ngIf="viewPhieuchi" (SaveSuccess)="saveSuccessAccounts($event)" (CloseModal)="closeAccounts()">
+</modal-phieu-chi>
+<modal-phieu-thu *ngIf="viewAccounts" (SaveSuccess)="saveSuccessAccounts($event)" (CloseModal)="closeAccounts()">
+</modal-phieu-thu>
+
+<!-- <div [ngBusy]="busy"></div> -->

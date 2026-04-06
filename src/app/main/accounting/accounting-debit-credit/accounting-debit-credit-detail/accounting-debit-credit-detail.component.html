@@ -1,0 +1,91 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="row">
+      <div class="box-header with-border">
+        <div class="col-md-3">
+          <h3 class="box-title">Chi tiết định khoản</h3>
+        </div>
+        <div class="col-md-2">
+          <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+            class="form-control">
+        </div>
+        <div class="col-md-2">
+          <ng-select name="accountlist" [items]="listAccountList" bindLabel="categoryCode" bindValue="categoryCode"
+            [(ngModel)]="_accountListId" (change)="changedTaiKhoan($event)" placeholder="Chọn tài khoản...">
+          </ng-select>
+        </div>       
+        <div class="col-md-3">
+          <div class="input-group">
+            <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+              placeholder="Từ khóa" />
+            <span class="input-group-btn">
+              <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                <i class="fa fa-search"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+        <div class="col-md-2 text-right">
+          <button class="btn btn-success btn-sm" appPermission appFunction="TKNOCO" appAction="EXPORT">
+            <i class="fa fa-file-excel-o"></i> Xuất dữ liệu
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding">   
+       <table class="table table-bordered table-striped table-hover">
+        <thead>
+          <tr>         
+            <th>Số phiếu</th>
+            <th>Ngày</th>
+            <th>Số chứng từ</th>
+            <th>Nội dung</th>
+            <th>Nợ</th>
+            <th>Có</th>            
+          </tr>
+        </thead>
+        <tbody>          
+          <tr *ngFor="let item of listDatas">           
+            <td>
+              <a [routerLink]="[]" (click)="showModal(item)">{{item.refNo}}</a>
+            </td>
+            <td>{{item.refDate| date: 'dd/MM/yyyy'}}</td>
+            <td>{{item.documentNo}}</td>
+            <td>{{item.contents}}</td>
+            <td class="so-tien">{{item.debit|currency:'VND'}}</td>
+            <td class="so-tien">{{item.credit|currency:'VND'}}</td>            
+          </tr>
+          <tr *ngIf="listDatas?.length == 0">
+            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer no-padding">
+      <div *ngIf="listDatas?.length > 0" class="col-md-12 footer-phantrang">
+        <div class="row">
+          <div class="col-md-5">
+            <div class="dataTables_info">
+              <span>Tổng số bản ghi: {{ totalRows }}</span>
+            </div>
+          </div>
+          <div class="col-md-7 text-right">
+            <div class="page">
+              <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+                firstText="&laquo;" lastText="&raquo;">
+              </pagination>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /.box -->
+  </div>
+  <modal-phieu-thu *ngIf="viewModal" (CloseModal)="closeModal()">
+  </modal-phieu-thu>
+  <modal-phieu-chi *ngIf="viewModal" (CloseModal)="closeModal()">
+  </modal-phieu-chi>
+  <!-- <div [ngBusy]="busy"></div> -->
+  

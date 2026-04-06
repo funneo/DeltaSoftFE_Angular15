@@ -1,0 +1,117 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="row">
+    <div class="box-header with-border">
+      <div class="col-md-2">
+        <h3 class="box-title">Đề nghị bổ sung chi phí Lệnh</h3>
+      </div>
+      <div class="col-md-2">
+          <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+            class="form-control">
+        </div>
+      <div class="col-md-2">
+        <ng-select name="driver" [items]="listBranch" bindLabel="branchCode" bindValue="id" [(ngModel)]="branchId"
+        placeholder="Chọn chi nhánh..."  [disabled]="!adminPerrmission" (change)="changedBranch($event)">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa" />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="col-md-4 text-right">
+        <button class="btn btn-primary btn-sm" (click)="edit()" [disabled]="!flagEdit">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <!-- <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="true">
+          <i class="fa fa-trash"></i> Xóa
+        </button> -->
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding">
+    <table class="table table-bordered table-hover">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Sô phiếu</th>
+          <th>Số lệnh VC</th>
+          <th>Người tạo</th>
+          <th>Ngày tạo</th>
+          <th>Lý do</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listData" (click)="clickRow(item)">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>
+              <span> <b>
+                 {{item.refNo}}
+              </b></span>
+          </td>
+          <td>
+            <a [routerLink]="[]" (click)="viewDispatchOrder(item.dispatchOrderRefNo)">{{item.dispatchOrderRefNo}}</a>
+          </td>
+        <td>
+          <span>
+             {{item.createdByName}}
+          </span>
+        </td>
+          <td>
+              <span>
+                {{item.createdDate | date:'dd/MM/yyyy'}}
+              </span>
+          </td>
+          <td>{{item.reason}}</td>
+
+          <td>
+            <span [ngClass]="item.status==0? 'label label-info':item.status==1? 'label label-primary':item.status==2? 
+            'label label-warning': item.status==3? 'label label-success':'label label-danger'">{{item.rStatus}}</span>
+            </td>
+        </tr>
+        <tr *ngIf="listData?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="totalRows> 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+
+<modal-dispatchorder *ngIf="viewDispatchModal"  (CloseModal)="closeDispatchModal()">
+</modal-dispatchorder>
+<modal-dispatch-order-additional-fee *ngIf="viewModal" (SaveSuccess)="saveSuccess()"  (CloseModal)="closeModal()">
+</modal-dispatch-order-additional-fee>
+<!-- <div [ngBusy]="busy"></div> -->

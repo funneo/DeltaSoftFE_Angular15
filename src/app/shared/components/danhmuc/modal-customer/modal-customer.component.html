@@ -1,0 +1,419 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Khách hàng</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity">
+          <div class="box-body">
+            <tabset>
+              <tab heading="Thông tin chung">
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Tên khách hàng
+                    <span class="error">*</span>
+                  </label>
+                  <div
+                    class="{{ (entity.customerCode==null || entity.customerCode?.length==0)?'col-sm-10':'col-sm-8'}}">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.customerName" required
+                      maxlength="255" name="tenkh" class="form-control" placeholder="Nhập tên khách hàng" focus
+                      [readonly]="flagXem" />
+                    <small [hidden]="tennhomquyen.valid || (tennhomquyen.pristine && !addEditForm.submitted)"
+                      class="text-danger">
+                      Tên không được để trống và không vượt quá 255 kí tự
+                    </small>
+                  </div>
+                  <div *ngIf="entity.customerCode" class="col-sm-2">
+                    <input class="form-control" [(ngModel)]="entity.customerCode" type="text" name="code"
+                      placeholder="Nhập mã khách hàng" [readonly]="true" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Tên tiếng Anh
+                  </label>
+                  <div class="col-sm-10">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.nameEnglish" name="nameen"
+                      class="form-control" placeholder="Nhập tên tiếng Anh" focus [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Tên viết tắt
+                  </label>
+                  <div class="col-sm-10">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.abbName" name="tenvtat"
+                      class="form-control" placeholder="Nhập tên viết tắt" focus [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Mã số thuế
+                  </label>
+                  <div class="col-sm-4">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.taxCode" name="taxcode"
+                      class="form-control" placeholder="Nhập mã số thuế" focus [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Điện thoại
+                  </label>
+                  <div class="col-sm-4">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.tel" name="tel" class="form-control"
+                      placeholder="Điện thoại" focus [readonly]="flagXem" />
+                  </div>
+                  <label class="col-sm-2 control-label">Email</label>
+                  <div class="col-sm-4">
+                    <input class="form-control" [(ngModel)]="entity.website" type="text" name="web"
+                      placeholder="Nhập email" [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Địa chỉ
+                    <span class="error">*</span>
+                  </label>
+                  <div class="col-sm-10">
+                    <input class="form-control" [(ngModel)]="entity.address" type="text" name="diachikh"
+                      placeholder="Nhập địa chỉ" [readonly]="flagXem" required />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Người đại diện
+                  </label>
+                  <div class="col-sm-4">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.contact" name="contact"
+                      class="form-control" placeholder="Người đại diện" focus [readonly]="flagXem" />
+                  </div>
+                  <label class="col-sm-2 control-label">Chức vụ</label>
+                  <div class="col-sm-4">
+                    <input class="form-control" [(ngModel)]="entity.contactPosition" type="text" name="contactPosition"
+                      placeholder="Chức vụ" [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Số điện thoại
+                  </label>
+                  <div class="col-sm-4">
+                    <input type="text" #tennhomquyen="ngModel" [(ngModel)]="entity.contactTel" name="contactTel"
+                      class="form-control" placeholder="Số điện thoại người đại diện" focus [readonly]="flagXem" />
+                  </div>
+                  <label class="col-sm-2 control-label">Email</label>
+                  <div class="col-sm-4">
+                    <input class="form-control" [(ngModel)]="entity.contactEmail" type="text" name="email"
+                      placeholder="Email" [readonly]="flagXem" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Chi nhánh QL
+                    <span class="error">*</span>
+                  </label>
+                  <div class="col-sm-2">
+                    <ng-select name="donvi" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                      [(ngModel)]="entity.branchId" placeholder="Chi nhánh quản lý khách hàng..." required
+                      [readonly]="flagXem">
+                    </ng-select>
+                  </div>
+                  <label class="col-sm-2 control-label">C/N xuất hóa đơn
+                    <span class="error">*</span>
+                  </label>
+                  <div class="col-sm-2">
+                    <ng-select name="dơnvihoadon" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                      [(ngModel)]="entity.invoiceIssuingBranchId" placeholder="Chi nhánh xuất hóa đơn..." required
+                      [readonly]="flagXem">
+                    </ng-select>
+                  </div>
+                  <label class="col-sm-1 control-label">Nhân viên
+                  </label>
+                  <div class="col-sm-3">
+                    <ng-select name="employee" [items]="listEmployees" bindLabel="employeeFullName" bindValue="id"
+                      [readonly]="flagXem" [(ngModel)]="entity.employeeId" placeholder="Chọn nhân viên...">
+                    </ng-select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Quốc gia
+                    <!-- <span class="error">*</span> -->
+                  </label>
+                  <div class="col-sm-2">
+                    <ng-select name="quocgia" [items]="listCountrys" bindLabel="countryName" bindValue="countryCode"
+                      [(ngModel)]="entity.countryCode" [readonly]="flagXem">
+                    </ng-select>
+                  </div>
+                  <label class="col-sm-2 control-label">Tỉnh
+                  </label>
+                  <div class="col-sm-2">
+                    <ng-select name="tinh" [items]="listProvinces" bindLabel="provinceName" bindValue="provinceCode"
+                      [(ngModel)]="entity.provinceCode" [readonly]="flagXem">
+                    </ng-select>
+                  </div>
+                  <label class="col-sm-2 control-label">Nhóm
+                  </label>
+                  <div class="col-sm-2">
+                    <ng-select name="tinh" [items]="listTeam" bindLabel="categoryName" bindValue="id"
+                      [(ngModel)]="entity.teamId" [readonly]="flagXem">
+                    </ng-select>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Thông tin viết hóa đơn chi hộ</label>
+                  <div class="col-sm-10">
+                    <textarea class="form-control textrea-size" [(ngModel)]="entity.thirdPartyInvoice"
+                      name="thirdPartyInvoice" rows="1" [readonly]="flagXem"></textarea>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Thông tin xuất hóa đơn nâng hạ container</label>
+                  <div class="col-sm-10">
+                    <textarea class="form-control textrea-size" [(ngModel)]="entity.informationOnContainerLiffInvoice"
+                      name="informationOnContainerLiffInvoice" rows="1" [readonly]="flagXem"></textarea>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Thông tin xuất hóa đơn NGOÀI nâng hạ container</label>
+                  <div class="col-sm-10">
+                    <textarea class="form-control textrea-size"
+                      [(ngModel)]="entity.externalInformationOnContainerLiffInvoice"
+                      name="externalInformationOnContainerLiffInvoice" rows="1" [readonly]="flagXem"></textarea>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Thông tin xuất hóa đơn phụ phí khác</label>
+                  <div class="col-sm-10">
+                    <textarea class="form-control textrea-size" [(ngModel)]="entity.informationOfSurchargeInvoice"
+                      name="informationOfSurchargeInvoice" rows="1" [readonly]="flagXem"></textarea>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Ghi chú</label>
+                  <div class="col-sm-10">
+                    <textarea class="form-control textrea-size" [(ngModel)]="entity.notes" name="ghichu" rows="3"
+                      placeholder="Nhập ghi chú" [readonly]="flagXem"></textarea>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="col-sm-2 control-label" style="color: red;">Phí mặc định (Debit)
+                  </label>
+                  <div class="col-sm-10">
+                    <ng-select name="feedef" [items]="listFee" bindLabel="feeName" bindValue="id"
+                      [(ngModel)]="listItems" placeholder="Chọn phí mặc định khi lên Debit Note"
+                      title="Chọn phí mặc định khi lên Debit Note" [multiple]="true">
+                    </ng-select>
+                  </div>
+                </div>
+              </tab>
+              <tab heading="Địa điểm giao nhận hàng" *ngIf="entity?.id>0">
+                <div class="form-group">
+                  <div class="col-sm-12">
+                    <button [disabled]="flagXem && !updateLocationPermission" type="button" class="btn btn-sm btn-primary"
+                      (click)="newLocation(entity.id)">Thêm</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Mã</th>
+                          <th>Địa điểm</th>
+                          <th>Người liên hệ</th>
+                          <th>SĐT liên hệ</th>
+                          <th class="fixed-column">Vị trí</th>
+                          <th>Khoảng cách</th>
+                          <th>Trạng thái</th>
+                          <th>Tác vụ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity.listLocations">
+                          <td style="width: 100px;">
+                            {{item.code}}
+                          </td>
+                          <td>{{item.address}}</td>
+                          <td>{{item.contactName}}</td>
+                          <td>{{item.contactTel}}</td>
+                          <td class="fixed-column"><a href={{item.googleLocations}}>{{item.googleLocations}}</a>
+                          </td>
+                          <td>{{item.distanceToWB | number:'1.0-0'}}</td>
+                          <td class="trang-thai">
+                            <span [ngClass]="
+                               item.locked? 'label label-danger': item.status ==0 ? 'label label-primary' : item.status==2? 'label label-success' : item.status==1? 'label label-warning': 'label label-danger'
+                              ">{{item.locked? 'Khóa': item.status ==0 ? 'Khởi tạo' : item.status==2? 'Duyệt' : item.status==1? 'Chuyển duyệt': 'Từ chối' }}
+                            </span>
+                          </td>
+                          <td>
+                            <button *ngIf="item.status < 1 || _acceptOther" [disabled]="flagXem && !updateLocationPermission" type="button"
+                              class="btn btn-success btn-sm" (click)="update(item.id)">
+                              <i class="fa fa-pencil"></i> Sửa
+                            </button>
+                            <button *ngIf="item.status<1" [disabled]=" flagXem && !updateLocationPermission" type="button"
+                              class="btn btn-warning btn-sm" (click)="deleteConfirm(item.id)">
+                              <i class="fa fa-trash"></i> Xóa
+                            </button>
+                            <button *ngIf="item.status==1" [disabled]=" !_acceptOther" type="button"
+                              class="btn btn-success btn-sm" (click)="accept(item.id,true)">
+                              <i class="fa fa-check"></i> Duyệt
+                            </button>
+                            <button *ngIf="item.status==1" [disabled]=" !_acceptOther " type="button"
+                              class="btn btn-danger btn-sm" (click)="accept(item.id,false)">
+                              <i class="fa fa-close"></i> Từ chối
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listLocations?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab heading="Cung đường tiêu chuẩn" *ngIf="entity?.id>0">
+                <div class="form-group">
+                  <div class="col-sm-2">
+                    <button [disabled]="flagXem || !updateLocationPermission" type="button" class="btn btn-sm btn-primary"
+                      (click)="newRoute(entity.id)">Thêm</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Nhà máy</th>
+                          <th>Cảng</th>
+                          <th>Khoảng cách</th>
+                          <th>Khoảng cách qua bãi</th>
+                          <th>Trạng thái</th>
+                          <th>Tác vụ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity?.listRoutes; let indexOfelement=index;">
+                          <td>
+                            <span>{{item.locationsName}}</span>
+                          </td>
+                          <td>
+                            <span>{{item.portsName}}</span>
+                          </td>
+                          <td style="width: 100px;">
+                            <input type="number" class="form-control" name="distance{{indexOfelement}}"
+                              [(ngModel)]="item.distance" [readonly]="true"  />
+                            </td>
+                          <td style="width: 100px;">
+                            <input type="number" class="form-control" name="distanceThrought{{indexOfelement}}"
+                              [(ngModel)]="item.distanceThrough" [readonly]="true"  />
+                          </td>
+                          <td class="trang-thai">
+                            <span [ngClass]="
+                               item.status<0? 'label label-danger': item.status ==0 ? 'label label-primary' : item.status==2? 'label label-success' : 'label label-warning'
+                              ">{{item.status<0? 'Từ chối': item.status ==0 ? 'Khởi tạo' : item.status==2? 'Duyệt' : item.status==1? 'Chuyển duyệt': 'Từ chối' }}
+                            </span>
+                          </td>
+                          <td>
+                            <button *ngIf="item.status<1 " [disabled]="flagXem " type="button"
+                              class="btn btn-success btn-sm" (click)="updateRoutes(item.id)">
+                              <i class="fa fa-trash"></i> Sửa
+                            </button>
+                            <button *ngIf="item.status<1" [disabled]=" flagXem " type="button"
+                              class="btn btn-warning btn-sm" (click)="confirmDeleteRoutes(item.id)">
+                              <i class="fa fa-trash"></i> Xóa
+                            </button>
+                            <button *ngIf="item.status==1 " [disabled]=" flagXem || !_accept " type="button"
+                              class="btn btn-success btn-sm" (click)="acceptRoutes(item.id,true)">
+                              <i class="fa fa-trash"></i> Duyệt
+                            </button>
+                            <button *ngIf="item.status==1" [disabled]=" flagXem || !_accept " type="button"
+                              class="btn btn-warning btn-sm" (click)="acceptRoutes(item.id,false)">
+                              <i class="fa fa-trash"></i> Từ chối
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listLocations?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+              <tab heading="Cung đường thành phần" *ngIf="entity">
+                <div class="form-group">
+                  <div class="col-sm-2">
+                    <button [disabled]="flagXem || !updatePermission" type="button" class="btn btn-sm btn-primary"
+                      (click)="newNormalRoute(entity.id)">Thêm</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Mã</th>
+                          <th>Tên cung đường</th>
+                          <th>Khoảng cách</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of entity?.listNormalRoute; let indexOfelement=index;">
+                          <td style="width: 100px;">
+                            {{item.routeCode}}
+                          </td>
+                          <td>{{item.routeName}}</td>
+                          <td>{{item.distance | number}}</td>
+                          <td>
+                            <button *ngIf="updatePermission" [disabled]=" flagXem " type="button"
+                              class="btn btn-warning btn-sm" (click)="confirmDeleteNormalRoutes(item.id)">
+                              <i class="fa fa-trash"></i> Xóa
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="entity.listLocations?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
+            </tabset>
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="_accept && !entity.status" type="button" class="btn btn-success btn-sm"
+              (click)="acceptCustomer(true)">
+              <i class="fa fa-save"></i> Duyệt</button>
+            <button *ngIf="_accept && !entity.status" type="button" class="btn btn-warning btn-sm"
+              (click)="acceptCustomer(false)">
+              <i class="fa fa-save"></i> Từ chối</button>
+            <button *ngIf="_accept && !entity.locked && entity.status" type="button" class="btn btn-warning btn-sm"
+              (click)="locked(true)">
+              <i class="fa fa-save"></i> Khóa</button>
+            <button *ngIf="_accept && entity.locked  && entity.status" type="button" class="btn btn-success btn-sm"
+              (click)="locked(false)">
+              <i class="fa fa-save"></i> Mở khóa</button>
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-save"></i> Lưu</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<modal-customer-locations *ngIf="viewLocations" (SaveSuccess)="saveSuccessLocations()"
+  (CloseModal)="closeModalLocations()">
+</modal-customer-locations>
+
+<modal-customer-routes *ngIf="viewRoutes" (SaveSuccess)="saveSuccessRoutes()"
+  (CloseModal)="closeModalRoutes()">
+</modal-customer-routes>
+<modal-customer-normal-routes *ngIf="viewNormalRoutes" (SaveSuccess)="saveSuccessNormalRoutes()"
+  (CloseModal)="closeModalRoutes()">
+</modal-customer-normal-routes>

@@ -1,0 +1,46 @@
+{
+  "listBranch": [
+    {
+      "id": 4,
+      "code": "HN",
+      "name": "Delta Hà Nội",
+      "status": false
+    },
+    {
+      "id": 5,
+      "code": "SG",
+      "name": "Delta Hồ Chí Minh",
+      "status": false
+    },
+    {
+      "id": 6,
+      "code": "VT",
+      "name": "Delta Vận tải",
+      "status": false
+    },
+    {
+      "id": 7,
+      "code": "BN",
+      "name": "Delta Bac Ninh",
+      "status": false
+    },
+    {
+      "id": 8,
+      "code": "HD",
+      "name": "Delta Hải Dương",
+      "status": false
+    },
+    {
+      "id": 9,
+      "code": "BD",
+      "name": "Delta Bình Dương",
+      "status": false
+    },
+    {
+      "id": 10,
+      "code": "HP",
+      "name": "Delta Hải Phòng",
+      "status": false
+    }
+  ]
+}

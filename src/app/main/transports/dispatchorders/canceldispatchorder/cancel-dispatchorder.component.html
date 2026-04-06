@@ -1,0 +1,88 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="row">
+      <div class="box-header with-border">
+        <div class="col-md-2">
+          <h3 class="box-title">Đề nghị hủy lệnh</h3>
+        </div>
+        <div class="col-md-2">
+          <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+            class="form-control">
+        </div>
+        <div class="col-md-2">
+        </div>
+        <div class="col-md-2">
+          <div class="input-group">
+            <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+              placeholder="Từ khóa" />
+            <span class="input-group-btn">
+              <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                <i class="fa fa-search"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding">
+      <table class="table table-bordered table-striped table-hover">
+        <thead>
+          <tr>
+            <th>RefNo</th>
+            <th>Người tạo lệnh</th>
+            <th>Người đề nghị</th>
+            <th>Lý do</th>
+            <th>Ghi chú</th>
+            <th>Tình trạng</th>
+            <!-- <th>Thao tác</th> -->
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of listCancelDispatchorder">
+            <td>
+              <a style="color: blue;" [routerLink]="[]" (click)="view(item)">
+                <b>{{item.refNo}}</b></a>
+            <td>{{item.dispatchOrderCreatedByFullName}}</td>
+            <td>{{item.createdByFullName}}</td>
+            <td>{{item.reason}}</td>
+            <td>{{item.notes}}</td>
+            <td>
+              <span [ngClass]="{'label label-info': item.status===0,
+              'label label-warning': item.status===1,
+              'label label-success': item.status===2,
+              'label label-danger': item.status===-1}">
+                {{item.rStatus}}
+              </span>
+            </td>
+            <!-- <td>
+              <button *ngIf="accept_permission && item.status==0" class="btn btn-success btn-sm"
+              (click)="setaccept(item,true)"><i class="fa fa-check"></i> Duyệt
+            </button>
+            <button *ngIf="accept_permission && item.status==0" class="btn btn-danger btn-sm" (click)="setaccept(item,false)">
+              <i class="fa fa-ban"></i> Từ chối
+            </button>
+            </td> -->
+          </tr>
+          <tr *ngIf="listCancelDispatchorder?.length == 0">
+            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer no-padding">
+      <div *ngIf="listCancelDispatchorder?.length > 0" class="col-md-12 footer-phantrang">
+        <div class="row">
+          <div class="col-md-5">
+            <div class="dataTables_info">
+              <span>Tổng số bản ghi: {{ totalRows }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /.box -->
+</div>
+
+<modal-cancel-dispatch-order-approved *ngIf="viewModal"  (CloseModal)="closeModal()">
+</modal-cancel-dispatch-order-approved>

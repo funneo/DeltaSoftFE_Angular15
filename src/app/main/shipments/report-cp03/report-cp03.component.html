@@ -1,0 +1,150 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="box-header with-border">
+    <div class="row" style="padding-bottom: 3px;">
+      <div class="col-md-2">
+        <h3 class="box-title">BẢNG KÊ TRẢ HỘ</h3>
+      </div>
+      <div class="col-md-4">
+        <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+          [(ngModel)]="_customerId" (change)="changedCustomer()" placeholder="Chọn đơn vị...">
+        </ng-select>
+      </div>
+
+  </div>
+    <div class="row" style="padding-bottom: 3px;">
+      <div class="col-md-2 offset"></div>
+      <div class="col-md-2">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+        class="form-control" />
+    </div>
+    <div class="col-md-2">
+      <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+      [(ngModel)]="_branchId" (change)="changedBranch()" placeholder="Chọn chi nhánh..." [clearable]="false" [readonly]="_quyen>0">
+    </ng-select>
+    </div>
+
+      <div class="col-md-2">
+        <ng-select name="loai" [items]="listTypes" bindLabel="text" bindValue="id"
+          [(ngModel)]="_type" (change)="changedType()" placeholder="Chọn loại..." [clearable]="false">
+        </ng-select>
+      </div>
+      <div class="col-md-4">
+        <div class="input-group">
+          <!-- <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+          [(ngModel)]="_branchId" (change)="changedBranch()" placeholder="Chọn chi nhánh..." [clearable]="false" [readonly]="_quyen>0">
+        </ng-select> -->
+        <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+        placeholder="Keyword: JobId, InvoiceNo..." title="Nhập số JobId, số hóa đơn..." />
+        <span class="input-group-btn">
+          <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()" title="">
+            <i class="fa fa-search"></i>
+          </button>
+          <button class="btn btn-success btn-sm" appPermission appFunction="REPORTCP03" appAction="EXPORT" (click)="exportExcel()" title="Xuất dữ liệu">
+            <i class="fa fa-file-excel-o"></i>
+          </button>
+        </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th rowspan="2">Mã khách hàng</th>
+          <th rowspan="2">Tên khách hàng</th>
+          <th rowspan="2">Lô hàng</th>
+          <th rowspan="2">Tờ khai</th>
+          <th rowspan="2">Vận đơn</th>
+          <th rowspan="2">Số Booking</th>
+          <th rowspan="2">Số Debit/<br>Thanh toán</th>
+          <th>Loại hình</th>
+          <th>Mã phí</th>
+          <th>Nội dung</th>
+          <th>Hóa đơn</th>
+          <th>Ngày</th>
+          <th>Số tiền</th>
+          <th>VAT</th>
+          <th>Số tiền <br>(+VAT)</th>
+          <th>Lượng hàng</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listData">
+          <!-- <td>
+            <a [routerLink]="" (click)="showDebt(item)">{{item.customerName}}</a>
+          </td> -->
+          <td >{{item.customerCode}}</td>
+          <td class="column-name">{{item.customerName}}</td>
+          <td >
+            <a [routerLink]="[]" (click)="showJob(item)">{{item.jobId}}</a>
+          </td>
+          <td >{{item.cdsNumber}}</td>
+          <td >{{item.hawB_HBL}}</td>
+          <td >{{item.bookingNo}}</td>
+          <td *ngIf="_type==1">
+            <a [routerLink]="[]" (click)="showPayment(item)">{{item.soPhieu}}</a>
+          </td>
+          <td *ngIf="_type==0">
+            <a [routerLink]="[]" (click)="showDebit(item)">{{item.soPhieu}}</a>
+          </td>
+          <td *ngIf="_type==2">
+            <a [routerLink]="[]" (click)="showDebit(item)">{{item.soPhieu}}</a>
+          </td>
+          <td >{{item.loaiHinh}}</td>
+          <td >{{item.maPhi}}</td>
+          <td >{{item.tenPhi}}</td>
+          <td >{{item.soHoaDon}}</td>
+          <td >{{item.ngayHoaDon}}</td>
+          <td [style.background-color]="item.currency!='VND' ? '#DAF380' : null" class="so-tien">{{item.currency=='VND'? (item.soTien|VND) : (item.soTien |number:'1.2-2')}}</td>
+          <td [style.background-color]="item.currency!='VND' ? '#DAF380' : null" class="so-tien">{{item.currency=='VND'? (item.vat|VND) : (item.vat |number:'1.2-2')}}</td>
+          <td [style.background-color]="item.currency!='VND' ? '#DAF380' : null" class="so-tien">{{item.currency=='VND'? (item.tongTien|VND) : (item.tongTien |number:'1.2-2')}}</td>
+          <td >{{item.luongHang}}</td>
+          <td class="trang-thai">
+            <span [ngClass]="
+              item.trangThai? 'label label-success' : 'label label-danger'
+              ">{{ item.trangThai ? 'Đã duyệt' : 'Chưa duyệt' }}</span>
+
+          </td>
+        </tr>
+        <tr *ngIf="listData?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listData?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-3">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="dataTables_info">
+            <span style="color: rgba(0, 68, 255, 0.926);">Tổng tiền: {{ soTien|VND }}</span>
+            <span style="color: rgb(7, 156, 47);"> - VAT: {{ tienVat|VND }}</span>
+            <span style="color: rgba(255, 77, 0, 0.926);"> - Tổng tiền(+VAT): {{ tongTien|VND }}</span>
+          </div>
+        </div>
+        <div class="col-md-3 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+<modal-shipment *ngIf="viewModalJob" (CloseModal)="closeModalJob()">
+</modal-shipment>
+<!-- <div [ngBusy]="busy"></div> -->

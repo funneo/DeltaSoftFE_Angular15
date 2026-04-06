@@ -1,0 +1,181 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="box-header with-border">
+  <div class="row">
+      <div class="col-md-2">
+        <h3 class="box-title">Cược vỏ</h3>
+      </div>
+      <div class="col-md-6"></div>
+      <div class="col-md-4 text-right">
+        <div class="dropdown btn-group">
+          <button class="btn btn-success btn-sm dropbtn" type="button" appPermission appFunction="BETS"
+            appAction="CREATE">
+            <i class="fa fa-plus"></i> Thêm
+            <span class="caret"></span></button>
+          <div class="dropdown-content">
+            <li (click)="add(0)">Tiền mặt</li>
+            <li (click)="add(1)">Chuyển khoản</li>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+          appFunction="BETS" appAction="UPDATE">
+          <i class="fa fa-edit"></i> Sửa
+        </button>
+        <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+          appFunction="BETS" appAction="DELETE">
+          <i class="fa fa-trash"></i> Xóa
+        </button>
+        <!-- <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagView">
+          <i class="fa fa-eye"></i> Xem
+        </button> -->
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-2">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+          class="form-control">
+      </div>
+      <div class="col-md-2">
+        <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+          [(ngModel)]="_branchId" (change)="changedChiNhanh()" title="Chọn chi nhánh..." [clearable]="false" [readonly]="_auth>0">
+        </ng-select>
+      </div>
+      <div class="col-md-3">
+        <ng-select name="nhanvien" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
+          [(ngModel)]="_employeeId" [readonly]="_auth>_viewAll" (change)="changedEmployee($event)"
+          placeholder="Chọn nhân viên...">
+        </ng-select>
+      </div>
+      <div class="col-md-3">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+            placeholder="Từ khóa" />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+          <span class="input-group-btn">
+            <button class="btn btn-success btn-flat btn-sm" appPermission appFunction="BETS" appAction="EXPORT"
+            (click)="export()" title="Xuất dữ liệu">
+            <i class="fa fa-file-excel-o"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
+              <span class="helping-el"></span>
+            </label>
+          </th>
+          <th style="min-width: 120px;">Người tạm ứng</th>
+          <th>Số tham chiếu</th>
+          <th>Ngày</th>
+          <th>Số tiền</th>
+          <th>Hãng tàu</th>
+          <th>Hình thức</th>
+          <th>Ghi chú</th>
+          <th>Trạng thái</th>
+          <th style="width: 80px;">Tác vụ</th>
+        </tr>
+        <tr>
+          <th></th>
+          <th><input class="form-control" #nguoilapSearchInput [(ngModel)]="nguoilapSearch" (input)="filter()" type="text" name="nguoilapSearch"/></th>
+          <th><input class="form-control" #refnoSearchInput [(ngModel)]="refnoSearch" (input)="filter()" type="text" name="refnoSearch"/></th>
+          <th><input class="form-control" #ngaySearchInput [(ngModel)]="ngaySearch" (input)="filter()" type="text" name="ngaySearch"/></th>
+          <th><input class="form-control" #sotienSearchInput [(ngModel)]="sotienSearch" (input)="filter()" type="text" name="sotienSearch"/></th>
+          <th><input class="form-control" #hangtauSearchInput [(ngModel)]="hangtauSearch" (input)="filter()" type="text" name="hangtauSearch"/></th>
+          <th>
+            <ng-select name="filterType" (change)="filter()" [(ngModel)]="hinhthucSearch" [clearable]="false" [items]="array" bindLabel="text" bindValue="value"></ng-select>
+          </th>
+          <th><input class="form-control" #ghichuSearchInput [(ngModel)]="ghichuSearch" (input)="filter()" type="text" name="ghichuSearch"/></th>
+          <th>
+            <ng-select name="filterHt" (change)="filter()" [(ngModel)]="trangthaiSearch" [clearable]="false" [items]="arrayht" bindLabel="text" bindValue="value"></ng-select>
+          </th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listFilter"  [ngStyle]="{'background-color':item.isAlert ? item.explanationStatus==2? '#99f3ee':item.explanationStatus==3? '#Ebd8f5':'#F9f3e7':'white'}">
+          <td class="table-checkbox">
+            <label class="custom-checkbox">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked"  (click)="clickRow(item)"/>
+              <span class="helping-el"></span>
+            </label>
+          </td>
+          <td>{{item.employeeName}}</td>
+          <td>
+            <a [routerLink]="[]" (click)="showModal(item)">{{item.refNo}}</a>
+          </td>
+          <td>{{item.refDate|date: "dd/MM/yyyy"}}</td>
+          <td class="so-tien">{{item.amount|currency:'VND':''}}</td>
+          <td>{{item.carriers }}</td>
+          <td>{{item.type==0? 'Tiền mặt':'Chuyển khoản' }}</td>
+          <td>{{item.notes}}</td>
+          <td class="trang-thai">
+            <span class="{{item.step | List: listLables}}">
+              {{item.step| List: listStatus}}</span><br>
+              <span *ngIf="item.isAlert" class="label {{ item.explanationStatus==-1? 'label-danger':
+              item.explanationStatus==0? 'label-warning' :item.explanationStatus==1? 'label-success': item.explanationStatus==2? 'label-default':'label-primary'}}">
+                {{item.explanationStatus==-1?"Từ chối giải trình" :item.explanationStatus==0? "Chưa giải trình":item.explanationStatus==1? "Chờ duyệt giải trình": item.explanationStatus==2?"Theo dõi tiếp":"Chờ tiền"}}</span>
+          </td>
+          <td>
+            <button *ngIf="item.status && _accept && item.acceptStep==0" type="button" class="btn btn-success btn-sm action"
+              title="Duyệt" (click)="accept(item,true)">
+              <i class="fa fa-meh-o" aria-hidden="true"></i> Duyệt
+            </button>
+            <button *ngIf="item.status && _accept && item.acceptStep==0" type="button" class="btn btn-danger btn-sm action"
+              title="Từ chối" (click)="accept(item,false)">
+              <i class="fa fa-frown-o" aria-hidden="true"></i> Từ chối
+            </button>
+            <button *ngIf="_acc && item.acceptStep>=1 && !item.isComplete" type="button"
+              class="btn btn-warning btn-sm action" title="Chi tiền" (click)="showAccounts(item)">
+              <i class="fa fa-usd" aria-hidden="true"></i> Chi tiền
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="listContBets?.length == 0">
+          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <!-- /.box-body -->
+  <div class="box-footer no-padding">
+    <div *ngIf="listContBets?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-4">
+          <div class="dataTables_info">
+            <span>Tổng số bản ghi: {{ totalRows }}</span>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="dataTables_info">
+            <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng tiền cược: {{ totalAmount|VND }}</span>
+          </div>
+        </div>
+        <div class="col-md-4 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- /.box -->
+</div>
+<modal-cont-bets *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-cont-bets>
+<modal-phieu-chi *ngIf="viewAccounts" (SaveSuccess)="saveSuccessAccounts($event)" (CloseModal)="closeAccounts()">
+</modal-phieu-chi>
+<!-- <div [ngBusy]="busy"></div> -->

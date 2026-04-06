@@ -1,0 +1,72 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="onHidden()" (onShown)="onShow()">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Đề nghị mở Debit-Note</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
+          *ngIf="entity" #aForm>
+          <div class="box-body">
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Số Debit
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <input type="text" #groupfeename="ngModel" [(ngModel)]="entity.debitNo" required maxlength="255" name="debitno"
+                  class="form-control" placeholder="Debit No." focus [readonly]="true" />
+                <small [hidden]="groupfeename.valid || (groupfeename.pristine && !addEditForm.submitted)"
+                  class="text-danger">
+                  Không được để trống và không vượt quá 255 kí tự
+                </small>
+              </div>
+            </div>
+            <!-- <div class="form-group">
+              <label class="col-sm-3 control-label">Kí hiệu</label>
+              <div class="col-sm-4">
+                <input class="form-control" [(ngModel)]="entity.groupCode" type="text" name="groupfeecode"
+                placeholder="Kí hiệu" [readonly]="flagXem" />
+              </div>
+            </div> -->
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Lý do
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-9">
+                <textarea class="form-control textrea-size" #openjobfeedback="ngModel" [(ngModel)]="entity.notes" name="openjobfeedback" rows="3"
+                  placeholder="Nhập lý do xin mở" required [readonly]="flagXem"></textarea>
+                  <small [hidden]="openjobfeedback.valid || (openjobfeedback.pristine && !addEditForm.submitted)"
+                  class="text-danger">
+                  Không được để trống và không vượt quá 400 kí tự
+                </small>
+              </div>
+            </div>
+            <!-- <div class="form-group">
+              <label class="col-sm-3 control-label"></label>
+              <div class="col-sm-4">
+                <label class="custom-checkbox">
+                  <input type="checkbox" [(ngModel)]="entity.status" name="status" />
+                  <span class="helping-el"></span>
+                  Chuyển duyệt
+                </label>
+              </div>
+            </div> -->
+          </div>
+          <!-- /.box-body -->
+          <div class="box-footer text-right">
+            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-edit"></i> Lưu & chuyển duyệt</button>
+            <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+              <i class="fa fa-close"></i> Hủy</button>
+          </div>
+          <!-- /.box-footer -->
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,126 @@
+
+<div class="box box-primary box-chieu-cao">
+    <div class="row">
+      <div class="box-header with-border">
+        <div class="col-md-2">
+          <h3 class="box-title">Báo giá Thầu phụ</h3>
+        </div>
+          <div class="col-md-2" *ngIf="adminPermission">
+            <ng-select name="branch" [items]="listBranch" bindLabel="branchCode" bindValue="id" [(ngModel)]="branchId"
+            placeholder="Chọn chi nhánh..." (change)="changedBranch($event)"  >
+            </ng-select>
+          </div>
+        <div class="col-md-2">
+          <ng-select name="supplier" [items]="listSupplier" bindLabel="supplierName" bindValue="id" [(ngModel)]="supplierId"
+          placeholder="Chọn thầu phụ..."  >
+          </ng-select>
+        </div>
+        <div class="col-md-2">
+          <div class="input-group">
+            <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+              placeholder="Từ khóa" />
+            <span class="input-group-btn">
+              <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                <i class="fa fa-search"></i>
+              </button>
+            </span>
+          </div>
+        </div>
+        <div class="col-md-4 text-right">
+          <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="QUOTATIONSUB"
+            appAction="CREATE">
+            <i class="fa fa-plus"></i> Thêm
+          </button>
+          <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+            appFunction="QUOTATIONSUB" appAction="UPDATE">
+            <i class="fa fa-edit"></i> Sửa
+          </button>
+          <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+            appFunction="QUOTATIONSUB" appAction="DELETE">
+            <i class="fa fa-trash"></i> Xóa
+          </button>
+          <button class="btn btn-info btn-sm" (click)="edit(true)" [disabled]="!flagEdit">
+            <i class="fa fa-eye"></i> Xem
+          </button>
+        </div>
+      </div>
+    </div>
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding">
+      <table class="table table-bordered table-striped table-hover">
+        <thead>
+          <tr>
+            <th></th>
+            <th>Chi nhánh</th>
+            <th>Số báo giá</th>
+            <th>Người tạo</th>
+            <th>Tên thầu phụ</th>
+            <th>Mã/Tên cung đường</th>
+            <th>Kích hoạt</th>
+            <th>Tình trạng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of listQuotation" (click)="clickRow(item)">
+            <td class="table-checkbox">
+              <label class="custom-checkbox">
+                <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
+                <span class="helping-el"></span>
+              </label>
+            </td>
+            <td>{{item.branchCode}}</td>
+            <td>{{item.quotationCode}}</td>
+            <td>{{item.createdByName}}</td>
+            <td>{{item.supplierName}}</td>
+            <td>
+                <span>
+                  Mã: {{item.tollRouteCode}}
+                </span>
+                <br>
+                <span><b>Tên:  {{item.tollRouteName}}</b></span>
+            </td>
+            <td>
+              <span [ngClass]="{'label label-warning': !item.isActived}">
+              {{item.rActived}}
+              </span>
+            </td>
+            <td>
+            <span [ngClass]="{'label label-info': item.status===0,
+              'label label-success': item.status===1 && !item.isApproved,
+              'label label-danger': (item.status===1 && item.isApproved)}">
+                {{item.rStatus}}
+            </span>
+            </td>
+          </tr>
+          <tr *ngIf="listQuotation?.length == 0">
+            <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <!-- /.box-body -->
+    <div class="box-footer no-padding">
+      <div *ngIf="listQuotation?.length > 0" class="col-md-12 footer-phantrang">
+        <div class="row">
+          <div class="col-md-5">
+            <div class="dataTables_info">
+              <span>Tổng số bản ghi: {{ totalRows }}</span>
+            </div>
+          </div>
+          <div class="col-md-7 text-right">
+            <div class="page">
+              <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+                (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+                firstText="&laquo;" lastText="&raquo;">
+              </pagination>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /.box -->
+</div>
+
+  <modal-quotationsubcontractors *ngIf="viewModal" (SaveSuccess)="saveSuccess($event)" (CloseModal)="closeModal()">
+  </modal-quotationsubcontractors>
+  <!-- <div [ngBusy]="busy"></div> -->
