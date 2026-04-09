@@ -43,4 +43,21 @@ export interface Accounts {
   accountType?:number;
   typeAccount?:number;
   advanceId?:number;
+  dispatchOrderFees?: AcountDispatchOrderFees[];
+}
+
+export interface AcountDispatchOrderFees {
+  id?: number;
+  accountId?: number;
+  feeId?: number;
+  feeCode?: string;
+  feeName?: string;
+  refNo?: string;
+  contents?: string;
+  amount?: number;
+  cost?: number;
+  vat?: number;
+  amountAfterVat?: number;
+  totalCost?: number;
+  type?: number;
 }

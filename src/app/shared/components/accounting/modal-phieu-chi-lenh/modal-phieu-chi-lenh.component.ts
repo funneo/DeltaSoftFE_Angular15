@@ -1,7 +1,7 @@
 import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
 import { SystemContstants } from '@app/shared/constants/SystemConstants';
 import { FormatContstants } from '@app/shared/constants/format.constants';
-import { AccountList, AccountingDetail, Accounts, Branch, Customer, Employee, OtherCategories, ResponseValue, Supplier } from '@app/shared/models';
+import { AccountList, AccountingDetail, Accounts, AcountDispatchOrderFees, Branch, Customer, Employee, OtherCategories, ResponseValue, Supplier } from '@app/shared/models';
 import { Attachfiles } from '@app/shared/models/attachfiles.models';
 import * as moment from 'moment';
 import { ModalAttachfileComponent } from '../../systems/modal-attachfile/modal-attachfile.component';
@@ -151,6 +151,7 @@ export class ModalPhieuChiLenhComponent implements OnInit {
             currency: 'VND',
             refDate: moment(new Date()).format('DD/MM/YYYY'),
             accountPayments: [],
+            dispatchOrderFees: [],
             accountType: 2, //Là phiếu chi từ lệnh
             groupType: 1 // Always 1 for Employee
         };
@@ -188,11 +189,20 @@ export class ModalPhieuChiLenhComponent implements OnInit {
                 }
                 this.flagXem = flag;
                 this.flagSave = false;
-                this.listDispatchOrderFees = []; // For edit, we might need to load existing items differently? 
-                // Logic for edit: usually we show what was saved. 
-                // For now let's assume this modal is primarily for creating new payments or basic edit.
-                // If edit, need to load details. But getDetail returns accountPayments...
-                // We need to map accountPayments back to listDispatchOrderFees style or just show them.
+                this.listDispatchOrderFees = [];
+                if (this.entity.dispatchOrderFees && this.entity.dispatchOrderFees.length > 0) {
+                    this.listDispatchOrderFees = this.entity.dispatchOrderFees.map(it => {
+                        return {
+                            feeId: it.feeId,
+                            feeCode: it.feeCode,
+                            contents: it.contents,
+                            type: it.type,
+                            amount: it.amount,
+                            vat: it.vat,
+                            totalCost: it.totalCost
+                        }
+                    });
+                }
 
                 this.loadQuy();
                 this.loadEmployee();
@@ -257,16 +267,18 @@ export class ModalPhieuChiLenhComponent implements OnInit {
 
             this.entity.typeAccount = 2; //Phiếu chi lệnh
             this.listDispatchOrderFees.forEach(it => {
-                if (it.checked) {
-                    let nItem: AccountsPaymentDetail = {
-                        paymentDetailId: it.id,
-                        type: it.type,
-                        amount: it.cost,
-                        vat: it.vat,
-                        amountAfterVat: it.totalCost
-                    }
-                    this.entity.accountPayments.push(nItem);
+                //if (it.checked) {
+                let nItem: AcountDispatchOrderFees = {
+                    feeId: it.feeId,
+                    feeCode: it.feeCode,
+                    contents: it.contents,
+                    type: it.type,
+                    amount: it.cost,
+                    vat: it.vat,
+                    amountAfterVat: it.totalCost
                 }
+                this.entity.dispatchOrderFees.push(nItem);
+                //}
             })
 
             if (this.entity.id == undefined) {

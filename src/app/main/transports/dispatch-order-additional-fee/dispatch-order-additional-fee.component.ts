@@ -11,6 +11,7 @@ import { Subscription } from 'rxjs';
 import { MessageContstants } from '@app/shared/constants';
 import { PageChangedEvent } from 'ngx-bootstrap/pagination';
 import { ModalDispatchorderComponent } from '@app/shared/components/transports/modal-dispatchorder/modal-dispatchorder.component';
+import { ExportService } from '@app/shared/services/export-excel.service';
 
 @Component({
   selector: 'app-dispatch-order-additional-fee',
@@ -42,7 +43,8 @@ export class DispatchOrderAdditionalFeeComponent implements OnInit {
     private _utilityService: UtilityService,
     private additionalFeeService:AdditionalFeeService,
     private notificationService: NotificationService, private _authService:AuthService,
-    private branchService:BranchService
+    private branchService:BranchService,
+    private exportService: ExportService
   ) { }
 
   ngOnInit(): void {
@@ -173,6 +175,40 @@ export class DispatchOrderAdditionalFeeComponent implements OnInit {
   }
   closeDispatchModal(){
     this.viewDispatchModal=false;
+  }
+
+  exportExcel() {
+    let tuNgay = moment(this.ngayBatDau).format('YYYYMMDD');
+    let denNgay = moment(this.ngayKetThuc).format('YYYYMMDD');
+    const params = new HttpParams()
+      .set('pageIndex', '1')
+      .set('pageSize', '99999')
+      .set('branchid', this.branchId == null ? '0' : this.branchId.toString())
+      .set('fromDate', tuNgay)
+      .set('toDate', denNgay)
+      .set('keyword', this.keyword);
+
+    this.busy = this.additionalFeeService.getPaging(params).subscribe((res: ResponseValue<Pagination<DispatchOrderAdditionalFee>>) => {
+      if (res.code == '200' || res.code == '201') {
+        if (res.data?.items?.length > 0) {
+          const exportData = res.data.items.map(item => {
+            return {
+              'Số phiếu': item.refNo,
+              'Số lệnh VC': item.dispatchOrderRefNo,
+              'Người tạo': item.createdByName,
+              'Ngày tạo': moment(item.createdDate).format('DD/MM/YYYY'),
+              'Lý do': item.reason,
+              'Trạng thái': item.rStatus
+            };
+          });
+          this.exportService.exportExcel(exportData, 'Danhsachbosungchiphi');
+        } else {
+          this.notificationService.printErrorMessage(MessageContstants.EMPTY_VALUE);
+        }
+      } else {
+        this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code);
+      }
+    });
   }
 
 }

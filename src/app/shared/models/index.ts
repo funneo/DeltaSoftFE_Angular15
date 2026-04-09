@@ -33,7 +33,7 @@ import { ShipmentContSeal } from './shipment-contSeal.model';
 import { ShipmentPackage } from './shipment-package.model';
 import { PersonalLoan } from './personal-loan.model';
 import { ResponseValue } from './response-value.model';
-import { Accounts } from './accounts.model';
+import { Accounts, AcountDispatchOrderFees } from './accounts.model';
 import { Fund } from './fund.model';
 import { FundReserve, FundReserveDetail } from './fund-reserve.model';
 import { Repayment } from './repayment.model';
@@ -115,6 +115,7 @@ export {
   PersonalLoan,
   ResponseValue,
   Accounts,
+  AcountDispatchOrderFees,
   Fund, FundReserve,
   Repayment,
   OtherCategories,

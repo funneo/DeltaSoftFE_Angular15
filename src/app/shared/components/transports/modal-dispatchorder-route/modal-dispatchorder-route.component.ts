@@ -138,17 +138,16 @@ export class ModalDispatchorderRouteComponent implements OnInit {
   }
 
   add() {
-    // Reset all checked states and clear selected list when opening modal
+    // Reset all search and checked states and clear selected list when opening modal
+    this.codeSearch = '';
+    this.nameSearch = '';
     this.selectedList = [];
     this.allChecked = false;
     if (this.listRoute && this.listRoute.length > 0) {
       this.listRoute.forEach(route => route.checked = false);
     }
-    if (this.filteredItems && this.filteredItems.length > 0) {
-      this.filteredItems.forEach(route => route.checked = false);
-    }
+    this.assignCopy(); // This will reset filteredItems to full list and update pagination
     this.currentPage = 1;
-    this.updatePagination();
     this.flagOk = false;
     this.modalRoute.show();
   }
@@ -161,8 +160,6 @@ export class ModalDispatchorderRouteComponent implements OnInit {
     // Rebuild selectedList from scratch to avoid duplicates
     this.selectedList = this.listRoute.filter(x => x.checked);
     this.flagOk = this.selectedList.length > 0;
-    // Update allChecked state
-    this.allChecked = this.listRoute.length > 0 && this.selectedList.length === this.listRoute.length;
   }
 
   toggleAll() {

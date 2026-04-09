@@ -149,14 +149,14 @@
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
-                                        <th class="table-checkbox" *ngIf="flagNew">
+                                        <!-- <th class="table-checkbox" *ngIf="flagNew">
                                             <label class="custom-checkbox">
                                                 <input type="checkbox" name="allOrder"
                                                     [checked]="isAllDispatchOrderChecked()"
                                                     (change)="checkAllDispatchOrder($event)" [disabled]="!flagNew" />
                                                 <span class="helping-el"></span>
                                             </label>
-                                        </th>
+                                        </th> -->
                                         <th class="column-sm">Số lệnh</th>
                                         <th class="column-sm">Mã phí - Tên phí</th>
                                         <th class="column-ten">Nội dung</th>
@@ -167,14 +167,14 @@
                                 </thead>
                                 <tbody>
                                     <tr *ngFor="let item of listDispatchOrderFees; let i = index">
-                                        <td class="table-checkbox" *ngIf="flagNew">
+                                        <!-- <td class="table-checkbox" *ngIf="flagNew">
                                             <label class="custom-checkbox">
                                                 <input type="checkbox" (ngModelChange)="calculatorDispatchOrder(item)"
                                                     [(ngModel)]="item.checked" name="chkItem{{i}}"
                                                     [disabled]="!flagNew" />
                                                 <span class="helping-el"></span>
                                             </label>
-                                        </td>
+                                        </td> -->
                                         <td>{{item.refNo}}</td>
                                         <td>{{item.feeCode}} - {{item.feeName}}</td>
                                         <td>{{item.contents}}</td>

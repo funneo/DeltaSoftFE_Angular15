@@ -28,6 +28,9 @@
         <button class="btn btn-primary btn-sm" (click)="edit()" [disabled]="!flagEdit">
           <i class="fa fa-edit"></i> Sửa
         </button>
+        <button class="btn btn-success btn-sm" (click)="exportExcel()">
+          <i class="fa fa-file-excel-o"></i> Xuất excel
+        </button>
         <!-- <button class="btn btn-danger btn-sm" (click)="deleteConfirm()" [disabled]="true">
           <i class="fa fa-trash"></i> Xóa
         </button> -->
@@ -114,4 +117,4 @@
 </modal-dispatchorder>
 <modal-dispatch-order-additional-fee *ngIf="viewModal" (SaveSuccess)="saveSuccess()"  (CloseModal)="closeModal()">
 </modal-dispatch-order-additional-fee>
-<!-- <div [ngBusy]="busy"></div> -->
+<div [ngBusy]="busy"></div>
