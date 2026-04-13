@@ -29,7 +29,6 @@ export class ModalPhieuChiLenhComponent implements OnInit {
     busy: Subscription;
     listBranch: Branch[];
     maskNumber = UtilityService.maskNumber;
-    listDispatchOrderFees: DispatchOrderFee[] = [];
     listEmployee: Employee[];
     _branchId: number;
     _employeeId: number;
@@ -42,6 +41,7 @@ export class ModalPhieuChiLenhComponent implements OnInit {
         false
     );
     listCurrencys = UtilityService.listCurrencys();
+    loadingFees: boolean = false;
 
     flagLink: boolean = false;
     selectedItem = false;
@@ -85,25 +85,28 @@ export class ModalPhieuChiLenhComponent implements OnInit {
         if (event) {
             this.loadDispatchOrderFees(event.id);
         } else {
-            this.listDispatchOrderFees = [];
+            this.entity.dispatchOrderFees = [];
             this.entity.amount = 0;
         }
     }
 
     loadDispatchOrderFees(employeeId: number) {
+        this.loadingFees = true;
         this.accountsService.getDriverPayments(employeeId).subscribe((res: ResponseValue<DispatchOrderFee[]>) => {
             if (res.code == '200' || res.code == '201') {
-                this.listDispatchOrderFees = res.data;
-                if (this.listDispatchOrderFees) {
+                this.entity.dispatchOrderFees = res.data;
+                if (this.entity.dispatchOrderFees) {
                     let total = 0;
-                    this.listDispatchOrderFees.forEach(x => {
-                        x.checked = true;
-                        total += x.totalCost ? x.totalCost : 0;
+                    this.entity.dispatchOrderFees.forEach(x => {
+                        total += x.amountAfterVat ? x.amountAfterVat : 0;
                     });
                     this.entity.amount = total;
-                    this.selectedItem = this.listDispatchOrderFees.length > 0;
+                    this.selectedItem = this.entity.dispatchOrderFees.length > 0;
                 }
             }
+            this.loadingFees = false;
+        }, () => {
+            this.loadingFees = false;
         });
     }
 
@@ -162,7 +165,7 @@ export class ModalPhieuChiLenhComponent implements OnInit {
         this.flagXem = false;
         this.flagSave = false;
         this.flagNew = true;
-        this.listDispatchOrderFees = [];
+        this.entity.dispatchOrderFees = [];
         this.modalAddEdit.show();
     }
 
@@ -189,20 +192,6 @@ export class ModalPhieuChiLenhComponent implements OnInit {
                 }
                 this.flagXem = flag;
                 this.flagSave = false;
-                this.listDispatchOrderFees = [];
-                if (this.entity.dispatchOrderFees && this.entity.dispatchOrderFees.length > 0) {
-                    this.listDispatchOrderFees = this.entity.dispatchOrderFees.map(it => {
-                        return {
-                            feeId: it.feeId,
-                            feeCode: it.feeCode,
-                            contents: it.contents,
-                            type: it.type,
-                            amount: it.amount,
-                            vat: it.vat,
-                            totalCost: it.totalCost
-                        }
-                    });
-                }
 
                 this.loadQuy();
                 this.loadEmployee();
@@ -224,30 +213,18 @@ export class ModalPhieuChiLenhComponent implements OnInit {
     checkAllDispatchOrder(ev) {
         this.selectedItem = false;
         let total = 0;
-        this.listDispatchOrderFees.forEach(it => {
-            it.checked = ev.target.checked;
-            if (it.checked) {
-                total += it.totalCost ? it.totalCost : 0;
-                this.selectedItem = true;
-            }
+        this.entity.dispatchOrderFees.forEach(it => {
+            total += it.totalCost ? it.totalCost : 0;
         });
         this.entity.amount = total;
     }
 
-    isAllDispatchOrderChecked() {
-        if (this.listDispatchOrderFees && this.listDispatchOrderFees.length > 0)
-            return this.listDispatchOrderFees.every(x => x.checked);
-        return false;
-    }
-
-    calculatorDispatchOrder(item: DispatchOrderFee) {
+    calculatorDispatchOrder(item: any) {
         this.selectedItem = false;
         let total = 0;
-        this.listDispatchOrderFees.forEach(it => {
-            if (it.checked) {
-                total += it.totalCost ? it.totalCost : 0;
-                this.selectedItem = true;
-            }
+        this.entity.dispatchOrderFees.forEach(it => {
+            total += it.totalCost ? it.totalCost : 0;
+            this.selectedItem = true;
         })
         this.entity.amount = total;
     }
@@ -264,23 +241,7 @@ export class ModalPhieuChiLenhComponent implements OnInit {
                     FormatContstants.CLIENTDATE
                 );
             this.entity.accountingDetails = [];
-
             this.entity.typeAccount = 2; //Phiếu chi lệnh
-            this.listDispatchOrderFees.forEach(it => {
-                //if (it.checked) {
-                let nItem: AcountDispatchOrderFees = {
-                    feeId: it.feeId,
-                    feeCode: it.feeCode,
-                    contents: it.contents,
-                    type: it.type,
-                    amount: it.cost,
-                    vat: it.vat,
-                    amountAfterVat: it.totalCost
-                }
-                this.entity.dispatchOrderFees.push(nItem);
-                //}
-            })
-
             if (this.entity.id == undefined) {
                 this.accountsService.createForDriver(this.entity).subscribe((res: ResponseValue<any>) => {
                     if (res.code == '200' || res.code == '201') {

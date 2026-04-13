@@ -149,14 +149,6 @@
                             <table class="table table-bordered">
                                 <thead>
                                     <tr>
-                                        <!-- <th class="table-checkbox" *ngIf="flagNew">
-                                            <label class="custom-checkbox">
-                                                <input type="checkbox" name="allOrder"
-                                                    [checked]="isAllDispatchOrderChecked()"
-                                                    (change)="checkAllDispatchOrder($event)" [disabled]="!flagNew" />
-                                                <span class="helping-el"></span>
-                                            </label>
-                                        </th> -->
                                         <th class="column-sm">Số lệnh</th>
                                         <th class="column-sm">Mã phí - Tên phí</th>
                                         <th class="column-ten">Nội dung</th>
@@ -166,22 +158,25 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr *ngFor="let item of listDispatchOrderFees; let i = index">
-                                        <!-- <td class="table-checkbox" *ngIf="flagNew">
-                                            <label class="custom-checkbox">
-                                                <input type="checkbox" (ngModelChange)="calculatorDispatchOrder(item)"
-                                                    [(ngModel)]="item.checked" name="chkItem{{i}}"
-                                                    [disabled]="!flagNew" />
-                                                <span class="helping-el"></span>
-                                            </label>
-                                        </td> -->
-                                        <td>{{item.refNo}}</td>
-                                        <td>{{item.feeCode}} - {{item.feeName}}</td>
-                                        <td>{{item.contents}}</td>
-                                        <td class="text-right">{{item.cost || 0 | VND}}</td>
-                                        <td class="text-right">{{item.vat || 0 | VND}}</td>
-                                        <td class="text-right">{{item.totalCost || 0 | VND}}</td>
+                                    <tr *ngIf="loadingFees">
+                                        <td colspan="100%" class="text-center" style="padding: 20px;">
+                                            <i class="fa fa-spinner fa-spin fa-fw fa-2x"></i>
+                                            <span class="sr-only">Đang tải...</span>
+                                        </td>
                                     </tr>
+                                    <ng-container *ngIf="!loadingFees">
+                                        <tr *ngFor="let item of (entity.dispatchOrderFees || []); let i = index">
+                                            <td>{{item.refNo}}</td>
+                                            <td>{{item.feeCode}} - {{item.feeName}}</td>
+                                            <td>{{item.contents}}</td>
+                                            <td class="text-right">{{item.amount || 0 | VND}}</td>
+                                            <td class="text-right">{{item.vat || 0 | VND}}</td>
+                                            <td class="text-right">{{item.amountAfterVat || 0 | VND}}</td>
+                                        </tr>
+                                        <tr *ngIf="!entity.dispatchOrderFees || entity.dispatchOrderFees.length === 0">
+                                            <td colspan="100%" class="text-center">Không có bản ghi nào được tìm thấy!</td>
+                                        </tr>
+                                    </ng-container>
                                 </tbody>
                             </table>
                         </div>

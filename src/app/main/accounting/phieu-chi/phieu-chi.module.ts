@@ -11,6 +11,7 @@ import { PhieuChiComponent } from './phieu-chi.component';
 import { PhieuChiRoutingModule } from './phieu-chi-routing.module';
 import { ModalPhieuChiModule } from '@app/shared/components/accounting/modal-phieu-chi/modal-phieu-chi.module';
 import { ModalPhieuChiMultiModule } from '@app/shared/components/accounting/modal-phieu-chi-multi/modal-phieu-chi-multi.module';
+import { ModalPhieuChiLenhModule } from '@app/shared/components/accounting/modal-phieu-chi-lenh/modal-phieu-chi-lenh.module';
 
 @NgModule({
   declarations: [PhieuChiComponent],
@@ -25,9 +26,10 @@ import { ModalPhieuChiMultiModule } from '@app/shared/components/accounting/moda
     PhieuChiRoutingModule,
     ModalPhieuChiModule,
     ModalPhieuChiMultiModule,
+    ModalPhieuChiLenhModule,
     Daterangepicker
   ],
-  providers:[
+  providers: [
     DatePipe,
   ]
 })

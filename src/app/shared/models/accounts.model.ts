@@ -4,12 +4,12 @@ import { AccountsPaymentDetail } from "./accounts-payment-detail.model";
 export interface Accounts {
   id?: number;
   branchId?: number;
-  accountBranchId?:number;
+  accountBranchId?: number;
   accountListId?: number;
   type?: number;
   refNo?: string;
   refDate?: string;
-  effectiveDate?:string;
+  effectiveDate?: string;
   employeeId?: number;
   customerId?: number;
   agencyId?: number;
@@ -38,11 +38,12 @@ export interface Accounts {
   tenDonVi?: string;
   tenQuy?: string;
   tenThuQuy?: string;
-  createdByName?:string;
-  paymentDetailId?:number;
-  accountType?:number;
-  typeAccount?:number;
-  advanceId?:number;
+  createdByName?: string;
+  paymentDetailId?: number;
+  accountType?: number;
+  typeAccount?: number;
+  advanceId?: number;
+  detailedType?: number;
   dispatchOrderFees?: AcountDispatchOrderFees[];
 }
 

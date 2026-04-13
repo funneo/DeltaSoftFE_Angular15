@@ -14,6 +14,7 @@ import { DatePipe } from '@angular/common';
 import { ExportService } from '@app/shared/services/export-excel.service';
 import { ModalPhieuChiMultiComponent } from '@app/shared/components/accounting/modal-phieu-chi-multi/modal-phieu-chi-multi.component';
 import { NgxSpinnerService } from 'ngx-spinner';
+import { ModalPhieuChiLenhComponent } from '@app/shared/components/accounting/modal-phieu-chi-lenh/modal-phieu-chi-lenh.component';
 
 @Component({
   selector: 'app-phieu-chi',
@@ -293,12 +294,20 @@ export class PhieuChiComponent implements OnInit {
   saveSuccess(): void {
     this.loadData();
   }
-
+  viewModalLenh: boolean = false;
+  @ViewChild(ModalPhieuChiLenhComponent, { static: false }) modalAddEditLenh: ModalPhieuChiLenhComponent;
   showModal(item: Accounts) {
-    this.viewModal = true;
-    setTimeout(() => {
-      this.modalAddEdit.edit(item.id.toString(), true);
-    }, 50);
+    if (item.detailedType == 2) {
+      this.viewModalLenh = true;
+      setTimeout(() => {
+        this.modalAddEditLenh.edit(item.id.toString(), true);
+      }, 50);
+    } else {
+      this.viewModal = true;
+      setTimeout(() => {
+        this.modalAddEdit.edit(item.id.toString(), true);
+      }, 50);
+    }
   }
 
   closeModal(): void {
@@ -306,7 +315,11 @@ export class PhieuChiComponent implements OnInit {
   }
 
   closeModalChi(): void {
-    this.viewModal = false;
+    this.viewModalChi = false;
+  }
+
+  closeModalLenh(): void {
+    this.viewModalLenh = false;
   }
 
   exportExcel(): void {
