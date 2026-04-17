@@ -1,0 +1,190 @@
+<div bsModal #modalRoutes="bs-modal" [config]="{backdrop: 'static'}" class="modal fade" tabindex="-1" role="dialog"
+     (onShown)="onModalShown()">
+  <div class="modal-dialog modal-lg" style="width: 82vw; max-width: 96vw;">
+    <div class="modal-content">
+
+      <!-- ═══ HEADER ═══ -->
+      <div class="modal-header bg-success" style="padding: 11px 18px;">
+        <h4 class="modal-title pull-left" style="color:#fff; font-size:15px; margin:0; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+          <i class="fa fa-map-signs"></i>
+          Chọn lộ trình &nbsp;<span style="opacity:.7; font-size:12px; font-weight:400;">(Vietmap API)</span>
+        </h4>
+        <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
+          <button type="button" class="close" (click)="modalRoutes.hide()"
+                  style="color:#fff; opacity:1; font-size:22px; background:none; border:none; padding:0 4px; line-height:1;">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══ BODY ═══ -->
+      <div class="modal-body" style="padding: 0; background: #f0f4fb;">
+        <div class="routes-layout">
+
+          <!-- ─── CỘT TRÁI ─── -->
+          <div class="routes-left-panel">
+
+            <!-- Loading overlay -->
+            <div *ngIf="flagGettingRoutes" class="loading-overlay">
+              <div class="loading-spinner"><i class="fa fa-spinner fa-spin fa-2x"></i></div>
+              <p>Đang tìm đường qua Vietmap API...</p>
+            </div>
+
+            <div *ngIf="!flagGettingRoutes && lstRoutes.length === 0" class="empty-state">
+              <i class="fa fa-exclamation-triangle fa-2x text-warning"></i>
+              <p style="margin-top:10px; color:#555;">Không tìm thấy lộ trình.</p>
+            </div>
+
+            <!-- Danh sách route -->
+            <ul *ngIf="!flagGettingRoutes && lstRoutes.length > 0" class="route-list">
+              <li class="route-item"
+                  *ngFor="let route of lstRoutes; let i = index"
+                  [class.active]="expandedRouteIndex === i"
+                  (click)="toggleRoute(i, $event)">
+
+                <div class="route-item-body">
+                  <div class="route-item-left">
+                    <div class="route-title">
+                      <span class="route-dot" [style.background]="'#1a73e8'"></span>
+                      <strong>Lộ trình thay thế</strong>
+                      <span class="badge-summary">{{ route.summary }}</span>
+                      <span class="badge-draggable">
+                        <i class="fa fa-hand-pointer-o"></i> Kéo điểm trung gian để đổi đường
+                      </span>
+                    </div>
+                    <div class="route-stats">
+                      <span class="route-stat-km"><i class="fa fa-car"></i> {{ route.distanceText }}</span>
+                      <span class="route-stat-time"><i class="fa fa-clock-o"></i> {{ route.durationText }}</span>
+                    </div>
+                  </div>
+                  <div class="route-item-right">
+                    <i class="fa" [ngClass]="expandedRouteIndex === i ? 'fa-chevron-up text-primary' : 'fa-chevron-down text-muted'"></i>
+                  </div>
+                </div>
+
+                 <!-- Nút Chọn -->
+                <button class="btn btn-sm btn-success route-select-btn"
+                        (click)="selectRoute(route); $event.stopPropagation()">
+                  <i class="fa fa-check"></i> Chọn
+                </button>
+
+                <!-- ── TOLL INFO ROW ── -->
+                <div class="toll-row">
+                  <ng-container *ngIf="route.tollLoading">
+                    <span class="toll-skeleton">
+                      <i class="fa fa-spinner fa-spin"></i> Đang tải thông tin trạm phí (Vietmap)...
+                    </span>
+                  </ng-container>
+
+                  <ng-container *ngIf="!route.tollLoading && route.tollInfo !== null && route.tollInfo !== undefined">
+                    <ng-container *ngIf="route.tollInfo!.totalCost && route.tollInfo!.totalCost !== '0'">
+                      <span class="toll-badge">
+                        <i class="fa fa-ticket"></i>
+                        {{ route.tollInfo!.stationCount > 0 ? route.tollInfo!.stationCount + ' trạm' : 'Có trạm thu phí' }}
+                      </span>
+                      <span class="toll-cost">
+                        <i class="fa fa-money"></i>
+                        ~{{ formatTollCost(route.tollInfo) }}
+                        <em style="font-size:10px; opacity:.7;">(Vietmap API)</em>
+                      </span>
+                    </ng-container>
+                    <ng-container *ngIf="!route.tollInfo!.totalCost && (!route.tollInfo!.vehicleCosts || route.tollInfo!.vehicleCosts.length === 0)">
+                      <span class="toll-badge toll-badge--none">
+                        <i class="fa fa-check-circle"></i> Không có trạm thu phí
+                      </span>
+                    </ng-container>
+                  </ng-container>
+                </div>
+
+                <!-- Danh sách hướng dẫn ngã rẽ (Steps) -->
+                <div class="route-steps" *ngIf="expandedRouteIndex === i && route.steps?.length > 0">
+                  <div class="route-step" *ngFor="let step of route.steps; let j = index">
+                    <div class="route-step-indicator">
+                      <span class="route-step-icon" 
+                            [class.step-start]="j === 0" 
+                            [class.step-end]="j === route.steps.length - 1"></span>
+                      <div class="route-step-line" *ngIf="j < route.steps.length - 1"></div>
+                    </div>
+                    <div class="route-step-content">
+                       <div [innerHTML]="step.instructions"></div>
+                       <span class="route-step-distance" *ngIf="step.distance">
+                         <i class="fa fa-arrows-h"></i> {{ step.distance }}
+                       </span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Bảng trạm phí -->
+                <div class="toll-stations-detail"
+                     *ngIf="expandedRouteIndex === i && route.tollInfo && route.tollInfo!.stations?.length > 0">
+                  <div class="toll-stations-title">
+                    <i class="fa fa-list text-warning"></i> Chi tiết trạm thu phí:
+                  </div>
+                  <div class="toll-station-item" *ngFor="let station of route.tollInfo!.stations; let si = index">
+                    <span class="toll-station-num">{{ si + 1 }}</span>
+                    <span class="toll-station-name">{{ station.name }}</span>
+                    <span class="toll-station-cost" *ngIf="station.cost">{{ station.cost }}</span>
+                    <span class="toll-station-cost text-muted" *ngIf="!station.cost">N/A</span>
+                  </div>
+                </div>
+
+                <!-- Bảng chi phí xe -->
+                <div class="vehicle-cost-table"
+                     *ngIf="expandedRouteIndex === i && route.tollInfo && route.tollInfo!.vehicleCosts?.length > 0">
+                  <div class="vehicle-cost-header">
+                    <span><i class="fa fa-table"></i> Biểu phí theo từng loại xe</span>
+                  </div>
+                  <table class="vehicle-tbl">
+                    <thead>
+                      <tr>
+                        <th style="width:30px"></th>
+                        <th>Loại xe</th>
+                        <th style="text-align:right">Cước phí</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let vc of route.tollInfo!.vehicleCosts" [class.row-estimated]="vc.isEstimated">
+                        <td class="veh-icon-cell"><i class="fa" [ngClass]="vc.icon"></i></td>
+                        <td>{{ vc.label }}</td>
+                        <td class="veh-cost-cell">
+                          <ng-container *ngIf="vc.cost !== null">
+                            <strong>{{ vc.cost | number:'1.0-0' }} ₫</strong>
+                          </ng-container>
+                          <span *ngIf="vc.cost === null" class="text-muted">–</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <div class="toll-note" *ngIf="route.tollInfo!.vehicleCosts[0]?.isEstimated">
+                     <i class="fa fa-info-circle text-info"></i>
+                     <em>Ước tính theo tỷ lệ của Vietmap hoặc tham chiếu.</em>
+                  </div>
+                </div>
+
+              </li>
+            </ul>
+          </div>
+
+          <!-- ─── CỘT PHẢI: BẢN ĐỒ (LUÔN HIỂN THỊ) ─── -->
+          <div class="routes-map-panel">
+            <div #mapContainer class="map-container"></div>
+            <div *ngIf="flagMapInitializing" class="map-init-overlay">
+              <i class="fa fa-map-o fa-3x text-muted"></i>
+              <p style="margin-top:10px; color:#888;">Đang tải Vietmap GL JS...</p>
+            </div>
+            
+            <!-- Chú thích cách thao tác trên map trực quan -->
+            <div style="position:absolute; bottom:20px; right:20px; padding:10px; background:rgba(255,255,255,0.9); border-radius:8px; box-shadow:0 2px 10px rgba(0,0,0,0.1); font-size:12px; z-index:9;">
+               <i class="fa fa-lightbulb-o text-warning"></i> <b>Hướng dẫn kéo thả</b><br/>
+               - Kéo cục mốc <span style="color:#28a745">Xanh lá (Đi)</span> hoặc <span style="color:#dc3545">Đỏ (Đến)</span> để đổi vị trí.<br/>
+               - <b>Click lên bản đồ</b> để thêm Điểm trung gian (<span style="color:#007bff">Xanh biển</span>).<br/>
+               - Tuyến đường sẽ tự tính lại sau 1s.
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

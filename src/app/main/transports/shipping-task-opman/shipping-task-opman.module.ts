@@ -18,6 +18,7 @@ import { ModalShippingTaskOpmanModule } from '@app/shared/components/transports/
 import { ModalDispatchOrderFclModule } from '@app/shared/components/transports/modal-dispatch-order-fcl/modal-dispatch-order-fcl.module';
 import { UtilityService } from '@app/shared/services';
 import { NgxMaskModule } from 'ngx-mask';
+import { ModalTransportOrderModule } from '@app/shared/components/transports/modal-transport-order/modal-transport-order.module';
 
 
 @NgModule({
@@ -39,6 +40,7 @@ import { NgxMaskModule } from 'ngx-mask';
     NgxSpinnerModule,
     NgxMaskModule.forRoot(UtilityService.maskConfig),
     ModalDispatchOrderFclModule,
+    ModalTransportOrderModule,
   ],providers:[
     DatePipe
   ]

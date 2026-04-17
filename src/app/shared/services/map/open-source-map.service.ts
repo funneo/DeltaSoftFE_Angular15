@@ -25,17 +25,29 @@ export class OpenSourceMapService extends BaseService {
    * Phương thức gọi qua Backend C# để xử lý OSRM (OpenSourceMap) API
    * Backend sẽ thay mặt gọi sang router.project-osrm.org
    */
-  getRoutesOSRM(originLat: number, originLng: number, destLat: number, destLng: number) {
+  getRoutesOSRM(
+    originLat: number,
+    originLng: number,
+    destLat: number,
+    destLng: number,
+    routePreferences?: {
+      avoidHighway?: boolean;
+      avoidTolls?: boolean;
+      avoidFerries?: boolean;
+      preferHighway?: boolean;
+      roadType?: 'all' | 'highway' | 'national' | 'provincial';
+    }
+  ) {
     let p: any = {};
     p.item = { 
         originLat: originLat,
         originLng: originLng,
         destLat: destLat,
-        destLng: destLng
+        destLng: destLng,
+        routePreferences: routePreferences || {}
     };
     p.tokenKey = this.token;
     
-    // Yêu cầu dev C# backend viết 1 controller OpenSourceMap tương tự GoogleMap
     return this.http.post(`${environment.apiUrl}/api/OpenSourceMap/get-routes`, p)
       .pipe(map((response: any) => {
         if (response.code == '401')

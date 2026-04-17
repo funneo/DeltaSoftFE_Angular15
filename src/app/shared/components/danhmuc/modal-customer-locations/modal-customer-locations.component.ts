@@ -5,6 +5,7 @@ import { AuthService, NotificationService, UtilityService } from '@app/shared/se
 import { CustomerLocationsService } from '@app/shared/services/danhmuc/customer-locations.service';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { ModalMapRoutesComponent } from '../modal-map-routes/modal-map-routes.component';
+import { ModalVietmapRoutesComponent } from '../modal-vietmap-routes/modal-vietmap-routes.component';
 import { Subscription } from 'rxjs';
 import { MessageContstants } from '@app/shared/constants';
 import { NgForm } from '@angular/forms';
@@ -27,6 +28,7 @@ export class ModalCustomerLocationsComponent implements OnInit {
   @Output() CloseModal: EventEmitter<any> = new EventEmitter;
   @ViewChild('modalAddEdit', { static: false }) modalAddEdit: ModalDirective;
   @ViewChild('modalRoutes', { static: false }) modalRoutes: ModalMapRoutesComponent;
+  @ViewChild('modalVietmapRoutes', { static: false }) modalVietmapRoutes: ModalVietmapRoutesComponent;
 
 
 
@@ -135,7 +137,7 @@ export class ModalCustomerLocationsComponent implements OnInit {
     });
   }
 
-  viewRoute() {
+  viewRouteGoogle() {
     const rawLat = this.entity.latitude;
     const rawLng = this.entity.longtitude;
 
@@ -150,20 +152,26 @@ export class ModalCustomerLocationsComponent implements OnInit {
     const destLat = 20.835485;
     const destLng = 106.726535;
 
-    // Call thẳng OpenSource (OSRM) luôn theo yêu cầu
+    // Gọi Google Maps Directions API trực tiếp (không qua backend C#)
     this.modalRoutes.show(lat, lng, destLat, destLng);
+  }
 
-    /* Lưu lại Google APIs để làm sau khi có api key hợp lệ
-    this.service.getRoutesWB(lat, lng, destLat, destLng).subscribe((res: ResponseValue<any>) => {
-      if ((res.code == '200' || res.code == '201') && res.data && res.data.length > 0) {
-          this.modalRoutes.showGoogle(res.data, lat, lng, destLat, destLng);
-      } else {
-          this.modalRoutes.show(lat, lng, destLat, destLng);
-      }
-    }, () => {
-       this.modalRoutes.show(lat, lng, destLat, destLng);
-    });
-    */
+  viewRouteVietmap() {
+    const rawLat = this.entity.latitude;
+    const rawLng = this.entity.longtitude;
+
+    const lat = parseFloat(rawLat?.toString()?.replace(/[^0-9.-]/g, ''));
+    const lng = parseFloat(rawLng?.toString()?.replace(/[^0-9.-]/g, ''));
+
+    if (isNaN(lat) || isNaN(lng)) {
+      this._notificationService.printErrorMessage(`Tọa độ không hợp lệ để tìm lộ trình!`);
+      return;
+    }
+
+    const destLat = 20.835485;
+    const destLng = 106.726535;
+
+    this.modalVietmapRoutes.show(lat, lng, destLat, destLng);
   }
 
   selectRoute(eventData: any) {

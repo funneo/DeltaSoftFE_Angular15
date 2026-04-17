@@ -1,0 +1,237 @@
+<div bsModal #modalMain="bs-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="dialog-sizes-name1"
+  (onShown)="onModalShown()" [config]="{backdrop: 'static'}">
+  <div class="modal-dialog modal-full">
+    <div class="modal-content overflow-hidden">
+      <div class="modal-header py-2 flex-shrink-0">
+        <h4 class="modal-title pull-left text-uppercase font-weight-bold">
+          <i class="fa fa-truck mr-2"></i> Lệnh Vận Chuyển Mới (Location-Based)
+        </h4>
+        <button type="button" class="close pull-right" (click)="hide()" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body p-0 d-flex flex-column overflow-hidden" style="height: calc(100vh - 60px);">
+
+        <!-- Main Layout: 2 Panels -->
+        <div class="d-flex flex-grow-1 overflow-hidden">
+
+          <!-- Left Panel: Data & Forms (Width 50-60%) -->
+          <div class="left-panel d-flex flex-column border-right overflow-auto" style="width: 55%; min-width: 600px;">
+            <div class="p-3">
+              <tabset [justified]="true" class="custom-tabs">
+
+                <!-- Tab 1: Thông tin cơ bản -->
+                <tab heading="Thông tin chung">
+                  <div class="mt-3">
+                    <div class="row mb-3">
+                      <div class="col-md-12">
+                        <div class="custom-control custom-checkbox custom-control-inline">
+                          <input type="checkbox" id="isSub" class="custom-control-input"
+                            [(ngModel)]="entity.isSubcontractors" (change)="onSubcontractorToggle()">
+                          <label class="custom-control-label font-weight-bold text-primary" for="isSub">Xe thuê ngoài
+                            (Subcontractor)</label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row">
+                      <div class="col-md-6" *ngIf="entity.isSubcontractors">
+                        <div class="form-group">
+                          <label>Chủ xe / Thầu phụ <span class="text-danger">*</span></label>
+                          <ng-select [items]="listSuppliers" bindLabel="supplierName" bindValue="id"
+                            [(ngModel)]="entity.shippingUnitId"></ng-select>
+                        </div>
+                      </div>
+                      <div class="col-md-6" *ngIf="entity.isSubcontractors">
+                        <div class="form-group">
+                          <label>Số xe ngoài <span class="text-danger">*</span></label>
+                          <input type="text" class="form-control" [(ngModel)]="entity.vehiclelLicensePlates">
+                        </div>
+                      </div>
+
+                      <div class="col-md-6" *ngIf="!entity.isSubcontractors">
+                        <div class="form-group">
+                          <label>Loại xe <span class="text-danger">*</span></label>
+                          <ng-select [items]="listVehicleTypes" bindLabel="categoryName" bindValue="id"
+                            [(ngModel)]="entity.vehicleType" (change)="onVehicleTypeChange($event)"></ng-select>
+                        </div>
+                      </div>
+                      <div class="col-md-6" *ngIf="!entity.isSubcontractors">
+                        <div class="form-group">
+                          <label>Số xe <span class="text-danger">*</span></label>
+                          <ng-select [items]="listVehicles" bindLabel="licensePlates" bindValue="id"
+                            [(ngModel)]="entity.vehicleId" (change)="onVehicleChange($event)"></ng-select>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label>Tài xế <span class="text-danger">*</span></label>
+                          <ng-select [items]="listDrivers" bindLabel="employeeFullName" bindValue="id"
+                            [(ngModel)]="entity.driverId" (change)="onDriverChange($event)"></ng-select>
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="form-group">
+                          <label>Số điện thoại</label>
+                          <input type="text" class="form-control" [(ngModel)]="entity.driverTel">
+                        </div>
+                      </div>
+                    </div>
+                    <div class="row">
+                      <div class="col-md-12">
+                        <div class="form-group">
+                          <label>Ghi chú</label>
+                          <textarea class="form-control" rows="2" [(ngModel)]="entity.note"></textarea>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </tab>
+
+                <!-- Tab 2: Lộ trình & Điểm dừng -->
+                <tab heading="Lộ trình & Điểm dừng">
+                  <div class="mt-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                      <label class="font-weight-bold mb-0">Thứ tự các điểm đi:</label>
+                      <div class="btn-group btn-group-sm">
+                        <button class="btn btn-outline-primary" [class.active]="fetchMode === 'history'"
+                          (click)="setFetchMode('history')">Lịch sử DB</button>
+                        <div class="btn-group btn-group-sm" dropdown>
+                          <button dropdownToggle type="button" class="btn btn-outline-secondary dropdown-toggle">
+                            API VietMap ({{fetchMode === 'api-seg' ? 'Từng cung' : 'Toàn trình'}})
+                          </button>
+                          <ul *dropdownMenu class="dropdown-menu" role="menu">
+                            <li role="menuitem"><a class="dropdown-item" (click)="setFetchMode('api-seg')">Theo từng
+                                cung (Parallel)</a></li>
+                            <li role="menuitem"><a class="dropdown-item" (click)="setFetchMode('api-full')">Toàn bộ lộ
+                                trình (Optimization)</a></li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Drag and Drop List -->
+                    <div cdkDropList class="location-list" (cdkDropListDropped)="onDropLocation($event)">
+                      <div class="location-box d-flex align-items-center p-2 mb-2 border rounded bg-light"
+                        *ngFor="let loc of locations; let i = index" cdkDrag>
+                        <div class="drag-handle mr-3" cdkDragHandle>
+                          <i class="fa fa-bars text-muted"></i>
+                        </div>
+                        <div class="marker-index mr-3">{{i + 1}}</div>
+                        <div class="flex-grow-1">
+                          <div class="font-weight-bold">{{loc.locationName}}</div>
+                          <small class="text-muted">{{loc.address}}</small>
+                        </div>
+                        <button class="btn btn-sm text-danger" (click)="removeLocation(i)"><i
+                            class="fa fa-trash"></i></button>
+                      </div>
+                    </div>
+
+                    <button class="btn btn-block btn-outline-success mt-2" (click)="addManualLocation()">
+                      <i class="fa fa-plus mr-1"></i> Thêm điểm dừng ngoài danh sách
+                    </button>
+                  </div>
+                </tab>
+
+                <!-- Tab 3: Chi tiết Cung & ETC -->
+                <tab heading="Tính toán Segment & ETC">
+                  <div class="mt-3 overflow-auto" style="max-height: 600px;">
+                    <div *ngFor="let seg of entity.segments; let i = index"
+                      class="segment-card border rounded p-3 mb-3 bg-white shadow-sm">
+                      <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="text-primary font-weight-bold">Chặng {{i+1}}: {{seg.startLocationName}} <i
+                            class="fa fa-arrow-right mx-1"></i> {{seg.endLocationName}}</h6>
+                        <div class="form-inline">
+                          <label class="mr-2">Distance (km):</label>
+                          <input type="number" class="form-control form-control-sm w-80" [(ngModel)]="seg.distanceKm"
+                            (change)="calculateTotal()">
+                        </div>
+                      </div>
+
+                      <!-- ETC Table for this segment -->
+                      <table class="table table-sm table-bordered mt-2 mb-0">
+                        <thead class="bg-light small">
+                          <tr>
+                            <th>Trạm thu phí</th>
+                            <th width="120">Giá tiền (5 loại xe)</th>
+                            <th width="40"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let etc of seg.listEtc; let j = index">
+                            <td><input type="text" class="form-control form-control-sm border-0 bg-transparent"
+                                [(ngModel)]="etc.stationName"></td>
+                            <td><input type="number"
+                                class="form-control form-control-sm border-0 bg-transparent text-right"
+                                [(ngModel)]="etc.price" (change)="calculateTotal()"></td>
+                            <td class="text-center">
+                              <i class="fa fa-times text-danger cursor-pointer" (click)="removeEtc(i, j)"></i>
+                            </td>
+                          </tr>
+                          <tr class="bg-lighter">
+                            <td colspan="3" class="text-center">
+                              <button class="btn btn-xs btn-link text-success" (click)="addManualEtc(i)">
+                                <i class="fa fa-plus"></i> Thêm trạm vé thủ công
+                              </button>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </tab>
+
+                <!-- Tab 4: Phí phát sinh -->
+                <tab heading="Phí phát sinh">
+                  <!-- Similar to existing fee tab logic -->
+                </tab>
+              </tabset>
+            </div>
+
+            <!-- Footer of Left Panel -->
+            <div class="mt-auto p-3 border-top bg-light">
+              <div class="row align-items-center">
+                <div class="col">
+                  <div class="d-flex text-dark small font-weight-bold">
+                    <div class="mr-4">Tổng Km: <span class="text-primary">{{entity.tongKm | number:'1.0-2'}} km</span>
+                    </div>
+
+                  </div>
+                  <div class="col-auto">
+                    <button class="btn btn-secondary mr-2" (click)="hide()">Hủy</button>
+                    <button class="btn btn-primary" (click)="save()">Lưu Lệnh Vận Chuyển</button>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right Panel: Map (Width 40-50%) -->
+            <div class="right-panel flex-grow-1 bg-dark relative">
+              <div id="vietmap" class="w-100 h-100"></div>
+
+              <!-- Map Overlays -->
+              <div class="map-loading" *ngIf="isMapLoading">
+                <div class="spinner-border text-light" role="status"></div>
+              </div>
+
+              <div class="map-legend p-2 rounded bg-white m-2 shadow-sm border small"
+                style="position: absolute; bottom: 10px; right: 10px; z-index: 1000;">
+                <div class="d-flex align-items-center mb-1"><span class="marker-dot bg-success mr-2"></span> Điểm xuất
+                  phát</div>
+                <div class="d-flex align-items-center mb-1"><span class="marker-dot bg-warning mr-2"></span> Điểm dừng
+                  chân</div>
+                <div class="d-flex align-items-center"><span class="marker-dot bg-danger mr-2"></span> Điểm kết thúc
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>

@@ -88,10 +88,14 @@
                     <input type="text" [(ngModel)]="entity.distanceToWB" [mask]="mask0"
                       name="distanceToWB" class="form-control" placeholder="Nhập khoảng cách"
                       [readonly]="flagXem" />
-                    <span class="input-group-btn">
-                      <button type="button" class="btn btn-primary btn-flat btn-sm" (click)="viewRoute()" 
-                        title="Xem đường đi trên bản đồ">
-                        <i class="fa fa-map"></i> Vẽ đường
+                    <span class="input-group-btn" style="display:flex;">
+                      <button type="button" class="btn btn-info btn-flat btn-sm" (click)="viewRouteGoogle()"
+                        title="Xem đường đi trên Google Maps" style="margin-right:2px;">
+                        <i class="fa fa-map-marker"></i> Google
+                      </button>
+                      <button type="button" class="btn btn-success btn-flat btn-sm" (click)="viewRouteVietmap()"
+                        title="Xem đường đi trên Vietmap">
+                        <i class="fa fa-map"></i> Vietmap
                       </button>
                     </span>
                   </div>
@@ -124,3 +128,4 @@
 </div>
 
 <modal-map-routes #modalRoutes (RouteSelected)="selectRoute($event)"></modal-map-routes>
+<modal-vietmap-routes #modalVietmapRoutes (RouteSelected)="selectRoute($event)"></modal-vietmap-routes>

@@ -5,6 +5,7 @@ import { ModalAttachfileComponent } from '@app/shared/components/systems/modal-a
 import { ModalDispatchOrderFclComponent } from '@app/shared/components/transports/modal-dispatch-order-fcl/modal-dispatch-order-fcl.component';
 import { ModalShippingTaskCsComponent } from '@app/shared/components/transports/modal-shipping-task-cs/modal-shipping-task-cs.component';
 import { ModalShippingTaskOpmanComponent } from '@app/shared/components/transports/modal-shipping-task-opman/modal-shipping-task-opman.component';
+import { ModalTransportOrderComponent } from '@app/shared/components/transports/modal-transport-order/modal-transport-order.component';
 import { MessageContstants } from '@app/shared/constants';
 import { Customer, Branch, Profile, ResponseValue, OtherCategories } from '@app/shared/models';
 import { ShippingTask } from '@app/shared/models/transports/shipping-task.model';
@@ -53,11 +54,13 @@ export class ShippingTaskOpmanComponent implements OnInit {
   public ngayKetThuc: Date = this._utilityService.ngayKetThuc;
   public dateOptions = this._utilityService.dateOptionMultis(this.ngayBatDau, this.ngayKetThuc);
   viewModalDispatchOrder:boolean=false;
+  viewModalTransportOrder: boolean = false;
   filterColumns: { [key: string]: string } = {};
 
   maskNumber = UtilityService.maskNumber;
 
   @ViewChild(ModalDispatchOrderFclComponent, { static: false }) modalDispatchOrder: ModalDispatchOrderFclComponent
+  @ViewChild(ModalTransportOrderComponent, { static: false }) modalTransportOrder: ModalTransportOrderComponent;
   @ViewChild(ModalShippingTaskCsComponent, { static: false }) modalAddEdit: ModalShippingTaskCsComponent
   @ViewChild(ModalShippingTaskOpmanComponent, { static: false }) modalOpManEdit: ModalShippingTaskOpmanComponent
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttachFile: ModalAttachfileComponent
@@ -290,6 +293,13 @@ export class ShippingTaskOpmanComponent implements OnInit {
       this.modalDispatchOrder.add(listChecks);
     }, 50);
   }
+  createTransportOrder(): void {
+    let listChecks = this.listWorkflow.filter(x => x.checked);
+    this.viewModalTransportOrder = true;
+    setTimeout(() => {
+      this.modalTransportOrder.add(listChecks);
+    }, 50);
+  }
 
   delete(id: number): void {
     this.service.delete(id).subscribe((res: ResponseValue<any>) => {
@@ -318,6 +328,9 @@ export class ShippingTaskOpmanComponent implements OnInit {
   }
   closeModalDispatchOrder(): void {
     this.viewModalDispatchOrder = false;
+  }
+  closeModalTransportOrder(): void {
+    this.viewModalTransportOrder = false;
   }
 
 }

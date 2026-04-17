@@ -56,6 +56,7 @@ import { BankService } from './bank.service';
 import { VietQrService } from './viet-qr.service';
 import { OnBehalfPaymentService } from './on-behalf-payment.service';
 import { OpenSourceMapService } from './map/open-source-map.service';
+import { VihicleService } from './vihicle.service';
 
 export {
   AuthService,
@@ -115,6 +116,7 @@ export {
   BankService,
   VietQrService,
   OnBehalfPaymentService,
-  OpenSourceMapService
+  OpenSourceMapService,
+  VihicleService
 }
 export * from './canon-quotationsubcontractors.service';
