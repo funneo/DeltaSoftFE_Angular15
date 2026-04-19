@@ -38,15 +38,15 @@ export class ModalShippingTaskCsComponent implements OnInit {
   public endTime?: string;
   public checked?: boolean = false;
   public viewAttackFiles?: boolean = false;
-  listTypeOfLiffingOrder:any[]=[{id:0,value:'Điện tử'},{id:1,value:'Giấy'}];
-  listType:any[]=[{id:0,value:'FCL'},{id:1,value:'LCL'}];
+  listTypeOfLiffingOrder: any[] = [{ id: 0, value: 'Điện tử' }, { id: 1, value: 'Giấy' }];
+  listType: any[] = [{ id: 0, value: 'FCL' }, { id: 1, value: 'LCL' }];
   listShipmentType: OtherCategories[];
   listContTypes: OtherCategories[];
   listImportExports: OtherCategories[];
-  listTransportCategoryType:TransportCategory[]=[];
+  listTransportCategoryType: TransportCategory[] = [];
   viewSearchJobId = false;
-  shipmentSelected:Shipment = {};
-  customerName='';
+  shipmentSelected: Shipment = {};
+  customerName = '';
   ngaybatdauOption = this._utilityService.dateTimeOptionDays(
     new Date(),
     true
@@ -72,18 +72,18 @@ export class ModalShippingTaskCsComponent implements OnInit {
   public listHandlingGroup: Handlinggroup[];
   public listShipment: Shipment[];
   public handlingGroupId?: number;
-  public listContype:OtherCategories[]=[];
+  public listContype: OtherCategories[] = [];
   public customerId?: number;
   public customerCode?: string;
   public jobgroupId?: number;
   public busy: Subscription;
-  public listShipBrand:OtherCategories[];
-  public listCFS:Ports[]=[];
-  listEmployee: Employee[]=[];
-  listLocations:CustomerLocations[]=[];
-  viewContSeals:boolean=false;
+  public listShipBrand: OtherCategories[];
+  public listCFS: Ports[] = [];
+  listEmployee: Employee[] = [];
+  listLocations: CustomerLocations[] = [];
+  viewContSeals: boolean = false;
   maskNumber = UtilityService.maskNumber;
-  isEport=false;
+  isEport = false;
   public dateFields = [
     { field: 'estimatedStartTime', optionField: 'ngaybatdauOption' },
     { field: 'estimatedFinishTime', optionField: 'ngayhoanthanhOption' },
@@ -100,15 +100,15 @@ export class ModalShippingTaskCsComponent implements OnInit {
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent
   @ViewChild(ModalShipmentViewSearchComponent, { static: false }) modalListShipment: ModalShipmentViewSearchComponent
   @ViewChild(ModalListContSealComponent, { static: false }) modalListContSeals: ModalListContSealComponent
-  constructor(private notificationService: NotificationService 
+  constructor(private notificationService: NotificationService
     , private handlingGroupService: HandlinggroupService, private customerService: CustomerService
     , private service: ShippingTaskService, private _authService: AuthService
     , private otherCategoryService: OtherCategoriesService
     , private _utilityService: UtilityService
-    , private _transportCategoryService:TransportCategoryService
-    , private _employeeService:EmployeeService
-    , private _customerLocationService:CustomerLocationsService
-    , private _portsService:PortsService
+    , private _transportCategoryService: TransportCategoryService
+    , private _employeeService: EmployeeService
+    , private _customerLocationService: CustomerLocationsService
+    , private _portsService: PortsService
   ) { }
 
   ngOnInit(): void {
@@ -119,12 +119,12 @@ export class ModalShippingTaskCsComponent implements OnInit {
     this.loadEmployee()
     this.loadPorts();
     //List danh sách các trường ngày tháng trong form
-    
+
   }
 
   loadEmployee() {
     const params = new HttpParams()
-    .set('branchId',this.userLoged.branchId?.toString());
+      .set('branchId', this.userLoged.branchId?.toString());
     this._employeeService.getAll(params).subscribe((res: ResponseValue<Employee[]>) => {
       this.listEmployee = res.data;
     });
@@ -135,14 +135,14 @@ export class ModalShippingTaskCsComponent implements OnInit {
       .set('type', null);
     this.otherCategoryService.getAll(params).subscribe((res: ResponseValue<OtherCategories[]>) => {
       this.listContTypes = res.data.filter(x => x.type === 'SHIPMENT_T04');
-        this.listShipmentType = res.data.filter(x => x.type === 'SHIPMENT_T02');
-        this.listImportExports = res.data.filter(x => x.type === 'SHIPMENT_T03');
-        this.listToughness = res.data.filter(x => x.type === 'TOUGH');
-        this.listShipBrand = res.data.filter(x => x.type === 'HANGTAU');
+      this.listShipmentType = res.data.filter(x => x.type === 'SHIPMENT_T02');
+      this.listImportExports = res.data.filter(x => x.type === 'SHIPMENT_T03');
+      this.listToughness = res.data.filter(x => x.type === 'TOUGH');
+      this.listShipBrand = res.data.filter(x => x.type === 'HANGTAU');
     });
 
   }
-  
+
   listPorts: Ports[] = [];
   loadPorts(): void {
     this.busy = this._portsService.getAll().subscribe((res: ResponseValue<Ports[]>) => {
@@ -152,14 +152,14 @@ export class ModalShippingTaskCsComponent implements OnInit {
     });
   }
 
-  loadLocations(customerId:number){
-    this.busy = this._customerLocationService.getAll(customerId,true).subscribe((res: ResponseValue<CustomerLocations[]>) => {
+  loadLocations(customerId: number) {
+    this.busy = this._customerLocationService.getAll(customerId, true).subscribe((res: ResponseValue<CustomerLocations[]>) => {
       if (res.code == '200' || res.code == '201') {
         this.listLocations = res.data
-      }else this.listLocations=[];
+      } else this.listLocations = [];
     });
   }
-  
+
   loadCustomer(): void {
     const params = new HttpParams()
     this.busy = this.customerService.getAll(params).subscribe((res: ResponseValue<Customer[]>) => {
@@ -184,21 +184,21 @@ export class ModalShippingTaskCsComponent implements OnInit {
   }
 
 
-  add(item:ShippingTask,flag:boolean) {
-    this.entity=item;
-    this.entity.status=0;
-    if(!flag){
+  add(item: ShippingTask, flag: boolean) {
+    this.entity = item;
+    this.entity.status = 0;
+    if (!flag) {
       this.customerId = item.customerId;
       this.customerCode = item.customerCode;
-      this.customerName=item.customerName;
+      this.customerName = item.customerName;
       this.loadLocations(this.customerId);
-      this.isEport=this.entity.shipmentType==1174;
-      this.checked=this.entity.status>0;
+      this.isEport = this.entity.shipmentType == 1174;
+      this.checked = this.entity.status > 0;
       this.dateFields.forEach(({ field, optionField }) => {
         this._utilityService.formatAndSetDateTime(this.entity, field, optionField);
       });
-    }else{
-      this.entity.jobToughness=3
+    } else {
+      this.entity.jobToughness = 3
     }
     this.flagNew = true;
     this.flagXem = false;
@@ -214,11 +214,11 @@ export class ModalShippingTaskCsComponent implements OnInit {
         //this.flagSave = this.entity.status === 1;
         this.customerId = this.entity.customerId;
         this.loadLocations(this.customerId);
-        this.customerCode = this.entity.customerCode;  
-        this.isEport=this.entity.shipmentType==1174;
-        this.checked=this.entity.status>0;
+        this.customerCode = this.entity.customerCode;
+        this.isEport = this.entity.shipmentType == 1174;
+        this.checked = this.entity.status > 0;
         //Nếu lập lệnh VC rồi thì ko cho sửa nữa
-        if(this.entity.refNo?.length>0)this.flagXem=true;
+        if (this.entity.refNo?.length > 0) this.flagXem = true;
         this.dateFields.forEach(({ field, optionField }) => {
           this._utilityService.formatAndSetDateTime(this.entity, field, optionField);
         });
@@ -237,7 +237,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
         this.notificationService.printErrorMessage(MessageContstants.ENDTIME_NOT_LARGER_THAN_STARTTIME);
         return;
       }
-      this.entity.status=this.checked?1:0;
+      this.entity.status = this.checked ? 1 : 0;
       this.flagSave = true;
       //Nếu là tạo mới công việc thì id chưa khởi tạo
       if (this.entity.id == undefined) {
@@ -250,7 +250,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
             this.notificationService.printSuccessMessage(MessageContstants.CREATED_OK_MSG);
             this.SaveSuccess.emit(res.data);
           } else {
-            this.notificationService.printErrorMessage(MessageContstants.CREATED_ERR_MSG + '\n' + res.code +'\n'+res.message);
+            this.notificationService.printErrorMessage(MessageContstants.CREATED_ERR_MSG + '\n' + res.code + '\n' + res.message);
             this.flagSave = false;
           }
         });
@@ -276,14 +276,14 @@ export class ModalShippingTaskCsComponent implements OnInit {
     }
   }
 
-  saveAndNew(form:NgForm){
+  saveAndNew(form: NgForm) {
     if (form.valid) {
       if (this.endTime < this.startTime) {
         this.notificationService.printErrorMessage(MessageContstants.ENDTIME_NOT_LARGER_THAN_STARTTIME);
         return;
       }
       this.flagSave = true;
-      this.entity.status=this.checked?1:0;
+      this.entity.status = this.checked ? 1 : 0;
       //Nếu là tạo mới công việc thì id chưa khởi tạo
       if (this.entity.id == undefined) {
         this.entity.branchId = Number.parseInt(this.userLoged.branchId);
@@ -291,15 +291,15 @@ export class ModalShippingTaskCsComponent implements OnInit {
         this.service.add(this.entity).subscribe((res: ResponseValue<any>) => {
           if (res.code == '200' || res.code == '201') {
             //Đoạn này xóa hết các dữ liệu hiện có sau khi thêm mới thành công
-            this.entity.id=undefined;
-            this.entity.handlingGroupId=null;
-            this.entity.estimatedStartTime=null;
-            this.entity.estimatedFinishTime=null;
+            this.entity.id = undefined;
+            this.entity.handlingGroupId = null;
+            this.entity.estimatedStartTime = null;
+            this.entity.estimatedFinishTime = null;
             this.notificationService.printSuccessMessage(MessageContstants.CREATED_OK_MSG);
-            this.flagNew=true;
-            this.flagSave=false;
+            this.flagNew = true;
+            this.flagSave = false;
           } else {
-            this.notificationService.printErrorMessage(MessageContstants.CREATED_ERR_MSG + '\n' + res.code +'\n'+res.message);
+            this.notificationService.printErrorMessage(MessageContstants.CREATED_ERR_MSG + '\n' + res.code + '\n' + res.message);
             this.flagSave = false;
           }
         }, () => {
@@ -313,16 +313,16 @@ export class ModalShippingTaskCsComponent implements OnInit {
           if (res.code == '200' || res.code == '201') {
             //Update xong thì xóa hết entity đi để tạo mới
             this.notificationService.printSuccessMessage(MessageContstants.UPDATED_OK_MSG);
-            this.entity.id=undefined;
-            this.entity.customerId=null;
-            this.entity.jobId=null;
-            this.entity.handlingGroupId=null;
-            this.entity.jobToughness=null;
-            this.entity.estimatedStartTime=null;
-            this.entity.estimatedFinishTime=null;
-            this.customerCode=null
-            this.flagNew=true;
-            this.flagSave=false;
+            this.entity.id = undefined;
+            this.entity.customerId = null;
+            this.entity.jobId = null;
+            this.entity.handlingGroupId = null;
+            this.entity.jobToughness = null;
+            this.entity.estimatedStartTime = null;
+            this.entity.estimatedFinishTime = null;
+            this.customerCode = null
+            this.flagNew = true;
+            this.flagSave = false;
           }
           else {
             this.notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG + res.code);
@@ -335,17 +335,17 @@ export class ModalShippingTaskCsComponent implements OnInit {
     }
   }
 
-  changepickupLocationExport(event:CustomerLocations){
-    this.entity.pickupLocation=event?.address;
+  changepickupLocationExport(event: CustomerLocations) {
+    this.entity.pickupLocation = event?.address;
   }
-  changepickupLocationImport (event:Ports){
-    this.entity.pickupLocation=event.name;
+  changepickupLocationImport(event: Ports) {
+    this.entity.pickupLocation = event.name;
   }
-  changedeliveryLocationImport(event:CustomerLocations){
-    this.entity.deliveryLocation=event?.address;
+  changedeliveryLocationImport(event: CustomerLocations) {
+    this.entity.deliveryLocation = event?.address;
   }
-  changedeliveryLocationExport (event:Ports){
-    this.entity.deliveryLocation=event.name;
+  changedeliveryLocationExport(event: Ports) {
+    this.entity.deliveryLocation = event.name;
   }
   attack() {
     this.viewAttackFiles = true;
@@ -355,7 +355,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
       refNo: this.entity.id.toString()
     }
     setTimeout(() => {
-      this.modalAttackFiles.edit(item, this.entity.createdBy!=this.userLoged.id);
+      this.modalAttackFiles.edit(item, this.entity.createdBy != this.userLoged.id);
     }, 50);
   }
 
@@ -369,12 +369,12 @@ export class ModalShippingTaskCsComponent implements OnInit {
       this.modalListContSeals.view(this.entity.shipmentId);
     }, 50);
   }
-  saveSuccessContSeal(event:ShipmentContSeal){
-    this.entity.containerNumber=event?.contNo;
-    this.entity.sealNumber=event?.sealNo;
-    this.entity.contType=event?.contType;
-    this.entity.weight=event?.gw?.toString();
-  } 
+  saveSuccessContSeal(event: ShipmentContSeal) {
+    this.entity.containerNumber = event?.contNo;
+    this.entity.sealNumber = event?.sealNo;
+    this.entity.contType = event?.contType;
+    this.entity.weight = event?.gw?.toString();
+  }
   closeShipmentContSealsModal() {
     this.viewContSeals = false;
   }
@@ -423,7 +423,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
     if (this.entity.detentionTime == null)
       this.entity.detentionTime = moment(event.oldStartDate).format('DD/MM/YYYY HH:mm:ss');
   }
-  
+
   selectedcutOffTime(event) {
     this.entity.cutOffTime = moment(event.start).format('DD/MM/YYYY HH:mm:ss');
   }
@@ -431,7 +431,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
     if (this.entity.cutOffTime == null)
       this.entity.cutOffTime = moment(event.oldStartDate).format('DD/MM/YYYY HH:mm:ss');
   }
-  
+
   toughessChanged(event: OtherCategories) {
     this.entity.jobToughnessName = event?.categoryName;
   }
@@ -439,16 +439,16 @@ export class ModalShippingTaskCsComponent implements OnInit {
   changedCustomer(event: Customer) {
     this.customerId = event?.id;
     this.customerCode = event.customerCode;
-    this.customerName=event.customerName;
+    this.customerName = event.customerName;
     this.entity.jobId = null;
     this.entity.weight = null;
-    this.entity.shipmentType=null;
-    this.entity.shipmentId=null;
-    this.entity.billBooking=null;
+    this.entity.shipmentType = null;
+    this.entity.shipmentId = null;
+    this.entity.billBooking = null;
     this.loadLocations(this.customerId);
-    this.entity.informationOfSurchargeInvoice=event?.informationOfSurchargeInvoice;
-    this.entity.informationOnContainerLiffInvoice=event?.informationOnContainerLiffInvoice;
-    this.entity.externalInformationOnContainerLiffInvoice=event?.externalInformationOnContainerLiffInvoice;
+    this.entity.informationOfSurchargeInvoice = event?.informationOfSurchargeInvoice;
+    this.entity.informationOnContainerLiffInvoice = event?.informationOnContainerLiffInvoice;
+    this.entity.externalInformationOnContainerLiffInvoice = event?.externalInformationOnContainerLiffInvoice;
   }
 
   searchCustomer() {
@@ -457,52 +457,52 @@ export class ModalShippingTaskCsComponent implements OnInit {
       this.entity.customerId = this.listCustomer[value].id;
       this.customerId = this.listCustomer[value].id;
       this.customerCode = this.listCustomer[value].customerCode;
-      this.customerName=this.listCustomer[value].customerName;
+      this.customerName = this.listCustomer[value].customerName;
     } else {
       this.entity.customerId = 0;
       this.customerCode = '';
       this.customerId = 0;
-      this.customerName='';
+      this.customerName = '';
     }
   }
 
-  changedTaskType(event:any){
-    if(event?.id==0)this.entity.weight=null
-    else this.entity.contType=null; 
+  changedTaskType(event: any) {
+    if (event?.id == 0) this.entity.weight = null
+    else this.entity.contType = null;
   }
 
-  selectedContNo(event:ShipmentContSeal){
-    this.entity.sealNumber=event?.sealNo;
-    let contType=event?.contType;
-    let index=this.listContype.find(it=>{
-      it.categoryName===contType;
+  selectedContNo(event: ShipmentContSeal) {
+    this.entity.sealNumber = event?.sealNo;
+    let contType = event?.contType;
+    let index = this.listContype.find(it => {
+      it.categoryName === contType;
     })
-    if(index)this.entity.contType=index.categoryCode;
+    if (index) this.entity.contType = index.categoryCode;
   }
   saveSuccessJobId(event: Shipment) {
-    this.shipmentSelected=event;
-    const allowedShipmentTypes = [1174, 1175, 1177,46];
-    if(allowedShipmentTypes.includes(this.shipmentSelected.shipmentType)){
+    this.shipmentSelected = event;
+    const allowedShipmentTypes = [1174, 1175, 1177, 46];
+    if (allowedShipmentTypes.includes(this.shipmentSelected.shipmentType)) {
       this.entity.jobId = event.jobId;
       this.entity.weight = event.weight?.toString();
-      this.entity.shipmentType=event.shipmentType;
-      this.entity.shipmentId=event.id;
-      this.entity.billBooking=event.bookingNo;
-      this.isEport=this.shipmentSelected.shipmentType==1174;
+      this.entity.shipmentType = event.shipmentType;
+      this.entity.shipmentId = event.id;
+      this.entity.billBooking = event.bookingNo;
+      this.isEport = this.shipmentSelected.shipmentType == 1174;
     }
-      else{
-        this.shipmentSelected=null;
-        this.notificationService.printAlert(MessageContstants.TITLE_INFO,"Loại hình Job không phải là SE,SI,DS, kiểm tra lại!");
-      }
+    else {
+      this.shipmentSelected = null;
+      this.notificationService.printAlert(MessageContstants.TITLE_INFO, "Loại hình Job không phải là SE,SI,DS, kiểm tra lại!");
+    }
   }
-  
+
   getJobId() {
     this.viewSearchJobId = true;
     setTimeout(() => {
-      this.modalListShipment.view(this.entity.customerId, Number.parseInt(this.userLoged.branchId),0);
+      this.modalListShipment.view(this.entity.customerId, Number.parseInt(this.userLoged.branchId), 0);
     }, 50);
   }
-  
+
   OnHidden() {
     this.CloseModal.emit();
   }

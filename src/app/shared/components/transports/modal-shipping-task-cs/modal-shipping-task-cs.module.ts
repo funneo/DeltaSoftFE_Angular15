@@ -33,6 +33,6 @@ import { UtilityService } from '@app/shared/services';
     ModalShipmentViewSearchModule,
     ModalAttachfileModule,
     ModalListContSealModule
-  ],exports:[ModalShippingTaskCsComponent]
+  ], exports: [ModalShippingTaskCsComponent]
 })
 export class ModalShippingTaskCsModule { }

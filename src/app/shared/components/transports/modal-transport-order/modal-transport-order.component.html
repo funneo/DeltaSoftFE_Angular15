@@ -1,237 +1,580 @@
-<div bsModal #modalMain="bs-modal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="dialog-sizes-name1"
-  (onShown)="onModalShown()" [config]="{backdrop: 'static'}">
+<div bsModal #modalMain="bs-modal" class="modal fade" tabindex="-1" role="dialog"
+  [config]="{backdrop: 'static'}" (onShown)="onModalShown()">
   <div class="modal-dialog modal-full">
-    <div class="modal-content overflow-hidden">
-      <div class="modal-header py-2 flex-shrink-0">
-        <h4 class="modal-title pull-left text-uppercase font-weight-bold">
-          <i class="fa fa-truck mr-2"></i> Lệnh Vận Chuyển Mới (Location-Based)
-        </h4>
-        <button type="button" class="close pull-right" (click)="hide()" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
+    <div class="modal-content">
+
+      <!-- HEADER -->
+      <div class="to-header">
+        <div class="to-header-title">
+          <i class="fa fa-truck"></i>
+          <span>Lập Lệnh Vận Chuyển</span>
+          <span class="to-header-badge" *ngIf="entity.listDetailed?.length">
+            {{ entity.listDetailed.length }} công việc
+          </span>
+        </div>
+        <button type="button" class="to-close-btn" (click)="hide()">
+          <i class="fa fa-times"></i>
         </button>
       </div>
-      <div class="modal-body p-0 d-flex flex-column overflow-hidden" style="height: calc(100vh - 60px);">
 
-        <!-- Main Layout: 2 Panels -->
-        <div class="d-flex flex-grow-1 overflow-hidden">
+      <!-- BODY: 3 cột -->
+      <div class="to-body">
 
-          <!-- Left Panel: Data & Forms (Width 50-60%) -->
-          <div class="left-panel d-flex flex-column border-right overflow-auto" style="width: 55%; min-width: 600px;">
-            <div class="p-3">
-              <tabset [justified]="true" class="custom-tabs">
-
-                <!-- Tab 1: Thông tin cơ bản -->
-                <tab heading="Thông tin chung">
-                  <div class="mt-3">
-                    <div class="row mb-3">
-                      <div class="col-md-12">
-                        <div class="custom-control custom-checkbox custom-control-inline">
-                          <input type="checkbox" id="isSub" class="custom-control-input"
-                            [(ngModel)]="entity.isSubcontractors" (change)="onSubcontractorToggle()">
-                          <label class="custom-control-label font-weight-bold text-primary" for="isSub">Xe thuê ngoài
-                            (Subcontractor)</label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-6" *ngIf="entity.isSubcontractors">
-                        <div class="form-group">
-                          <label>Chủ xe / Thầu phụ <span class="text-danger">*</span></label>
-                          <ng-select [items]="listSuppliers" bindLabel="supplierName" bindValue="id"
-                            [(ngModel)]="entity.shippingUnitId"></ng-select>
-                        </div>
-                      </div>
-                      <div class="col-md-6" *ngIf="entity.isSubcontractors">
-                        <div class="form-group">
-                          <label>Số xe ngoài <span class="text-danger">*</span></label>
-                          <input type="text" class="form-control" [(ngModel)]="entity.vehiclelLicensePlates">
-                        </div>
-                      </div>
-
-                      <div class="col-md-6" *ngIf="!entity.isSubcontractors">
-                        <div class="form-group">
-                          <label>Loại xe <span class="text-danger">*</span></label>
-                          <ng-select [items]="listVehicleTypes" bindLabel="categoryName" bindValue="id"
-                            [(ngModel)]="entity.vehicleType" (change)="onVehicleTypeChange($event)"></ng-select>
-                        </div>
-                      </div>
-                      <div class="col-md-6" *ngIf="!entity.isSubcontractors">
-                        <div class="form-group">
-                          <label>Số xe <span class="text-danger">*</span></label>
-                          <ng-select [items]="listVehicles" bindLabel="licensePlates" bindValue="id"
-                            [(ngModel)]="entity.vehicleId" (change)="onVehicleChange($event)"></ng-select>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="row">
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label>Tài xế <span class="text-danger">*</span></label>
-                          <ng-select [items]="listDrivers" bindLabel="employeeFullName" bindValue="id"
-                            [(ngModel)]="entity.driverId" (change)="onDriverChange($event)"></ng-select>
-                        </div>
-                      </div>
-                      <div class="col-md-6">
-                        <div class="form-group">
-                          <label>Số điện thoại</label>
-                          <input type="text" class="form-control" [(ngModel)]="entity.driverTel">
-                        </div>
-                      </div>
-                    </div>
-                    <div class="row">
-                      <div class="col-md-12">
-                        <div class="form-group">
-                          <label>Ghi chú</label>
-                          <textarea class="form-control" rows="2" [(ngModel)]="entity.note"></textarea>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </tab>
-
-                <!-- Tab 2: Lộ trình & Điểm dừng -->
-                <tab heading="Lộ trình & Điểm dừng">
-                  <div class="mt-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                      <label class="font-weight-bold mb-0">Thứ tự các điểm đi:</label>
-                      <div class="btn-group btn-group-sm">
-                        <button class="btn btn-outline-primary" [class.active]="fetchMode === 'history'"
-                          (click)="setFetchMode('history')">Lịch sử DB</button>
-                        <div class="btn-group btn-group-sm" dropdown>
-                          <button dropdownToggle type="button" class="btn btn-outline-secondary dropdown-toggle">
-                            API VietMap ({{fetchMode === 'api-seg' ? 'Từng cung' : 'Toàn trình'}})
-                          </button>
-                          <ul *dropdownMenu class="dropdown-menu" role="menu">
-                            <li role="menuitem"><a class="dropdown-item" (click)="setFetchMode('api-seg')">Theo từng
-                                cung (Parallel)</a></li>
-                            <li role="menuitem"><a class="dropdown-item" (click)="setFetchMode('api-full')">Toàn bộ lộ
-                                trình (Optimization)</a></li>
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Drag and Drop List -->
-                    <div cdkDropList class="location-list" (cdkDropListDropped)="onDropLocation($event)">
-                      <div class="location-box d-flex align-items-center p-2 mb-2 border rounded bg-light"
-                        *ngFor="let loc of locations; let i = index" cdkDrag>
-                        <div class="drag-handle mr-3" cdkDragHandle>
-                          <i class="fa fa-bars text-muted"></i>
-                        </div>
-                        <div class="marker-index mr-3">{{i + 1}}</div>
-                        <div class="flex-grow-1">
-                          <div class="font-weight-bold">{{loc.locationName}}</div>
-                          <small class="text-muted">{{loc.address}}</small>
-                        </div>
-                        <button class="btn btn-sm text-danger" (click)="removeLocation(i)"><i
-                            class="fa fa-trash"></i></button>
-                      </div>
-                    </div>
-
-                    <button class="btn btn-block btn-outline-success mt-2" (click)="addManualLocation()">
-                      <i class="fa fa-plus mr-1"></i> Thêm điểm dừng ngoài danh sách
-                    </button>
-                  </div>
-                </tab>
-
-                <!-- Tab 3: Chi tiết Cung & ETC -->
-                <tab heading="Tính toán Segment & ETC">
-                  <div class="mt-3 overflow-auto" style="max-height: 600px;">
-                    <div *ngFor="let seg of entity.segments; let i = index"
-                      class="segment-card border rounded p-3 mb-3 bg-white shadow-sm">
-                      <div class="d-flex justify-content-between align-items-start mb-2">
-                        <h6 class="text-primary font-weight-bold">Chặng {{i+1}}: {{seg.startLocationName}} <i
-                            class="fa fa-arrow-right mx-1"></i> {{seg.endLocationName}}</h6>
-                        <div class="form-inline">
-                          <label class="mr-2">Distance (km):</label>
-                          <input type="number" class="form-control form-control-sm w-80" [(ngModel)]="seg.distanceKm"
-                            (change)="calculateTotal()">
-                        </div>
-                      </div>
-
-                      <!-- ETC Table for this segment -->
-                      <table class="table table-sm table-bordered mt-2 mb-0">
-                        <thead class="bg-light small">
-                          <tr>
-                            <th>Trạm thu phí</th>
-                            <th width="120">Giá tiền (5 loại xe)</th>
-                            <th width="40"></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          <tr *ngFor="let etc of seg.listEtc; let j = index">
-                            <td><input type="text" class="form-control form-control-sm border-0 bg-transparent"
-                                [(ngModel)]="etc.stationName"></td>
-                            <td><input type="number"
-                                class="form-control form-control-sm border-0 bg-transparent text-right"
-                                [(ngModel)]="etc.price" (change)="calculateTotal()"></td>
-                            <td class="text-center">
-                              <i class="fa fa-times text-danger cursor-pointer" (click)="removeEtc(i, j)"></i>
-                            </td>
-                          </tr>
-                          <tr class="bg-lighter">
-                            <td colspan="3" class="text-center">
-                              <button class="btn btn-xs btn-link text-success" (click)="addManualEtc(i)">
-                                <i class="fa fa-plus"></i> Thêm trạm vé thủ công
-                              </button>
-                            </td>
-                          </tr>
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </tab>
-
-                <!-- Tab 4: Phí phát sinh -->
-                <tab heading="Phí phát sinh">
-                  <!-- Similar to existing fee tab logic -->
-                </tab>
-              </tabset>
+        <!-- ═══════════════════════════════════════════════════════
+             CỘT TRÁI: Pool các điểm từ ShippingTask
+             ═══════════════════════════════════════════════════════ -->
+        <div class="to-col-pool">
+          <div class="to-col-header">
+            <div class="to-col-header-title">
+              <i class="fa fa-map-marker text-danger"></i>
+              Điểm hàng từ công việc
             </div>
-
-            <!-- Footer of Left Panel -->
-            <div class="mt-auto p-3 border-top bg-light">
-              <div class="row align-items-center">
-                <div class="col">
-                  <div class="d-flex text-dark small font-weight-bold">
-                    <div class="mr-4">Tổng Km: <span class="text-primary">{{entity.tongKm | number:'1.0-2'}} km</span>
-                    </div>
-
-                  </div>
-                  <div class="col-auto">
-                    <button class="btn btn-secondary mr-2" (click)="hide()">Hủy</button>
-                    <button class="btn btn-primary" (click)="save()">Lưu Lệnh Vận Chuyển</button>
-                  </div>
-                </div>
-              </div>
-
-            </div>
-
-            <!-- Right Panel: Map (Width 40-50%) -->
-            <div class="right-panel flex-grow-1 bg-dark relative">
-              <div id="vietmap" class="w-100 h-100"></div>
-
-              <!-- Map Overlays -->
-              <div class="map-loading" *ngIf="isMapLoading">
-                <div class="spinner-border text-light" role="status"></div>
-              </div>
-
-              <div class="map-legend p-2 rounded bg-white m-2 shadow-sm border small"
-                style="position: absolute; bottom: 10px; right: 10px; z-index: 1000;">
-                <div class="d-flex align-items-center mb-1"><span class="marker-dot bg-success mr-2"></span> Điểm xuất
-                  phát</div>
-                <div class="d-flex align-items-center mb-1"><span class="marker-dot bg-warning mr-2"></span> Điểm dừng
-                  chân</div>
-                <div class="d-flex align-items-center"><span class="marker-dot bg-danger mr-2"></span> Điểm kết thúc
-                </div>
-              </div>
-            </div>
-
+            <span class="badge badge-secondary">{{ locationPool.length }} điểm</span>
           </div>
 
+          <div class="pool-list">
+            <!-- Nhóm theo từng ShippingTask -->
+            <div *ngFor="let task of entity.listDetailed" class="task-group">
+              <div class="task-group-header">
+                <span class="task-group-customer">{{ task.shippingTaskItem?.customerCode }}</span>
+                <span class="task-group-name">{{ task.shippingTaskItem?.customerName }}</span>
+                <span *ngIf="task.shippingTaskItem?.containerNumber" class="task-group-cont">
+                  <i class="fa fa-cube"></i> {{ task.shippingTaskItem?.containerNumber }}
+                </span>
+              </div>
+
+              <!-- Card: Nơi nhận hàng (Pickup) -->
+              <div class="loc-card loc-card--pickup"
+                *ngIf="task.shippingTaskItem?.pickupLocationId"
+                [class.loc-card--used]="isLocInRoute(task.shippingTaskItem?.pickupLocationId)"
+                (click)="addToRoute(task.shippingTaskItem, 'pickup')"
+                title="Bấm để thêm vào lộ trình">
+                <div class="loc-card-type loc-type--pickup">
+                  <i class="fa fa-arrow-down"></i> Nhận
+                </div>
+                <div class="loc-card-body">
+                  <div class="loc-card-name">{{ task.shippingTaskItem?.pickupLocation || 'Chưa có địa chỉ' }}</div>
+                  <div class="loc-card-coords" *ngIf="task.shippingTaskItem?.pickupLatitude">
+                    <i class="fa fa-crosshairs"></i>
+                    {{ task.shippingTaskItem?.pickupLatitude | number:'1.4-6' }},
+                    {{ task.shippingTaskItem?.pickupLongitude | number:'1.4-6' }}
+                  </div>
+                  <div class="loc-card-coords text-warning" *ngIf="!task.shippingTaskItem?.pickupLatitude">
+                    <i class="fa fa-exclamation-triangle"></i> Chưa có tọa độ
+                  </div>
+                </div>
+                <div class="loc-card-action">
+                  <i class="fa" [class.fa-check-circle]="isLocInRoute(task.shippingTaskItem?.pickupLocationId)"
+                    [class.fa-plus-circle]="!isLocInRoute(task.shippingTaskItem?.pickupLocationId)"></i>
+                </div>
+              </div>
+
+              <!-- Card: Nơi giao hàng (Delivery) -->
+              <div class="loc-card loc-card--delivery"
+                *ngIf="task.shippingTaskItem?.deliveryLocationId"
+                [class.loc-card--used]="isLocInRoute(task.shippingTaskItem?.deliveryLocationId)"
+                (click)="addToRoute(task.shippingTaskItem, 'delivery')"
+                title="Bấm để thêm vào lộ trình">
+                <div class="loc-card-type loc-type--delivery">
+                  <i class="fa fa-arrow-up"></i> Giao
+                </div>
+                <div class="loc-card-body">
+                  <div class="loc-card-name">{{ task.shippingTaskItem?.deliveryLocation || 'Chưa có địa chỉ' }}</div>
+                  <div class="loc-card-coords" *ngIf="task.shippingTaskItem?.deliveryLatitude">
+                    <i class="fa fa-crosshairs"></i>
+                    {{ task.shippingTaskItem?.deliveryLatitude | number:'1.4-6' }},
+                    {{ task.shippingTaskItem?.deliveryLongitude | number:'1.4-6' }}
+                  </div>
+                  <div class="loc-card-coords text-warning" *ngIf="!task.shippingTaskItem?.deliveryLatitude">
+                    <i class="fa fa-exclamation-triangle"></i> Chưa có tọa độ
+                  </div>
+                </div>
+                <div class="loc-card-action">
+                  <i class="fa" [class.fa-check-circle]="isLocInRoute(task.shippingTaskItem?.deliveryLocationId)"
+                    [class.fa-plus-circle]="!isLocInRoute(task.shippingTaskItem?.deliveryLocationId)"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="pool-empty" *ngIf="!entity.listDetailed?.length">
+              <i class="fa fa-inbox fa-2x text-muted"></i>
+              <p class="text-muted mt-2">Chưa có công việc nào</p>
+            </div>
+          </div>
         </div>
+
+        <!-- ═══════════════════════════════════════════════════════
+             CỘT GIỮA: Route Builder — Drag & Drop + Segment results
+             ═══════════════════════════════════════════════════════ -->
+        <div class="to-col-route">
+          <div class="to-col-header">
+            <div class="to-col-header-title">
+              <i class="fa fa-random text-primary"></i>
+              Lộ trình & Tính cung đường
+            </div>
+            <!-- Nút tính toán -->
+            <div class="btn-group btn-group-sm" *ngIf="locations.length >= 2">
+              <button type="button" class="btn btn-outline-primary btn-calc"
+                (click)="calcAllSegments()"
+                [disabled]="isCalculating"
+                title="Tính từng cung A→B, B→C riêng lẻ song song">
+                <i class="fa fa-calculator"></i>
+                <span>Tính từng chặng</span>
+              </button>
+              <button type="button" class="btn btn-primary btn-calc"
+                (click)="calcFullRoute()"
+                [disabled]="isCalculating"
+                title="Gọi Vietmap với tất cả các điểm cùng lúc">
+                <i class="fa" [class.fa-road]="!isCalculating" [class.fa-spinner]="isCalculating"
+                  [class.fa-spin]="isCalculating"></i>
+                <span>{{ isCalculating ? 'Đang tính...' : 'Tính toàn trình' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Drag-Drop Zone -->
+          <div class="route-drop-zone">
+
+            <!-- Placeholder khi chưa có điểm nào -->
+            <div class="route-empty" *ngIf="locations.length === 0">
+              <i class="fa fa-long-arrow-down fa-2x text-muted"></i>
+              <p class="text-muted">Bấm vào các điểm bên trái để thêm vào lộ trình</p>
+              <p class="text-muted small">Hoặc kéo thả để sắp xếp thứ tự</p>
+            </div>
+
+            <!-- List có thể drag-drop -->
+            <div cdkDropList class="route-list"
+              [cdkDropListData]="locations"
+              (cdkDropListDropped)="onDropLocation($event)"
+              *ngIf="locations.length > 0">
+
+              <ng-container *ngFor="let loc of locations; let i = index">
+
+                <!-- Item điểm dừng -->
+                <div class="route-item" cdkDrag [cdkDragData]="loc">
+                  <!-- Handle kéo thả -->
+                  <div class="route-item-handle" cdkDragHandle title="Kéo để đổi thứ tự">
+                    <i class="fa fa-bars"></i>
+                  </div>
+                  <!-- Số thứ tự -->
+                  <div class="route-item-index" [ngClass]="getIndexClass(i, locations.length)">
+                    {{ i + 1 }}
+                  </div>
+                  <!-- Tên điểm -->
+                  <div class="route-item-info">
+                    <div class="route-item-name">{{ loc.locationName }}</div>
+                    <div class="route-item-coords" *ngIf="loc.lat">
+                      <i class="fa fa-crosshairs"></i>
+                      {{ loc.lat | number:'1.4-6' }}, {{ loc.lng | number:'1.4-6' }}
+                    </div>
+                    <span class="route-item-badge" [ngClass]="loc.type === 'pickup' ? 'badge-pickup' : 'badge-delivery'">
+                      {{ loc.type === 'pickup' ? 'Nhận hàng' : 'Giao hàng' }}
+                    </span>
+                  </div>
+                  <!-- Nút xóa -->
+                  <button type="button" class="route-item-remove" (click)="removeLocation(i)"
+                    title="Xóa khỏi lộ trình">
+                    <i class="fa fa-times"></i>
+                  </button>
+
+                  <!-- Placeholder khi đang drag -->
+                  <div *cdkDragPlaceholder class="route-item-placeholder"></div>
+                </div>
+
+                <!-- Segment result: hiển thị kết quả giữa 2 điểm liên tiếp -->
+                <div class="segment-result" *ngIf="i < locations.length - 1 && getSegment(i)">
+                  <div class="segment-result-arrow">
+                    <div class="segment-result-line"></div>
+                    <i class="fa fa-arrow-down segment-result-icon"></i>
+                  </div>
+                  <div class="segment-result-info">
+                    <!-- Đang tính -->
+                    <div class="segment-calculating" *ngIf="isSegmentCalculating(i)">
+                      <i class="fa fa-spinner fa-spin"></i> Đang tính...
+                    </div>
+                    <!-- Kết quả -->
+                    <ng-container *ngIf="!isSegmentCalculating(i) && getSegment(i)">
+                      <div class="segment-km">
+                        <i class="fa fa-road text-primary"></i>
+                        <input type="number" class="segment-km-input"
+                          [(ngModel)]="getSegment(i).distanceKm"
+                          (ngModelChange)="calculateTotal()"
+                          title="Có thể sửa thủ công"
+                          [ngModelOptions]="{standalone: true}">
+                        <span class="text-muted">km</span>
+                      </div>
+                      <!-- Trạm ETC -->
+                      <div class="segment-etcs" *ngIf="getSegment(i).listEtc?.length">
+                        <div class="segment-etc-item" *ngFor="let etc of getSegment(i).listEtc; let j = index">
+                          <i class="fa fa-ticket text-warning"></i>
+                          <span class="segment-etc-name">{{ etc.stationName }}</span>
+                          <input type="number" class="segment-etc-price"
+                            [(ngModel)]="etc.price"
+                            (ngModelChange)="calculateTotal()"
+                            [ngModelOptions]="{standalone: true}"
+                            title="Đơn giá (có thể sửa)">
+                          <span class="text-muted small">đ</span>
+                          <button type="button" class="btn-etc-remove" (click)="removeEtc(i, j)">
+                            <i class="fa fa-times text-danger"></i>
+                          </button>
+                        </div>
+                      </div>
+                      <button type="button" class="btn-add-etc" (click)="addManualEtc(i)">
+                        <i class="fa fa-plus"></i> Thêm trạm phí
+                      </button>
+                    </ng-container>
+                    <!-- Chưa có dữ liệu (chưa tính) -->
+                    <div class="segment-no-data" *ngIf="!isSegmentCalculating(i) && !getSegment(i)?.distanceKm">
+                      <i class="fa fa-question-circle text-muted"></i>
+                      <span class="text-muted small">Bấm "Tính" để lấy dữ liệu</span>
+                      <button type="button" class="btn-calc-single" (click)="calcSingleSegment(i)">
+                        <i class="fa fa-calculator"></i> Tính
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+              </ng-container>
+            </div>
+          </div>
+
+          <!-- Tổng kết ở dưới cùng cột giữa -->
+          <div class="route-summary" *ngIf="locations.length >= 2">
+            <div class="route-summary-item">
+              <i class="fa fa-road"></i>
+              <span>Tổng km:</span>
+              <strong class="text-primary">{{ entity.tongKm | number:'1.0-1' }} km</strong>
+            </div>
+            <div class="route-summary-item">
+              <i class="fa fa-ticket"></i>
+              <span>Tổng ETC:</span>
+              <strong class="text-warning">{{ totalEtcCost | number:'1.0-0' }} đ</strong>
+            </div>
+            <div class="route-summary-item">
+              <i class="fa fa-map-signs"></i>
+              <span>Số chặng:</span>
+              <strong>{{ locations.length - 1 }}</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════════
+             CỘT PHẢI: Thông tin xe + tài xế
+             ═══════════════════════════════════════════════════════ -->
+        <div class="to-col-info">
+          <div class="to-col-header">
+            <div class="to-col-header-title">
+              <i class="fa fa-cog text-secondary"></i>
+              Thông tin vận chuyển
+            </div>
+          </div>
+
+          <div class="info-form">
+
+            <!-- Xe thuê ngoài -->
+            <div class="info-toggle">
+              <label class="toggle-label">
+                <input type="checkbox" [(ngModel)]="entity.isSubcontractors" (change)="onSubcontractorToggle()">
+                <span class="toggle-slider"></span>
+                Xe thuê ngoài (Subcontractor)
+              </label>
+            </div>
+
+            <!-- Chọn xe + tài xế (xe nội bộ) -->
+            <ng-container *ngIf="!entity.isSubcontractors">
+              <div class="info-field">
+                <label>Loại xe</label>
+                <ng-select [items]="listVehicleTypes" bindLabel="categoryName" bindValue="id"
+                  [(ngModel)]="entity.vehicleType" (change)="onVehicleTypeChange($event)"
+                  placeholder="Chọn loại xe...">
+                </ng-select>
+              </div>
+              <div class="info-field">
+                <label>Số xe <span class="text-danger">*</span></label>
+                <ng-select [items]="listVehicles" bindLabel="licensePlates" bindValue="id"
+                  [(ngModel)]="entity.vehicleId" (change)="onVehicleChange($event)"
+                  placeholder="Chọn biển số...">
+                </ng-select>
+              </div>
+            </ng-container>
+
+            <!-- Xe thuê ngoài -->
+            <ng-container *ngIf="entity.isSubcontractors">
+              <div class="info-field">
+                <label>Đơn vị vận chuyển <span class="text-danger">*</span></label>
+                <ng-select [items]="listSuppliers" bindLabel="supplierName" bindValue="id"
+                  [(ngModel)]="entity.shippingUnitId"
+                  placeholder="Chọn nhà thầu...">
+                </ng-select>
+              </div>
+              <div class="info-field">
+                <label>Biển số xe ngoài <span class="text-danger">*</span></label>
+                <input type="text" class="form-control form-control-sm"
+                  [(ngModel)]="entity.vehiclelLicensePlates"
+                  placeholder="VD: 51C-12345">
+              </div>
+            </ng-container>
+
+            <!-- Tài xế -->
+            <div class="info-field">
+              <label>Tài xế <span class="text-danger">*</span></label>
+              <ng-select [items]="listDrivers" bindLabel="employeeFullName" bindValue="id"
+                [(ngModel)]="entity.driverId" (change)="onDriverChange($event)"
+                placeholder="Chọn tài xế...">
+              </ng-select>
+            </div>
+            <div class="info-field">
+              <label>SĐT tài xế</label>
+              <input type="text" class="form-control form-control-sm"
+                [(ngModel)]="entity.driverTel"
+                placeholder="Số điện thoại...">
+            </div>
+
+            <!-- Mooc (rơ moóc) -->
+            <div class="info-field">
+              <label>Mooc</label>
+              <ng-select [items]="listMoocs" bindLabel="licensePlates" bindValue="id"
+                [(ngModel)]="entity.moocId" (change)="onMoocChange($event)"
+                placeholder="Chọn rơ moóc (nếu có)...">
+              </ng-select>
+            </div>
+
+            <hr class="info-divider">
+
+            <!-- Ghi chú -->
+            <div class="info-field">
+              <label>Ghi chú</label>
+              <textarea class="form-control form-control-sm" rows="3"
+                [(ngModel)]="entity.note"
+                placeholder="Ghi chú cho lệnh vận chuyển..."></textarea>
+            </div>
+
+            <!-- Danh sách công việc đính kèm -->
+            <div class="info-tasks" *ngIf="entity.listDetailed?.length">
+              <label class="info-tasks-label">
+                <i class="fa fa-list-ul"></i>
+                Công việc đính kèm ({{ entity.listDetailed.length }})
+              </label>
+              <div class="task-chip" *ngFor="let d of entity.listDetailed">
+                <i class="fa fa-file-text-o"></i>
+                <span>{{ d.shippingTaskItem?.referCode || ('Task #' + d.shippingTaskId) }}</span>
+                <small class="text-muted">{{ d.shippingTaskItem?.customerCode }}</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nút lưu ở cuối cột phải -->
+          <div class="info-footer">
+            <button type="button" class="btn btn-default btn-sm" (click)="hide()">
+              <i class="fa fa-times"></i> Đóng
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" (click)="save()"
+              [disabled]="isSaving || locations.length < 2">
+              <i class="fa" [class.fa-save]="!isSaving" [class.fa-spinner]="isSaving" [class.fa-spin]="isSaving"></i>
+              {{ isSaving ? 'Đang lưu...' : 'Lưu lệnh' }}
+            </button>
+          </div>
+        </div>
+
       </div>
+      <!-- /to-body -->
+
+      <!-- TABS: Chi tiết công việc / Chi phí / Hình ảnh hiện trường -->
+      <div class="to-tabs-section">
+        <tabset>
+
+          <!-- TAB: Chi tiết công việc -->
+          <tab heading="Chi tiết công việc">
+            <div class="form-group" style="margin-top:10px;">
+              <div class="table-responsive" style="padding-left:15px; padding-right:15px;">
+                <table class="table table-bordered table-striped table-hover">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Khách hàng / JobId</th>
+                      <th>Nơi nhận / Nơi giao</th>
+                      <th>Cảng nâng/hạ</th>
+                      <th>T/g KH yêu cầu</th>
+                      <th>Loại container</th>
+                      <th>Số Container</th>
+                      <th>Mã tham chiếu</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of entity.listDetailed">
+                      <td>
+                        <b style="color: blue;">{{item.shippingTaskId}}</b>
+                      </td>
+                      <td>
+                        <span style="color: blue;"><b>{{item.shippingTaskItem?.customerName}}</b></span>
+                        <br>
+                        <span style="color: blueviolet;">{{item.shippingTaskItem?.jobId}}</span>
+                      </td>
+                      <td>
+                        <span style="color: blue;">{{item.shippingTaskItem?.pickupLocation}}</span>
+                        <br>
+                        <span style="color: salmon;">{{item.shippingTaskItem?.deliveryLocation}}</span>
+                      </td>
+                      <td>
+                        <span style="color: blue;">{{item.shippingTaskItem?.portOfLiftingName}}</span>
+                        <br>
+                        <span style="color: salmon;">{{item.shippingTaskItem?.portOfLiftOffName}}</span>
+                      </td>
+                      <td>
+                        <span>{{item.shippingTaskItem?.pickupTime | date:'dd/MM/yyyy HH:mm'}}</span>
+                      </td>
+                      <td>{{item.shippingTaskItem?.contType}}</td>
+                      <td>
+                        <span>{{item.shippingTaskItem?.containerNumber}}</span>
+                        <br>
+                        <span>{{item.shippingTaskItem?.sealNumber}}</span>
+                      </td>
+                      <td>{{item.shippingTaskItem?.referCode}}</td>
+                      <td style="width:18%">
+                        <button *ngIf="entity.status < 4" type="button" class="btn btn-warning btn-sm"
+                          (click)="deleteWorkflow(item)" title="Xóa công việc">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                        <button type="button" class="btn btn-primary btn-sm"
+                          (click)="attack(item.shippingTaskItem?.id)" title="Tải file CS">
+                          <i class="fa fa-upload"></i>
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm"
+                          (click)="attackDriver(item.shippingTaskItem?.id)" title="File tài xế">
+                          <i class="fa fa-download"></i>
+                        </button>
+                        <button type="button" class="btn btn-success btn-sm"
+                          (click)="duplicate(item.shippingTaskItem?.id)" title="Nhân đôi">
+                          <i class="fa fa-files-o"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="!entity.listDetailed?.length">
+                      <td colspan="100%">Không có công việc nào.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </tab>
+
+          <!-- TAB: Chi phí -->
+          <tab heading="Chi phí">
+            <div class="form-group" style="margin-top:10px;">
+              <div class="col-sm-2">
+                <button type="button" class="btn btn-sm btn-primary" (click)="newFee()"
+                  [disabled]="entity.status >= 4">Thêm</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="table-responsive" style="padding-left:15px; padding-right:15px;">
+                <table class="table table-bordered table-striped table-hover">
+                  <thead>
+                    <tr>
+                      <th>Mã phí</th>
+                      <th>Nội dung</th>
+                      <th>Số lượng</th>
+                      <th>Số tiền</th>
+                      <th>Vat</th>
+                      <th>Tổng tiền</th>
+                      <th>Ghi chú</th>
+                      <th>Tác vụ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of entity.listFee; let i = index;">
+                      <td>
+                        <ng-select name="feeId{{i}}" [items]="listFeeSelect" bindLabel="feeName" bindValue="id"
+                          (change)="feeCodeChanged(item, $event)" [(ngModel)]="item.feeId" required>
+                        </ng-select>
+                      </td>
+                      <td>
+                        <input type="text" class="form-control" name="contents{{i}}" [(ngModel)]="item.contents"
+                          placeholder="Nội dung" />
+                      </td>
+                      <td>
+                        <input type="number" class="form-control text-right" name="soluong{{i}}"
+                          [(ngModel)]="item.quantity" (change)="changeQuantity(item)"
+                          placeholder="Số lượng" min="0" />
+                      </td>
+                      <td style="width:150px;">
+                        <input type="number" class="form-control text-right" name="sotienFee{{i}}"
+                          [(ngModel)]="item.cost" (change)="changeCost(item)"
+                          placeholder="Chi phí" min="0" />
+                      </td>
+                      <td style="width:100px;">
+                        <input type="number" class="form-control text-right" name="vatFee{{i}}"
+                          [(ngModel)]="item.vat" (change)="changeCost(item)"
+                          placeholder="Vat" min="0" />
+                      </td>
+                      <td style="width:120px;">
+                        <input type="number" class="form-control text-right" name="totalFeeCost{{i}}"
+                          [(ngModel)]="item.totalCost" [readonly]="true" placeholder="Tổng tiền" />
+                      </td>
+                      <td>
+                        <input class="form-control" [(ngModel)]="item.note" type="text"
+                          name="noteFee{{i}}" />
+                      </td>
+                      <td style="width:40px;">
+                        <button *ngIf="entity.status == 3" type="button" class="btn btn-warning btn-sm"
+                          (click)="deleteFee(item)">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="!entity.listFee?.length">
+                      <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </tab>
+
+          <!-- TAB: Hình ảnh hiện trường (chỉ hiện khi status > 1) -->
+          <tab *ngIf="entity.status > 1" heading="Hình ảnh hiện trường">
+            <div class="form-group" style="margin-top:10px;">
+              <div class="col-sm-3">
+                <input style="display:none;" type="file" class="custom-file-input" id="attackFileTO" #fileUploadTO
+                  (change)="onAttachFileChanged($event)" accept=".jpg,.png,.gif,.pdf">
+                <button type="button" class="btn btn-sm btn-primary" (click)="fileUploadTO.click()"
+                  [disabled]="entity.status >= 4">
+                  <i class="fa fa-upload" aria-hidden="true"></i> Tải Ảnh hiện trường
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="table-responsive" style="padding-left:15px; padding-right:15px;">
+                <table class="table table-bordered table-striped table-hover">
+                  <thead>
+                    <tr>
+                      <th>Tên File</th>
+                      <th>Kích thước (B)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of listAttachFile; let i = index;">
+                      <td><a (click)="clickLink(item)">{{item.fileName}}</a></td>
+                      <td style="width:50%">{{item.size}}</td>
+                    </tr>
+                    <tr *ngIf="!listAttachFile?.length">
+                      <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </tab>
+
+        </tabset>
+      </div>
+      <!-- /to-tabs-section -->
+
     </div>
   </div>
+</div>
+<modal-attachfile *ngIf="viewAttackFiles" (CloseModal)="closeAttackModal()">
+</modal-attachfile>
+<modal-shipping-task-attach-file *ngIf="viewAttackDriverFiles" (CloseModal)="closeAttackDriverModal()">
+</modal-shipping-task-attach-file>

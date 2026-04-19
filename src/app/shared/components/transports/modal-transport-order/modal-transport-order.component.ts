@@ -1,13 +1,39 @@
-import { Component, EventEmitter, NgZone, Output, ViewChild, ElementRef } from '@angular/core';
+import { Component, EventEmitter, Output, ViewChild } from '@angular/core';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import { environment } from '@environments/environment';
-import { NotificationService, UtilityService, EmployeeService, OtherCategoriesService, SupplierService, AuthService, VihicleService } from '@app/shared/services';
+import {
+  NotificationService, EmployeeService, OtherCategoriesService,
+  SupplierService, AuthService, VihicleService, FeeService
+} from '@app/shared/services';
 import { TransportOrderService } from '@app/shared/services/transports/transport-order.service';
-import { TransportOrder, TransportOrderSegment, TransportOrderSegmentEtc } from '@app/shared/models/transports/dispatchorders/transport-order.model';
+import {
+  TransportOrder, TransportOrderDetail, TransportOrderFee,
+  TransportOrderSegment, TransportOrderSegmentEtc
+} from '@app/shared/models/transports/dispatchorders/transport-order.model';
 import { ShippingTask } from '@app/shared/models/transports/shipping-task.model';
-import { Vihicle, Employee, OtherCategories, Supplier } from '@app/shared/models';
+import { Vihicle, Employee, Fee, OtherCategories, Supplier, ResponseValue } from '@app/shared/models';
+import { ShippingTaskAttachFile } from '@app/shared/models/transports/shipping-task-attach-file';
+import { Attachfiles } from '@app/shared/models/attachfiles.models';
+import { ModalAttachfileComponent } from '../../systems/modal-attachfile/modal-attachfile.component';
+import { ModalShippingTaskAttachFileComponent } from '../modal-shipping-task-attach-file/modal-shipping-task-attach-file.component';
+import { ShippingTaskService } from '@app/shared/services/transports/shipping-task.service';
+import { MessageContstants } from '@app/shared/constants';
+import { HttpParams } from '@angular/common/http';
+
+export interface LocationItem {
+  locationId: number;
+  locationName: string;
+  address?: string;
+  lat: number;
+  lng: number;
+  type: 'pickup' | 'delivery';
+  taskId?: number;
+  customerName?: string;
+}
 
 @Component({
   selector: 'modal-transport-order',
@@ -18,21 +44,64 @@ export class ModalTransportOrderComponent {
   @ViewChild('modalMain', { static: false }) modalMain: ModalDirective;
   @Output() SaveSuccess = new EventEmitter<any>();
 
-  public entity: TransportOrder = {};
-  public locations: any[] = [];
-  public fetchMode: 'history' | 'api-seg' | 'api-full' = 'history';
-  public isMapLoading = false;
-  public isSubcontractor = false;
+  entity: TransportOrder = this._emptyEntity();
+  locations: LocationItem[] = [];
 
-  // Lists for dropdowns
-  public listVehicles: Vihicle[] = [];
-  public listVehicleTypes: OtherCategories[] = [];
-  public listDrivers: Employee[] = [];
-  public listSuppliers: Supplier[] = [];
+  // Getter: tập hợp tất cả điểm có thể thêm (từ listDetailed)
+  get locationPool(): LocationItem[] {
+    const pool: LocationItem[] = [];
+    (this.entity.listDetailed || []).forEach(d => {
+      const t = d.shippingTaskItem;
+      if (!t) return;
+      if (t.pickupLocationId) {
+        pool.push({
+          locationId: t.pickupLocationId,
+          locationName: t.pickupLocation || '',
+          lat: t.pickupLatitude,
+          lng: t.pickupLongitude,
+          type: 'pickup',
+          taskId: t.id,
+          customerName: t.customerName
+        });
+      }
+      if (t.deliveryLocationId) {
+        pool.push({
+          locationId: t.deliveryLocationId,
+          locationName: t.deliveryLocation || '',
+          lat: t.deliveryLatitude,
+          lng: t.deliveryLongitude,
+          type: 'delivery',
+          taskId: t.id,
+          customerName: t.customerName
+        });
+      }
+    });
+    return pool;
+  }
 
-  private map: any;
-  private markers: any[] = [];
-  private routeLines: string[] = [];
+  // State flags
+  isCalculating = false;
+  isSaving = false;
+  segmentCalculating: boolean[] = [];
+
+  // Totals
+  totalEtcCost = 0;
+
+  // Dropdowns
+  listVehicles: Vihicle[] = [];
+  listVehicleTypes: OtherCategories[] = [];
+  listMoocs: Vihicle[] = [];
+  listDrivers: Employee[] = [];
+  listSuppliers: Supplier[] = [];
+  listFeeSelect: Fee[] = [];
+
+  // Attach files
+  listAttachFile: ShippingTaskAttachFile[] = [];
+  viewAttackFiles = false;
+  viewAttackDriverFiles = false;
+
+  @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent;
+  @ViewChild(ModalShippingTaskAttachFileComponent, { static: false }) modalAttackDriverFilesRef: ModalShippingTaskAttachFileComponent;
 
   constructor(
     private _notif: NotificationService,
@@ -42,94 +111,218 @@ export class ModalTransportOrderComponent {
     private _otherService: OtherCategoriesService,
     private _supplierService: SupplierService,
     private _authService: AuthService,
-    private http: HttpClient,
-    private ngZone: NgZone
+    private _feeService: FeeService,
+    private _shippingTaskService: ShippingTaskService,
+    private http: HttpClient
   ) { }
 
-  /**
-   * Mở modal để tạo mới từ danh sách Shipping Tasks
-   */
+  // ── PUBLIC LIFECYCLE ──
+
   add(listTasks: ShippingTask[]) {
-    this._resetEntity();
+    this.entity = this._emptyEntity();
     this.entity.listDetailed = listTasks.map(t => ({ shippingTaskId: t.id, shippingTaskItem: t }));
-
-    // Tổng hợp danh sách location duy nhất từ các tasks
-    this._extractLocations(listTasks);
-
+    this.locations = [];
     this.modalMain.show();
   }
 
-  /**
-   * Mở modal để chỉnh sửa
-   */
   edit(id: number) {
     this._transportService.getById(id).subscribe(res => {
       if (res.code === '200') {
         this.entity = res.data;
-        // Map locations for UI list
-        this._extractLocationsFromSegments();
+        this.locations = this._segmentsToLocations(this.entity.segments || []);
+        this.calculateTotal();
         this.modalMain.show();
       }
     });
   }
 
-  hide() {
-    this.modalMain.hide();
+  hide() { this.modalMain.hide(); }
+
+  onModalShown() { this._loadDropdowns(); this._loadFees(); }
+
+  // ── LOCATION POOL ──
+
+  isLocInRoute(locationId: number): boolean {
+    return this.locations.some(l => l.locationId === locationId);
   }
 
-  onModalShown() {
-    this._loadMapsScript().then(() => this._createMap());
-    // Load initial data if needed
-    this._loadDropdowns();
+  addToRoute(task: ShippingTask, type: 'pickup' | 'delivery') {
+    const locationId = type === 'pickup' ? task.pickupLocationId : task.deliveryLocationId;
+    if (this.isLocInRoute(locationId)) return; // đã có rồi
+
+    this.locations.push({
+      locationId,
+      locationName: type === 'pickup' ? task.pickupLocation : task.deliveryLocation,
+      lat: type === 'pickup' ? task.pickupLatitude : task.deliveryLatitude,
+      lng: type === 'pickup' ? task.pickupLongitude : task.deliveryLongitude,
+      type,
+      taskId: task.id,
+      customerName: task.customerName
+    });
+    this._rebuildSegments();
   }
 
-  setFetchMode(mode: 'history' | 'api-seg' | 'api-full') {
-    this.fetchMode = mode;
-    this._fetchRouteData();
-  }
+  // ── DRAG & DROP ──
 
-  onDropLocation(event: CdkDragDrop<any[]>) {
+  onDropLocation(event: CdkDragDrop<LocationItem[]>) {
     moveItemInArray(this.locations, event.previousIndex, event.currentIndex);
-    this._fetchRouteData();
+    this._rebuildSegments();
   }
 
   removeLocation(index: number) {
     this.locations.splice(index, 1);
-    this._fetchRouteData();
+    this._rebuildSegments();
   }
 
-  addManualLocation() {
-    // Logic to open a sub-modal or add a search box for locations
-    this._notif.printMessage('Tính năng thêm điểm dừng tự do đang phát triển');
+  // ── SEGMENT HELPERS ──
+
+  getSegment(index: number): TransportOrderSegment | null {
+    return this.entity.segments?.[index] || null;
   }
 
-  addManualEtc(segmentIndex: number) {
-    if (!this.entity.segments[segmentIndex].listEtc) {
-      this.entity.segments[segmentIndex].listEtc = [];
+  isSegmentCalculating(index: number): boolean {
+    return !!this.segmentCalculating[index];
+  }
+
+  getIndexClass(index: number, total: number): string {
+    if (index === 0) return 'index-start';
+    if (index === total - 1) return 'index-end';
+    return 'index-mid';
+  }
+
+  // ── ETC ──
+
+  addManualEtc(segIndex: number) {
+    if (!this.entity.segments[segIndex].listEtc) {
+      this.entity.segments[segIndex].listEtc = [];
     }
-    this.entity.segments[segmentIndex].listEtc.push({
-      stationName: 'Trạm mới',
-      price: 0
-    });
+    this.entity.segments[segIndex].listEtc.push({ stationName: 'Trạm mới', price: 0 });
   }
 
-  removeEtc(segmentIndex: number, etcIndex: number) {
-    this.entity.segments[segmentIndex].listEtc.splice(etcIndex, 1);
+  removeEtc(segIndex: number, etcIndex: number) {
+    this.entity.segments[segIndex].listEtc.splice(etcIndex, 1);
     this.calculateTotal();
   }
 
   calculateTotal() {
     let totalKm = 0;
     let totalEtc = 0;
-    this.entity.segments?.forEach(s => {
+    (this.entity.segments || []).forEach(s => {
       totalKm += (s.distanceKm || 0);
       let segEtc = 0;
-      s.listEtc?.forEach(e => segEtc += (e.price || 0));
+      (s.listEtc || []).forEach(e => segEtc += (e.price || 0));
       s.etcCost = segEtc;
       totalEtc += segEtc;
     });
     this.entity.tongKm = totalKm;
-    // this.entity.etcCost = totalEtc; // Add to model if needed or use local var
+    this.totalEtcCost = totalEtc;
+  }
+
+  // ── CALCULATE BUTTONS ──
+
+  /** Tính từng chặng A→B, B→C song song bằng Vietmap */
+  calcAllSegments() {
+    if (this.locations.length < 2) return;
+    this.isCalculating = true;
+
+    const calls = [];
+    for (let i = 0; i < this.locations.length - 1; i++) {
+      this.segmentCalculating[i] = true;
+      const a = this.locations[i];
+      const b = this.locations[i + 1];
+      calls.push(
+        this.http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, {
+          points: [{ lat: a.lat, lng: a.lng }, { lat: b.lat, lng: b.lng }]
+        }).pipe(catchError(() => of(null)))
+      );
+    }
+
+    forkJoin(calls).subscribe(results => {
+      results.forEach((res, i) => {
+        this.segmentCalculating[i] = false;
+        if (!res) return;
+        const seg = this.entity.segments[i];
+        if (!seg) return;
+        if (res.route?.paths?.[0]) {
+          seg.distanceKm = +(res.route.paths[0].distance / 1000).toFixed(2);
+        }
+        seg.listEtc = this._parseTollStations(res.toll, 2); // loại xe 2 (xe tải)
+      });
+      this.calculateTotal();
+      this.isCalculating = false;
+    });
+  }
+
+  /** Tính toàn trình — gọi Vietmap với tất cả các điểm */
+  calcFullRoute() {
+    if (this.locations.length < 2) return;
+    this.isCalculating = true;
+
+    const points = this.locations.map(l => ({ lat: l.lat, lng: l.lng }));
+    this.http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, { points })
+      .subscribe(res => {
+        this.isCalculating = false;
+        if (!res?.route?.paths?.[0]) {
+          this._notif.printErrorMessage('Không lấy được dữ liệu từ VietMap');
+          return;
+        }
+        // Toàn trình: gán tổng km cho chặng đầu, các chặng còn lại = 0
+        const totalKm = +(res.route.paths[0].distance / 1000).toFixed(2);
+        const etcs = this._parseTollStations(res.toll, 2);
+
+        this.entity.segments.forEach((seg, i) => {
+          seg.distanceKm = i === 0 ? totalKm : 0;
+          seg.listEtc = i === 0 ? etcs : [];
+        });
+        this.calculateTotal();
+      }, () => {
+        this.isCalculating = false;
+        this._notif.printErrorMessage('Lỗi kết nối VietMap API');
+      });
+  }
+
+  /** Tính riêng 1 chặng */
+  calcSingleSegment(segIndex: number) {
+    const a = this.locations[segIndex];
+    const b = this.locations[segIndex + 1];
+    if (!a || !b) return;
+
+    this.segmentCalculating[segIndex] = true;
+    this.http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, {
+      points: [{ lat: a.lat, lng: a.lng }, { lat: b.lat, lng: b.lng }]
+    }).subscribe(res => {
+      this.segmentCalculating[segIndex] = false;
+      const seg = this.entity.segments[segIndex];
+      if (!seg || !res?.route?.paths?.[0]) return;
+      seg.distanceKm = +(res.route.paths[0].distance / 1000).toFixed(2);
+      seg.listEtc = this._parseTollStations(res.toll, 2);
+      this.calculateTotal();
+    }, () => {
+      this.segmentCalculating[segIndex] = false;
+    });
+  }
+
+  // ── VEHICLE / DRIVER CHANGE ──
+
+  onVehicleTypeChange(event: OtherCategories) {
+    this.entity.vehicleType = event?.id;
+  }
+
+  onVehicleChange(event: Vihicle) {
+    if (event) {
+      this.entity.vehicleId = event.id;
+      this.entity.vehiclelLicensePlates = event.licensePlates;
+    }
+  }
+
+  onMoocChange(event: Vihicle) {
+    if (event) {
+      this.entity.moocId = event.id;
+      this.entity.moocLicensePlates = event.licensePlates;
+    } else {
+      this.entity.moocId = undefined;
+      this.entity.moocLicensePlates = '';
+    }
   }
 
   onDriverChange(event: Employee) {
@@ -145,106 +338,134 @@ export class ModalTransportOrderComponent {
   }
 
   onSubcontractorToggle() {
-    // Logic when switching between own fleet and subcontractor
     this.entity.vehicleId = undefined;
     this.entity.driverId = undefined;
     this.entity.driverName = '';
     this.entity.driverTel = '';
+    this.entity.vehiclelLicensePlates = '';
   }
 
+  // ── SAVE ──
+
   save() {
-    if (!this.entity.vehicleId) {
+    if (!this.entity.isSubcontractors && !this.entity.vehicleId) {
       this._notif.printErrorMessage('Vui lòng chọn số xe');
       return;
     }
+    if (!this.entity.driverId) {
+      this._notif.printErrorMessage('Vui lòng chọn tài xế');
+      return;
+    }
+    if (this.locations.length < 2) {
+      this._notif.printErrorMessage('Lộ trình cần ít nhất 2 điểm');
+      return;
+    }
 
-    const action = this.entity.id ? this._transportService.update(this.entity) : this._transportService.add(this.entity);
+    this.isSaving = true;
+    const user = this._authService.getLoggedInUser();
+    this.entity.branchId = +user.branchId;
+
+    const action = this.entity.id
+      ? this._transportService.update(this.entity)
+      : this._transportService.add(this.entity);
+
     action.subscribe(res => {
+      this.isSaving = false;
       if (res.code === '200') {
         this._notif.printSuccessMessage('Lưu lệnh vận chuyển thành công');
         this.SaveSuccess.emit(res.data);
         this.hide();
       } else {
-        this._notif.printErrorMessage(res.message);
+        this._notif.printErrorMessage(res.message || 'Có lỗi xảy ra');
       }
+    }, () => {
+      this.isSaving = false;
+      this._notif.printErrorMessage('Lỗi kết nối server');
     });
   }
 
-  // ── PRIVATE METHODS ──
+  // ── CHI TIẾT CÔNG VIỆC ──
 
-  private _resetEntity() {
-    this.entity = {
-      segments: [],
-      listFee: [],
-      listDetailed: [],
-      status: 0,
-      tongKm: 0,
-      vehicleType: 0,
-      isSubcontractors: false
+  deleteWorkflow(item: TransportOrderDetail) {
+    const idx = this.entity.listDetailed.indexOf(item);
+    if (idx !== -1) this.entity.listDetailed.splice(idx, 1);
+  }
+
+  attack(id: number) {
+    this.viewAttackFiles = true;
+    const item: Attachfiles = { frmName: 'SHIPPINGTASK', functionName: 'SHIPPINGTASK', refNo: id.toString() };
+    setTimeout(() => this.modalAttackFiles.edit(item, false), 50);
+  }
+
+  closeAttackModal() { this.viewAttackFiles = false; }
+
+  attackDriver(id: number) {
+    this.viewAttackDriverFiles = true;
+    setTimeout(() => this.modalAttackDriverFilesRef.edit(id, false), 50);
+  }
+
+  closeAttackDriverModal() { this.viewAttackDriverFiles = false; }
+
+  duplicate(id: number) {
+    this._notif.printConfirmationDialog(MessageContstants.DUPLICATE_SHIPPINGTASK, () => {
+      this._shippingTaskService.duplicate(id).subscribe((res: ResponseValue<number>) => {
+        if (res.code === '200' || res.code === '201') {
+          this._notif.printSuccessMessage(MessageContstants.DUPLICATE_SHIPPINGTASK_SUCCESS + ' Id: ' + res.data);
+        } else {
+          this._notif.printErrorMessage(MessageContstants.SYSTEM_ERROR_MSG + '\n' + res.code);
+        }
+      });
+    });
+  }
+
+  // ── CHI PHÍ ──
+
+  newFee() {
+    if (!this.entity.listFee) this.entity.listFee = [];
+    const item: TransportOrderFee = { cost: 0, vat: 0, totalCost: 0, quantity: 1 };
+    this.entity.listFee.push(item);
+  }
+
+  deleteFee(item: TransportOrderFee) {
+    const idx = this.entity.listFee.indexOf(item);
+    if (idx !== -1) this.entity.listFee.splice(idx, 1);
+  }
+
+  feeCodeChanged(item: TransportOrderFee, event: Fee) {
+    item.feeId = event?.id;
+    item.contents = event?.feeName;
+  }
+
+  changeCost(item: TransportOrderFee) {
+    item.totalCost = (item.cost || 0) + (item.vat || 0);
+  }
+
+  changeQuantity(item: TransportOrderFee) {
+    item.totalCost = (item.cost || 0) * (item.quantity || 1);
+  }
+
+  // ── HÌNH ẢNH HIỆN TRƯỜNG ──
+
+  onAttachFileChanged(_event: any) { /* upload pending */ }
+
+  clickLink(item: ShippingTaskAttachFile) {
+    window.open(environment.apiUrl + item.pathFile?.replace('~', ''), '_blank');
+  }
+
+  // ── PRIVATE ──
+
+  private _emptyEntity(): TransportOrder {
+    return {
+      segments: [], listFee: [], listDetailed: [],
+      status: 0, tongKm: 0, isSubcontractors: false
     };
-    this.locations = [];
-    this.fetchMode = 'history';
-    this.isSubcontractor = false;
   }
 
-  private _extractLocations(tasks: ShippingTask[]) {
-    const locs = [];
-    tasks.forEach(t => {
-      // Add Pick location
-      locs.push({
-        locationId: t.pickupLocationId,
-        locationName: t.pickupLocation,
-        lat: t.pickupLatitude,
-        lng: t.pickupLongitude
-      });
-      // Add Delivery location
-      locs.push({
-        locationId: t.deliveryLocationId,
-        locationName: t.deliveryLocation,
-        lat: t.deliveryLatitude,
-        lng: t.deliveryLongitude
-      });
-    });
-    // Remove duplicates (by locationId)
-    this.locations = locs.filter((v, i, a) => a.findIndex(t => t.locationId === v.locationId) === i);
-  }
-
-  private _extractLocationsFromSegments() {
-    // Reconstruct locations array from existing segments
-    if (!this.entity.segments?.length) return;
-    const locs = [];
-    this.entity.segments.forEach((s, idx) => {
-      if (idx === 0) {
-        locs.push({ locationId: s.startLocationId, locationName: s.startLocationName, lat: s.startLat, lng: s.startLng });
-      }
-      locs.push({ locationId: s.endLocationId, locationName: s.endLocationName, lat: s.endLat, lng: s.endLng });
-    });
-    this.locations = locs;
-  }
-
-  private _fetchRouteData() {
-    if (this.locations.length < 2) return;
-
-    if (this.fetchMode === 'history') {
-      this._fetchFromHistory();
-    } else {
-      this._fetchFromVietMap(this.fetchMode === 'api-full');
-    }
-  }
-
-  private _fetchFromHistory() {
-    this.entity.segments = [];
-    const observables = [];
-    for (let i = 0; i < this.locations.length - 1; i++) {
-      const start = this.locations[i];
-      const end = this.locations[i + 1];
-      observables.push(this._transportService.getSegmentHistory(start.locationId, end.locationId));
-    }
-
-    // Process sequentially or using forkJoin
-    // Simplified for now
+  private _rebuildSegments() {
+    const existing = this.entity.segments || [];
     this.entity.segments = this.locations.slice(0, -1).map((loc, i) => {
       const next = this.locations[i + 1];
+      const prev = existing[i];
       return {
         orderIndex: i,
         startLocationId: loc.locationId,
@@ -255,181 +476,69 @@ export class ModalTransportOrderComponent {
         endLocationName: next.locationName,
         endLat: next.lat,
         endLng: next.lng,
-        distanceKm: 0,
-        listEtc: []
+        // Giữ lại dữ liệu cũ nếu đúng cặp điểm
+        distanceKm: (prev?.startLocationId === loc.locationId && prev?.endLocationId === next.locationId)
+          ? prev.distanceKm : 0,
+        listEtc: (prev?.startLocationId === loc.locationId && prev?.endLocationId === next.locationId)
+          ? prev.listEtc : []
       };
     });
-
-    // Actually call history for each segment
-    this.entity.segments.forEach((seg, idx) => {
-      this._transportService.getSegmentHistory(seg.startLocationId, seg.endLocationId).subscribe(res => {
-        if (res.code === '200' && res.data) {
-          seg.distanceKm = res.data.distanceKm;
-          seg.listEtc = res.data.listEtc || [];
-          this.calculateTotal();
-        }
-      });
-    });
-
-    this._drawOnMap();
+    this.segmentCalculating = new Array(this.entity.segments.length).fill(false);
+    this.calculateTotal();
   }
 
-  private _fetchFromVietMap(isFullRoute: boolean) {
-    this.isMapLoading = true;
-    const points = this.locations.map(l => ({ lat: l.lat, lng: l.lng }));
-
-    this.http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, { points: points })
-      .subscribe(res => {
-        this.isMapLoading = false;
-        if (res.route?.paths?.[0]) {
-          this._processVietMapResponse(res, isFullRoute);
-          this._drawOnMap(res.route.paths[0].points);
-        }
-      }, err => {
-        this.isMapLoading = false;
-        this._notif.printErrorMessage('Không thể kết nối API VietMap');
-      });
-  }
-
-  private _processVietMapResponse(res: any, isFullRoute: boolean) {
-    const path = res.route.paths[0];
-    // Logic to split path into segments or just one big segment
-    // For now, let's create the segments based on our 'locations' array
-    this.entity.segments = [];
-    for (let i = 0; i < this.locations.length - 1; i++) {
-      const start = this.locations[i];
-      const next = this.locations[i + 1];
-
-      // Find toll for this segment (complex if full-route)
-      // This part needs refinement based on VietMap dynamic response
-      this.entity.segments.push({
-        orderIndex: i,
-        startLocationId: start.locationId,
-        startLocationName: start.locationName,
-        startLat: start.lat,
-        startLng: start.lng,
-        endLocationId: next.locationId,
-        endLocationName: next.locationName,
-        endLat: next.lat,
-        endLng: next.lng,
-        distanceKm: i === 0 ? (path.distance / 1000) : 0, // Placeholder
-        listEtc: []
-      });
-    }
-  }
-
-  // ── VIETMAP BOOTSTRAPPING ──
-
-  private _loadMapsScript(): Promise<void> {
-    const w = window as any;
-    if (w.vietmapgl) return Promise.resolve();
-    return new Promise(resolve => {
-      if (!document.getElementById('vietmapCss')) {
-        const link = document.createElement('link');
-        link.id = 'vietmapCss'; link.rel = 'stylesheet';
-        link.href = 'https://cdn.jsdelivr.net/npm/@vietmap/vietmap-gl-js/dist/vietmap-gl.css';
-        document.head.appendChild(link);
+  private _segmentsToLocations(segments: TransportOrderSegment[]): LocationItem[] {
+    if (!segments.length) return [];
+    const locs: LocationItem[] = [];
+    segments.forEach((s, idx) => {
+      if (idx === 0) {
+        locs.push({ locationId: s.startLocationId, locationName: s.startLocationName, lat: s.startLat, lng: s.startLng, type: 'pickup' });
       }
-      const waitForVietmap = () => {
-        if (w.vietmapgl) resolve();
-        else setTimeout(waitForVietmap, 100);
-      };
-      if (!document.getElementById('vietmapScript')) {
-        const s = document.createElement('script');
-        s.id = 'vietmapScript'; s.src = 'https://cdn.jsdelivr.net/npm/@vietmap/vietmap-gl-js/dist/vietmap-gl.js';
-        s.onload = () => waitForVietmap();
-        document.head.appendChild(s);
-      } else waitForVietmap();
+      locs.push({ locationId: s.endLocationId, locationName: s.endLocationName, lat: s.endLat, lng: s.endLng, type: 'delivery' });
     });
+    return locs;
   }
 
-  private _createMap() {
-    const w = window as any;
-    const tileApiKey = '261b145415dc3828f1fd75c98f9110e3c19d986d41cef544';
-    w.vietmapgl.accessToken = tileApiKey;
-
-    const center = this.locations.length > 0 ? [this.locations[0].lng, this.locations[0].lat] : [106.660172, 10.762622];
-
-    this.map = new w.vietmapgl.Map({
-      container: 'vietmap',
-      style: `https://maps.vietmap.vn/api/maps/light/styles.json?apikey=${tileApiKey}`,
-      center: center,
-      zoom: 10
-    });
-
-    this.map.on('load', () => {
-      this._drawOnMap();
-    });
+  /** Parse toll data từ VietMap response — lấy loại xe `vehicleType` */
+  private _parseTollStations(tollData: any, vehicleType: number): TransportOrderSegmentEtc[] {
+    if (!tollData || !Array.isArray(tollData)) return [];
+    const entry = tollData.find((t: any) => t.vehicle === vehicleType);
+    if (!entry?.data) return [];
+    try {
+      const d = typeof entry.data === 'string' ? JSON.parse(entry.data) : entry.data;
+      const stations: any[] = d?.stations || d?.toll_stations || [];
+      return stations.map((s: any) => ({
+        stationId: s.id || s.station_id,
+        stationName: s.name || s.station_name || 'Trạm thu phí',
+        price: s.price || s.fee || 0
+      }));
+    } catch { return []; }
   }
 
-  private _drawOnMap(geometry?: any) {
-    if (!this.map) return;
-    const w = window as any;
-
-    // 1. Draw Markers
-    this.markers.forEach(m => m.remove());
-    this.markers = [];
-    this.locations.forEach((loc, idx) => {
-      const el = document.createElement('div');
-      el.className = `marker-pin ${idx === 0 ? 'start' : (idx === this.locations.length - 1 ? 'end' : '')}`;
-      const marker = new w.vietmapgl.Marker(el)
-        .setLngLat([loc.lng, loc.lat])
-        .addTo(this.map);
-      this.markers.push(marker);
+  private _loadFees() {
+    this._feeService.getAll(new HttpParams()).subscribe((res: ResponseValue<Fee[]>) => {
+      const filtered = res.data?.filter(f => f.groupCode === 'CP01' || f.groupCode === 'CP02' || f.groupCode === 'CP03') || [];
+      this.listFeeSelect = filtered.map(f => ({ ...f, feeName: f.feeCode + '-' + f.feeName }));
     });
-
-    // 2. Draw Polyline
-    if (this.map.getSource('route')) {
-      this.map.removeLayer('route-layer');
-      this.map.removeSource('route');
-    }
-    if (geometry) {
-      this.map.addSource('route', { 'type': 'geojson', 'data': { 'type': 'Feature', 'geometry': geometry } });
-      this.map.addLayer({
-        'id': 'route-layer', 'type': 'line', 'source': 'route',
-        'paint': { 'line-color': '#007bff', 'line-width': 5 }
-      });
-      // Fit bounds
-      const coordinates = geometry.coordinates;
-      const bounds = coordinates.reduce((acc, coord) => acc.extend(coord), new w.vietmapgl.LngLatBounds(coordinates[0], coordinates[0]));
-      this.map.fitBounds(bounds, { padding: 50 });
-    }
   }
 
   private _loadDropdowns() {
     const user = this._authService.getLoggedInUser();
     const branchId = user?.branchId || '0';
 
-    // Vehicles
-    const vParams = new HttpParams({
-      fromObject: { branchid: branchId, vihicletype: '0' }
-    });
-    this._vihicleService.getAll(vParams).subscribe(res => {
-      this.listVehicles = res.data || [];
-    });
+    this._vihicleService.getAll({ branchid: branchId, vihicletype: '0' } as any)
+      .subscribe(res => this.listVehicles = res.data || []);
 
-    // Vehicle Types
-    const vtParams = new HttpParams({
-      fromObject: { type: 'VIHITYPE' }
-    });
-    this._otherService.getAll(vtParams).subscribe(res => {
-      this.listVehicleTypes = res.data || [];
-    });
+    this._vihicleService.getAll({ branchid: branchId, vihicletype: 'MOOC' } as any)
+      .subscribe(res => this.listMoocs = res.data || []);
 
-    // Drivers
-    const eParams = new HttpParams({
-      fromObject: { branchId: branchId }
-    });
-    this._employeeService.getAll(eParams).subscribe(res => {
-      this.listDrivers = (res.data || []).filter(x => x.departmentId == 1147);
-    });
+    this._otherService.getAll({ type: 'VIHITYPE' } as any)
+      .subscribe(res => this.listVehicleTypes = res.data || []);
 
-    // Suppliers
-    const sParams = new HttpParams({
-      fromObject: { branchid: branchId }
-    });
-    this._supplierService.getAll(sParams).subscribe(res => {
-      this.listSuppliers = res.data || [];
-    });
+    this._employeeService.getAll({ branchId } as any)
+      .subscribe(res => this.listDrivers = (res.data || []).filter((x: Employee) => x.departmentId == 1147));
+
+    this._supplierService.getAll({ branchid: branchId } as any)
+      .subscribe(res => this.listSuppliers = res.data || []);
   }
 }

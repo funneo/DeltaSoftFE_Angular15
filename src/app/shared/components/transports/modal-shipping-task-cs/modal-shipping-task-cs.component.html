@@ -38,9 +38,9 @@
                 <div class="input-group">
                   <span class="form-control" style="color: red;"><b>{{entity.jobId}}</b></span>
                   <span class="input-group-btn">
-                   <button *ngIf=" entity.status<1" type="button" class="btn btn-primary btn-sm " (click)="getJobId()">
-                    <i class="fa fa-edit"></i>...</button>
-                </span>                  
+                    <button *ngIf=" entity.status<1" type="button" class="btn btn-primary btn-sm " (click)="getJobId()">
+                      <i class="fa fa-edit"></i>...</button>
+                  </span>
                 </div>
               </div>
               <label class="col-sm-2 control-label"> Loại hình</label>
@@ -63,31 +63,35 @@
             <div class="form-group">
               <label class="col-sm-2 control-label">Nơi nhận hàng<span class="error">*</span></label>
               <div class="col-sm-10" *ngIf="isEport">
-                    <ng-select name="pickupLocationExportId" [items]="listLocations" bindLabel="address" bindValue="id" 
-                      [(ngModel)]="entity.pickupLocationId" (change)="changepickupLocationExport($event)" [required]="isEport">
-                    </ng-select>
+                <ng-select name="pickupLocationExportId" [items]="listLocations" bindLabel="address" bindValue="id"
+                  [(ngModel)]="entity.pickupLocationId" (change)="changepickupLocationExport($event)"
+                  [required]="isEport">
+                </ng-select>
               </div>
               <div class="col-sm-10" *ngIf="!isEport">
-                    <ng-select name="pickupLocationImportId" [items]="listPorts" bindLabel="name" bindValue="id" 
-                      [(ngModel)]="entity.pickupLocationId"  (change)="changepickupLocationImport($event)" [required]="!isEport">
-                    </ng-select>
+                <ng-select name="pickupLocationImportId" [items]="listPorts" bindLabel="name" bindValue="id"
+                  [(ngModel)]="entity.pickupLocationId" (change)="changepickupLocationImport($event)"
+                  [required]="!isEport">
+                </ng-select>
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">Nơi giao hàng<span class="error">*</span></label>
               <div class="col-sm-10" *ngIf="isEport">
-                  <ng-select name="deliveryLocationExportId" [items]="listPorts" bindLabel="name" bindValue="id" 
-                    [(ngModel)]="entity.deliveryLocationId"  (change)="changedeliveryLocationExport($event)" [required]="isEport">
-                  </ng-select>
+                <ng-select name="deliveryLocationExportId" [items]="listPorts" bindLabel="name" bindValue="id"
+                  [(ngModel)]="entity.deliveryLocationId" (change)="changedeliveryLocationExport($event)"
+                  [required]="isEport">
+                </ng-select>
               </div>
               <div class="col-sm-10" *ngIf="!isEport">
-                  <ng-select name="deliveryLocationImportId" [items]="listLocations" bindLabel="address" bindValue="id" 
-                    [(ngModel)]="entity.deliveryLocationId"  (change)="changedeliveryLocationImport($event)" [required]="!isEport">
-                  </ng-select>
+                <ng-select name="deliveryLocationImportId" [items]="listLocations" bindLabel="address" bindValue="id"
+                  [(ngModel)]="entity.deliveryLocationId" (change)="changedeliveryLocationImport($event)"
+                  [required]="!isEport">
+                </ng-select>
               </div>
             </div>
             <div class="form-group">
-              <label class="col-sm-2 control-label">T/g KH yêu cầu 
+              <label class="col-sm-2 control-label">T/g KH yêu cầu
                 <span class="error">*</span>
               </label>
               <div class="col-sm-4">
@@ -95,32 +99,34 @@
                   [(ngModel)]="entity.pickupTime" class="form-control" (selected)="selectedpickupTime($event)"
                   (hideDaterangepicker)="closedpickupTime($event)" autocomplete="off" [disabled]="flagXem">
               </div>
-              <label class="col-sm-2 control-label" *ngIf="!isEport"> T/g trả cont rỗng <span class="error">*</span></label>
-              <div class="col-sm-4"  *ngIf="!isEport">
-                <input name="detentionTime" type="text" daterangepicker [options]="ngaybatdauOption" [required]="!isEport"
-                  [(ngModel)]="entity.detentionTime" class="form-control"
-                  (selected)="selecteddetentionTime($event)"
-                  (hideDaterangepicker)="closeddetentionTime($event)" autocomplete="off" [disabled]="flagXem">
+              <label class="col-sm-2 control-label" *ngIf="!isEport"> T/g trả cont rỗng <span
+                  class="error">*</span></label>
+              <div class="col-sm-4" *ngIf="!isEport">
+                <input name="detentionTime" type="text" daterangepicker [options]="ngaybatdauOption"
+                  [required]="!isEport" [(ngModel)]="entity.detentionTime" class="form-control"
+                  (selected)="selecteddetentionTime($event)" (hideDaterangepicker)="closeddetentionTime($event)"
+                  autocomplete="off" [disabled]="flagXem">
               </div>
               <label class="col-sm-2 control-label" *ngIf="isEport">T/g Cut-off <span class="error">*</span></label>
               <div class="col-sm-4" *ngIf="isEport">
-                <input name="cutOffTime" type="text" daterangepicker [options]="ngayhoanthanhOption" [required]="isEport"
-                  [(ngModel)]="entity.cutOffTime" class="form-control" (selected)="selectedcutOffTime($event)"
-                  (hideDaterangepicker)="closedcutOffTime($event)" autocomplete="off" [disabled]="flagXem">
+                <input name="cutOffTime" type="text" daterangepicker [options]="ngayhoanthanhOption"
+                  [required]="isEport" [(ngModel)]="entity.cutOffTime" class="form-control"
+                  (selected)="selectedcutOffTime($event)" (hideDaterangepicker)="closedcutOffTime($event)"
+                  autocomplete="off" [disabled]="flagXem">
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">T/g pick-up cont tại Cảng <span class="error">*</span></label>
               <div class="col-sm-4">
                 <input name="demurageTime" type="text" daterangepicker [options]="ngayhoanthanhOption"
-                  [(ngModel)]="entity.demurageTime" class="form-control" (selected)="selectedcontainerStoragePeriod($event)"
+                  [(ngModel)]="entity.demurageTime" class="form-control"
+                  (selected)="selectedcontainerStoragePeriod($event)"
                   (hideDaterangepicker)="closedcontainerStoragePeriod($event)" autocomplete="off" [disabled]="flagXem">
               </div>
-              
+
               <label class="col-sm-2 control-label">Mã tham chiếu <span class="error">*</span> </label>
               <div class="col-sm-4">
-                <input name="referCode" type="text" 
-                  [(ngModel)]="entity.referCode" class="form-control" required
+                <input name="referCode" type="text" [(ngModel)]="entity.referCode" class="form-control" required
                   [disabled]="flagXem">
               </div>
             </div>
@@ -133,32 +139,33 @@
               <label class="col-sm-2 control-label"> Lượng hàng
               </label>
               <div class="col-sm-4 text-right">
-                <input class="form-control so-luong" [(ngModel)]="entity.weight"  name="weight" [readonly]="flagXem"
-                [mask]="maskNumber"/>
+                <input class="form-control so-luong" [(ngModel)]="entity.weight" name="weight" [readonly]="flagXem"
+                  [mask]="maskNumber" />
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">Ops làm lệnh</label>
               <div class="col-sm-4">
-                <ng-select name="nhanvien" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id" [(ngModel)]="entity.operatorId">
+                <ng-select name="nhanvien" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
+                  [(ngModel)]="entity.operatorId">
                 </ng-select>
               </div>
               <label class="col-sm-2 control-label">Size kiện hàng</label>
               <div class="col-sm-4">
-                <input class="form-control" [(ngModel)]="entity.dimension" type="text" 
-                  name="dimension" />
+                <input class="form-control" [(ngModel)]="entity.dimension" type="text" name="dimension" />
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">Số Cont</label>
               <div class="col-sm-4">
                 <div class="input-group" style="width: 100%;">
-                  <input name="containerNumberAccordingToPlan" type="text" [(ngModel)]="entity.containerNumber" class="form-control"
-                  [disabled]="flagXem" />
+                  <input name="containerNumberAccordingToPlan" type="text" [(ngModel)]="entity.containerNumber"
+                    class="form-control" [disabled]="flagXem" />
                   <span class="input-group-btn">
-                    <button type="button" class="btn btn-primary btn-sm " (click)="viewShipmentContSeal()" [disabled]="entity.status>1">
-                     <i class="fa fa-search"></i></button>
-                 </span>  
+                    <button type="button" class="btn btn-primary btn-sm " (click)="viewShipmentContSeal()"
+                      [disabled]="entity.status>1">
+                      <i class="fa fa-search"></i></button>
+                  </span>
                 </div>
               </div>
               <label class="col-sm-2 control-label">Số chì</label>
@@ -168,21 +175,22 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="col-sm-2 control-label" *ngIf="entity.taskType==0 || entity.taskType==null">Loại Container</label>
+              <label class="col-sm-2 control-label" *ngIf="entity.taskType==0 || entity.taskType==null">Loại
+                Container</label>
               <div class="col-sm-2">
-                <ng-select [items]="listContTypes" name="listContTypes" bindLabel="categoryName" bindValue="categoryCode"
-                  [disabled]="flagXem" [(ngModel)]="entity.contType">
+                <ng-select [items]="listContTypes" name="listContTypes" bindLabel="categoryName"
+                  bindValue="categoryCode" [disabled]="flagXem" [(ngModel)]="entity.contType">
                 </ng-select>
               </div>
               <label class="col-sm-2 control-label">Loại lệnh nâng</label>
               <div class="col-sm-2">
-                <ng-select [items]="listTypeOfLiffingOrder" name="typeOfLiffingOrder"  bindLabel="value" bindValue="id"
+                <ng-select [items]="listTypeOfLiffingOrder" name="typeOfLiffingOrder" bindLabel="value" bindValue="id"
                   [disabled]="flagXem" [(ngModel)]="entity.typeOfLiffingOrder">
                 </ng-select>
               </div>
               <label class="col-sm-2 control-label">Loại lệnh hạ</label>
               <div class="col-sm-2">
-                <ng-select [items]="listTypeOfLiffingOrder" name="typeOfLiftOffOrder"  bindLabel="value" bindValue="id"
+                <ng-select [items]="listTypeOfLiffingOrder" name="typeOfLiftOffOrder" bindLabel="value" bindValue="id"
                   [disabled]="flagXem" [(ngModel)]="entity.typeOfLiftOffOrder">
                 </ng-select>
               </div>
@@ -190,28 +198,28 @@
             <div class="form-group">
               <label class="col-sm-2 control-label">Hãng tàu</label>
               <div class="col-sm-4">
-                <ng-select [items]="listShipBrand" name="shipBrand"  bindLabel="categoryName" bindValue="id"
+                <ng-select [items]="listShipBrand" name="shipBrand" bindLabel="categoryName" bindValue="id"
                   [disabled]="flagXem" [(ngModel)]="entity.shipBrand">
                 </ng-select>
               </div>
               <label class="col-sm-2 control-label">Kho CFS</label>
               <div class="col-sm-4">
-                <ng-select [items]="listPorts" name="cFSWarehouse"  bindLabel="name" bindValue="id"
-                  [disabled]="flagXem" [(ngModel)]="entity.cfsWarehouse">
+                <ng-select [items]="listPorts" name="cFSWarehouse" bindLabel="name" bindValue="id" [disabled]="flagXem"
+                  [(ngModel)]="entity.cfsWarehouse">
                 </ng-select>
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">Cảng/bãi nâng</label>
               <div class="col-sm-4">
-                <ng-select [items]="listPorts" name="portOfLiffting"  bindLabel="name" bindValue="id"
+                <ng-select [items]="listPorts" name="portOfLiffting" bindLabel="name" bindValue="id"
                   [disabled]="flagXem" [(ngModel)]="entity.portOfLiffting">
                 </ng-select>
               </div>
               <label class="col-sm-2 control-label">Cảng/bãi hạ</label>
               <div class="col-sm-4">
-                <ng-select [items]="listPorts" name="portOfLiffoff" bindLabel="name" bindValue="id"
-                  [disabled]="flagXem" [(ngModel)]="entity.portOfLiftOff">
+                <ng-select [items]="listPorts" name="portOfLiffoff" bindLabel="name" bindValue="id" [disabled]="flagXem"
+                  [(ngModel)]="entity.portOfLiftOff">
                 </ng-select>
               </div>
             </div>
@@ -219,41 +227,40 @@
             <div class="form-group">
               <label class="col-sm-2 control-label">Người giao hàng/SĐT</label>
               <div class="col-sm-4">
-                <input class="form-control" [(ngModel)]="entity.deliveryInformaiton" type="text" 
+                <input class="form-control" [(ngModel)]="entity.deliveryInformaiton" type="text"
                   name="deliveryReturnLocation" />
               </div>
               <label class="col-sm-2 control-label">Người nhận hàng/SĐT</label>
               <div class="col-sm-4">
-                <input class="form-control" [(ngModel)]="entity.receiverInformation" type="text" 
+                <input class="form-control" [(ngModel)]="entity.receiverInformation" type="text"
                   name="receiverInformation" />
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">T/t xuất HĐ nâng hạ Cont</label>
               <div class="col-sm-10">
-                <input class="form-control" [(ngModel)]="entity.informationOnContainerLiffInvoice" type="text" 
+                <input class="form-control" [(ngModel)]="entity.informationOnContainerLiffInvoice" type="text"
                   name="informationOnContainerLiffInvoice" />
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">T/t xuất HĐ ngoài</label>
               <div class="col-sm-10">
-                <input class="form-control" [(ngModel)]="entity.externalInformationOnContainerLiffInvoice" type="text" 
+                <input class="form-control" [(ngModel)]="entity.externalInformationOnContainerLiffInvoice" type="text"
                   name="externalInformationOnContainerLiffInvoice" />
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">T/t xuất HĐ phụ phí khác</label>
               <div class="col-sm-10">
-                <input class="form-control" [(ngModel)]="entity.informationOfSurchargeInvoice" type="text" 
+                <input class="form-control" [(ngModel)]="entity.informationOfSurchargeInvoice" type="text"
                   name="informationOfSurchargeInvoice" />
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">Ghi chú</label>
               <div class="col-sm-10">
-                <textarea class="form-control" [(ngModel)]="entity.note" rows="1" 
-                  name="note"></textarea>
+                <textarea class="form-control" [(ngModel)]="entity.note" rows="1" name="note"></textarea>
               </div>
             </div>
             <div class="form-group" *ngIf="entity.status<1">
@@ -288,5 +295,6 @@
 </modal-attachfile>
 <modal-shipment-view-search *ngIf="viewSearchJobId" (SaveSuccess)="saveSuccessJobId($event)">
 </modal-shipment-view-search>
-<modal-list-cont-seal *ngIf="viewContSeals" (SaveSuccess)="saveSuccessContSeal($event)" (CloseModal)="closeShipmentContSealsModal()">
+<modal-list-cont-seal *ngIf="viewContSeals" (SaveSuccess)="saveSuccessContSeal($event)"
+  (CloseModal)="closeShipmentContSealsModal()">
 </modal-list-cont-seal>

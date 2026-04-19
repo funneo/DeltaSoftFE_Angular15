@@ -8,6 +8,8 @@ import { TabsModule } from 'ngx-bootstrap/tabs';
 import { BsDropdownModule } from 'ngx-bootstrap/dropdown';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { PipeSharedModule } from '@app/shared/pipes/pipe-shared.module';
+import { ModalAttachfileModule } from '../../systems/modal-attachfile/modal-attachfile.module';
+import { ModalShippingTaskAttachFileModule } from '../modal-shipping-task-attach-file/modal-shipping-task-attach-file.module';
 
 @NgModule({
   declarations: [ModalTransportOrderComponent],
@@ -19,7 +21,9 @@ import { PipeSharedModule } from '@app/shared/pipes/pipe-shared.module';
     TabsModule.forRoot(),
     BsDropdownModule.forRoot(),
     NgSelectModule,
-    PipeSharedModule
+    PipeSharedModule,
+    ModalAttachfileModule,
+    ModalShippingTaskAttachFileModule
   ],
   exports: [ModalTransportOrderComponent]
 })

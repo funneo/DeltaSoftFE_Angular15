@@ -1,4 +1,5 @@
 import { stat } from 'fs';
+import { DispatchOrderFee } from './dispatchorders/dispatch-order-fee';
 export interface ShippingTask {
     id?: number;
     branchId?: number;
@@ -84,4 +85,5 @@ export interface ShippingTask {
     hasMinutes?: boolean;
     hasOrders?: boolean;
     opManNote?: string;
+    listFee?: DispatchOrderFee[];
 }
