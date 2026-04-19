@@ -49,6 +49,9 @@
 - Dispatch order parking tickets
 - Transport order (lệnh vận chuyển) — new module using Vietmap + Google Maps API
 - Transport order modal: tab "Chi tiết công việc" với 4 action buttons (xoá, đính kèm, tải file lái xe, nhân bản), tab "Chi phí" (listFee), tab "Hình ảnh hiện trường" (khi status > 1)
+- Transport order modal: scrollable tab tables với sticky header (flex chain fix: tabset→tab-content→tab-pane.active→tab-table-wrap overflow-y:auto)
+- Transport order modal: thông tin vận chuyển đầy đủ như FCL (isSubcontractor split form, route split 5-5, general info fields)
+- Transport order modal: driver 1 dùng listEmployees (all employees) thay vì listDrivers (filtered by dept 1147 — empty)
 - Quotation subcontractors
 - Shipping tasks: CS, LG, OpMan views
 - Fuel/gas management: driver fuel approval, debit, limit

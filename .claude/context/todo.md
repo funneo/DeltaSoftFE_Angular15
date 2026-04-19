@@ -8,6 +8,8 @@
 - Integration: Vietmap API for route + toll calculation is implemented
 - Google Maps API for display is wired up
 - Modal tabs (Chi tiết công việc, Chi phí, Hình ảnh hiện trường) đã thêm — chưa implement upload ảnh (onAttachFileChanged là stub)
+- Modal scroll tables: flex chain fix đã apply — chờ user confirm hoạt động
+- Driver 1 dropdown: đã fix dùng listEmployees — chờ user confirm
 - Status: đang phát triển
 
 ### AI Invoice Extraction

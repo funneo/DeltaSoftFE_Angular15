@@ -23,6 +23,8 @@ import { ModalShippingTaskAttachFileComponent } from '../modal-shipping-task-att
 import { ShippingTaskService } from '@app/shared/services/transports/shipping-task.service';
 import { MessageContstants } from '@app/shared/constants';
 import { HttpParams } from '@angular/common/http';
+import { TollrouteService } from '@app/shared/services/tollroute.service';
+import { Tollroute } from '@app/shared/models/tollroute.model';
 
 export interface LocationItem {
   locationId: number;
@@ -90,10 +92,15 @@ export class ModalTransportOrderComponent {
   // Dropdowns
   listVehicles: Vihicle[] = [];
   listVehicleTypes: OtherCategories[] = [];
+  listContType: OtherCategories[] = [];
   listMoocs: Vihicle[] = [];
+  listEmployees: Employee[] = [];
   listDrivers: Employee[] = [];
   listSuppliers: Supplier[] = [];
   listFeeSelect: Fee[] = [];
+  listTollRoute: Tollroute[] = [];
+  listOrderTypes = [{ value: 0, text: 'Đường dài' }, { value: 1, text: 'Đường ngắn' }];
+  orderType = 0;
 
   // Attach files
   listAttachFile: ShippingTaskAttachFile[] = [];
@@ -113,6 +120,7 @@ export class ModalTransportOrderComponent {
     private _authService: AuthService,
     private _feeService: FeeService,
     private _shippingTaskService: ShippingTaskService,
+    private _tollRouteService: TollrouteService,
     private http: HttpClient
   ) { }
 
@@ -524,21 +532,49 @@ export class ModalTransportOrderComponent {
 
   private _loadDropdowns() {
     const user = this._authService.getLoggedInUser();
-    const branchId = user?.branchId || '0';
+    const branchId = user?.branchId?.toString() || '0';
 
-    this._vihicleService.getAll({ branchid: branchId, vihicletype: '0' } as any)
-      .subscribe(res => this.listVehicles = res.data || []);
+    this._vihicleService.getAll(
+      new HttpParams().set('branchid', branchId).set('vihicletype', '0')
+    ).subscribe((res: ResponseValue<Vihicle[]>) => this.listVehicles = res.data || []);
 
-    this._vihicleService.getAll({ branchid: branchId, vihicletype: 'MOOC' } as any)
-      .subscribe(res => this.listMoocs = res.data || []);
+    this._vihicleService.getAllMooc(
+      new HttpParams().set('branchid', branchId)
+    ).subscribe((res: ResponseValue<Vihicle[]>) => this.listMoocs = res.data || []);
 
-    this._otherService.getAll({ type: 'VIHITYPE' } as any)
-      .subscribe(res => this.listVehicleTypes = res.data || []);
+    this._otherService.getAll(
+      new HttpParams().set('type', 'VIHITYPE')
+    ).subscribe((res: ResponseValue<OtherCategories[]>) => this.listVehicleTypes = res.data || []);
 
-    this._employeeService.getAll({ branchId } as any)
-      .subscribe(res => this.listDrivers = (res.data || []).filter((x: Employee) => x.departmentId == 1147));
+    this._otherService.getAll(
+      new HttpParams().set('type', 'CONTTYPE')
+    ).subscribe((res: ResponseValue<OtherCategories[]>) => this.listContType = res.data || []);
 
-    this._supplierService.getAll({ branchid: branchId } as any)
-      .subscribe(res => this.listSuppliers = res.data || []);
+    this._employeeService.getAll(
+      new HttpParams().set('branchId', branchId)
+    ).subscribe((res: ResponseValue<Employee[]>) => {
+      this.listEmployees = res.data || [];
+      this.listDrivers = this.listEmployees.filter((x: Employee) => x.departmentId == 1147);
+    });
+
+    this._supplierService.getAll(
+      new HttpParams().set('branchid', branchId)
+    ).subscribe((res: ResponseValue<Supplier[]>) => this.listSuppliers = res.data || []);
+
+    this._tollRouteService.getAll(
+      new HttpParams().set('branchid', branchId)
+    ).subscribe((res: ResponseValue<Tollroute[]>) => this.listTollRoute = res.data || []);
+  }
+
+  changeTollRouteCode(event: Tollroute) {
+    this.entity.subcontractorsQuoteRouteCode = event?.tollRouteCode;
+  }
+
+  orderTypeChange(event: any) {
+    this.entity.shortWay = event?.value === 1;
+  }
+
+  calulateOil() {
+    // tongdau/tongKm được tính từ backend; client chỉ cần lưu oilCompensation
   }
 }

@@ -17,8 +17,24 @@
         </button>
       </div>
 
-      <!-- BODY: 3 cột -->
-      <div class="to-body">
+      <!-- MODE BAR: chọn loại lệnh -->
+      <div class="to-mode-bar">
+        <label class="to-mode-toggle">
+          <input type="checkbox" [(ngModel)]="entity.isSubcontractors" (change)="onSubcontractorToggle()"
+            [disabled]="entity.status > 0">
+          <span class="toggle-slider"></span>
+          <span>Xe thuê ngoài (Subcontractor)</span>
+        </label>
+        <span class="to-mode-hint" *ngIf="entity.isSubcontractors">
+          <i class="fa fa-info-circle"></i> Chế độ thầu phụ — nhập thông tin nhà thầu bên dưới
+        </span>
+        <span class="to-mode-hint text-muted" *ngIf="!entity.isSubcontractors">
+          <i class="fa fa-info-circle"></i> Xe nội bộ — lập tuyến đường và chọn xe/lái xe bên dưới
+        </span>
+      </div>
+
+      <!-- BODY: 3 cột — chỉ hiện khi xe nội bộ -->
+      <div class="to-body" *ngIf="!entity.isSubcontractors">
 
         <!-- ═══════════════════════════════════════════════════════
              CỘT TRÁI: Pool các điểm từ ShippingTask
@@ -271,96 +287,114 @@
 
           <div class="info-form">
 
-            <!-- Xe thuê ngoài -->
-            <div class="info-toggle">
-              <label class="toggle-label">
-                <input type="checkbox" [(ngModel)]="entity.isSubcontractors" (change)="onSubcontractorToggle()">
-                <span class="toggle-slider"></span>
-                Xe thuê ngoài (Subcontractor)
-              </label>
-            </div>
-
-            <!-- Chọn xe + tài xế (xe nội bộ) -->
-            <ng-container *ngIf="!entity.isSubcontractors">
-              <div class="info-field">
-                <label>Loại xe</label>
+            <div class="if-row">
+              <div class="if-field">
+                <span class="if-label">Loại xe</span>
                 <ng-select [items]="listVehicleTypes" bindLabel="categoryName" bindValue="id"
-                  [(ngModel)]="entity.vehicleType" (change)="onVehicleTypeChange($event)"
-                  placeholder="Chọn loại xe...">
+                  [(ngModel)]="entity.vehicleType" (change)="onVehicleTypeChange($event)" placeholder="Loại xe...">
                 </ng-select>
               </div>
-              <div class="info-field">
-                <label>Số xe <span class="text-danger">*</span></label>
+              <div class="if-field">
+                <span class="if-label">Loại Cont</span>
+                <ng-select [items]="listContType" bindLabel="categoryName" bindValue="categoryName"
+                  [(ngModel)]="entity.contType" placeholder="Cont...">
+                </ng-select>
+              </div>
+            </div>
+
+            <div class="if-row">
+              <div class="if-field">
+                <span class="if-label">Số xe <span class="text-danger">*</span></span>
                 <ng-select [items]="listVehicles" bindLabel="licensePlates" bindValue="id"
-                  [(ngModel)]="entity.vehicleId" (change)="onVehicleChange($event)"
-                  placeholder="Chọn biển số...">
+                  [(ngModel)]="entity.vehicleId" (change)="onVehicleChange($event)" placeholder="Xe...">
                 </ng-select>
+              </div>
+              <div class="if-field">
+                <span class="if-label">Mooc</span>
+                <ng-select [items]="listMoocs" bindLabel="licensePlates" bindValue="id"
+                  [(ngModel)]="entity.moocId" (change)="onMoocChange($event)" placeholder="Mooc...">
+                </ng-select>
+              </div>
+            </div>
+
+            <div class="if-row">
+              <div class="if-field">
+                <span class="if-label">Lái xe 1 <span class="text-danger">*</span></span>
+                <ng-select [items]="listEmployees" bindLabel="employeeFullName" bindValue="id"
+                  [(ngModel)]="entity.driverId" (change)="onDriverChange($event)" placeholder="Lái xe...">
+                </ng-select>
+              </div>
+              <div class="if-field">
+                <span class="if-label">SĐT</span>
+                <input type="text" class="form-control" [(ngModel)]="entity.driverTel">
+              </div>
+            </div>
+
+            <div class="if-row">
+              <div class="if-field">
+                <span class="if-label">Lái xe dầu <span class="text-danger">*</span></span>
+                <ng-select [items]="listEmployees" bindLabel="employeeFullName" bindValue="id"
+                  [(ngModel)]="entity.fuelDriverId" placeholder="Lái xe dầu...">
+                </ng-select>
+              </div>
+              <div class="if-field">
+                <span class="if-label">Định mức chạy hàng</span>
+                <ng-select [items]="listOrderTypes" bindLabel="text" bindValue="value"
+                  [(ngModel)]="orderType" (change)="orderTypeChange($event)">
+                </ng-select>
+              </div>
+            </div>
+
+            <div class="if-row">
+              <div class="if-field">
+                <span class="if-label">Tổng dầu ĐM</span>
+                <span class="form-control text-right">{{ entity.tongdau | number:'1.2-2' }}</span>
+              </div>
+              <div class="if-field">
+                <span class="if-label">Bù dầu</span>
+                <input type="text" class="form-control text-right"
+                  [(ngModel)]="entity.oilCompensation" (change)="calulateOil()">
+              </div>
+              <div class="if-field">
+                <span class="if-label">Tổng km</span>
+                <span class="form-control text-right">{{ entity.tongKm | number:'1.0-0' }}</span>
+              </div>
+            </div>
+
+            <div class="if-row">
+              <div class="if-field">
+                <span class="if-label">Giá dầu</span>
+                <input type="number" class="form-control" [(ngModel)]="entity.oilPrice">
+              </div>
+              <div class="if-field if-field--wide">
+                <span class="if-label">Lý do bù dầu</span>
+                <input type="text" class="form-control" [(ngModel)]="entity.reasonOilCompensation">
+              </div>
+            </div>
+
+            <div class="if-field if-field--full">
+              <span class="if-label">Tóm tắt lệnh</span>
+              <textarea class="form-control" rows="2" [(ngModel)]="entity.dispatchSummarize"></textarea>
+            </div>
+
+            <div class="if-field if-field--full">
+              <span class="if-label">Ghi chú</span>
+              <textarea class="form-control" rows="2" [(ngModel)]="entity.note"></textarea>
+            </div>
+
+            <ng-container *ngIf="entity.finished">
+              <div class="if-row">
+                <div class="if-field if-field--wide">
+                  <span class="if-label">T/g hoàn thành lệnh</span>
+                  <span class="form-control">{{ entity.finishedDate }}</span>
+                </div>
+              </div>
+              <div class="if-field if-field--full">
+                <span class="if-label">Tài xế ghi chú</span>
+                <span class="form-control">{{ entity.noteFinished }}</span>
               </div>
             </ng-container>
 
-            <!-- Xe thuê ngoài -->
-            <ng-container *ngIf="entity.isSubcontractors">
-              <div class="info-field">
-                <label>Đơn vị vận chuyển <span class="text-danger">*</span></label>
-                <ng-select [items]="listSuppliers" bindLabel="supplierName" bindValue="id"
-                  [(ngModel)]="entity.shippingUnitId"
-                  placeholder="Chọn nhà thầu...">
-                </ng-select>
-              </div>
-              <div class="info-field">
-                <label>Biển số xe ngoài <span class="text-danger">*</span></label>
-                <input type="text" class="form-control form-control-sm"
-                  [(ngModel)]="entity.vehiclelLicensePlates"
-                  placeholder="VD: 51C-12345">
-              </div>
-            </ng-container>
-
-            <!-- Tài xế -->
-            <div class="info-field">
-              <label>Tài xế <span class="text-danger">*</span></label>
-              <ng-select [items]="listDrivers" bindLabel="employeeFullName" bindValue="id"
-                [(ngModel)]="entity.driverId" (change)="onDriverChange($event)"
-                placeholder="Chọn tài xế...">
-              </ng-select>
-            </div>
-            <div class="info-field">
-              <label>SĐT tài xế</label>
-              <input type="text" class="form-control form-control-sm"
-                [(ngModel)]="entity.driverTel"
-                placeholder="Số điện thoại...">
-            </div>
-
-            <!-- Mooc (rơ moóc) -->
-            <div class="info-field">
-              <label>Mooc</label>
-              <ng-select [items]="listMoocs" bindLabel="licensePlates" bindValue="id"
-                [(ngModel)]="entity.moocId" (change)="onMoocChange($event)"
-                placeholder="Chọn rơ moóc (nếu có)...">
-              </ng-select>
-            </div>
-
-            <hr class="info-divider">
-
-            <!-- Ghi chú -->
-            <div class="info-field">
-              <label>Ghi chú</label>
-              <textarea class="form-control form-control-sm" rows="3"
-                [(ngModel)]="entity.note"
-                placeholder="Ghi chú cho lệnh vận chuyển..."></textarea>
-            </div>
-
-            <!-- Danh sách công việc đính kèm -->
-            <div class="info-tasks" *ngIf="entity.listDetailed?.length">
-              <label class="info-tasks-label">
-                <i class="fa fa-list-ul"></i>
-                Công việc đính kèm ({{ entity.listDetailed.length }})
-              </label>
-              <div class="task-chip" *ngFor="let d of entity.listDetailed">
-                <i class="fa fa-file-text-o"></i>
-                <span>{{ d.shippingTaskItem?.referCode || ('Task #' + d.shippingTaskId) }}</span>
-                <small class="text-muted">{{ d.shippingTaskItem?.customerCode }}</small>
-              </div>
-            </div>
           </div>
 
           <!-- Nút lưu ở cuối cột phải -->
@@ -379,15 +413,159 @@
       </div>
       <!-- /to-body -->
 
+      <!-- BODY: form thầu phụ — chỉ hiện khi isSubcontractors -->
+      <div class="to-subcontractor-body" *ngIf="entity.isSubcontractors">
+        <form class="form-horizontal sub-form" novalidate>
+          <div class="sub-form-scroll">
+
+            <div class="form-group" *ngIf="entity.refNo">
+              <label class="col-sm-2 control-label">RefNo</label>
+              <div class="col-sm-3 control-label-text-left">
+                <span style="font-weight:bold;color:blue;">{{entity.refNo}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Ngày</label>
+              <div class="col-sm-3 control-label-text-left">
+                <span style="font-weight:bold;color:blue;">{{entity.createdDate | date:'dd/MM/yyyy'}}</span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Nhà cung cấp <span class="error">*</span></label>
+              <div class="col-sm-10">
+                <ng-select [items]="listSuppliers" bindLabel="supplierName" bindValue="id"
+                  [(ngModel)]="entity.shippingUnitId" name="shippingUnitId"
+                  placeholder="Chọn nhà thầu..." [required]="true">
+                </ng-select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Loại xe</label>
+              <div class="col-sm-4">
+                <ng-select [items]="listVehicleTypes" bindLabel="categoryName" bindValue="id"
+                  [(ngModel)]="entity.vehicleType" name="vehicleType" (change)="onVehicleTypeChange($event)"
+                  placeholder="Chọn loại xe...">
+                </ng-select>
+              </div>
+              <label class="col-sm-2 control-label">Loại Cont</label>
+              <div class="col-sm-4">
+                <ng-select [items]="listContType" bindLabel="categoryName" bindValue="categoryName"
+                  [(ngModel)]="entity.contType" name="contType" placeholder="Chọn loại cont...">
+                </ng-select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Biển số xe</label>
+              <div class="col-sm-4">
+                <input type="text" class="form-control" [(ngModel)]="entity.vehiclelLicensePlates"
+                  name="vehiclelLicensePlates" placeholder="VD: 51C-12345">
+              </div>
+              <label class="col-sm-2 control-label">Biển Mooc</label>
+              <div class="col-sm-4">
+                <input class="form-control" [(ngModel)]="entity.moocLicensePlates"
+                  name="moocLicensePlates" type="text" placeholder="Biển rơ moóc...">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Lái xe 1 <span class="error">*</span></label>
+              <div class="col-sm-4">
+                <ng-select [items]="listEmployees" bindLabel="employeeFullName" bindValue="id"
+                  [(ngModel)]="entity.driverId" name="driverId" (change)="onDriverChange($event)"
+                  placeholder="Chọn lái xe..." [required]="true">
+                </ng-select>
+              </div>
+              <label class="col-sm-2 control-label">SĐT</label>
+              <div class="col-sm-4">
+                <input class="form-control" [(ngModel)]="entity.driverTel" name="driverTel" type="text">
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Cung đường toàn tuyến</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" [(ngModel)]="entity.fullRoute" name="fullRoute" rows="2"
+                  placeholder="Mô tả cung đường..."></textarea>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Mã cung đường tính phí</label>
+              <div class="col-sm-10">
+                <ng-select [items]="listTollRoute" bindLabel="tollRouteName" bindValue="tollRouteCode"
+                  [(ngModel)]="entity.subcontractorsQuoteRouteCode" name="subcontractorsQuoteRouteCode"
+                  (change)="changeTollRouteCode($event)" placeholder="Chọn cung đường...">
+                </ng-select>
+              </div>
+            </div>
+
+            <div class="form-group" *ngIf="entity.subcontractorsPurchaseCost || entity.subcontractorsPurchaseVat">
+              <label class="col-sm-2 control-label">Đơn giá chưa VAT</label>
+              <div class="col-sm-2">
+                <span class="form-control text-right">{{entity.subcontractorsPurchaseCost | number:'1.0-0'}}</span>
+              </div>
+              <label class="col-sm-1 control-label">VAT</label>
+              <div class="col-sm-2">
+                <span class="form-control text-right">{{entity.subcontractorsPurchaseVat | number:'1.0-0'}}</span>
+              </div>
+              <label class="col-sm-1 control-label">Số tiền</label>
+              <div class="col-sm-2">
+                <span class="form-control text-right">
+                  {{((entity.subcontractorsPurchaseCost||0)+(entity.subcontractorsPurchaseVat||0)) | number:'1.0-0'}}
+                </span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Tóm tắt Lệnh</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" [(ngModel)]="entity.dispatchSummarize" name="dispatchSummarize"
+                  rows="3"></textarea>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Ghi chú</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" [(ngModel)]="entity.note" name="note" rows="2"></textarea>
+              </div>
+            </div>
+
+            <div class="form-group" *ngIf="entity.finished">
+              <label class="col-sm-2 control-label">T/g hoàn thành lệnh</label>
+              <div class="col-sm-3">
+                <span class="form-control">{{entity.finishedDate}}</span>
+              </div>
+              <label class="col-sm-2 control-label">Tài xế ghi chú</label>
+              <div class="col-sm-5">
+                <span class="form-control">{{entity.noteFinished}}</span>
+              </div>
+            </div>
+
+          </div><!-- /sub-form-scroll -->
+
+          <div class="sub-form-footer">
+            <button type="button" class="btn btn-default btn-sm" (click)="hide()">
+              <i class="fa fa-times"></i> Đóng
+            </button>
+            <button type="button" class="btn btn-primary btn-sm" (click)="save()" [disabled]="isSaving">
+              <i class="fa" [class.fa-save]="!isSaving" [class.fa-spinner]="isSaving" [class.fa-spin]="isSaving"></i>
+              {{ isSaving ? 'Đang lưu...' : 'Lưu lệnh' }}
+            </button>
+          </div>
+        </form>
+      </div>
+      <!-- /to-subcontractor-body -->
+
       <!-- TABS: Chi tiết công việc / Chi phí / Hình ảnh hiện trường -->
       <div class="to-tabs-section">
         <tabset>
 
           <!-- TAB: Chi tiết công việc -->
           <tab heading="Chi tiết công việc">
-            <div class="form-group" style="margin-top:10px;">
-              <div class="table-responsive" style="padding-left:15px; padding-right:15px;">
-                <table class="table table-bordered table-striped table-hover">
+            <div class="tab-table-wrap">
+                <table class="table to-table">
                   <thead>
                     <tr>
                       <th>ID</th>
@@ -455,80 +633,70 @@
                     </tr>
                   </tbody>
                 </table>
-              </div>
             </div>
           </tab>
 
           <!-- TAB: Chi phí -->
           <tab heading="Chi phí">
-            <div class="form-group" style="margin-top:10px;">
-              <div class="col-sm-2">
-                <button type="button" class="btn btn-sm btn-primary" (click)="newFee()"
-                  [disabled]="entity.status >= 4">Thêm</button>
-              </div>
+            <div class="tab-toolbar">
+              <button type="button" class="btn btn-sm btn-primary" (click)="newFee()"
+                [disabled]="entity.status >= 4">Thêm</button>
             </div>
-            <div class="form-group">
-              <div class="table-responsive" style="padding-left:15px; padding-right:15px;">
-                <table class="table table-bordered table-striped table-hover">
-                  <thead>
-                    <tr>
-                      <th>Mã phí</th>
-                      <th>Nội dung</th>
-                      <th>Số lượng</th>
-                      <th>Số tiền</th>
-                      <th>Vat</th>
-                      <th>Tổng tiền</th>
-                      <th>Ghi chú</th>
-                      <th>Tác vụ</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let item of entity.listFee; let i = index;">
-                      <td>
-                        <ng-select name="feeId{{i}}" [items]="listFeeSelect" bindLabel="feeName" bindValue="id"
-                          (change)="feeCodeChanged(item, $event)" [(ngModel)]="item.feeId" required>
-                        </ng-select>
-                      </td>
-                      <td>
-                        <input type="text" class="form-control" name="contents{{i}}" [(ngModel)]="item.contents"
-                          placeholder="Nội dung" />
-                      </td>
-                      <td>
-                        <input type="number" class="form-control text-right" name="soluong{{i}}"
-                          [(ngModel)]="item.quantity" (change)="changeQuantity(item)"
-                          placeholder="Số lượng" min="0" />
-                      </td>
-                      <td style="width:150px;">
-                        <input type="number" class="form-control text-right" name="sotienFee{{i}}"
-                          [(ngModel)]="item.cost" (change)="changeCost(item)"
-                          placeholder="Chi phí" min="0" />
-                      </td>
-                      <td style="width:100px;">
-                        <input type="number" class="form-control text-right" name="vatFee{{i}}"
-                          [(ngModel)]="item.vat" (change)="changeCost(item)"
-                          placeholder="Vat" min="0" />
-                      </td>
-                      <td style="width:120px;">
-                        <input type="number" class="form-control text-right" name="totalFeeCost{{i}}"
-                          [(ngModel)]="item.totalCost" [readonly]="true" placeholder="Tổng tiền" />
-                      </td>
-                      <td>
-                        <input class="form-control" [(ngModel)]="item.note" type="text"
-                          name="noteFee{{i}}" />
-                      </td>
-                      <td style="width:40px;">
-                        <button *ngIf="entity.status == 3" type="button" class="btn btn-warning btn-sm"
-                          (click)="deleteFee(item)">
-                          <i class="fa fa-trash"></i>
-                        </button>
-                      </td>
-                    </tr>
-                    <tr *ngIf="!entity.listFee?.length">
-                      <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
+            <div class="tab-table-wrap">
+              <table class="table to-table">
+                <thead>
+                  <tr>
+                    <th>Mã phí</th>
+                    <th>Nội dung</th>
+                    <th>Số lượng</th>
+                    <th>Số tiền</th>
+                    <th>Vat</th>
+                    <th>Tổng tiền</th>
+                    <th>Ghi chú</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of entity.listFee; let i = index;">
+                    <td>
+                      <ng-select name="feeId{{i}}" [items]="listFeeSelect" bindLabel="feeName" bindValue="id"
+                        (change)="feeCodeChanged(item, $event)" [(ngModel)]="item.feeId" required>
+                      </ng-select>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control" name="contents{{i}}" [(ngModel)]="item.contents" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control text-right" name="soluong{{i}}"
+                        [(ngModel)]="item.quantity" (change)="changeQuantity(item)" min="0" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control text-right" name="sotienFee{{i}}"
+                        [(ngModel)]="item.cost" (change)="changeCost(item)" min="0" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control text-right" name="vatFee{{i}}"
+                        [(ngModel)]="item.vat" (change)="changeCost(item)" min="0" />
+                    </td>
+                    <td>
+                      <input type="number" class="form-control text-right" name="totalFeeCost{{i}}"
+                        [(ngModel)]="item.totalCost" [readonly]="true" />
+                    </td>
+                    <td>
+                      <input class="form-control" [(ngModel)]="item.note" type="text" name="noteFee{{i}}" />
+                    </td>
+                    <td>
+                      <button *ngIf="entity.status == 3" type="button" class="btn btn-warning btn-sm"
+                        (click)="deleteFee(item)">
+                        <i class="fa fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="!entity.listFee?.length">
+                    <td colspan="100%">Không có bản ghi nào.</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </tab>
 

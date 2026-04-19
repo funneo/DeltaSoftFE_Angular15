@@ -5,7 +5,8 @@
         <h3 class="box-title">Thực hiện giao nhận vận chuyển</h3>
       </div>
       <div class="col-md-2">
-        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)" class="form-control">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+          class="form-control">
         <!-- <label class="input-group-text" style="padding-right: 20px;">Tháng: </label> -->
       </div>
       <div class="col-md-1">
@@ -13,7 +14,7 @@
           [(ngModel)]="branchId" (change)="changedBranch($event)" [readonly]="!userLoged.isAdmin">
         </ng-select>
       </div>
-      <div class="col-md-4">
+      <div class="col-md-3">
         <div class="input-group">
           <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
             placeholder="Từ khóa" />
@@ -23,31 +24,32 @@
             </button>
           </span>
           <span class="input-group-btn">
-            <button class="btn btn-success btn-flat btn-sm" style="height: 28px;" 
-            (click)="exportExcel()" title="Xuất dữ liệu">
-            <i class="fa fa-file-excel-o"></i>
+            <button class="btn btn-success btn-flat btn-sm" style="height: 28px;" (click)="exportExcel()"
+              title="Xuất dữ liệu">
+              <i class="fa fa-file-excel-o"></i>
             </button>
           </span>
         </div>
       </div>
-      <div class="col-md-3 text-right">
-        <button class="btn btn-warning btn-sm" (click)="updateGroup()" appPermission
-          appFunction="DISPATCHORDER" appAction="CREATE">
+      <div class="col-md-4 text-right">
+        <button class="btn btn-warning btn-sm" (click)="updateGroup()" appPermission appFunction="DISPATCHORDER"
+          appAction="CREATE">
           <i class="fa fa-check"></i> Cập nhật Nhóm
         </button>
         <button class="btn btn-success btn-sm" (click)="createDispatchOrder()" [disabled]="!flagDelete" appPermission
           appFunction="DISPATCHORDER" appAction="CREATE">
           <i class="fa fa-check"></i> Lập lệnh vận chuyển
         </button>
-        <button class="btn btn-primary btn-sm" (click)="createTransportOrder()" [disabled]="!flagDelete" appPermission
-          appFunction="DISPATCHORDER" appAction="CREATE">
+        <button *ngIf="userLoged.isAdmin" class="btn btn-primary btn-sm" (click)="createTransportOrder()"
+          [disabled]="!flagDelete" appPermission appFunction="DISPATCHORDER" appAction="CREATE">
           <i class="fa fa-map-marker"></i> Lập lệnh (Location)
         </button>
       </div>
     </div>
   </div>
   <!-- /.box-header -->
-  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrappe" style="position: relative;"  id="div#style-scroll-1">
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrappe" style="position: relative;"
+    id="div#style-scroll-1">
     <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f4f4f9" size="medium" color="#1010ee" name="spinner1"
       type="ball-clip-rotate" size="medium">
       <p class="loading">Tải dữ liệu ...</p>
@@ -83,28 +85,43 @@
         </tr>
         <!-- Dòng filter -->
         <tr>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.id" (keyup)="filterData()"  ></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.id" (keyup)="filterData()"></th>
           <th colspan="2"></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.contType" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.customerName" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.pickupTime" (keyup)="filterData()"></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.pickupLocation" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.portOfLiffting" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.cutOffTime" (keyup)="filterData()"></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.demurageTime" (keyup)="filterData()"></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.detentionTime" (keyup)="filterData()"></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.billBooking" (keyup)="filterData()"></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.containerNumber" (keyup)="filterData()"></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.planningGroup" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.planningDriverName" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.weight" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.note" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.informationOnContainerLiffInvoice" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.opManNote" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.refNo" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.vehiclelLicensePlates" (keyup)="filterData()" ></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.driverName" (keyup)="filterData()"></th>
-          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.createdByName" (keyup)="filterData()" ></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.contType" (keyup)="filterData()"></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.customerName" (keyup)="filterData()">
+          </th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.pickupTime" (keyup)="filterData()">
+          </th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.pickupLocation" (keyup)="filterData()">
+          </th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.portOfLiffting" (keyup)="filterData()">
+          </th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.cutOffTime" (keyup)="filterData()">
+          </th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.demurageTime" (keyup)="filterData()">
+          </th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.detentionTime" (keyup)="filterData()">
+          </th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.billBooking" (keyup)="filterData()">
+          </th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.containerNumber"
+              (keyup)="filterData()"></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.planningGroup" (keyup)="filterData()">
+          </th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.planningDriverName"
+              (keyup)="filterData()"></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.weight" (keyup)="filterData()"></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.note" (keyup)="filterData()"></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.informationOnContainerLiffInvoice"
+              (keyup)="filterData()"></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.opManNote" (keyup)="filterData()"></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.refNo" (keyup)="filterData()"></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.vehiclelLicensePlates"
+              (keyup)="filterData()"></th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.driverName" (keyup)="filterData()">
+          </th>
+          <th><input type="text" class="form-control" [(ngModel)]="filterColumns.createdByName" (keyup)="filterData()">
+          </th>
         </tr>
       </thead>
       <tbody>
@@ -119,13 +136,15 @@
           </td>
           <td>
             <label class="custom-checkbox">
-              <input type="checkbox" value="hasMinutes{{ item.id }}" [(ngModel)]="item.hasMinutes" (change)="updateMinutes(item)" />
+              <input type="checkbox" value="hasMinutes{{ item.id }}" [(ngModel)]="item.hasMinutes"
+                (change)="updateMinutes(item)" />
               <span class="helping-el"></span>
             </label>
           </td>
           <td>
             <label class="custom-checkbox">
-              <input type="checkbox" value="hasOrders{{ item.id }}" [(ngModel)]="item.hasOrders" (change)="updateOrders(item)" />
+              <input type="checkbox" value="hasOrders{{ item.id }}" [(ngModel)]="item.hasOrders"
+                (change)="updateOrders(item)" />
               <span class="helping-el"></span>
             </label>
           </td>
@@ -144,44 +163,51 @@
           <td>
             <span style="color: blue;">{{item.pickupTime | date:'dd/MM/yyyy HH:mm'}}</span>
           </td>
-          <td><span style="color: blue;">{{item.pickupLocation }}</span><br><span style="color: saddlebrown;"> {{item.deliveryLocation}}</span></td>
-          <td><span style="color: blue;">{{item.portOfLiftingName }}</span><br><span style="color: saddlebrown;"> {{item.portOfLiftOffName}}</span></td>
+          <td><span style="color: blue;">{{item.pickupLocation }}</span><br><span style="color: saddlebrown;">
+              {{item.deliveryLocation}}</span></td>
+          <td><span style="color: blue;">{{item.portOfLiftingName }}</span><br><span style="color: saddlebrown;">
+              {{item.portOfLiftOffName}}</span></td>
           <td>
             <span>
               {{item.cutOffTime | date:'dd/MM/yyyy HH:mm'}}
             </span>
           </td>
           <td><span>
-            {{item.demurageTime | date:'dd/MM/yyyy HH:mm'}}
-          </span></td>
+              {{item.demurageTime | date:'dd/MM/yyyy HH:mm'}}
+            </span></td>
           <td><span>
-            {{item.detentionTime | date:'dd/MM/yyyy HH:mm'}}
-          </span></td>
+              {{item.detentionTime | date:'dd/MM/yyyy HH:mm'}}
+            </span></td>
           <td>{{item.billBooking}}</td>
           <td>
             <span *ngIf="item.shipmentType!=1174">
-              {{ (item.containerNumber || '') + ((item.containerNumber?.length > 0 ? '-' : '') + (item.sealNumber || '')) 
+              {{ (item.containerNumber || '') + ((item.containerNumber?.length > 0 ? '-' : '') + (item.sealNumber ||
+              ''))
               }}
             </span>
             <div class="input-group" *ngIf="item.shipmentType==1174">
-              <input type="text" class="form-control" name="containerNumber{{item.id}}" [(ngModel)]="item.containerNumber">
+              <input type="text" class="form-control" name="containerNumber{{item.id}}"
+                [(ngModel)]="item.containerNumber">
               <span class="input-group-btn">
-                <button style="height: 28px;"  class="btn btn-warning btn-flat btn-sm" type="button" (click)="updateContainer(item)">
+                <button style="height: 28px;" class="btn btn-warning btn-flat btn-sm" type="button"
+                  (click)="updateContainer(item)">
                   <i class="fa fa-check"></i>
                 </button>
               </span>
             </div>
           </td>
           <td>
-            <ng-select  name="planningGroup" [items]="listGroup" appendTo="body" [disabled]="item.refNo?.length>0"  
-            [(ngModel)]="item.planningGroup">
+            <ng-select name="planningGroup" [items]="listGroup" appendTo="body" [disabled]="item.refNo?.length>0"
+              [(ngModel)]="item.planningGroup">
             </ng-select>
           </td>
           <td class="column-ten-md">
             <div class="input-group">
-              <input type="text" class="form-control" name="planningDriverName{{item.id}}" [(ngModel)]="item.planningDriverName" [disabled]="item.refNo?.length>0">
+              <input type="text" class="form-control" name="planningDriverName{{item.id}}"
+                [(ngModel)]="item.planningDriverName" [disabled]="item.refNo?.length>0">
               <span class="input-group-btn">
-                <button style="height: 28px;" [disabled]="item.refNo?.length>0" class="btn btn-warning btn-flat btn-sm" type="button" (click)="updatePlanning(item)">
+                <button style="height: 28px;" [disabled]="item.refNo?.length>0" class="btn btn-warning btn-flat btn-sm"
+                  type="button" (click)="updatePlanning(item)">
                   <i class="fa fa-check"></i>
                 </button>
               </span>
@@ -189,12 +215,14 @@
           </td>
           <td>
             <span *ngIf="item.shipmentType!=1174">
-              {{item.weight}} 
+              {{item.weight}}
             </span>
             <div class="input-group" *ngIf="item.shipmentType==1174">
-              <input type="text" class="form-control" name="weight{{item.id}}" [(ngModel)]="item.weight" [mask]="maskNumber">
+              <input type="text" class="form-control" name="weight{{item.id}}" [(ngModel)]="item.weight"
+                [mask]="maskNumber">
               <span class="input-group-btn">
-                <button style="height: 28px;"  class="btn btn-warning btn-flat btn-sm" type="button"  (click)="updateWeight(item)">
+                <button style="height: 28px;" class="btn btn-warning btn-flat btn-sm" type="button"
+                  (click)="updateWeight(item)">
                   <i class="fa fa-check"></i>
                 </button>
               </span>
@@ -204,9 +232,11 @@
           <td>{{item.informationOnContainerLiffInvoice}}</td>
           <td class="column-ten-md">
             <div class="input-group">
-              <input type="text" class="form-control" name="opManNote{{item.id}}" [(ngModel)]="item.opManNote" [disabled]="item.refNo?.length>0">
+              <input type="text" class="form-control" name="opManNote{{item.id}}" [(ngModel)]="item.opManNote"
+                [disabled]="item.refNo?.length>0">
               <span class="input-group-btn">
-                <button style="height: 28px;" class="btn btn-warning btn-flat btn-sm" type="button" (click)="updateNote(item)">
+                <button style="height: 28px;" class="btn btn-warning btn-flat btn-sm" type="button"
+                  (click)="updateNote(item)">
                   <i class="fa fa-check"></i>
                 </button>
               </span>
@@ -251,8 +281,9 @@
 </modal-attachfile>
 <modal-shipping-task-cs *ngIf="viewModal" (CloseModal)="closeModal()">
 </modal-shipping-task-cs>
-<modal-dispatch-order-fcl *ngIf="viewModalDispatchOrder" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModalDispatchOrder()">
+<modal-dispatch-order-fcl *ngIf="viewModalDispatchOrder" (SaveSuccess)="saveSuccess()"
+  (CloseModal)="closeModalDispatchOrder()">
 </modal-dispatch-order-fcl>
-<modal-transport-order *ngIf="viewModalTransportOrder" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModalTransportOrder()">
+<modal-transport-order *ngIf="viewModalTransportOrder" (SaveSuccess)="saveSuccess()"
+  (CloseModal)="closeModalTransportOrder()">
 </modal-transport-order>
-
