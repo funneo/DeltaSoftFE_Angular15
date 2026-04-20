@@ -145,6 +145,12 @@
                   [class.fa-spin]="isCalculating"></i>
                 <span>{{ isCalculating ? 'Đang tính...' : 'Tính toàn trình' }}</span>
               </button>
+              <button type="button" class="btn btn-info btn-calc"
+                (click)="showMap()"
+                title="Xem lộ trình trên bản đồ Vietmap">
+                <i class="fa fa-map-o"></i>
+                <span>Xem bản đồ</span>
+              </button>
             </div>
           </div>
 
@@ -218,6 +224,13 @@
                           title="Có thể sửa thủ công"
                           [ngModelOptions]="{standalone: true}">
                         <span class="text-muted">km</span>
+                        <ng-select class="segment-payload-select ml-2"
+                          [items]="listOilQuota" bindLabel="oilQuotaName" bindValue="id"
+                          [(ngModel)]="getSegment(i).payloadWeight"
+                          (change)="onSegmentQuotaChange(i, $event)"
+                          [ngModelOptions]="{standalone: true}"
+                          placeholder="Lượng hàng...">
+                        </ng-select>
                       </div>
                       <!-- Trạm ETC -->
                       <div class="segment-etcs" *ngIf="getSegment(i).listEtc?.length">
@@ -320,7 +333,7 @@
             <div class="if-row">
               <div class="if-field">
                 <span class="if-label">Lái xe 1 <span class="text-danger">*</span></span>
-                <ng-select [items]="listEmployees" bindLabel="employeeFullName" bindValue="id"
+                <ng-select [items]="listDrivers" bindLabel="employeeFullName" bindValue="id"
                   [(ngModel)]="entity.driverId" (change)="onDriverChange($event)" placeholder="Lái xe...">
                 </ng-select>
               </div>
@@ -471,7 +484,7 @@
             <div class="form-group">
               <label class="col-sm-2 control-label">Lái xe 1 <span class="error">*</span></label>
               <div class="col-sm-4">
-                <ng-select [items]="listEmployees" bindLabel="employeeFullName" bindValue="id"
+                <ng-select [items]="listDrivers" bindLabel="employeeFullName" bindValue="id"
                   [(ngModel)]="entity.driverId" name="driverId" (change)="onDriverChange($event)"
                   placeholder="Chọn lái xe..." [required]="true">
                 </ng-select>
@@ -746,3 +759,4 @@
 </modal-attachfile>
 <modal-shipping-task-attach-file *ngIf="viewAttackDriverFiles" (CloseModal)="closeAttackDriverModal()">
 </modal-shipping-task-attach-file>
+<modal-vietmap-routes></modal-vietmap-routes>

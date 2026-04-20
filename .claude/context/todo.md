@@ -1,51 +1,29 @@
 # Pending / In-Progress Work
 
-## In Progress
+## Transport Order (Lệnh vận chuyển) — modal-transport-order
 
-### Transport Order (Lệnh vận chuyển) — New Module
-- Backend: `TransportOrderController` + `TransportOrderRepository` — basic CRUD + status workflow done
-- Frontend: `transports/` module partially built
-- Integration: Vietmap API for route + toll calculation is implemented
-- Google Maps API for display is wired up
-- Modal tabs (Chi tiết công việc, Chi phí, Hình ảnh hiện trường) đã thêm — chưa implement upload ảnh (onAttachFileChanged là stub)
-- Modal scroll tables: flex chain fix đã apply — chờ user confirm hoạt động
-- Driver 1 dropdown: đã fix dùng listEmployees — chờ user confirm
-- Status: đang phát triển
+### Pending confirmation (not yet tested in browser)
+- Scroll tables flex chain fix (tabset→tab-content→tab-pane.active→tab-table-wrap overflow-y:auto)
+- Driver 1 dropdown uses `listDrivers` filtered to `departmentId == 1174`
+- Vehicle select → auto-bind driver 1 + SĐT + fuelDriverId from `vehicle.employeeId`
+- Per-segment `payloadWeight` = VehicleOilQuota.id from `listOilQuota` dropdown
+- `onSegmentQuotaChange` → fuelNorm + fuelAmountCalculated per segment
+- `calulateOil()` sums tongdau; `orderTypeChange` recalcs all segments
+- "Xem bản đồ" button → `modal-vietmap-routes` with all waypoints
+- `edit()` calls `loadVehicle(vehicleId)` to restore listOilQuota on reopen
 
-### AI Invoice Extraction
-- Backend: `GeminiAIController.extract-invoice` using Gemini 2.5 Flash — in dev/refactoring
-- `DocumentAIController` — exists, integration status unclear
-- `ClaudeAIController` — controller exists, implementation status unknown
-- Frontend UI for invoice extraction: not yet built
+### Still TODO
+- `onAttachFileChanged()` — upload ảnh hiện trường is a stub, needs actual S3 upload logic
+- Save / submit lệnh vận chuyển (POST to API) — not yet wired up
 
-## Known Issues / Bugs Fixed Recently
-- Phiếu chi (accounting receipts) written from dispatch order — fixed (`db538dc`, `09ee18c`)
-- Driver payment from dispatch order — fixed
+## Backend — SQL Stored Procedures (cần tạo trong SQL Server)
+- `SP_CustomerLocations_UpdateGeocode (@Id int, @Latitude decimal, @Longtitude decimal)`
+- `SP_Ports_UpdateGeocode (@Code varchar, @Latitude decimal, @Longtitude decimal)`
 
-## Pending Features (inferred from codebase gaps)
+## AI Invoice Extraction — frontend UI
+- Backend complete: `POST /api/geminiAI/extract-invoice` (Gemini 2.5 Flash)
+- Frontend: cần tạo UI để upload ảnh/PDF hóa đơn → hiển thị dữ liệu trích xuất → cho phép chỉnh sửa → lưu vào phiếu chi/thu
 
-### Frontend incomplete screens
-- `training-materials-management` module folder exists but contents not deeply explored
-- Canon module sub-pages: workflow-canon, db-chitiet-canon — status unknown
-
-### Backend services awaiting frontend
-- `ClaudeAIController` — Claude AI integration in backend, no frontend UI
-- `OpenSourceMapController` — alternative map service, no frontend UI observed
-- `DeltaGetController` — internal Delta API aggregator, usage unclear
-
-### Infrastructure
-- `appsettings.json` has `ClaudeApiKey: ""` — Claude AI not yet configured with real key
-- Google Document AI credentials stored in `Templates/delta-erp-vn-2550393a36c2.json` — active
-- Gemini AI: `ModelId: "gemini-2.5-flash"` configured
-
-## Technical Debt
-- `WeatherForecastController.cs` — default ASP.NET template file, never cleaned up
-- Some controllers still use old `JwtSecurityTokenHandler` (deprecated path) vs new `JsonWebTokenHandler`
-- `console.log(user)` left in `AuthService.hasPermission()` — should be removed
-- `tslint.json` used (deprecated, should migrate to ESLint)
-- `@types/googlemaps` version `3.39.13` is old — should use `@types/google.maps`
-
-## Upgrade Considerations
-- Frontend on Angular 15; Angular 20 workspace exists at `web-app-angular20/` — migration in progress
-- New web app at `new-web-app/` and `logistics-v2/` — parallel development tracks
-- See `d:/Delta/DeltaSoft/SYSTEM_UPGRADE_ROADMAP.md` for upgrade plans
+## Other Known Pending
+- Claude AI controller — endpoint exists but no frontend integration
+- `appsettings.json` ClaudeApiKey is empty (Anthropic key not configured)

@@ -10,6 +10,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { PipeSharedModule } from '@app/shared/pipes/pipe-shared.module';
 import { ModalAttachfileModule } from '../../systems/modal-attachfile/modal-attachfile.module';
 import { ModalShippingTaskAttachFileModule } from '../modal-shipping-task-attach-file/modal-shipping-task-attach-file.module';
+import { ModalMapRoutesModule } from '../../danhmuc/modal-map-routes/modal-map-routes.module';
 
 @NgModule({
   declarations: [ModalTransportOrderComponent],
@@ -23,7 +24,8 @@ import { ModalShippingTaskAttachFileModule } from '../modal-shipping-task-attach
     NgSelectModule,
     PipeSharedModule,
     ModalAttachfileModule,
-    ModalShippingTaskAttachFileModule
+    ModalShippingTaskAttachFileModule,
+    ModalMapRoutesModule
   ],
   exports: [ModalTransportOrderComponent]
 })

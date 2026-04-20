@@ -16,10 +16,12 @@ import {
 } from '@app/shared/models/transports/dispatchorders/transport-order.model';
 import { ShippingTask } from '@app/shared/models/transports/shipping-task.model';
 import { Vihicle, Employee, Fee, OtherCategories, Supplier, ResponseValue } from '@app/shared/models';
+import { VehicleOilQuota } from '@app/shared/models/danhmuc/vehicle-oil-quota.model';
 import { ShippingTaskAttachFile } from '@app/shared/models/transports/shipping-task-attach-file';
 import { Attachfiles } from '@app/shared/models/attachfiles.models';
 import { ModalAttachfileComponent } from '../../systems/modal-attachfile/modal-attachfile.component';
 import { ModalShippingTaskAttachFileComponent } from '../modal-shipping-task-attach-file/modal-shipping-task-attach-file.component';
+import { ModalVietmapRoutesComponent } from '../../danhmuc/modal-vietmap-routes/modal-vietmap-routes.component';
 import { ShippingTaskService } from '@app/shared/services/transports/shipping-task.service';
 import { MessageContstants } from '@app/shared/constants';
 import { HttpParams } from '@angular/common/http';
@@ -86,6 +88,9 @@ export class ModalTransportOrderComponent {
   isSaving = false;
   segmentCalculating: boolean[] = [];
 
+  // Danh sách định mức dầu (lượng hàng) của xe đang chọn
+  listOilQuota: VehicleOilQuota[] = [];
+
   // Totals
   totalEtcCost = 0;
 
@@ -109,6 +114,7 @@ export class ModalTransportOrderComponent {
 
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent;
   @ViewChild(ModalShippingTaskAttachFileComponent, { static: false }) modalAttackDriverFilesRef: ModalShippingTaskAttachFileComponent;
+  @ViewChild(ModalVietmapRoutesComponent, { static: false }) modalVietmap: ModalVietmapRoutesComponent;
 
   constructor(
     private _notif: NotificationService,
@@ -130,6 +136,7 @@ export class ModalTransportOrderComponent {
     this.entity = this._emptyEntity();
     this.entity.listDetailed = listTasks.map(t => ({ shippingTaskId: t.id, shippingTaskItem: t }));
     this.locations = [];
+    this.listOilQuota = [];
     this.modalMain.show();
   }
 
@@ -138,6 +145,7 @@ export class ModalTransportOrderComponent {
       if (res.code === '200') {
         this.entity = res.data;
         this.locations = this._segmentsToLocations(this.entity.segments || []);
+        if (this.entity.vehicleId) this.loadVehicle(this.entity.vehicleId);
         this.calculateTotal();
         this.modalMain.show();
       }
@@ -228,6 +236,12 @@ export class ModalTransportOrderComponent {
 
   // ── CALCULATE BUTTONS ──
 
+  showMap() {
+    if (this.locations.length < 2) return;
+    const points = this.locations.map(l => ({ lat: l.lat, lng: l.lng }));
+    this.modalVietmap.show(points);
+  }
+
   /** Tính từng chặng A→B, B→C song song bằng Vietmap */
   calcAllSegments() {
     if (this.locations.length < 2) return;
@@ -316,11 +330,42 @@ export class ModalTransportOrderComponent {
     this.entity.vehicleType = event?.id;
   }
 
+  loadVehicle(id: number) {
+    this._vihicleService.getDetail(id).subscribe((res: ResponseValue<Vihicle>) => {
+      if (res.code === '200' || res.code === '201') {
+        this.listOilQuota = res.data?.listOilQuota || [];
+      } else {
+        this.listOilQuota = [];
+      }
+    });
+  }
+
   onVehicleChange(event: Vihicle) {
     if (event) {
       this.entity.vehicleId = event.id;
       this.entity.vehiclelLicensePlates = event.licensePlates;
+      // Lái xe gán với xe → tự động bind lái xe 1 + SĐT
+      const driver = this.listEmployees.find(e => e.id === event.employeeId);
+      this.entity.driverId = event.employeeId;
+      this.entity.driverName = driver?.employeeFullName || '';
+      this.entity.driverTel = driver?.telephone || '';
+      // Mặc định lái xe nhận dầu = lái xe 1
+      this.entity.fuelDriverId = event.employeeId;
+      this.loadVehicle(event.id);
+    } else {
+      this.entity.vehicleId = undefined;
+      this.entity.vehiclelLicensePlates = '';
+      this.listOilQuota = [];
     }
+  }
+
+  onSegmentQuotaChange(segIndex: number, event: VehicleOilQuota) {
+    const seg = this.entity.segments?.[segIndex];
+    if (!seg) return;
+    seg.payloadWeight = event?.id;
+    seg.fuelNorm = this.entity.shortWay ? event?.shortWayValue : event?.value;
+    seg.fuelAmountCalculated = +((seg.fuelNorm || 0) * (seg.distanceKm || 0) / 100).toFixed(2);
+    this.calulateOil();
   }
 
   onMoocChange(event: Vihicle) {
@@ -487,6 +532,8 @@ export class ModalTransportOrderComponent {
         // Giữ lại dữ liệu cũ nếu đúng cặp điểm
         distanceKm: (prev?.startLocationId === loc.locationId && prev?.endLocationId === next.locationId)
           ? prev.distanceKm : 0,
+        payloadWeight: (prev?.startLocationId === loc.locationId && prev?.endLocationId === next.locationId)
+          ? prev.payloadWeight : undefined,
         listEtc: (prev?.startLocationId === loc.locationId && prev?.endLocationId === next.locationId)
           ? prev.listEtc : []
       };
@@ -554,7 +601,7 @@ export class ModalTransportOrderComponent {
       new HttpParams().set('branchId', branchId)
     ).subscribe((res: ResponseValue<Employee[]>) => {
       this.listEmployees = res.data || [];
-      this.listDrivers = this.listEmployees.filter((x: Employee) => x.departmentId == 1147);
+      this.listDrivers = this.listEmployees.filter((x: Employee) => x.departmentId == 1174);
     });
 
     this._supplierService.getAll(
@@ -572,9 +619,19 @@ export class ModalTransportOrderComponent {
 
   orderTypeChange(event: any) {
     this.entity.shortWay = event?.value === 1;
+    (this.entity.segments || []).forEach(s => {
+      const quota = this.listOilQuota.find(x => x.id === s.payloadWeight);
+      if (quota) s.fuelNorm = this.entity.shortWay ? quota.shortWayValue : quota.value;
+    });
+    this.calulateOil();
   }
 
   calulateOil() {
-    // tongdau/tongKm được tính từ backend; client chỉ cần lưu oilCompensation
+    let total = 0;
+    (this.entity.segments || []).forEach(s => {
+      s.fuelAmountCalculated = +((s.fuelNorm || 0) * (s.distanceKm || 0) / 100).toFixed(2);
+      total += s.fuelAmountCalculated;
+    });
+    this.entity.tongdau = +total.toFixed(2);
   }
 }

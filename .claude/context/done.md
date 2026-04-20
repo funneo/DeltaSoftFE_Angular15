@@ -51,7 +51,12 @@
 - Transport order modal: tab "Chi tiết công việc" với 4 action buttons (xoá, đính kèm, tải file lái xe, nhân bản), tab "Chi phí" (listFee), tab "Hình ảnh hiện trường" (khi status > 1)
 - Transport order modal: scrollable tab tables với sticky header (flex chain fix: tabset→tab-content→tab-pane.active→tab-table-wrap overflow-y:auto)
 - Transport order modal: thông tin vận chuyển đầy đủ như FCL (isSubcontractor split form, route split 5-5, general info fields)
-- Transport order modal: driver 1 dùng listEmployees (all employees) thay vì listDrivers (filtered by dept 1147 — empty)
+- Transport order modal: driver 1 dùng listDrivers (filter dept=1174); chọn xe → tự bind driver 1 + SĐT + fuelDriverId từ vehicle.employeeId
+- Transport order modal: loadVehicle(id) → listOilQuota (pattern FCL); mỗi segment chọn lượng hàng từ dropdown listOilQuota (bindValue=id → segment.payloadWeight)
+- Transport order modal: onSegmentQuotaChange → segment.fuelNorm (value/shortWayValue theo orderType), fuelAmountCalculated = fuelNorm×km/100
+- Transport order modal: calulateOil() tính tongdau toàn lệnh; orderTypeChange recalc fuelNorm tất cả segments
+- Transport order modal: button "Xem bản đồ" → mở modal-vietmap-routes với tất cả waypoints (extend show() nhận {lat,lng}[])
+- Transport order modal: edit() gọi loadVehicle(vehicleId) để restore listOilQuota khi mở lại lệnh cũ
 - Quotation subcontractors
 - Shipping tasks: CS, LG, OpMan views
 - Fuel/gas management: driver fuel approval, debit, limit
@@ -147,3 +152,6 @@
 - Vietcombank exchange rate fetch
 - Igas integration
 - DBS EDI integration
+- `GoogleMapService`: reusable backend service — follows Google Maps URL redirects, extracts lat/lng via regex (no Geocoding API key needed)
+- Auto-geocode on Create/Update: CustomerLocations + Ports — if `GoogleLocations` URL present and lat/lng = 0, auto-extract and save coords
+- Admin-only `POST geocode-all` endpoints on CustomerLocations + Ports — batch backfill of historical records missing coords; uses `SP_CustomerLocations_UpdateGeocode` / `SP_Ports_UpdateGeocode`

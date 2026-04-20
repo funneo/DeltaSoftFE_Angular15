@@ -73,13 +73,23 @@ export class ModalVietmapRoutesComponent {
     private http: HttpClient
   ) { }
 
-  show(lat: number, lng: number, destLat: number, destLng: number) {
-    this.originLat = lat; this.originLng = lng;
-    this.destLat = destLat; this.destLng = destLng;
-    this.waypoints = [
-      { lat: lat, lng: lng },
-      { lat: destLat, lng: destLng }
-    ];
+  show(lat: number, lng: number, destLat: number, destLng: number): void;
+  show(points: { lat: number; lng: number }[]): void;
+  show(latOrPoints: number | { lat: number; lng: number }[], lng?: number, destLat?: number, destLng?: number) {
+    if (Array.isArray(latOrPoints)) {
+      this.waypoints = [...latOrPoints];
+      this.originLat = latOrPoints[0]?.lat;
+      this.originLng = latOrPoints[0]?.lng;
+      this.destLat = latOrPoints[latOrPoints.length - 1]?.lat;
+      this.destLng = latOrPoints[latOrPoints.length - 1]?.lng;
+    } else {
+      this.originLat = latOrPoints; this.originLng = lng;
+      this.destLat = destLat; this.destLng = destLng;
+      this.waypoints = [
+        { lat: latOrPoints, lng: lng },
+        { lat: destLat, lng: destLng }
+      ];
+    }
     this.lstRoutes = [];
     this.flagMapInitializing = true;
     this.expandedRouteIndex = 0;

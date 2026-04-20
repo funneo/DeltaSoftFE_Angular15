@@ -500,6 +500,13 @@
     text-align: right;
     &:focus { border-color: #3498db; outline: none; }
   }
+
+  .segment-payload-select {
+    min-width: 140px;
+    font-size: 12px;
+    ::ng-deep .ng-control { min-height: 28px; padding: 0 4px; }
+    ::ng-deep .ng-value-label { font-size: 12px; }
+  }
 }
 
 .segment-etcs {
