@@ -20,6 +20,7 @@ import { ModalListApprovedLogModule } from '@app/shared/components/advance-payme
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { ModalPaymentDetailedModule } from '@app/shared/components/advance-payment/modal-payment-detailed/modal-payment-detailed.module';
 import { ModalImportExcelModule } from '@app/shared/components/systems/modal-import-excel/modal-import-excel.module';
+import { ModalDocHoaDonModule } from '@app/shared/components/advance-payment/modal-doc-hoa-don/modal-doc-hoa-don.module';
 
 @NgModule({
   declarations: [PaymentComponent, PaymentDetailComponent],
@@ -38,7 +39,7 @@ import { ModalImportExcelModule } from '@app/shared/components/systems/modal-imp
     ModalShipmentModule,
     ModalListApprovedLogModule,ModalPaymentDetailedModule,
     ModalListAdvanceModule,NgxSpinnerModule,ModalListPaymentAcceptModule,
-    ModalImportExcelModule
+    ModalImportExcelModule,ModalDocHoaDonModule
   ],
   providers:[
     DatePipe,

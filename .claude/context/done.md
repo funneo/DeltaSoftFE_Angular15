@@ -49,14 +49,22 @@
 - Dispatch order parking tickets
 - Transport order (lệnh vận chuyển) — new module using Vietmap + Google Maps API
 - Transport order modal: tab "Chi tiết công việc" với 4 action buttons (xoá, đính kèm, tải file lái xe, nhân bản), tab "Chi phí" (listFee), tab "Hình ảnh hiện trường" (khi status > 1)
-- Transport order modal: scrollable tab tables với sticky header (flex chain fix: tabset→tab-content→tab-pane.active→tab-table-wrap overflow-y:auto)
+- Transport order modal: scrollable tab tables với sticky header (flex chain fix)
 - Transport order modal: thông tin vận chuyển đầy đủ như FCL (isSubcontractor split form, route split 5-5, general info fields)
-- Transport order modal: driver 1 dùng listDrivers (filter dept=1174); chọn xe → tự bind driver 1 + SĐT + fuelDriverId từ vehicle.employeeId
-- Transport order modal: loadVehicle(id) → listOilQuota (pattern FCL); mỗi segment chọn lượng hàng từ dropdown listOilQuota (bindValue=id → segment.payloadWeight)
-- Transport order modal: onSegmentQuotaChange → segment.fuelNorm (value/shortWayValue theo orderType), fuelAmountCalculated = fuelNorm×km/100
-- Transport order modal: calulateOil() tính tongdau toàn lệnh; orderTypeChange recalc fuelNorm tất cả segments
-- Transport order modal: button "Xem bản đồ" → mở modal-vietmap-routes với tất cả waypoints (extend show() nhận {lat,lng}[])
-- Transport order modal: edit() gọi loadVehicle(vehicleId) để restore listOilQuota khi mở lại lệnh cũ
+- Transport order modal: chọn loại xe → _loadVehiclesByType; chọn xe → bind driver 1 + SĐT + fuelDriverId; cả 2 dropdown lái xe dùng listEmployees
+- Transport order modal: loadVehicle(id) → listOilQuota; mỗi segment chọn lượng hàng; onSegmentQuotaChange → fuelNorm, fuelAmountCalculated; calulateOil() tính tongdau
+- Transport order modal: **layout mới** — chủ đạo là giao diện location/route; xe+lái xe ẩn mặc định (toggle button); tabs ẩn mặc định (toggle button)
+- Transport order modal: **drag-drop route builder** — pool điểm từ ShippingTask (pickup/delivery), kéo thả sắp xếp thứ tự, per-segment km + ETC
+- Transport order modal: **per-segment map button** — mỗi đoạn A→B có nút riêng mở Vietmap
+- Transport order modal: **"Thêm điểm khác"** — dropdown ng-select tìm kiếm từ `getLocations()` (UnifiedLocation: CustomerLocation + Port), badge KH/Cảng
+- Transport order modal: **Unified Location endpoint** — `SP_GetAllLocations` UNION ALL CustomerLocations + Ports với `locationType TINYINT` (1=KH, 2=Cảng) tránh ID collision; filter theo `@ListCust` tùy chọn
+- Transport order modal: **lưu lộ trình đã duyệt per-segment** — `listWaypoints` (turn-by-turn: lat,lng,name,distanceM) lưu vào `Tbl_TransportOrder_Segment_Waypoints`; `routePolyline` (full GeoJSON coordinates JSON) lưu vào cột `RoutePolyline` trên segment
+- Transport order modal: **mở lại bản đồ** — nếu segment có `listWaypoints` → `showSaved()` vẽ lại từ `routePolyline` (mượt theo đường nhựa), KHÔNG gọi Vietmap API lại
+- Transport order modal: `StartLocationType`/`EndLocationType` trên segment phân biệt điểm KH vs Cảng
+- modal-vietmap-routes: `showSaved(steps, polyline)` mode — vẽ polyline màu cam nét đứt, populate turn-by-turn list, không fetch API
+- modal-vietmap-routes: `RouteSelected` emit đầy đủ `{summary, km, waypoints, steps, polyline}`
+- modal-vietmap-routes: extract `currentSteps` (lat/lng/name/distanceM từ instruction+coordinates), `currentPolyline` (JSON full geometry)
+- ShippingTask BE model: thêm PickupLatitude, PickupLongitude, DeliveryLatitude, DeliveryLongitude
 - Quotation subcontractors
 - Shipping tasks: CS, LG, OpMan views
 - Fuel/gas management: driver fuel approval, debit, limit
@@ -152,6 +160,8 @@
 - Vietcombank exchange rate fetch
 - Igas integration
 - DBS EDI integration
-- `GoogleMapService`: reusable backend service — follows Google Maps URL redirects, extracts lat/lng via regex (no Geocoding API key needed)
-- Auto-geocode on Create/Update: CustomerLocations + Ports — if `GoogleLocations` URL present and lat/lng = 0, auto-extract and save coords
-- Admin-only `POST geocode-all` endpoints on CustomerLocations + Ports — batch backfill of historical records missing coords; uses `SP_CustomerLocations_UpdateGeocode` / `SP_Ports_UpdateGeocode`
+- `GoogleMapService`: follows Google Maps URL redirects, extracts lat/lng với `CultureInfo.InvariantCulture` + GPS range validation
+- Auto-geocode on Create/Update: CustomerLocations + Ports
+- Admin-only `POST geocode-all` endpoints on CustomerLocations + Ports — batch backfill
+- `DapperAdapter.Parameters.AddGeoCoord()` — truyền tọa độ GPS với `DbType.Decimal, precision:18, scale:6`
+- **AI Invoice Extraction — frontend hoàn chỉnh**: `GeminiAiService` gọi `POST /api/geminiAI/extract-invoice`; `modal-doc-hoa-don` hiển thị kết quả (vendor, customer, hóa đơn, bảng hàng hóa, link + URL đầy đủ, ảnh preview); nút "Đọc hóa đơn" ở header list Thanh toán; modal rộng 90vw

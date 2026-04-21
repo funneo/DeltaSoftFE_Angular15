@@ -1,29 +1,27 @@
 # Pending / In-Progress Work
 
-## Transport Order (Lệnh vận chuyển) — modal-transport-order
+## Transport Order — SQL (bạn tự chạy trên SQL Server)
 
-### Pending confirmation (not yet tested in browser)
-- Scroll tables flex chain fix (tabset→tab-content→tab-pane.active→tab-table-wrap overflow-y:auto)
-- Driver 1 dropdown uses `listDrivers` filtered to `departmentId == 1174`
-- Vehicle select → auto-bind driver 1 + SĐT + fuelDriverId from `vehicle.employeeId`
-- Per-segment `payloadWeight` = VehicleOilQuota.id from `listOilQuota` dropdown
-- `onSegmentQuotaChange` → fuelNorm + fuelAmountCalculated per segment
-- `calulateOil()` sums tongdau; `orderTypeChange` recalcs all segments
-- "Xem bản đồ" button → `modal-vietmap-routes` with all waypoints
-- `edit()` calls `loadVehicle(vehicleId)` to restore listOilQuota on reopen
+Script đầy đủ đã được soạn sẵn trong session. Thứ tự chạy:
 
-### Still TODO
-- `onAttachFileChanged()` — upload ảnh hiện trường is a stub, needs actual S3 upload logic
-- Save / submit lệnh vận chuyển (POST to API) — not yet wired up
+1. **ALTER TABLE** `Tbl_TransportOrder_Segments` — thêm `StartLocationType TINYINT NOT NULL DEFAULT 1`, `EndLocationType TINYINT NOT NULL DEFAULT 1`, `RoutePolyline NVARCHAR(MAX) NULL`
+2. **CREATE TABLE** `Tbl_TransportOrder_Segment_Waypoints` (Id, SegmentId FK, OrderIndex, Lat, Lng, Name, DistanceM)
+3. **DROP** `SP_TransportOrder_Create` + `SP_TransportOrder_Update`
+4. **DROP TYPE** `TypeTransportOrderSegment` → **CREATE lại** với 3 cột mới
+5. **CREATE TYPE** `TypeTransportOrderSegmentWaypoint` (mới hoàn toàn)
+6. **CREATE** `SP_TransportOrder_Create` — thêm `@ListSegmentWaypoints`, INSERT segments với cột mới, INSERT waypoints qua SegMap
+7. **CREATE** `SP_TransportOrder_Update` — thêm `@ListSegmentWaypoints`, xóa waypoints trước khi xóa segments, INSERT lại
+8. **ALTER** `SP_TransportOrder_GetById` — thêm Result 4 (waypoints); Fees → Result 5; Details → Result 6
+9. **CREATE SP** `SP_GetAllLocations` — UNION ALL CustomerLocations + Ports với locationType, filter `@ListCust varchar(100) = NULL`
 
-## Backend — SQL Stored Procedures (cần tạo trong SQL Server)
-- `SP_CustomerLocations_UpdateGeocode (@Id int, @Latitude decimal, @Longtitude decimal)`
-- `SP_Ports_UpdateGeocode (@Code varchar, @Latitude decimal, @Longtitude decimal)`
+## Transport Order — FE còn TODO
+- `onAttachFileChanged()` — upload ảnh hiện trường là stub, cần S3 logic
 
-## AI Invoice Extraction — frontend UI
-- Backend complete: `POST /api/geminiAI/extract-invoice` (Gemini 2.5 Flash)
-- Frontend: cần tạo UI để upload ảnh/PDF hóa đơn → hiển thị dữ liệu trích xuất → cho phép chỉnh sửa → lưu vào phiếu chi/thu
+## Backend — SQL còn lại (không liên quan transport order)
+- `SP_CustomerLocations_UpdateGeocode (@Id int, @Latitude decimal(10,6), @Longtitude decimal(10,6))`
+- `SP_Ports_UpdateGeocode (@Code varchar, @Latitude decimal(9,6), @Longtitude decimal(9,6))`
+- Các SP getBy* của ShippingTask: JOIN thêm `PickupLatitude`, `PickupLongitude`, `DeliveryLatitude`, `DeliveryLongitude` từ bảng CustomerLocations
 
 ## Other Known Pending
-- Claude AI controller — endpoint exists but no frontend integration
-- `appsettings.json` ClaudeApiKey is empty (Anthropic key not configured)
+- Claude AI controller — endpoint exists, không có frontend
+- `appsettings.json` ClaudeApiKey còn trống

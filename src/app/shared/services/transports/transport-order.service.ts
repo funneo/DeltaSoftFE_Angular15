@@ -4,7 +4,7 @@ import { environment } from '@environments/environment';
 import { catchError, map } from 'rxjs/operators';
 import { AuthService } from '..';
 import { FromBodyBase } from '../../models';
-import { TransportOrder, TransportOrderSegment } from '../../models/transports/dispatchorders/transport-order.model';
+import { TransportOrder, TransportOrderSegment, UnifiedLocation } from '../../models/transports/dispatchorders/transport-order.model';
 import { BaseService } from '../base.service';
 import { JwtService } from '../jwt.service';
 
@@ -97,6 +97,21 @@ export class TransportOrderService extends BaseService {
         if (response.code == '401') this.authenService.logout();
         else return response;
       }), catchError(this.handleError));
+  }
+
+  getLocations(listCustId?: string) {
+    const p: FromBodyBase<TransportOrder> = {
+      tokenKey: this.token,
+      keyWord: listCustId ?? null
+    };
+    return this.http.post<any>(`${environment.apiUrl}/api/TransportOrder/GetAllLocations`, p)
+      .pipe(
+        map((response: any) => {
+          if (response.code === '401') this.authenService.logout();
+          return response.data as UnifiedLocation[];
+        }),
+        catchError(this.handleError)
+      );
   }
 
   getSegmentHistory(startLocationId: number, endLocationId: number) {

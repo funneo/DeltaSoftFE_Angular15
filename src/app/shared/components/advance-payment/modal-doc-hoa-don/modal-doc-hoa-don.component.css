@@ -1,0 +1,110 @@
+.upload-area {
+  border: 2px dashed #aaa;
+  border-radius: 8px;
+  padding: 48px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  background: #fafafa;
+  user-select: none;
+}
+
+.upload-area:hover {
+  border-color: #337ab7;
+  background: #f0f6ff;
+}
+
+.loading-area {
+  cursor: default;
+  border-color: #337ab7;
+  background: #f0f6ff;
+}
+
+.upload-text {
+  font-size: 16px;
+  margin: 12px 0 4px;
+  color: #444;
+}
+
+.info-card {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.info-card-header {
+  background: #f5f5f5;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 13px;
+  border-bottom: 1px solid #ddd;
+  color: #333;
+}
+
+.vendor-card .info-card-header { background: #e8f4fd; }
+.customer-card .info-card-header { background: #e9fbe9; }
+.invoice-card .info-card-header { background: #fff8e1; }
+.weblink-card .info-card-header { background: #f3e5f5; }
+
+.info-table {
+  margin: 0;
+  font-size: 12px;
+}
+
+.info-table td {
+  padding: 4px 10px !important;
+  border: none !important;
+  vertical-align: middle;
+}
+
+.label-col {
+  color: #888;
+  width: 100px;
+  white-space: nowrap;
+}
+
+.so-tien {
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.total-amount {
+  color: #c0392b;
+  font-size: 14px;
+}
+
+.total-row td {
+  background: #f9f9f9;
+}
+
+.preview-wrap {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  overflow: hidden;
+  max-height: 520px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: #f5f5f5;
+}
+
+.invoice-preview {
+  max-width: 100%;
+  max-height: 520px;
+  object-fit: contain;
+}
+
+.weblink-url {
+  font-size: 12px;
+  word-break: break-all;
+  color: #337ab7;
+}
+
+.badge-code {
+  background: #8e44ad;
+  color: #fff;
+  padding: 3px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 6px;
+}

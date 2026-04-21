@@ -260,10 +260,48 @@
                         <i class="fa fa-calculator"></i> Tính
                       </button>
                     </div>
+                    <!-- Nút xem bản đồ per-segment -->
+                    <div class="segment-map-btn-row">
+                      <button type="button" class="btn-segment-map"
+                        (click)="showMapForSegment(i)"
+                        [title]="getSegment(i)?.listWaypoints?.length ? 'Xem lộ trình đã điều chỉnh' : 'Mở bản đồ cho chặng này'">
+                        <i class="fa fa-map-marker text-info"></i>
+                        <span>{{ getSegment(i)?.listWaypoints?.length ? 'Lộ trình đã lưu (' + getSegment(i).listWaypoints.length + ' điểm)' : 'Xem bản đồ chặng' }}</span>
+                        <i *ngIf="getSegment(i)?.listWaypoints?.length" class="fa fa-check-circle text-success" title="Đã có lộ trình điều chỉnh"></i>
+                      </button>
+                    </div>
                   </div>
                 </div>
 
               </ng-container>
+            </div>
+          </div>
+
+          <!-- Thêm điểm thủ công -->
+          <div class="add-custom-point-bar">
+            <button type="button" class="btn-add-custom-point" (click)="toggleAddCustomPoint()">
+              <i class="fa" [class.fa-plus]="!showAddCustomPoint" [class.fa-minus]="showAddCustomPoint"></i>
+              Thêm điểm khác
+            </button>
+            <div class="add-custom-point-form" *ngIf="showAddCustomPoint">
+              <ng-select class="acp-select"
+                [items]="listAllLocations"
+                [(ngModel)]="selectedCustomLocation"
+                [ngModelOptions]="{standalone: true}"
+                bindLabel="address"
+                placeholder="Tìm điểm (kho, cảng...)"
+                [searchable]="true"
+                notFoundText="Không tìm thấy">
+                <ng-template ng-option-tmp let-item="item">
+                  <span class="badge" [class.badge-info]="item.locationType===1" [class.badge-warning]="item.locationType===2">
+                    {{ item.locationType === 1 ? 'KH' : 'Cảng' }}
+                  </span>
+                  {{ item.address }}
+                </ng-template>
+              </ng-select>
+              <button type="button" class="btn btn-sm btn-primary" (click)="confirmAddCustomPoint()">
+                <i class="fa fa-plus"></i> Thêm
+              </button>
             </div>
           </div>
 
@@ -288,9 +326,9 @@
         </div>
 
         <!-- ═══════════════════════════════════════════════════════
-             CỘT PHẢI: Thông tin xe + tài xế
+             CỘT PHẢI: Thông tin xe + tài xế (ẩn mặc định)
              ═══════════════════════════════════════════════════════ -->
-        <div class="to-col-info">
+        <div class="to-col-info" *ngIf="showVehiclePanel">
           <div class="to-col-header">
             <div class="to-col-header-title">
               <i class="fa fa-cog text-secondary"></i>
@@ -318,7 +356,7 @@
             <div class="if-row">
               <div class="if-field">
                 <span class="if-label">Số xe <span class="text-danger">*</span></span>
-                <ng-select [items]="listVehicles" bindLabel="licensePlates" bindValue="id"
+                <ng-select [items]="listVehiclesFiltered" bindLabel="licensePlates" bindValue="id"
                   [(ngModel)]="entity.vehicleId" (change)="onVehicleChange($event)" placeholder="Xe...">
                 </ng-select>
               </div>
@@ -333,7 +371,7 @@
             <div class="if-row">
               <div class="if-field">
                 <span class="if-label">Lái xe 1 <span class="text-danger">*</span></span>
-                <ng-select [items]="listDrivers" bindLabel="employeeFullName" bindValue="id"
+                <ng-select [items]="listEmployees" bindLabel="employeeFullName" bindValue="id"
                   [(ngModel)]="entity.driverId" (change)="onDriverChange($event)" placeholder="Lái xe...">
                 </ng-select>
               </div>
@@ -484,7 +522,7 @@
             <div class="form-group">
               <label class="col-sm-2 control-label">Lái xe 1 <span class="error">*</span></label>
               <div class="col-sm-4">
-                <ng-select [items]="listDrivers" bindLabel="employeeFullName" bindValue="id"
+                <ng-select [items]="listEmployees" bindLabel="employeeFullName" bindValue="id"
                   [(ngModel)]="entity.driverId" name="driverId" (change)="onDriverChange($event)"
                   placeholder="Chọn lái xe..." [required]="true">
                 </ng-select>
@@ -571,8 +609,29 @@
       </div>
       <!-- /to-subcontractor-body -->
 
+      <!-- TOGGLE BAR: bật/tắt panel Chi tiết & Chi phí -->
+      <div class="to-toggle-bar">
+        <button type="button" class="btn btn-xs btn-default to-toggle-btn"
+          (click)="showVehiclePanel = !showVehiclePanel"
+          [class.active]="showVehiclePanel">
+          <i class="fa fa-cog"></i>
+          Thông tin lệnh
+          <i class="fa" [class.fa-chevron-down]="!showVehiclePanel" [class.fa-chevron-up]="showVehiclePanel"></i>
+        </button>
+        <button type="button" class="btn btn-xs btn-default to-toggle-btn"
+          (click)="showBottomPanel = !showBottomPanel"
+          [class.active]="showBottomPanel">
+          <i class="fa fa-list-alt"></i>
+          Chi tiết & Chi phí
+          <span class="badge badge-pill badge-secondary" *ngIf="entity.listDetailed?.length">
+            {{ entity.listDetailed.length }}
+          </span>
+          <i class="fa" [class.fa-chevron-down]="!showBottomPanel" [class.fa-chevron-up]="showBottomPanel"></i>
+        </button>
+      </div>
+
       <!-- TABS: Chi tiết công việc / Chi phí / Hình ảnh hiện trường -->
-      <div class="to-tabs-section">
+      <div class="to-tabs-section" *ngIf="showBottomPanel">
         <tabset>
 
           <!-- TAB: Chi tiết công việc -->
@@ -759,4 +818,4 @@
 </modal-attachfile>
 <modal-shipping-task-attach-file *ngIf="viewAttackDriverFiles" (CloseModal)="closeAttackDriverModal()">
 </modal-shipping-task-attach-file>
-<modal-vietmap-routes></modal-vietmap-routes>
+<modal-vietmap-routes (RouteSelected)="onRouteSelected($event)"></modal-vietmap-routes>

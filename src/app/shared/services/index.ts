@@ -120,3 +120,5 @@ export {
   VihicleService
 }
 export * from './canon-quotationsubcontractors.service';
+export * from './gemini-ai.service';
+

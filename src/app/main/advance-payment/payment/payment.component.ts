@@ -1,5 +1,5 @@
 import { HttpParams } from '@angular/common/http';
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, AfterViewInit } from '@angular/core';
 import { MessageContstants } from '@app/shared/constants';
 import { Payments, Pagination, Employee, ResponseValue, Branch } from '@app/shared/models';
 import { AuthService, BranchService, EmployeeService, NotificationService, PaymentsService, UtilityService } from '@app/shared/services';
@@ -11,6 +11,7 @@ import * as signalR from '@aspnet/signalr';
 import { environment } from '@environments/environment';
 import { Router } from '@angular/router';
 import { ModalAttachfileComponent } from '@app/shared/components/systems/modal-attachfile/modal-attachfile.component';
+import { ModalDocHoaDonComponent } from '@app/shared/components/advance-payment/modal-doc-hoa-don/modal-doc-hoa-don.component';
 import { Attachfiles } from '@app/shared/models/attachfiles.models';
 import { SystemContstants } from '@app/shared/constants/SystemConstants';
 import { ExportService } from '@app/shared/services/export-excel.service';
@@ -456,6 +457,9 @@ export class PaymentComponent implements OnInit {
 
   viewAttachFiles: boolean;
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent;
+
+  viewDocHoaDon = false;
+  @ViewChild(ModalDocHoaDonComponent, { static: false }) modalDocHoaDon: ModalDocHoaDonComponent;
   showFiles(job: Payments) {
     this.viewAttachFiles = true;
     let item: Attachfiles = {
@@ -474,5 +478,14 @@ export class PaymentComponent implements OnInit {
 
   closeModalFile() {
     this.viewAttachFiles = false;
+  }
+
+  showDocHoaDon() {
+    this.viewDocHoaDon = true;
+    setTimeout(() => { this.modalDocHoaDon.show(); }, 50);
+  }
+
+  closeDocHoaDon() {
+    this.viewDocHoaDon = false;
   }
 }

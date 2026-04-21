@@ -100,15 +100,26 @@ export interface TransportOrderDetail {
     shippingTaskItem?:ShippingTask;
 }
 
+export interface UnifiedLocation {
+    id: number;
+    locationType: number; // 1=CustomerLocation, 2=Port
+    address: string;
+    googleLocations?: string;
+    latitude: number;
+    longtitude: number;
+}
+
 export interface TransportOrderSegment {
     id?: number;
     transportOrderId?: number;
     orderIndex?: number;
     startLocationId?: number;
+    startLocationType?: number; // 1=CustomerLocation, 2=Port
     startLocationName?: string;
     startLat?: number;
     startLng?: number;
     endLocationId?: number;
+    endLocationType?: number; // 1=CustomerLocation, 2=Port
     endLocationName?: string;
     endLat?: number;
     endLng?: number;
@@ -117,9 +128,23 @@ export interface TransportOrderSegment {
     fuelNorm?: number;
     fuelAmountCalculated?: number;
     etcCost?: number;
-    
+    // Full polyline GeoJSON coordinates [[lng,lat],...] để vẽ đường mượt
+    routePolyline?: string;
+
     // 1 Cung đường có thể có nhiều trạm thu phí
     listEtc?: TransportOrderSegmentEtc[];
+    // Turn-by-turn steps (để hiển thị & sync Google Maps)
+    listWaypoints?: TransportOrderSegmentWaypoint[];
+}
+
+export interface TransportOrderSegmentWaypoint {
+    id?: number;
+    segmentId?: number;
+    orderIndex?: number;
+    lat: number;
+    lng: number;
+    name?: string;    // Tên đường / chỉ dẫn: "Rẽ phải QL.10"
+    distanceM?: number; // Khoảng cách đến điểm tiếp theo (mét)
 }
 
 export interface TransportOrderSegmentEtc {

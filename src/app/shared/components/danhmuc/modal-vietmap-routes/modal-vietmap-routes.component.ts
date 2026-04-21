@@ -49,7 +49,13 @@ export interface RouteOption {
 export class ModalVietmapRoutesComponent {
   @ViewChild('modalRoutes', { static: false }) modalRoutes: ModalDirective;
   @ViewChild('mapContainer', { static: false }) mapContainer: ElementRef;
-  @Output() RouteSelected = new EventEmitter<{ summary: string; km: number }>();
+  @Output() RouteSelected = new EventEmitter<{
+    summary: string;
+    km: number;
+    waypoints: { lat: number; lng: number }[];
+    steps: { lat: number; lng: number; name: string; distanceM: number }[];
+    polyline: string; // JSON [[lng,lat],...] full road geometry để vẽ mượt
+  }>();
 
   public lstRoutes: RouteOption[] = [];
   public flagGettingRoutes = false;
@@ -60,7 +66,10 @@ export class ModalVietmapRoutesComponent {
   private routeLineId = 'route-line';
   private markers: any[] = [];
   private waypoints: { lat: number, lng: number }[] = [];
+  private currentSteps: { lat: number; lng: number; name: string; distanceM: number }[] = [];
+  private currentPolyline: string = null; // JSON [[lng,lat],...] raw geometry
   private fetchTimer: any;
+  isSavedMode = false; // true = đang xem lộ trình đã lưu, không gọi lại API
 
   private originLat: number;
   private originLng: number;
@@ -76,6 +85,7 @@ export class ModalVietmapRoutesComponent {
   show(lat: number, lng: number, destLat: number, destLng: number): void;
   show(points: { lat: number; lng: number }[]): void;
   show(latOrPoints: number | { lat: number; lng: number }[], lng?: number, destLat?: number, destLng?: number) {
+    this.isSavedMode = false;
     if (Array.isArray(latOrPoints)) {
       this.waypoints = [...latOrPoints];
       this.originLat = latOrPoints[0]?.lat;
@@ -96,8 +106,46 @@ export class ModalVietmapRoutesComponent {
     this.modalRoutes.show();
   }
 
+  /** Mở bản đồ với lộ trình đã lưu — không gọi lại API */
+  showSaved(savedSteps: { lat: number; lng: number; name: string; distanceM: number }[], polyline?: string) {
+    if (!savedSteps?.length) return;
+    this.isSavedMode = true;
+    this.currentSteps = [...savedSteps];
+    this.currentPolyline = polyline || null;
+    this.waypoints = savedSteps.map(s => ({ lat: s.lat, lng: s.lng }));
+    this.originLat = savedSteps[0].lat;
+    this.originLng = savedSteps[0].lng;
+    this.destLat = savedSteps[savedSteps.length - 1].lat;
+    this.destLng = savedSteps[savedSteps.length - 1].lng;
+
+    const totalDistM = savedSteps.reduce((sum, s) => sum + (s.distanceM || 0), 0);
+    this.lstRoutes = [{
+      index: 0,
+      summary: 'Lộ trình đã lưu',
+      distanceText: `${(totalDistM / 1000).toFixed(1)} km`,
+      distanceValue: totalDistM,
+      durationText: '',
+      durationValue: 0,
+      steps: savedSteps.map(s => ({ instructions: s.name, distance: s.distanceM + 'm' })),
+      tollLoading: false
+    }];
+
+    this.flagMapInitializing = true;
+    this.expandedRouteIndex = 0;
+    this.modalRoutes.show();
+  }
+
   onModalShown() {
     this._loadMapsScript().then(() => this._createMap());
+  }
+
+  private _afterMapLoad() {
+    if (this.isSavedMode) {
+      this._drawSavedRoute();
+    } else {
+      this._setupInteractions();
+      this._fetchRoutesAndTolls();
+    }
   }
 
   toggleRoute(index: number, event: Event | null) {
@@ -109,7 +157,13 @@ export class ModalVietmapRoutesComponent {
   }
 
   selectRoute(route: RouteOption) {
-    this.RouteSelected.emit({ summary: route.summary, km: Math.round(route.distanceValue / 1000) });
+    this.RouteSelected.emit({
+      summary: route.summary,
+      km: Math.round(route.distanceValue / 1000),
+      waypoints: [...this.waypoints],
+      steps: [...this.currentSteps],
+      polyline: this.currentPolyline
+    });
     this.modalRoutes.hide();
   }
 
@@ -172,8 +226,7 @@ export class ModalVietmapRoutesComponent {
 
     this.map.on('load', () => {
       this.flagMapInitializing = false;
-      this._setupInteractions();
-      this._fetchRoutesAndTolls();
+      this._afterMapLoad();
     });
   }
 
@@ -214,6 +267,51 @@ export class ModalVietmapRoutesComponent {
 
       this.markers.push(marker);
     });
+  }
+
+  private _drawSavedRoute() {
+    this._drawMarkers();
+
+    // Ưu tiên dùng full polyline (mượt), fallback về step points (thẳng)
+    let coordinates: number[][];
+    if (this.currentPolyline) {
+      try { coordinates = JSON.parse(this.currentPolyline); } catch { coordinates = null; }
+    }
+    if (!coordinates?.length) {
+      coordinates = this.currentSteps.map(s => [s.lng, s.lat]);
+    }
+    if (coordinates.length < 2) return;
+
+    if (this.map.getSource('route')) {
+      this.map.removeLayer('route-layer');
+      this.map.removeSource('route');
+    }
+
+    this.map.addSource('route', {
+      type: 'geojson',
+      data: {
+        type: 'Feature',
+        properties: {},
+        geometry: { type: 'LineString', coordinates }
+      }
+    });
+    this.map.addLayer({
+      id: 'route-layer',
+      type: 'line',
+      source: 'route',
+      layout: { 'line-join': 'round', 'line-cap': 'round' },
+      paint: { 'line-color': '#e67e22', 'line-width': 5, 'line-dasharray': [2, 1] }
+    });
+
+    // Fit bounds
+    const lngs = coordinates.map(c => c[0]);
+    const lats = coordinates.map(c => c[1]);
+    this.map.fitBounds(
+      [[Math.min(...lngs), Math.min(...lats)], [Math.max(...lngs), Math.max(...lats)]],
+      { padding: 40 }
+    );
+
+    this.ngZone.run(() => { this.flagGettingRoutes = false; });
   }
 
   private _drawPolyline(encodedPolyline: string) {
@@ -303,6 +401,22 @@ export class ModalVietmapRoutesComponent {
       };
     }
 
+    // Lưu full polyline để vẽ đường mượt khi load lại
+    const coords: [number, number][] = routeNode.points?.coordinates || [];
+    this.currentPolyline = coords.length ? JSON.stringify(coords) : null;
+
+    // Extract steps với lat/lng từ instruction points
+    this.currentSteps = (routeNode.instructions || []).map((s: any) => {
+      const ptIdx = s.interval?.[0] ?? 0;
+      const coord = coords[ptIdx];
+      return {
+        lat: coord ? coord[1] : 0,
+        lng: coord ? coord[0] : 0,
+        name: s.text || '',
+        distanceM: s.distance || 0
+      };
+    });
+
     this.lstRoutes = [{
       index: 0,
       summary: `Vietmap Tuyến Nhất`,
@@ -310,7 +424,7 @@ export class ModalVietmapRoutesComponent {
       distanceValue: routeNode.distance,
       durationText: `${durationMin} phút`,
       durationValue: routeNode.time,
-      steps: (routeNode.instructions || []).map((s: any) => ({ instructions: s.text, distance: s.distance + 'm' })),
+      steps: this.currentSteps.map(s => ({ instructions: s.name, distance: s.distanceM + 'm' })),
       tollInfo: tollInfo,
       tollLoading: false
     }];

@@ -918,3 +918,103 @@
     }
   }
 }
+
+// ─── Toggle bar (bật/tắt panel) ──────────────────────────────────────────────
+
+.to-toggle-bar {
+  display: flex;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f0f3f7;
+  border-top: 1px solid #dde4ed;
+  border-bottom: 1px solid #dde4ed;
+  flex-shrink: 0;
+}
+
+.to-toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  border: 1px solid #bbb;
+  background: #fff;
+  color: #555;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { border-color: #337ab7; color: #337ab7; }
+  &.active { background: #337ab7; color: #fff; border-color: #2e6da4; }
+
+  .badge { background: #e74c3c; color: #fff; font-size: 10px; }
+}
+
+// ─── Per-segment map button ───────────────────────────────────────────────────
+
+.segment-map-btn-row {
+  margin-top: 4px;
+}
+
+.btn-segment-map {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid #aee0f5;
+  background: #eaf6fd;
+  color: #1a8bbf;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { background: #d0eefa; border-color: #1a8bbf; }
+}
+
+// ─── Add custom point ─────────────────────────────────────────────────────────
+
+.add-custom-point-bar {
+  padding: 6px 8px;
+  border-top: 1px dashed #ccc;
+  margin-top: 4px;
+}
+
+.btn-add-custom-point {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  padding: 3px 10px;
+  border-radius: 10px;
+  border: 1px dashed #999;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+
+  &:hover { border-color: #337ab7; color: #337ab7; }
+}
+
+.add-custom-point-form {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+
+  .acp-input {
+    flex: 1 1 160px;
+    font-size: 12px;
+    height: 28px;
+    padding: 2px 6px;
+  }
+
+  .acp-coord {
+    width: 110px;
+    flex-shrink: 0;
+    font-size: 12px;
+    height: 28px;
+    padding: 2px 6px;
+  }
+}
+
