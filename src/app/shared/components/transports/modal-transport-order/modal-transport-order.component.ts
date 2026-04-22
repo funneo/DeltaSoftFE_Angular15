@@ -22,6 +22,8 @@ import { Attachfiles } from '@app/shared/models/attachfiles.models';
 import { ModalAttachfileComponent } from '../../systems/modal-attachfile/modal-attachfile.component';
 import { ModalShippingTaskAttachFileComponent } from '../modal-shipping-task-attach-file/modal-shipping-task-attach-file.component';
 import { ModalVietmapRoutesComponent } from '../../danhmuc/modal-vietmap-routes/modal-vietmap-routes.component';
+import { ModalMapRoutesComponent } from '../../danhmuc/modal-map-routes/modal-map-routes.component';
+import { ModalRouteCompareComponent, CompareRouteResult } from '../../danhmuc/modal-route-compare/modal-route-compare.component';
 import { ShippingTaskService } from '@app/shared/services/transports/shipping-task.service';
 import { MessageContstants } from '@app/shared/constants';
 import { HttpParams } from '@angular/common/http';
@@ -88,10 +90,53 @@ export class ModalTransportOrderComponent {
   showVehiclePanel = false;
   showBottomPanel = false;
 
-  // Custom point form
+  // Custom point form — bảng chọn location
   showAddCustomPoint = false;
   selectedCustomLocation: UnifiedLocation | null = null;
   listAllLocations: UnifiedLocation[] = [];
+  locFilter = { address: '', type: '' };
+  locSortCol: 'address' | 'locationType' = 'address';
+  locSortDir: 'asc' | 'desc' = 'asc';
+
+  get filteredLocations(): UnifiedLocation[] {
+    let list = this.listAllLocations;
+    const addr = this.locFilter.address.trim().toLowerCase();
+    const type = this.locFilter.type.trim();
+    if (addr) list = list.filter(l => l.address?.toLowerCase().includes(addr));
+    if (type) list = list.filter(l => l.locationType?.toString() === type);
+    list = [...list].sort((a, b) => {
+      const va = this.locSortCol === 'locationType' ? (a.locationType || 0) : (a.address || '');
+      const vb = this.locSortCol === 'locationType' ? (b.locationType || 0) : (b.address || '');
+      if (va < vb) return this.locSortDir === 'asc' ? -1 : 1;
+      if (va > vb) return this.locSortDir === 'asc' ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }
+
+  sortLoc(col: 'address' | 'locationType') {
+    if (this.locSortCol === col) {
+      this.locSortDir = this.locSortDir === 'asc' ? 'desc' : 'asc';
+    } else {
+      this.locSortCol = col;
+      this.locSortDir = 'asc';
+    }
+  }
+
+  hasGeoCoord(loc: UnifiedLocation): boolean {
+    return !!(loc.latitude && loc.longtitude
+      && Math.abs(loc.latitude) > 0.0001
+      && Math.abs(loc.longtitude) > 0.0001);
+  }
+
+  selectLocation(loc: UnifiedLocation) {
+    if (!this.hasGeoCoord(loc)) return;
+    this.selectedCustomLocation = loc;
+  }
+
+  locationTypeName(type: number): string {
+    return type === 2 ? 'Cảng/Bãi' : 'Nhà máy';
+  }
 
   // Track segment đang mở bản đồ
   private _currentMapSegmentIndex: number | null = null;
@@ -128,6 +173,8 @@ export class ModalTransportOrderComponent {
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent;
   @ViewChild(ModalShippingTaskAttachFileComponent, { static: false }) modalAttackDriverFilesRef: ModalShippingTaskAttachFileComponent;
   @ViewChild(ModalVietmapRoutesComponent, { static: false }) modalVietmap: ModalVietmapRoutesComponent;
+  @ViewChild(ModalMapRoutesComponent, { static: false }) modalGoogle: ModalMapRoutesComponent;
+  @ViewChild(ModalRouteCompareComponent, { static: false }) modalCompare: ModalRouteCompareComponent;
 
   constructor(
     private _notif: NotificationService,
@@ -257,13 +304,107 @@ export class ModalTransportOrderComponent {
     this.totalEtcCost = totalEtc;
   }
 
-  // ── MAP: mở bản đồ toàn trình (không gắn segment) ──
+  // ── MAP: xem lộ trình toàn tuyến (read-only, ghép tất cả segments đã lưu) ──
 
-  showMap() {
+  showFullRouteMap() {
     if (this.locations.length < 2) return;
     this._currentMapSegmentIndex = null;
-    const points = this.locations.map(l => ({ lat: l.lat, lng: l.lng }));
-    this.modalVietmap.show(points);
+
+    const segments = this.entity.segments || [];
+
+    // Gộp polyline từ tất cả segments theo thứ tự
+    const combinedCoords: number[][] = [];
+    segments.forEach(seg => {
+      if (seg.routePolyline) {
+        try {
+          const coords: number[][] = JSON.parse(seg.routePolyline);
+          combinedCoords.push(...coords);
+        } catch { }
+      } else {
+        // Fallback: nối thẳng start → end
+        if (seg.startLng && seg.startLat) combinedCoords.push([seg.startLng, seg.startLat]);
+        if (seg.endLng && seg.endLat) combinedCoords.push([seg.endLng, seg.endLat]);
+      }
+    });
+
+    // Gộp steps từ tất cả segments
+    const combinedSteps: { lat: number; lng: number; name: string; distanceM: number }[] = [];
+    segments.forEach(seg => {
+      (seg.listWaypoints || []).forEach(w => {
+        combinedSteps.push({ lat: w.lat, lng: w.lng, name: w.name || '', distanceM: w.distanceM || 0 });
+      });
+    });
+
+    // Fallback nếu chưa có waypoints: dùng location points
+    if (!combinedSteps.length) {
+      this.locations.forEach(l => combinedSteps.push({ lat: l.lat, lng: l.lng, name: l.locationName, distanceM: 0 }));
+    }
+
+    const polylineJson = combinedCoords.length >= 2 ? JSON.stringify(combinedCoords) : null;
+    this.modalVietmap.showSaved(combinedSteps, polylineJson);
+  }
+
+  /** Mở bản đồ edit mode để tính lại / chọn lộ trình mới cho segment */
+  editSegmentRoute(segIndex: number) {
+    const seg = this.entity.segments?.[segIndex];
+    if (!seg) return;
+    this._currentMapSegmentIndex = segIndex;
+    this.modalVietmap.show([
+      { lat: seg.startLat, lng: seg.startLng },
+      { lat: seg.endLat, lng: seg.endLng }
+    ]);
+  }
+
+  /** Mở modal so sánh Vietmap vs Google Maps cho một segment */
+  openCompareModal(segIndex: number) {
+    const seg = this.entity.segments?.[segIndex];
+    if (!seg) return;
+    this._currentMapSegmentIndex = segIndex;
+    this.modalCompare.show([
+      { lat: seg.startLat, lng: seg.startLng },
+      { lat: seg.endLat, lng: seg.endLng }
+    ]);
+  }
+
+  /** Xử lý khi user chọn tuyến từ compare modal */
+  onCompareRouteSelected(event: CompareRouteResult) {
+    const seg = this.entity.segments?.[this._currentMapSegmentIndex];
+    if (!seg) return;
+    seg.distanceKm = +(event.km).toFixed(1);
+    seg.routePolyline = event.polyline;
+    seg.listWaypoints = event.steps.map((s, i) => ({
+      orderIndex: i, lat: s.lat, lng: s.lng, name: s.name, distanceM: s.distanceM
+    }));
+    if (seg.payloadWeight) {
+      const quota = this.listOilQuota.find(x => x.id === seg.payloadWeight);
+      if (quota) {
+        seg.fuelNorm = this.entity.shortWay ? quota.shortWayValue : quota.value;
+        seg.fuelAmountCalculated = +(seg.fuelNorm * seg.distanceKm / 100).toFixed(2);
+      }
+    }
+    this.calculateTotal();
+    this.calulateOil();
+  }
+
+
+  /** Xử lý khi user chọn tuyến từ Google Maps modal */
+  onGoogleRouteSelected(event: { summary: string; km: number; steps: { lat: number; lng: number; name: string; distanceM: number }[]; polyline: string }) {
+    const seg = this.entity.segments?.[this._currentMapSegmentIndex];
+    if (!seg) return;
+    seg.distanceKm = +(event.km).toFixed(1);
+    seg.routePolyline = event.polyline;
+    seg.listWaypoints = event.steps.map((s, i) => ({
+      orderIndex: i, lat: s.lat, lng: s.lng, name: s.name, distanceM: s.distanceM
+    }));
+    if (seg.payloadWeight) {
+      const quota = this.listOilQuota.find(x => x.id === seg.payloadWeight);
+      if (quota) {
+        seg.fuelNorm = this.entity.shortWay ? quota.shortWayValue : quota.value;
+        seg.fuelAmountCalculated = +(seg.fuelNorm * seg.distanceKm / 100).toFixed(2);
+      }
+    }
+    this.calculateTotal();
+    this.calulateOil();
   }
 
   /** Mở bản đồ cho một segment cụ thể — dùng waypoints đã lưu nếu có */
@@ -292,10 +433,19 @@ export class ModalTransportOrderComponent {
     if (this._currentMapSegmentIndex !== null) {
       const seg = this.entity.segments?.[this._currentMapSegmentIndex];
       if (seg) {
-        seg.distanceKm = event.km;
+        seg.distanceKm = +(event.km).toFixed(1);
         seg.routePolyline = event.polyline;
         seg.listWaypoints = event.steps.map((s, i) => ({ orderIndex: i, lat: s.lat, lng: s.lng, name: s.name, distanceM: s.distanceM }));
+        // Recalc fuel nếu có định mức
+        if (seg.payloadWeight) {
+          const quota = this.listOilQuota.find(x => x.id === seg.payloadWeight);
+          if (quota) {
+            seg.fuelNorm = this.entity.shortWay ? quota.shortWayValue : quota.value;
+            seg.fuelAmountCalculated = +(seg.fuelNorm * seg.distanceKm / 100).toFixed(2);
+          }
+        }
         this.calculateTotal();
+        this.calulateOil();
       }
     }
     this._currentMapSegmentIndex = null;
@@ -307,6 +457,10 @@ export class ModalTransportOrderComponent {
     this.showAddCustomPoint = !this.showAddCustomPoint;
     if (!this.showAddCustomPoint) {
       this.selectedCustomLocation = null;
+    } else {
+      this.locFilter = { address: '', type: '' };
+      this.locSortCol = 'address';
+      this.locSortDir = 'asc';
     }
   }
 

@@ -1,0 +1,119 @@
+<div bsModal #modalCompare="bs-modal" [config]="{backdrop: 'static'}" class="modal fade" tabindex="-1" role="dialog"
+     (onShown)="onModalShown()">
+  <div class="modal-dialog cmp-dialog">
+    <div class="modal-content cmp-content">
+
+      <!-- HEADER -->
+      <div class="cmp-header">
+        <div class="cmp-header-title">
+          <i class="fa fa-balance-scale"></i>
+          So sánh lộ trình
+          <span class="cmp-header-sub">Kéo thả tuyến trên mỗi bản đồ để điều chỉnh</span>
+        </div>
+        <button type="button" class="cmp-close" (click)="modalCompare.hide()">
+          <span>&times;</span>
+        </button>
+      </div>
+
+      <!-- BODY: hai bản đồ chia đôi -->
+      <div class="cmp-body">
+
+        <!-- ─── VIETMAP (trái) ─── -->
+        <div class="cmp-panel cmp-panel--left">
+          <div class="cmp-panel-label cmp-panel-label--vietmap">
+            <i class="fa fa-map"></i> Vietmap
+            <span class="cmp-panel-hint">Click bản đồ để thêm điểm trung gian · Kéo mốc để đổi vị trí</span>
+          </div>
+
+          <div class="cmp-map-wrap">
+            <div #vietmapContainer class="cmp-map"></div>
+            <div *ngIf="vietmapLoading" class="cmp-map-overlay">
+              <i class="fa fa-spinner fa-spin fa-2x text-primary"></i>
+              <p>Đang tải Vietmap...</p>
+            </div>
+          </div>
+
+          <div class="cmp-stats">
+            <ng-container *ngIf="!vietmapLoading && vietmapStats">
+              <div class="cmp-stat-row">
+                <span class="cmp-stat-item">
+                  <i class="fa fa-road text-primary"></i>
+                  <strong>{{ vietmapStats.distanceText }}</strong>
+                </span>
+                <span class="cmp-stat-item">
+                  <i class="fa fa-clock-o text-info"></i>
+                  {{ vietmapStats.durationText }}
+                </span>
+                <span class="cmp-stat-item" *ngIf="vietmapStats.tollText">
+                  <i class="fa fa-ticket text-warning"></i>
+                  {{ vietmapStats.tollText }}
+                </span>
+                <span class="cmp-stat-item cmp-stat-no-toll" *ngIf="!vietmapStats.tollText">
+                  <i class="fa fa-check-circle text-success"></i>
+                  Không có trạm
+                </span>
+              </div>
+              <button class="btn btn-primary btn-sm cmp-btn-select" (click)="selectVietmap()">
+                <i class="fa fa-check"></i> Dùng tuyến Vietmap
+              </button>
+            </ng-container>
+            <div *ngIf="vietmapLoading" class="cmp-stats-loading">
+              <i class="fa fa-spinner fa-spin"></i> Đang tính toán...
+            </div>
+            <div *ngIf="!vietmapLoading && vietmapError" class="cmp-stats-error">
+              <i class="fa fa-exclamation-triangle text-warning"></i> {{ vietmapError }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="cmp-divider"></div>
+
+        <!-- ─── GOOGLE MAPS (phải) ─── -->
+        <div class="cmp-panel cmp-panel--right">
+          <div class="cmp-panel-label cmp-panel-label--google">
+            <i class="fa fa-google"></i> Google Maps
+            <span class="cmp-panel-hint">Kéo tuyến đường để thay đổi lộ trình</span>
+          </div>
+
+          <div class="cmp-map-wrap">
+            <div #googleContainer class="cmp-map"></div>
+            <div *ngIf="googleLoading" class="cmp-map-overlay">
+              <i class="fa fa-spinner fa-spin fa-2x text-warning"></i>
+              <p>Đang tải Google Maps...</p>
+            </div>
+          </div>
+
+          <div class="cmp-stats">
+            <ng-container *ngIf="!googleLoading && googleStats">
+              <div class="cmp-stat-row">
+                <span class="cmp-stat-item">
+                  <i class="fa fa-road text-warning"></i>
+                  <strong>{{ googleStats.distanceText }}</strong>
+                </span>
+                <span class="cmp-stat-item">
+                  <i class="fa fa-clock-o text-info"></i>
+                  {{ googleStats.durationText }}
+                </span>
+                <span class="cmp-stat-item cmp-stat-no-toll">
+                  <i class="fa fa-info-circle text-muted"></i>
+                  Phí BOT xem trong modal Google
+                </span>
+              </div>
+              <button class="btn btn-warning btn-sm cmp-btn-select" (click)="selectGoogle()">
+                <i class="fa fa-check"></i> Dùng tuyến Google
+              </button>
+            </ng-container>
+            <div *ngIf="googleLoading" class="cmp-stats-loading">
+              <i class="fa fa-spinner fa-spin"></i> Đang tính toán...
+            </div>
+            <div *ngIf="!googleLoading && googleError" class="cmp-stats-error">
+              <i class="fa fa-exclamation-triangle text-warning"></i> {{ googleError }}
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

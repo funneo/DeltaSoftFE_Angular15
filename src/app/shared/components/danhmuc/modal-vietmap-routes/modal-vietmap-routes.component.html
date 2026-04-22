@@ -7,7 +7,8 @@
       <div class="modal-header bg-success" style="padding: 11px 18px;">
         <h4 class="modal-title pull-left" style="color:#fff; font-size:15px; margin:0; display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
           <i class="fa fa-map-signs"></i>
-          Chọn lộ trình &nbsp;<span style="opacity:.7; font-size:12px; font-weight:400;">(Vietmap API)</span>
+          {{ isSavedMode ? 'Lộ trình toàn tuyến' : 'Chọn lộ trình' }}
+          &nbsp;<span style="opacity:.7; font-size:12px; font-weight:400;">{{ isSavedMode ? '(chỉ xem)' : '(Vietmap API)' }}</span>
         </h4>
         <div style="display:flex; align-items:center; gap:8px; margin-left:auto;">
           <button type="button" class="close" (click)="modalRoutes.hide()"
@@ -62,11 +63,15 @@
                   </div>
                 </div>
 
-                 <!-- Nút Chọn -->
+                 <!-- Nút Chọn — ẩn khi xem toàn tuyến (read-only) -->
                 <button class="btn btn-sm btn-success route-select-btn"
+                        *ngIf="!isSavedMode"
                         (click)="selectRoute(route); $event.stopPropagation()">
                   <i class="fa fa-check"></i> Chọn
                 </button>
+                <span class="badge badge-info" *ngIf="isSavedMode" style="padding:6px 10px;">
+                  <i class="fa fa-eye"></i> Chỉ xem
+                </span>
 
                 <!-- ── TOLL INFO ROW ── -->
                 <div class="toll-row">

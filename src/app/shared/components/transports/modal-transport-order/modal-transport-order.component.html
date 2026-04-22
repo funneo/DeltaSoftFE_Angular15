@@ -128,28 +128,13 @@
               <i class="fa fa-random text-primary"></i>
               Lộ trình & Tính cung đường
             </div>
-            <!-- Nút tính toán -->
+            <!-- Nút xem toàn tuyến -->
             <div class="btn-group btn-group-sm" *ngIf="locations.length >= 2">
-              <button type="button" class="btn btn-outline-primary btn-calc"
-                (click)="calcAllSegments()"
-                [disabled]="isCalculating"
-                title="Tính từng cung A→B, B→C riêng lẻ song song">
-                <i class="fa fa-calculator"></i>
-                <span>Tính từng chặng</span>
-              </button>
-              <button type="button" class="btn btn-primary btn-calc"
-                (click)="calcFullRoute()"
-                [disabled]="isCalculating"
-                title="Gọi Vietmap với tất cả các điểm cùng lúc">
-                <i class="fa" [class.fa-road]="!isCalculating" [class.fa-spinner]="isCalculating"
-                  [class.fa-spin]="isCalculating"></i>
-                <span>{{ isCalculating ? 'Đang tính...' : 'Tính toàn trình' }}</span>
-              </button>
               <button type="button" class="btn btn-info btn-calc"
-                (click)="showMap()"
-                title="Xem lộ trình trên bản đồ Vietmap">
+                (click)="showFullRouteMap()"
+                title="Xem toàn bộ lộ trình đã sắp xếp (chỉ xem, không chỉnh sửa)">
                 <i class="fa fa-map-o"></i>
-                <span>Xem bản đồ</span>
+                <span>Lộ trình toàn tuyến</span>
               </button>
             </div>
           </div>
@@ -260,14 +245,30 @@
                         <i class="fa fa-calculator"></i> Tính
                       </button>
                     </div>
-                    <!-- Nút xem bản đồ per-segment -->
+                    <!-- Nút bản đồ per-segment -->
                     <div class="segment-map-btn-row">
+                      <!-- Xem lộ trình đã lưu (read-only) -->
                       <button type="button" class="btn-segment-map"
+                        *ngIf="getSegment(i)?.listWaypoints?.length"
                         (click)="showMapForSegment(i)"
-                        [title]="getSegment(i)?.listWaypoints?.length ? 'Xem lộ trình đã điều chỉnh' : 'Mở bản đồ cho chặng này'">
+                        title="Xem lộ trình đã lưu">
                         <i class="fa fa-map-marker text-info"></i>
-                        <span>{{ getSegment(i)?.listWaypoints?.length ? 'Lộ trình đã lưu (' + getSegment(i).listWaypoints.length + ' điểm)' : 'Xem bản đồ chặng' }}</span>
-                        <i *ngIf="getSegment(i)?.listWaypoints?.length" class="fa fa-check-circle text-success" title="Đã có lộ trình điều chỉnh"></i>
+                        <span>Lộ trình đã lưu ({{ getSegment(i).listWaypoints.length }} điểm)</span>
+                        <i class="fa fa-check-circle text-success"></i>
+                      </button>
+                      <!-- Tính lại / chọn lộ trình mới (Vietmap) -->
+                      <button type="button" class="btn-segment-map btn-segment-recalc"
+                        (click)="editSegmentRoute(i)"
+                        [title]="getSegment(i)?.listWaypoints?.length ? 'Tính lại lộ trình (Vietmap)' : 'Chọn lộ trình (Vietmap)'">
+                        <i class="fa fa-refresh text-warning"></i>
+                        <span>{{ getSegment(i)?.listWaypoints?.length ? 'Tính lại (Vietmap)' : 'Chọn lộ trình' }}</span>
+                      </button>
+                      <!-- So sánh Vietmap vs Google -->
+                      <button type="button" class="btn-segment-map btn-segment-compare"
+                        (click)="openCompareModal(i)"
+                        title="So sánh Vietmap và Google Maps">
+                        <i class="fa fa-balance-scale text-primary"></i>
+                        <span>So sánh</span>
                       </button>
                     </div>
                   </div>
@@ -283,25 +284,81 @@
               <i class="fa" [class.fa-plus]="!showAddCustomPoint" [class.fa-minus]="showAddCustomPoint"></i>
               Thêm điểm khác
             </button>
-            <div class="add-custom-point-form" *ngIf="showAddCustomPoint">
-              <ng-select class="acp-select"
-                [items]="listAllLocations"
-                [(ngModel)]="selectedCustomLocation"
-                [ngModelOptions]="{standalone: true}"
-                bindLabel="address"
-                placeholder="Tìm điểm (kho, cảng...)"
-                [searchable]="true"
-                notFoundText="Không tìm thấy">
-                <ng-template ng-option-tmp let-item="item">
-                  <span class="badge" [class.badge-info]="item.locationType===1" [class.badge-warning]="item.locationType===2">
-                    {{ item.locationType === 1 ? 'KH' : 'Cảng' }}
-                  </span>
-                  {{ item.address }}
-                </ng-template>
-              </ng-select>
-              <button type="button" class="btn btn-sm btn-primary" (click)="confirmAddCustomPoint()">
-                <i class="fa fa-plus"></i> Thêm
-              </button>
+            <div class="add-custom-point-table" *ngIf="showAddCustomPoint">
+              <!-- Bảng chọn điểm -->
+              <div class="loc-table-wrap">
+                <table class="loc-table">
+                  <thead>
+                    <tr class="loc-table-header">
+                      <th class="loc-th loc-th-type" (click)="sortLoc('locationType')">
+                        Loại
+                        <i class="fa" [class.fa-sort-asc]="locSortCol==='locationType' && locSortDir==='asc'"
+                           [class.fa-sort-desc]="locSortCol==='locationType' && locSortDir==='desc'"
+                           [class.fa-sort]="locSortCol!=='locationType'"></i>
+                      </th>
+                      <th class="loc-th loc-th-addr" (click)="sortLoc('address')">
+                        Tên / Địa chỉ
+                        <i class="fa" [class.fa-sort-asc]="locSortCol==='address' && locSortDir==='asc'"
+                           [class.fa-sort-desc]="locSortCol==='address' && locSortDir==='desc'"
+                           [class.fa-sort]="locSortCol!=='address'"></i>
+                      </th>
+                    </tr>
+                    <!-- Filter row -->
+                    <tr class="loc-table-filter">
+                      <td>
+                        <select class="form-control loc-filter-input"
+                          [(ngModel)]="locFilter.type" [ngModelOptions]="{standalone: true}">
+                          <option value="">Tất cả</option>
+                          <option value="1">Nhà máy</option>
+                          <option value="2">Cảng/Bãi</option>
+                        </select>
+                      </td>
+                      <td>
+                        <input type="text" class="form-control loc-filter-input"
+                          [(ngModel)]="locFilter.address" [ngModelOptions]="{standalone: true}"
+                          placeholder="Lọc địa chỉ...">
+                      </td>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let loc of filteredLocations"
+                      class="loc-table-row"
+                      [class.loc-table-row--selected]="selectedCustomLocation?.id === loc.id && selectedCustomLocation?.locationType === loc.locationType"
+                      [class.loc-table-row--disabled]="!hasGeoCoord(loc)"
+                      [title]="hasGeoCoord(loc) ? '' : 'Chưa có tọa độ GPS — không thể thêm vào lộ trình'"
+                      (click)="selectLocation(loc)">
+                      <td>
+                        <span class="badge" [class.badge-primary]="loc.locationType===1" [class.badge-warning]="loc.locationType===2">
+                          {{ locationTypeName(loc.locationType) }}
+                        </span>
+                      </td>
+                      <td class="loc-td-addr">
+                        {{ loc.address }}
+                        <span *ngIf="!hasGeoCoord(loc)" class="loc-no-coord" title="Chưa có tọa độ GPS">
+                          <i class="fa fa-map-marker" style="color:#ccc;"></i>
+                        </span>
+                      </td>
+                    </tr>
+                    <tr *ngIf="!filteredLocations.length">
+                      <td colspan="2" class="text-center text-muted" style="padding:12px;">
+                        <i class="fa fa-search"></i> Không tìm thấy
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <!-- Action bar -->
+              <div class="loc-table-action">
+                <span class="text-muted small" *ngIf="selectedCustomLocation">
+                  <i class="fa fa-check-circle text-success"></i>
+                  Đã chọn: <strong>{{ selectedCustomLocation.address }}</strong>
+                </span>
+                <span class="text-muted small" *ngIf="!selectedCustomLocation">Bấm vào hàng để chọn điểm</span>
+                <button type="button" class="btn btn-sm btn-primary ml-auto"
+                  (click)="confirmAddCustomPoint()" [disabled]="!selectedCustomLocation">
+                  <i class="fa fa-plus"></i> Thêm vào lộ trình
+                </button>
+              </div>
             </div>
           </div>
 
@@ -819,3 +876,7 @@
 <modal-shipping-task-attach-file *ngIf="viewAttackDriverFiles" (CloseModal)="closeAttackDriverModal()">
 </modal-shipping-task-attach-file>
 <modal-vietmap-routes (RouteSelected)="onRouteSelected($event)"></modal-vietmap-routes>
+<modal-map-routes (RouteSelected)="onGoogleRouteSelected($event)"></modal-map-routes>
+<modal-route-compare
+  (RouteSelected)="onCompareRouteSelected($event)">
+</modal-route-compare>

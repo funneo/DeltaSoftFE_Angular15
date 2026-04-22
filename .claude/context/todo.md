@@ -16,6 +16,7 @@ Script đầy đủ đã được soạn sẵn trong session. Thứ tự chạy:
 
 ## Transport Order — FE còn TODO
 - `onAttachFileChanged()` — upload ảnh hiện trường là stub, cần S3 logic
+- `modal-route-compare`: Google Maps phí BOT — hiện chỉ note "xem trong modal Google"; có thể bổ sung bằng Distance Matrix API nếu cần
 
 ## Backend — SQL còn lại (không liên quan transport order)
 - `SP_CustomerLocations_UpdateGeocode (@Id int, @Latitude decimal(10,6), @Longtitude decimal(10,6))`

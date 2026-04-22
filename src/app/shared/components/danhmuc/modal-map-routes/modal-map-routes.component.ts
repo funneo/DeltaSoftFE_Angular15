@@ -65,7 +65,12 @@ interface RouteOption {
 export class ModalMapRoutesComponent {
   @ViewChild('modalRoutes',  { static: false }) modalRoutes: ModalDirective;
   @ViewChild('mapContainer', { static: false }) mapContainer: ElementRef;
-  @Output() RouteSelected = new EventEmitter<{ summary: string; km: number }>();
+  @Output() RouteSelected = new EventEmitter<{
+    summary: string;
+    km: number;
+    steps: { lat: number; lng: number; name: string; distanceM: number }[];
+    polyline: string;
+  }>();
 
   // ── State ────────────────────────────────────────
   public lstRoutes: RouteOption[]          = [];
@@ -143,7 +148,32 @@ export class ModalMapRoutesComponent {
   }
 
   selectRoute(route: RouteOption) {
-    this.RouteSelected.emit({ summary: route.summary, km: Math.round(route.distanceValue / 1000) });
+    let polyline = '';
+    let steps: { lat: number; lng: number; name: string; distanceM: number }[] = [];
+
+    if (this.activeRenderer) {
+      const dir = this.activeRenderer.getDirections();
+      const r0 = dir?.routes?.[0];
+      if (r0) {
+        const encoded: string = r0.overview_polyline?.points || '';
+        if (encoded && (window as any).google?.maps?.geometry?.encoding) {
+          const path = (window as any).google.maps.geometry.encoding.decodePath(encoded);
+          const coords: [number, number][] = path.map((ll: any) => [ll.lng(), ll.lat()]);
+          polyline = JSON.stringify(coords);
+        }
+        const leg = r0.legs?.[0];
+        if (leg?.steps) {
+          steps = leg.steps.map((s: any) => ({
+            lat: s.start_location?.lat?.() ?? s.start_location?.lat ?? 0,
+            lng: s.start_location?.lng?.() ?? s.start_location?.lng ?? 0,
+            name: s.instructions || '',
+            distanceM: s.distance?.value || 0
+          }));
+        }
+      }
+    }
+
+    this.RouteSelected.emit({ summary: route.summary, km: Math.round(route.distanceValue / 1000), steps, polyline });
     this.modalRoutes.hide();
   }
 

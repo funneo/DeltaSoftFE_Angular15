@@ -1018,3 +1018,193 @@
   }
 }
 
+// ─── Add custom point — location table ───────────────────────────────────────
+
+.add-custom-point-table {
+  margin-top: 8px;
+  border: 1px solid #d0d8e8;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.loc-table-wrap {
+  max-height: 240px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.loc-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th, td {
+    padding: 4px 7px;
+    border-bottom: 1px solid #e8edf5;
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  thead th {
+    background: #f0f4fb;
+    font-weight: 600;
+    color: #2c4770;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    white-space: nowrap;
+    user-select: none;
+  }
+}
+
+.loc-th {
+  cursor: pointer;
+
+  &:hover { background: #e2eaf6 !important; }
+
+  i.fa { margin-left: 3px; opacity: .6; font-size: 10px; }
+}
+
+.loc-th-type  { width: 86px; }
+.loc-th-addr  { width: auto; }
+
+.loc-table-header {
+  background: #f0f4fb;
+
+  th { background: #f0f4fb; }
+}
+
+.loc-table-filter {
+  background: #fafbfd;
+
+  td { padding: 3px 5px; }
+}
+
+.loc-filter-select {
+  width: 100%;
+  font-size: 11px;
+  height: 24px;
+  padding: 1px 4px;
+  border: 1px solid #c8d4e8;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.loc-filter-input {
+  width: 100%;
+  font-size: 11px;
+  height: 24px;
+  padding: 1px 6px;
+  border: 1px solid #c8d4e8;
+  border-radius: 3px;
+  outline: none;
+
+  &:focus { border-color: #337ab7; }
+}
+
+.loc-table-row {
+  cursor: pointer;
+  transition: background .1s;
+
+  &:hover { background: #eef4ff; }
+
+  &--selected {
+    background: #ddeeff !important;
+
+    td { color: #1a4a8a; font-weight: 500; }
+  }
+
+  &--disabled {
+    cursor: not-allowed;
+    opacity: .45;
+    background: #f8f8f8 !important;
+
+    &:hover { background: #f8f8f8 !important; }
+
+    td { color: #aaa !important; }
+  }
+}
+
+.loc-no-coord {
+  margin-left: 4px;
+  font-size: 11px;
+}
+
+.loc-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+
+  &--factory {
+    background: #e8f5e9;
+    color: #2e7d32;
+    border: 1px solid #a5d6a7;
+  }
+
+  &--port {
+    background: #e3f2fd;
+    color: #1565c0;
+    border: 1px solid #90caf9;
+  }
+}
+
+.loc-td-addr {
+  max-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #333;
+}
+
+.loc-table-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  background: #f7f9fc;
+  border-top: 1px solid #d0d8e8;
+  font-size: 12px;
+
+  .loc-selected-label {
+    flex: 1;
+    color: #555;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    strong { color: #1a4a8a; }
+  }
+}
+
+// ─── Segment route buttons ────────────────────────────────────────────────────
+
+.btn-segment-recalc {
+  font-size: 11px;
+  padding: 2px 8px;
+  height: 24px;
+  line-height: 20px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.btn-segment-compare {
+  font-size: 11px;
+  padding: 2px 8px;
+  height: 24px;
+  line-height: 20px;
+  border-radius: 3px;
+  white-space: nowrap;
+  background: #e8f0fe;
+  border: 1px solid #c5d5f8;
+  color: #1a56db;
+  cursor: pointer;
+
+  &:hover { background: #c5d5f8; }
+
+  i { margin-right: 3px; }
+}
+
