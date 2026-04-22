@@ -75,6 +75,14 @@
   - Nút "Dùng tuyến này" ở mỗi bên → lưu polyline + waypoints vào segment
   - Cả 2 SDK tải độc lập song song, không xung đột
 - ShippingTask BE model: thêm PickupLatitude, PickupLongitude, DeliveryLatitude, DeliveryLongitude
+- Transport order SQL migration: ALTER TABLE Segments (StartLocationType, EndLocationType, RoutePolyline), CREATE TABLE Tbl_TransportOrder_Segment_Waypoints, DROP/CREATE TVP TypeTransportOrderSegment + TypeTransportOrderSegmentWaypoint, SP_TransportOrder_Create/Update/GetById cập nhật waypoints
+- Transport order modal: **bảng tải trọng + km per-segment** — tách khỏi giữa các điểm, đặt thành table riêng (Chặng / Tải trọng / Km / Dầu ĐM) ngay trên Tổng dầu ĐM; ng-select appendTo="body" tránh bị clip; km change gọi cả calulateOil() để ra số lít ngay
+- Transport order modal: **_rebuildSegments fix** — match theo startLocationId+endLocationId thay vì index, giữ nguyên payloadWeight/fuelNorm/fuelAmountCalculated/routePolyline/listWaypoints/listEtc khi thêm/xóa/kéo thả điểm
+- SP_GetAllLocations: UNION ALL CustomerLocations + Ports với locationType discriminator (1=KH, 2=Cảng)
+- SP_CustomerLocations_UpdateGeocode, SP_Ports_UpdateGeocode
+- ShippingTask SP getBy*: JOIN thêm PickupLatitude, PickupLongitude, DeliveryLatitude, DeliveryLongitude
+- Transport order: onAttachFileChanged() → S3 upload ảnh hiện trường
+- modal-route-compare: Google Maps phí BOT via Distance Matrix API
 - Quotation subcontractors
 - Shipping tasks: CS, LG, OpMan views
 - Fuel/gas management: driver fuel approval, debit, limit

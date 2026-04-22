@@ -774,8 +774,7 @@ export class ModalTransportOrderComponent {
     const existing = this.entity.segments || [];
     this.entity.segments = this.locations.slice(0, -1).map((loc, i) => {
       const next = this.locations[i + 1];
-      const prev = existing[i];
-      const sameSegment = prev?.startLocationId === loc.locationId && prev?.endLocationId === next.locationId;
+      const prev = existing.find(s => s.startLocationId === loc.locationId && s.endLocationId === next.locationId);
       return {
         orderIndex: i,
         startLocationId: loc.locationId,
@@ -788,14 +787,18 @@ export class ModalTransportOrderComponent {
         endLocationName: next.locationName,
         endLat: next.lat,
         endLng: next.lng,
-        distanceKm: sameSegment ? prev.distanceKm : 0,
-        payloadWeight: sameSegment ? prev.payloadWeight : undefined,
-        listWaypoints: sameSegment ? prev.listWaypoints : [],
-        listEtc: sameSegment ? prev.listEtc : []
+        distanceKm: prev?.distanceKm ?? 0,
+        payloadWeight: prev?.payloadWeight,
+        fuelNorm: prev?.fuelNorm,
+        fuelAmountCalculated: prev?.fuelAmountCalculated,
+        routePolyline: prev?.routePolyline,
+        listWaypoints: prev?.listWaypoints ?? [],
+        listEtc: prev?.listEtc ?? []
       };
     });
     this.segmentCalculating = new Array(this.entity.segments.length).fill(false);
     this.calculateTotal();
+    this.calulateOil();
   }
 
   private _segmentsToLocations(segments: TransportOrderSegment[]): LocationItem[] {

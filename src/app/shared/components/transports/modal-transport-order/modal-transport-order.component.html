@@ -201,22 +201,6 @@
                     </div>
                     <!-- Kết quả -->
                     <ng-container *ngIf="!isSegmentCalculating(i) && getSegment(i)">
-                      <div class="segment-km">
-                        <i class="fa fa-road text-primary"></i>
-                        <input type="number" class="segment-km-input"
-                          [(ngModel)]="getSegment(i).distanceKm"
-                          (ngModelChange)="calculateTotal()"
-                          title="Có thể sửa thủ công"
-                          [ngModelOptions]="{standalone: true}">
-                        <span class="text-muted">km</span>
-                        <ng-select class="segment-payload-select ml-2"
-                          [items]="listOilQuota" bindLabel="oilQuotaName" bindValue="id"
-                          [(ngModel)]="getSegment(i).payloadWeight"
-                          (change)="onSegmentQuotaChange(i, $event)"
-                          [ngModelOptions]="{standalone: true}"
-                          placeholder="Lượng hàng...">
-                        </ng-select>
-                      </div>
                       <!-- Trạm ETC -->
                       <div class="segment-etcs" *ngIf="getSegment(i).listEtc?.length">
                         <div class="segment-etc-item" *ngFor="let etc of getSegment(i).listEtc; let j = index">
@@ -237,14 +221,6 @@
                         <i class="fa fa-plus"></i> Thêm trạm phí
                       </button>
                     </ng-container>
-                    <!-- Chưa có dữ liệu (chưa tính) -->
-                    <div class="segment-no-data" *ngIf="!isSegmentCalculating(i) && !getSegment(i)?.distanceKm">
-                      <i class="fa fa-question-circle text-muted"></i>
-                      <span class="text-muted small">Bấm "Tính" để lấy dữ liệu</span>
-                      <button type="button" class="btn-calc-single" (click)="calcSingleSegment(i)">
-                        <i class="fa fa-calculator"></i> Tính
-                      </button>
-                    </div>
                     <!-- Nút bản đồ per-segment -->
                     <div class="segment-map-btn-row">
                       <!-- Xem lộ trình đã lưu (read-only) -->
@@ -451,6 +427,48 @@
                   [(ngModel)]="orderType" (change)="orderTypeChange($event)">
                 </ng-select>
               </div>
+            </div>
+
+            <!-- Bảng tải trọng + km per-segment -->
+            <div class="seg-km-table-wrap" *ngIf="entity.segments?.length">
+              <table class="seg-km-table">
+                <thead>
+                  <tr>
+                    <th class="skt-th-route">Chặng</th>
+                    <th class="skt-th-payload">Tải trọng</th>
+                    <th class="skt-th-km">Km</th>
+                    <th class="skt-th-fuel">Dầu ĐM (lít)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let seg of entity.segments; let i = index">
+                    <td class="skt-td-route">
+                      <span class="skt-loc-name" [title]="locations[i]?.locationName">{{ locations[i]?.locationName | slice:0:18 }}{{ (locations[i]?.locationName?.length > 18) ? '…' : '' }}</span>
+                      <i class="fa fa-long-arrow-right text-muted skt-arrow"></i>
+                      <span class="skt-loc-name" [title]="locations[i+1]?.locationName">{{ locations[i+1]?.locationName | slice:0:18 }}{{ (locations[i+1]?.locationName?.length > 18) ? '…' : '' }}</span>
+                    </td>
+                    <td class="skt-td-payload">
+                      <ng-select [items]="listOilQuota" bindLabel="oilQuotaName" bindValue="id"
+                        [(ngModel)]="seg.payloadWeight"
+                        (change)="onSegmentQuotaChange(i, $event)"
+                        [ngModelOptions]="{standalone: true}"
+                        appendTo="body"
+                        placeholder="Tải trọng...">
+                      </ng-select>
+                    </td>
+                    <td class="skt-td-km">
+                      <input type="number" class="form-control form-control-sm skt-km-input"
+                        [(ngModel)]="seg.distanceKm"
+                        (ngModelChange)="calculateTotal(); calulateOil()"
+                        [ngModelOptions]="{standalone: true}"
+                        title="Có thể sửa thủ công">
+                    </td>
+                    <td class="skt-td-fuel text-right">
+                      {{ seg.fuelAmountCalculated | number:'1.2-2' }}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
 
             <div class="if-row">
