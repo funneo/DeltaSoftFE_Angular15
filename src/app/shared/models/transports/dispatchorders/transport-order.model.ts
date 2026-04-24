@@ -154,6 +154,7 @@ export interface TransportOrderSegmentEtc {
     stationName?: string;
     price?: number;
     note?: string; // Điều vận có thể note thêm
+    isAvoided?: boolean; // Lái xe trốn trạm
 }
 
 export interface TransportOrderFee {

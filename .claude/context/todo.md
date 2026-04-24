@@ -22,6 +22,12 @@
 - [ ] Upload modal: multi-file drag-drop → loading per-file → hiển thị kết quả AI + warning trùng → confirm/bỏ qua từng dòng
 - [ ] Tích hợp thanh toán: "Thanh toán" button → payment modal pre-filled → sau khi save gọi mark-paid → ẩn khỏi list
 
+## Transport Order — DB Migration Pending
+- [ ] Chạy `TransportOrder_IsAvoided_Migration.sql` trong SSMS:
+  - Bước 1–2c đã hoàn chỉnh (ALTER TABLE + DROP/CREATE TVP)
+  - Bước 3–4: paste lại toàn bộ `SP_TransportOrder_Create` và `SP_TransportOrder_Update`, thêm `IsAvoided` vào INSERT `Tbl_TransportOrder_Segment_Etcs`
+- [ ] `to-col-info` flex: hiện là `flex: 6`, cần đổi thành `flex: 7` cho đúng tỷ lệ 3:7
+
 ## Other Known Pending
 - Claude AI controller — endpoint exists, không có frontend
 - `appsettings.json` ClaudeApiKey còn trống

@@ -90,6 +90,19 @@ export class ModalTransportOrderComponent {
   showVehiclePanel = false;
   showBottomPanel = false;
 
+  // Flag: chặng cuối đã chọn → không cho thêm điểm nữa
+  lastSegmentFinal = false;
+
+  get allTollStations(): TransportOrderSegmentEtc[] {
+    const stations: TransportOrderSegmentEtc[] = [];
+    (this.entity.segments || []).forEach(s => (s.listEtc || []).forEach(e => stations.push(e)));
+    return stations;
+  }
+
+  onLastSegmentFinalChange() {
+    if (this.lastSegmentFinal) this.showAddCustomPoint = false;
+  }
+
   // Custom point form — bảng chọn location
   showAddCustomPoint = false;
   selectedCustomLocation: UnifiedLocation | null = null;
@@ -197,6 +210,7 @@ export class ModalTransportOrderComponent {
     this.entity.listDetailed = listTasks.map(t => ({ shippingTaskId: t.id, shippingTaskItem: t }));
     this.locations = [];
     this.listOilQuota = [];
+    this.lastSegmentFinal = false;
     this.showVehiclePanel = false;
     this.showBottomPanel = false;
     this.showAddCustomPoint = false;
@@ -213,6 +227,7 @@ export class ModalTransportOrderComponent {
         if (this.entity.vehicleType) this._loadVehiclesByType(this.entity.vehicleType);
         if (this.entity.vehicleId) this.loadVehicle(this.entity.vehicleId);
         this.calculateTotal();
+        this.lastSegmentFinal = false;
         this.showVehiclePanel = false;
         this.showBottomPanel = false;
         this.showAddCustomPoint = false;
@@ -233,6 +248,7 @@ export class ModalTransportOrderComponent {
   }
 
   addToRoute(task: ShippingTask, type: 'pickup' | 'delivery') {
+    if (this.lastSegmentFinal) return;
     const locationId = type === 'pickup' ? task.pickupLocationId : task.deliveryLocationId;
     if (this.isLocInRoute(locationId)) return; // đã có rồi
 
@@ -257,6 +273,7 @@ export class ModalTransportOrderComponent {
 
   removeLocation(index: number) {
     this.locations.splice(index, 1);
+    this.lastSegmentFinal = false;
     this._rebuildSegments();
   }
 
@@ -384,6 +401,7 @@ export class ModalTransportOrderComponent {
     }
     this.calculateTotal();
     this.calulateOil();
+    this._fetchTollForSegment(this._currentMapSegmentIndex);
   }
 
 
@@ -405,6 +423,7 @@ export class ModalTransportOrderComponent {
     }
     this.calculateTotal();
     this.calulateOil();
+    this._fetchTollForSegment(this._currentMapSegmentIndex);
   }
 
   /** Mở bản đồ cho một segment cụ thể — dùng waypoints đã lưu nếu có */
@@ -429,14 +448,17 @@ export class ModalTransportOrderComponent {
   }
 
   /** Nhận kết quả từ modal-vietmap-routes khi user bấm "Chọn tuyến này" */
-  onRouteSelected(event: { summary: string; km: number; waypoints: { lat: number; lng: number }[]; steps: { lat: number; lng: number; name: string; distanceM: number }[]; polyline: string }) {
+  onRouteSelected(event: { summary: string; km: number; waypoints: { lat: number; lng: number }[]; steps: { lat: number; lng: number; name: string; distanceM: number }[]; polyline: string; tollStations?: { stationId: string; stationName: string; price: number }[] }) {
     if (this._currentMapSegmentIndex !== null) {
       const seg = this.entity.segments?.[this._currentMapSegmentIndex];
       if (seg) {
         seg.distanceKm = +(event.km).toFixed(1);
         seg.routePolyline = event.polyline;
         seg.listWaypoints = event.steps.map((s, i) => ({ orderIndex: i, lat: s.lat, lng: s.lng, name: s.name, distanceM: s.distanceM }));
-        // Recalc fuel nếu có định mức
+        // Dùng toll stations từ event (đã có sẵn từ VietMap response)
+        if (event.tollStations?.length) {
+          seg.listEtc = event.tollStations.map(s => ({ stationId: s.stationId, stationName: s.stationName, price: s.price }));
+        }
         if (seg.payloadWeight) {
           const quota = this.listOilQuota.find(x => x.id === seg.payloadWeight);
           if (quota) {
@@ -465,6 +487,7 @@ export class ModalTransportOrderComponent {
   }
 
   confirmAddCustomPoint() {
+    if (this.lastSegmentFinal) return;
     if (!this.selectedCustomLocation) {
       this._notif.printErrorMessage('Vui lòng chọn điểm');
       return;
@@ -827,6 +850,19 @@ export class ModalTransportOrderComponent {
         price: s.price || s.fee || 0
       }));
     } catch { return []; }
+  }
+
+  private _fetchTollForSegment(segIndex: number) {
+    const seg = this.entity.segments?.[segIndex];
+    if (!seg?.startLat || !seg?.endLat) return;
+    this.http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, {
+      points: [{ lat: seg.startLat, lng: seg.startLng }, { lat: seg.endLat, lng: seg.endLng }]
+    }).pipe(catchError(() => of(null))).subscribe(res => {
+      if (res?.toll) {
+        seg.listEtc = this._parseTollStations(res.toll, 2);
+        this.calculateTotal();
+      }
+    });
   }
 
   private _loadAllLocations() {

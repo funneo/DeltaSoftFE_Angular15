@@ -7,6 +7,7 @@ import { environment } from '@environments/environment';
 export interface TollStation {
   name: string;
   cost: string | null;
+  priceRaw?: number;
 }
 
 export interface VehicleCostRow {
@@ -55,6 +56,7 @@ export class ModalVietmapRoutesComponent {
     waypoints: { lat: number; lng: number }[];
     steps: { lat: number; lng: number; name: string; distanceM: number }[];
     polyline: string; // JSON [[lng,lat],...] full road geometry để vẽ mượt
+    tollStations: { stationId: string; stationName: string; price: number }[];
   }>();
 
   public lstRoutes: RouteOption[] = [];
@@ -157,12 +159,18 @@ export class ModalVietmapRoutesComponent {
   }
 
   selectRoute(route: RouteOption) {
+    const tollStations = (route.tollInfo?.stations || []).map((s, i) => ({
+      stationId: `vietmap_${i}`,
+      stationName: s.name,
+      price: s.priceRaw || 0
+    }));
     this.RouteSelected.emit({
       summary: route.summary,
       km: Math.round(route.distanceValue / 1000),
       waypoints: [...this.waypoints],
       steps: [...this.currentSteps],
-      polyline: this.currentPolyline
+      polyline: this.currentPolyline,
+      tollStations
     });
     this.modalRoutes.hide();
   }
@@ -368,7 +376,11 @@ export class ModalVietmapRoutesComponent {
       let baseToll1 = res.toll.find((x: any) => x.vehicle === 1)?.data;
       
       if (baseToll1 && baseToll1.tolls) {
-         allStations = baseToll1.tolls.map((t: any) => ({ name: t.name, cost: t.price ? `${t.price.toLocaleString('vi-VN')} ₫` : 'Miễn phí' }));
+        allStations = baseToll1.tolls.map((t: any) => ({
+          name: t.name,
+          cost: t.price ? `${t.price.toLocaleString('vi-VN')} ₫` : 'Miễn phí',
+          priceRaw: t.price || 0
+        }));
       }
 
       const CAT_LABELS = [
