@@ -157,26 +157,30 @@
   </div>
   <!-- /.box-body -->
   <div class="box-footer no-padding">
-    <div *ngIf="listFilter?.length > 0" class="col-md-12 footer-phantrang">
-      <div class="row">
-        <div class="col-md-4">
-          <div class="dataTables_info">
-            <span>Tổng số bản ghi: {{ totalRows }}</span>
+    <div *ngIf="totalRows > 0" class="col-md-12 footer-phantrang">
+      <div class="row" style="display:flex; align-items:center;">
+        <div class="col-md-3">
+          <span>Tổng số bản ghi: <strong>{{ totalRows }}</strong></span>
+        </div>
+        <div class="col-md-3">
+          <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng tiền: {{ totalAmount|VND }}</span>
+        </div>
+        <div class="col-md-2">
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="white-space:nowrap; font-size:12px;">Hiển thị:</span>
+            <select class="form-control input-sm" style="width:70px;" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+              <option *ngFor="let s of listPageSizes" [value]="s">{{s}}</option>
+            </select>
           </div>
         </div>
-        <div class="col-md-4">
-          <div class="dataTables_info">
-            <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng tiền: {{ totalAmount|VND }}</span>
-          </div>
-        </div>
-        <!-- <div class="col-md-4 text-right">
+        <div class="col-md-4 text-right">
           <div class="page">
             <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
               (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
               firstText="&laquo;" lastText="&raquo;">
             </pagination>
           </div>
-        </div> -->
+        </div>
       </div>
     </div>
   </div>

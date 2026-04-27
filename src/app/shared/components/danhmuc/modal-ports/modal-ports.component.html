@@ -70,14 +70,13 @@
                 </div>
             </div>
             <div class="form-group">
-                <label class="col-sm-2 control-label">Nhóm cảng
-                <span class="error">*</span>
-              </label>
-              <div class="col-sm-2">
-                  <ng-select [items]="listGroupPorts"  #tinh ="ngModel" name="provinceCode"
-                  bindLabel="code"
-                  bindValue="code"
-                  [(ngModel)]="entity.groupPort">
+                <label class="col-sm-2 control-label">Nhóm cảng</label>
+              <div class="col-sm-4">
+                  <ng-select [items]="listGroupPorts" name="groupPortId"
+                  bindLabel="categoryName"
+                  bindValue="id"
+                  [(ngModel)]="entity.groupPortId"
+                  placeholder="Chọn nhóm cảng...">
                   </ng-select>
               </div>
             </div>

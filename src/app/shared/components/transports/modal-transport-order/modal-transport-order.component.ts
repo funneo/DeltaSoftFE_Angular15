@@ -89,6 +89,7 @@ export class ModalTransportOrderComponent {
   // Panel visibility (ẩn mặc định, chủ đạo là giao diện location)
   showVehiclePanel = false;
   showBottomPanel = false;
+  showPoolPanel = true;
 
   // Flag: chặng cuối đã chọn → không cho thêm điểm nữa
   lastSegmentFinal = false;
@@ -213,6 +214,7 @@ export class ModalTransportOrderComponent {
     this.lastSegmentFinal = false;
     this.showVehiclePanel = false;
     this.showBottomPanel = false;
+    this.showPoolPanel = true;
     this.showAddCustomPoint = false;
     this.selectedCustomLocation = null;
     this.modalMain.show();
@@ -230,6 +232,7 @@ export class ModalTransportOrderComponent {
         this.lastSegmentFinal = false;
         this.showVehiclePanel = false;
         this.showBottomPanel = false;
+        this.showPoolPanel = true;
         this.showAddCustomPoint = false;
         this.selectedCustomLocation = null;
         this.modalMain.show();
@@ -357,8 +360,16 @@ export class ModalTransportOrderComponent {
       this.locations.forEach(l => combinedSteps.push({ lat: l.lat, lng: l.lng, name: l.locationName, distanceM: 0 }));
     }
 
+    // Gom tất cả trạm phí từ các segments
+    const combinedTolls: { stationName: string; price: number }[] = [];
+    segments.forEach(seg => {
+      (seg.listEtc || []).forEach(e => {
+        combinedTolls.push({ stationName: e.stationName || '', price: e.price || 0 });
+      });
+    });
+
     const polylineJson = combinedCoords.length >= 2 ? JSON.stringify(combinedCoords) : null;
-    this.modalVietmap.showSaved(combinedSteps, polylineJson);
+    this.modalVietmap.showSaved(combinedSteps, polylineJson, combinedTolls.length ? combinedTolls : undefined);
   }
 
   /** Mở bản đồ edit mode để tính lại / chọn lộ trình mới cho segment */

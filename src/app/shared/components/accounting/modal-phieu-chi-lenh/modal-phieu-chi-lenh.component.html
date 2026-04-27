@@ -1,180 +1,207 @@
 <div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal"
     [config]="{ backdrop: 'static' }" tabindex="-1" role="dialog" aria-labelledby="dialog-static-name"
     (onHidden)="OnHidden()">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div #myHandle class="modal-header">
-                <h4 class="modal-title pull-left">Phiếu chi lệnh vận chuyển</h4>
-                <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
-                    <span aria-hidden="true">&times;</span>
+    <div class="modal-dialog modal-lg pc-modal">
+        <div class="modal-content pc-modal-content">
+
+            <!-- HEADER -->
+            <div #myHandle class="pc-header">
+                <div class="pc-header-left">
+                    <span class="pc-header-icon"><i class="fa fa-money"></i></span>
+                    <div>
+                        <div class="pc-header-title">Phiếu chi lệnh vận chuyển</div>
+                        <div class="pc-header-sub" *ngIf="entity?.refNo">Số phiếu: <strong>{{entity.refNo}}</strong></div>
+                    </div>
+                </div>
+                <button type="button" class="pc-close-btn" aria-label="Close" (click)="modalAddEdit.hide()">
+                    <i class="fa fa-times"></i>
                 </button>
             </div>
-            <div class="modal-body">
-                <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)"
-                    *ngIf="entity">
-                    <div class="box-body">
-                        <div class="col-md-8">
-                            <div class="form-group">
-                                <label class="col-sm-3 control-label">Chi nhánh
-                                    <span class="error">*</span>
-                                </label>
-                                <div class="col-sm-3">
-                                    <ng-select name="donvi" [items]="listBranch" bindLabel="branchCode" bindValue="id"
-                                        [readonly]="true" [(ngModel)]="entity.branchId" required
-                                        placeholder="Chọn chi nhánh">
-                                    </ng-select>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-sm-3 control-label">Lái xe
-                                    <span class="error">*</span>
-                                </label>
-                                <div class="col-sm-9">
-                                    <ng-select name="employee" [items]="listEmployee" bindLabel="employeeFullName"
-                                        bindValue="id" [readonly]="flagXem" [(ngModel)]="entity.employeeId" required
-                                        placeholder="Chọn lái xe" (change)="changedEmployee($event)">
-                                    </ng-select>
-                                </div>
-                            </div>
 
-                            <div class="form-group">
-                                <label class="col-sm-3 control-label">Chi từ quỹ
-                                    <span class="error">*</span>
-                                </label>
-                                <div class="col-sm-9">
-                                    <ng-select name="accountlist" [items]="listAccountList" bindLabel="name"
-                                        bindValue="id" [(ngModel)]="entity.accountListId" required
-                                        placeholder="Chọn quỹ" (change)="changedFund($event)" [readonly]="flagXem">
-                                    </ng-select>
-                                </div>
+            <div class="modal-body pc-body">
+                <form class="pc-form" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)" *ngIf="entity">
+
+                    <!-- FORM GRID -->
+                    <div class="pc-form-grid">
+
+                        <!-- CỘT TRÁI -->
+                        <div class="pc-form-col">
+                            <div class="pc-field-row">
+                                <label class="pc-label">Lái xe <span class="pc-required">*</span></label>
+                                <ng-select name="employee" [items]="listEmployee" bindLabel="employeeFullName"
+                                    bindValue="id" [readonly]="flagXem" [(ngModel)]="entity.employeeId" required
+                                    placeholder="Chọn lái xe" (change)="changedEmployee($event)" class="pc-select">
+                                </ng-select>
                             </div>
-                            <div class="form-group">
-                                <label class="col-sm-3 control-label">Số tiền
-                                    <span class="error">*</span>
-                                </label>
-                                <div class="col-sm-3">
-                                    <input type="text" class="form-control so-tien" #sotien="ngModel" name="sotien"
-                                        [(ngModel)]="entity.amount" placeholder="Số tiền" [mask]="maskNumber" required
-                                        minLength="1" maxlength="18" [readonly]="true" [allowNegativeNumbers]="true" />
-                                    <small [hidden]="
-                      sotien.valid ||
-                      (sotien.pristine && !addEditForm.submitted)
-                    " class="text-danger">
-                                        Nhập số tiền
-                                    </small>
-                                </div>
-                                <label class="col-sm-3 control-label"> </label>
-                                <div class="col-sm-3">
-                                    <ng-select name="currency" [items]="listCurrencys" bindLabel="text" bindValue="id"
-                                        [(ngModel)]="entity.currency" required placeholder="Loại tiền tệ"
-                                        [readonly]="true">
-                                    </ng-select>
-                                </div>
+                            <div class="pc-field-row">
+                                <label class="pc-label">Chi từ quỹ <span class="pc-required">*</span></label>
+                                <ng-select name="accountlist" [items]="listAccountList" bindLabel="name"
+                                    bindValue="id" [(ngModel)]="entity.accountListId" required
+                                    placeholder="Chọn quỹ" (change)="changedFund($event)" [readonly]="flagXem" class="pc-select">
+                                </ng-select>
                             </div>
-                            <div class="form-group">
-                                <label class="col-sm-3 control-label">Nội dung
-                                    <span class="error">*</span>
-                                </label>
-                                <div class="col-sm-9">
-                                    <textarea class="form-control textrea-size" [(ngModel)]="entity.contents"
-                                        name="contents" placeholder="Nhập nội dung" required [readonly]="flagXem"
-                                        rows="4"></textarea>
-                                </div>
+                            <div class="pc-field-row">
+                                <label class="pc-label">Nội dung <span class="pc-required">*</span></label>
+                                <textarea class="pc-textarea" [(ngModel)]="entity.contents" name="contents"
+                                    placeholder="Nhập nội dung" required [readonly]="flagXem" rows="3"></textarea>
                             </div>
-                            <div class="form-group">
-                                <label class="col-sm-3 control-label">Ghi chú</label>
-                                <div class="col-sm-9">
-                                    <textarea class="form-control textrea-size" [(ngModel)]="entity.notes" name="ghichu"
-                                        rows="2" placeholder="Nhập ghi chú" [readonly]="flagXem"></textarea>
-                                </div>
+                            <div class="pc-field-row">
+                                <label class="pc-label">Ghi chú</label>
+                                <textarea class="pc-textarea" [(ngModel)]="entity.notes" name="ghichu"
+                                    rows="2" placeholder="Nhập ghi chú" [readonly]="flagXem"></textarea>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div *ngIf="entity.id" class="form-group">
-                                <label class="col-sm-5 control-label">Số phiếu</label>
-                                <div class="col-sm-7">
-                                    <input class="form-control refno-sm" [(ngModel)]="entity.refNo" type="text"
+
+                        <!-- CỘT PHẢI -->
+                        <div class="pc-form-col pc-form-col--right">
+                            <div class="pc-meta-card">
+                                <div class="pc-field-row" *ngIf="entity.id">
+                                    <label class="pc-label">Số phiếu</label>
+                                    <input class="pc-input pc-input--readonly" [(ngModel)]="entity.refNo" type="text"
                                         name="refno" placeholder="Số phiếu" [readonly]="true" />
                                 </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-sm-5 control-label">Ngày lập</label>
-                                <div class="col-sm-7 date">
-                                    <input name="refdate" type="text" [(ngModel)]="_ngayLap" class="form-control"
+                                <div class="pc-field-row">
+                                    <label class="pc-label">Chi nhánh</label>
+                                    <ng-select name="donvi" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                                        [readonly]="true" [(ngModel)]="entity.branchId" required
+                                        placeholder="Chọn chi nhánh" class="pc-select">
+                                    </ng-select>
+                                </div>
+                                <div class="pc-field-row">
+                                    <label class="pc-label">Ngày lập</label>
+                                    <input name="refdate" type="text" [(ngModel)]="_ngayLap" class="pc-input pc-input--readonly"
                                         [disabled]="true" />
                                 </div>
-                            </div>
-                            <div class="form-group" *ngIf="(_type || 0) > 0">
-                                <label class="col-sm-5 control-label">Ngày chứng từ <span class="error">*</span></label>
-                                <div class="col-sm-7 date">
+                                <div class="pc-field-row" *ngIf="(_type || 0) > 0">
+                                    <label class="pc-label">Ngày chứng từ <span class="pc-required">*</span></label>
                                     <input name="efectivedate" type="text" daterangepicker [options]="dateTimeOptions"
-                                        [disabled]="flagXem" [(ngModel)]="_ngayChungtu" class="form-control"
+                                        [disabled]="flagXem" [(ngModel)]="_ngayChungtu" class="pc-input"
                                         (selected)="selectedDate($event)" (hideDaterangepicker)="closedDate($event)"
                                         autocomplete="on" [required]="(_type || 0) > 0">
                                 </div>
-                            </div>
-                            <div *ngIf="entity.id" class="form-group">
-                                <label class="col-sm-5 control-label">Số chứng từ
-                                    <span class="error">*</span>
-                                </label>
-                                <div class="col-sm-7">
-                                    <div class="input-group">
-                                        <input class="form-control" [(ngModel)]="entity.documentNo" type="text"
+                                <div class="pc-field-row" *ngIf="entity.id">
+                                    <label class="pc-label">Số chứng từ <span class="pc-required">*</span></label>
+                                    <div class="pc-input-group">
+                                        <input class="pc-input" [(ngModel)]="entity.documentNo" type="text"
                                             name="documentno" placeholder="Số chứng từ" required [readonly]="flagXem" />
-                                        <span *ngIf="entity.id" class="input-group-addon" (click)="showFiles()">
-                                            <i class="fa fa-file-pdf-o" aria-hidden="true"
-                                                title="Chứng từ đính kèm..."></i>
-                                        </span>
+                                        <button type="button" class="pc-input-addon" (click)="showFiles()" title="Chứng từ đính kèm">
+                                            <i class="fa fa-paperclip"></i>
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="col-sm-5 control-label">Thủ quỹ </label>
-                                <div class="col-sm-7">
+                                <div class="pc-field-row">
+                                    <label class="pc-label">Thủ quỹ</label>
                                     <ng-select name="thuquy" [items]="listEmployee" bindLabel="employeeFullName"
                                         bindValue="id" [readonly]="flagXem" [(ngModel)]="entity.treasurerId"
-                                        [clearable]="false" title="Chọn thủ quỹ...">
+                                        [clearable]="false" placeholder="Chọn thủ quỹ" class="pc-select">
                                     </ng-select>
                                 </div>
+
+                                <!-- SỐ TIỀN NỔI BẬT -->
+                                <div class="pc-amount-box">
+                                    <div class="pc-amount-label">Tổng chi</div>
+                                    <div class="pc-amount-value">
+                                        <input type="text" class="pc-amount-input" #sotien="ngModel" name="sotien"
+                                            [(ngModel)]="entity.amount" [mask]="maskNumber" required
+                                            minLength="1" maxlength="18" [readonly]="true" [allowNegativeNumbers]="true" />
+                                        <ng-select name="currency" [items]="listCurrencys" bindLabel="text" bindValue="id"
+                                            [(ngModel)]="entity.currency" required [readonly]="true" class="pc-select pc-currency-select">
+                                        </ng-select>
+                                    </div>
+                                    <small [hidden]="sotien.valid || (sotien.pristine && !addEditForm.submitted)" class="pc-error-msg">
+                                        Nhập số tiền
+                                    </small>
+                                </div>
                             </div>
-                            <br />
                         </div>
                     </div>
 
-                    <div class="box-body">
-                        <div class="form-group">
-                            <h5 style="font-weight: bold; color: blue">Chi tiết lệnh vận chuyển</h5>
+                    <!-- BẢNG CHI TIẾT -->
+                    <div class="pc-section">
+                        <div class="pc-section-header">
+                            <span class="pc-section-title"><i class="fa fa-list-ul"></i> Chi tiết lệnh vận chuyển</span>
+                            <div class="pc-section-actions">
+                                <span class="pc-badge" *ngIf="entity.dispatchOrderFees?.length > 0">
+                                    {{ checkedCount() }} / {{ entity.dispatchOrderFees.length }} dòng
+                                </span>
+                                <button type="button" class="pc-btn-export" (click)="exportFees()"
+                                    *ngIf="entity.dispatchOrderFees?.length > 0"
+                                    title="Xuất Excel chi tiết">
+                                    <i class="fa fa-file-excel-o"></i> Excel
+                                </button>
+                            </div>
                         </div>
-                        <div class="tableFixHead" style="height: 400px; overflow-y: auto;">
-                            <table class="table table-bordered">
+                        <div class="pc-table-wrap">
+                            <table class="pc-table">
                                 <thead>
                                     <tr>
-                                        <th class="column-sm">Số lệnh</th>
-                                        <th class="column-sm">Mã phí - Tên phí</th>
-                                        <th class="column-ten">Nội dung</th>
-                                        <th class="column-gia-tri">Tiền trước VAT</th>
-                                        <th class="column-gia-tri">VAT</th>
-                                        <th class="column-gia-tri">Tiền sau VAT</th>
+                                        <th *ngIf="!flagXem" class="pc-th pc-th--check">
+                                            <input type="checkbox" class="pc-checkbox" title="Chọn/bỏ tất cả"
+                                                [checked]="allChecked"
+                                                (change)="toggleAllFees($event)" />
+                                        </th>
+                                        <th class="pc-th">Số lệnh</th>
+                                        <th class="pc-th">Mã phí — Tên phí</th>
+                                        <th class="pc-th pc-th--content">Nội dung</th>
+                                        <th class="pc-th pc-th--num">Trước VAT</th>
+                                        <th class="pc-th pc-th--num">VAT</th>
+                                        <th class="pc-th pc-th--num">Sau VAT</th>
+                                    </tr>
+                                    <tr class="pc-filter-row">
+                                        <th *ngIf="!flagXem" class="pc-filter-cell"></th>
+                                        <th class="pc-filter-cell">
+                                            <div class="pc-filter-wrap">
+                                                <i class="fa fa-search pc-filter-icon"></i>
+                                                <input class="pc-filter-input" [(ngModel)]="filterRefNo" name="f_refno" placeholder="Lọc số lệnh..." (ngModelChange)="recalculateAmount()" />
+                                                <button *ngIf="filterRefNo" class="pc-filter-clear" type="button" (click)="clearFilter('refNo')">×</button>
+                                            </div>
+                                        </th>
+                                        <th class="pc-filter-cell">
+                                            <div class="pc-filter-wrap">
+                                                <i class="fa fa-search pc-filter-icon"></i>
+                                                <input class="pc-filter-input" [(ngModel)]="filterFee" name="f_fee" placeholder="Lọc mã / tên phí..." (ngModelChange)="recalculateAmount()" />
+                                                <button *ngIf="filterFee" class="pc-filter-clear" type="button" (click)="clearFilter('fee')">×</button>
+                                            </div>
+                                        </th>
+                                        <th class="pc-filter-cell">
+                                            <div class="pc-filter-wrap">
+                                                <i class="fa fa-search pc-filter-icon"></i>
+                                                <input class="pc-filter-input" [(ngModel)]="filterContents" name="f_contents" placeholder="Lọc nội dung..." (ngModelChange)="recalculateAmount()" />
+                                                <button *ngIf="filterContents" class="pc-filter-clear" type="button" (click)="clearFilter('contents')">×</button>
+                                            </div>
+                                        </th>
+                                        <th class="pc-filter-cell" colspan="3"></th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr *ngIf="loadingFees">
-                                        <td colspan="100%" class="text-center" style="padding: 20px;">
-                                            <i class="fa fa-spinner fa-spin fa-fw fa-2x"></i>
-                                            <span class="sr-only">Đang tải...</span>
+                                        <td colspan="7" class="pc-td-loading">
+                                            <i class="fa fa-spinner fa-spin fa-2x"></i>
+                                            <span>Đang tải dữ liệu...</span>
                                         </td>
                                     </tr>
                                     <ng-container *ngIf="!loadingFees">
-                                        <tr *ngFor="let item of (entity.dispatchOrderFees || []); let i = index">
-                                            <td>{{item.refNo}}</td>
-                                            <td>{{item.feeCode}} - {{item.feeName}}</td>
-                                            <td>{{item.contents}}</td>
-                                            <td class="text-right">{{item.amount || 0 | VND}}</td>
-                                            <td class="text-right">{{item.vat || 0 | VND}}</td>
-                                            <td class="text-right">{{item.amountAfterVat || 0 | VND}}</td>
+                                        <tr *ngFor="let item of filteredFees; let i = index"
+                                            class="pc-tr" [class.pc-tr--unchecked]="item.checked === false">
+                                            <td *ngIf="!flagXem" class="pc-td pc-td--check">
+                                                <input type="checkbox" class="pc-checkbox" [(ngModel)]="item.checked"
+                                                    [name]="'fee_' + i" (change)="onFeeToggle(item)" />
+                                            </td>
+                                            <td class="pc-td">
+                                                <span class="pc-refno-badge">{{item.refNo}}</span>
+                                            </td>
+                                            <td class="pc-td"><strong>{{item.feeCode}}</strong> — {{item.feeName}}</td>
+                                            <td class="pc-td pc-td--content">{{item.contents}}</td>
+                                            <td class="pc-td pc-td--num">{{item.amount || 0 | VND}}</td>
+                                            <td class="pc-td pc-td--num">{{item.vat || 0 | VND}}</td>
+                                            <td class="pc-td pc-td--num pc-td--total">{{item.amountAfterVat || 0 | VND}}</td>
                                         </tr>
-                                        <tr *ngIf="!entity.dispatchOrderFees || entity.dispatchOrderFees.length === 0">
-                                            <td colspan="100%" class="text-center">Không có bản ghi nào được tìm thấy!</td>
+                                        <tr *ngIf="filteredFees.length === 0">
+                                            <td colspan="7" class="pc-td-empty">
+                                                <i class="fa fa-inbox"></i>
+                                                <span *ngIf="!entity.dispatchOrderFees?.length">Chọn lái xe để xem các khoản chi</span>
+                                                <span *ngIf="entity.dispatchOrderFees?.length">Không có dòng nào khớp với bộ lọc</span>
+                                            </td>
                                         </tr>
                                     </ng-container>
                                 </tbody>
@@ -182,18 +209,25 @@
                         </div>
                     </div>
 
-                    <div class="box-footer text-right">
-                        <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
-                            [disabled]="!addEditForm.form.valid || flagSave || (!selectedItem && flagNew)">
-                            <i class="fa fa-save"></i> Lưu
-                        </button>
-                        <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
-                            <i class="fa fa-close"></i> Hủy
-                        </button>
+                    <!-- FOOTER ACTIONS -->
+                    <div class="pc-footer">
+                        <div class="pc-footer-info">
+                            <span *ngIf="entity.dispatchOrderFees?.length > 0" class="pc-footer-count">
+                                <i class="fa fa-check-square-o"></i>
+                                Đã chọn {{ checkedCount() }} dòng
+                            </span>
+                        </div>
+                        <div class="pc-footer-actions">
+                            <button *ngIf="!flagXem" type="submit" class="pc-btn pc-btn--primary"
+                                [disabled]="!addEditForm.form.valid || flagSave || (!selectedItem && flagNew)">
+                                <i class="fa fa-save"></i> Lưu phiếu
+                            </button>
+                            <button type="button" (click)="modalAddEdit.hide()" class="pc-btn pc-btn--secondary">
+                                <i class="fa fa-times"></i> Đóng
+                            </button>
+                        </div>
                     </div>
 
-                    <!-- /.box-body -->
-                    <!-- /.box-footer -->
                 </form>
             </div>
         </div>

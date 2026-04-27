@@ -61,4 +61,5 @@ export interface AcountDispatchOrderFees {
   amountAfterVat?: number;
   totalCost?: number;
   type?: number;
+  checked?: boolean;
 }

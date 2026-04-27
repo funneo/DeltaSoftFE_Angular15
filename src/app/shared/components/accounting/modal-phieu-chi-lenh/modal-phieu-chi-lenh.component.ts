@@ -15,6 +15,7 @@ import { Subscription } from 'rxjs';
 import { AccountsPaymentDetail } from '@app/shared/models/accounts-payment-detail.model';
 import { DispatchordersService } from '@app/shared/services/transports/dispatchorders.service';
 import { DispatchOrderFee } from '@app/shared/models/transports/dispatchorders/dispatch-order-fee';
+import { ExportService } from '@app/shared/services/export-excel.service';
 
 @Component({
     selector: 'modal-phieu-chi-lenh',
@@ -45,6 +46,20 @@ export class ModalPhieuChiLenhComponent implements OnInit {
 
     flagLink: boolean = false;
     selectedItem = false;
+    filterRefNo = '';
+    filterFee = '';
+    filterContents = '';
+
+    get filteredFees(): AcountDispatchOrderFees[] {
+        return (this.entity?.dispatchOrderFees || []).filter(f => {
+            const rn = this.filterRefNo.trim().toLowerCase();
+            const fe = this.filterFee.trim().toLowerCase();
+            const ct = this.filterContents.trim().toLowerCase();
+            return (!rn || (f.refNo || '').toLowerCase().includes(rn))
+                && (!fe || (`${f.feeCode || ''} ${f.feeName || ''}`).toLowerCase().includes(fe))
+                && (!ct || (f.contents || '').toLowerCase().includes(ct));
+        });
+    }
     listDinhKhoan: AccountingDetail[] = [];
     listTaiKhoan: OtherCategories[];
     listSupplier: Supplier[];
@@ -56,7 +71,7 @@ export class ModalPhieuChiLenhComponent implements OnInit {
     constructor(private _notificationService: NotificationService, private accountsService: AccountsService,
         private branchService: BranchService, private employeeService: EmployeeService, private authService: AuthService, private accountListService: AccountListService,
         private _utilityService: UtilityService, private otherCategoriesService: OtherCategoriesService,
-        private dispatchOrderService: DispatchordersService) {
+        private dispatchOrderService: DispatchordersService, private exportService: ExportService) {
         let user = this.authService.getLoggedInUser();
         this._branchId = Number.parseInt(user.branchId);
         this._employeeId = Number.parseInt(user.employeeId);
@@ -91,23 +106,77 @@ export class ModalPhieuChiLenhComponent implements OnInit {
     }
 
     loadDispatchOrderFees(employeeId: number) {
+        this.filterRefNo = '';
+        this.filterFee = '';
+        this.filterContents = '';
         this.loadingFees = true;
         this.accountsService.getDriverPayments(employeeId).subscribe((res: ResponseValue<DispatchOrderFee[]>) => {
             if (res.code == '200' || res.code == '201') {
-                this.entity.dispatchOrderFees = res.data;
-                if (this.entity.dispatchOrderFees) {
-                    let total = 0;
-                    this.entity.dispatchOrderFees.forEach(x => {
-                        total += x.amountAfterVat ? x.amountAfterVat : 0;
-                    });
-                    this.entity.amount = total;
-                    this.selectedItem = this.entity.dispatchOrderFees.length > 0;
-                }
+                this.entity.dispatchOrderFees = (res.data || []).map(x => ({ ...x, checked: true }));
+                this.recalculateAmount();
             }
             this.loadingFees = false;
         }, () => {
             this.loadingFees = false;
         });
+    }
+
+    onFeeToggle(item: AcountDispatchOrderFees) {
+        const newState = item.checked;
+        this.entity.dispatchOrderFees
+            .filter(f => f.refNo === item.refNo)
+            .forEach(f => f.checked = newState);
+        this.recalculateAmount();
+    }
+
+    recalculateAmount() {
+        let total = 0;
+        this.filteredFees
+            .filter(f => f.checked)
+            .forEach(f => total += f.amountAfterVat || f.totalCost || 0);
+        this.entity.amount = total;
+        this.selectedItem = this.filteredFees.some(f => f.checked);
+    }
+
+    exportFees() {
+        const data = this.filteredFees.map(f => ({
+            'Số lệnh': f.refNo || '',
+            'Mã phí': f.feeCode || '',
+            'Tên phí': f.feeName || '',
+            'Nội dung': f.contents || '',
+            'Tiền trước VAT': f.amount || 0,
+            'VAT': f.vat || 0,
+            'Tiền sau VAT': f.amountAfterVat || f.totalCost || 0,
+        }));
+        const driverName = this.listEmployee?.find(e => e.id === this.entity?.employeeId)?.employeeFullName || 'laixe';
+        this.exportService.exportExcel(data, `PhieuChi_${driverName}`);
+    }
+
+    clearFilter(field: 'refNo' | 'fee' | 'contents') {
+        if (field === 'refNo') this.filterRefNo = '';
+        else if (field === 'fee') this.filterFee = '';
+        else this.filterContents = '';
+        this.recalculateAmount();
+    }
+
+    get allChecked(): boolean {
+        const visible = this.filteredFees;
+        return visible.length > 0 && visible.every(f => f.checked);
+    }
+
+    get someChecked(): boolean {
+        const visible = this.filteredFees;
+        return visible.some(f => f.checked) && !this.allChecked;
+    }
+
+    checkedCount(): number {
+        return this.filteredFees.filter(f => f.checked).length;
+    }
+
+    toggleAllFees(event: Event) {
+        const checked = (event.target as HTMLInputElement).checked;
+        this.filteredFees.forEach(f => f.checked = checked);
+        this.recalculateAmount();
     }
 
     changedFund(event: AccountList) {
@@ -210,25 +279,6 @@ export class ModalPhieuChiLenhComponent implements OnInit {
         });
     }
 
-    checkAllDispatchOrder(ev) {
-        this.selectedItem = false;
-        let total = 0;
-        this.entity.dispatchOrderFees.forEach(it => {
-            total += it.totalCost ? it.totalCost : 0;
-        });
-        this.entity.amount = total;
-    }
-
-    calculatorDispatchOrder(item: any) {
-        this.selectedItem = false;
-        let total = 0;
-        this.entity.dispatchOrderFees.forEach(it => {
-            total += it.totalCost ? it.totalCost : 0;
-            this.selectedItem = true;
-        })
-        this.entity.amount = total;
-    }
-
     saveChange(form: NgForm) {
         if (form.valid) {
             this.flagSave = true;
@@ -242,6 +292,7 @@ export class ModalPhieuChiLenhComponent implements OnInit {
                 );
             this.entity.accountingDetails = [];
             this.entity.typeAccount = 2; //Phiếu chi lệnh
+            this.entity.dispatchOrderFees = this.filteredFees.filter(f => f.checked);
             if (this.entity.id == undefined) {
                 this.accountsService.createForDriver(this.entity).subscribe((res: ResponseValue<any>) => {
                     if (res.code == '200' || res.code == '201') {

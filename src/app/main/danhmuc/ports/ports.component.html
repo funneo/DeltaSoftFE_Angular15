@@ -72,7 +72,7 @@
             <th>Địa chỉ</th>
             <th>Vị trí Google</th>
             <th>Khoảng cách</th>
-            <th>Nhóm cảng</th>
+            <th>Nhóm cảng/bãi</th>
           </tr>
           <tr>
             <th></th>
@@ -81,7 +81,7 @@
             <th><input class="form-control" [(ngModel)]="filterColumns.address" (input)="filterData()" /></th>
             <th><input class="form-control" [(ngModel)]="filterColumns.googleLocations" (input)="filterData()" /></th>
             <th><input class="form-control" [(ngModel)]="filterColumns.distance" (input)="filterData()" /></th>
-            <th><input class="form-control" [(ngModel)]="filterColumns.groupPort" (input)="filterData()" /></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.groupPortName" (input)="filterData()" /></th>
           </tr>
         </thead>
         <tbody>
@@ -99,7 +99,7 @@
               {{ item.googleLocations }}
             </td>
             <td>{{ item.distance }}</td>
-            <td>{{ item.groupPort }}</td>
+            <td>{{ item.groupPortName }}</td>
           </tr>
           <tr *ngIf="filteredData?.length === 0">
             <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>

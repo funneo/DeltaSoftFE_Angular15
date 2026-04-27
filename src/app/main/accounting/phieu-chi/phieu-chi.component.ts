@@ -23,7 +23,8 @@ import { ModalPhieuChiLenhComponent } from '@app/shared/components/accounting/mo
 })
 export class PhieuChiComponent implements OnInit {
   pageIndex = 1;
-  pageSize = 99999;
+  pageSize = 20;
+  listPageSizes = [10, 20, 50, 100];
   totalRows = 0;
   totalAmount = 0;
   flagEdit = false;
@@ -147,6 +148,7 @@ export class PhieuChiComponent implements OnInit {
       if (res.code == '200' || res.code == '201') {
         this.listAccounts = res.data?.items;
         this.listFilter = this.listAccounts;
+        this.totalRows = res.data?.totalRows ?? 0;
         this.calculator();
       }
       else {
@@ -209,10 +211,9 @@ export class PhieuChiComponent implements OnInit {
   }
   calculator() {
     this.totalAmount = 0;
-    this.totalRows = this.listFilter?.length;
-    this.listFilter.forEach(it => {
+    this.listFilter?.forEach(it => {
       this.totalAmount += it.amount;
-    })
+    });
   }
 
   clickRow(item: Accounts): void {
@@ -227,6 +228,11 @@ export class PhieuChiComponent implements OnInit {
 
   pageChanged(event: PageChangedEvent): void {
     this.pageIndex = event.page;
+    this.loadData();
+  }
+
+  onPageSizeChange(): void {
+    this.pageIndex = 1;
     this.loadData();
   }
 

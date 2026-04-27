@@ -109,7 +109,11 @@ export class ModalVietmapRoutesComponent {
   }
 
   /** Mở bản đồ với lộ trình đã lưu — không gọi lại API */
-  showSaved(savedSteps: { lat: number; lng: number; name: string; distanceM: number }[], polyline?: string) {
+  showSaved(
+    savedSteps: { lat: number; lng: number; name: string; distanceM: number }[],
+    polyline?: string,
+    tollStations?: { stationName: string; price: number }[]
+  ) {
     if (!savedSteps?.length) return;
     this.isSavedMode = true;
     this.currentSteps = [...savedSteps];
@@ -121,6 +125,25 @@ export class ModalVietmapRoutesComponent {
     this.destLng = savedSteps[savedSteps.length - 1].lng;
 
     const totalDistM = savedSteps.reduce((sum, s) => sum + (s.distanceM || 0), 0);
+
+    let tollInfo: TollInfo | null = null;
+    if (tollStations?.length) {
+      const totalCost = tollStations.reduce((s, t) => s + (t.price || 0), 0);
+      tollInfo = {
+        totalCost: totalCost.toString(),
+        currency: 'VND',
+        stationCount: tollStations.length,
+        stations: tollStations.map(t => ({
+          name: t.stationName,
+          cost: t.price ? `${t.price.toLocaleString('vi-VN')} ₫` : 'Miễn phí',
+          priceRaw: t.price || 0
+        })),
+        vehicleCosts: [],
+        dataFromApi: false,
+        hasEvDiscount: false
+      };
+    }
+
     this.lstRoutes = [{
       index: 0,
       summary: 'Lộ trình đã lưu',
@@ -129,6 +152,7 @@ export class ModalVietmapRoutesComponent {
       durationText: '',
       durationValue: 0,
       steps: savedSteps.map(s => ({ instructions: s.name, distance: s.distanceM + 'm' })),
+      tollInfo,
       tollLoading: false
     }];
 

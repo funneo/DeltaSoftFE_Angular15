@@ -21,7 +21,8 @@ import { ExportService } from '@app/shared/services/export-excel.service';
 })
 export class PhieuThuComponent implements OnInit {
   pageIndex = 1;
-  pageSize = 9999;
+  pageSize = 20;
+  listPageSizes = [10, 20, 50, 100];
   totalRows = 0;
   totalAmount = 0;
   flagEdit = false;
@@ -143,8 +144,8 @@ export class PhieuThuComponent implements OnInit {
       if (res.code == '200' || res.code == '201') {
         this.listAccounts = res.data?.items;
         this.listFilter = this.listAccounts;
+        this.totalRows = res.data?.totalRows ?? 0;
         this.calculator();
-        // this._listDatas=this.listAccounts;
       }
       else {
         this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
@@ -205,10 +206,9 @@ export class PhieuThuComponent implements OnInit {
   }
   calculator() {
     this.totalAmount = 0;
-    this.totalRows = this.listFilter?.length;
-    this.listFilter.forEach(it => {
+    this.listFilter?.forEach(it => {
       this.totalAmount += it.amount;
-    })
+    });
   }
 
   clickRow(item: Accounts): void {
@@ -223,6 +223,11 @@ export class PhieuThuComponent implements OnInit {
 
   pageChanged(event: PageChangedEvent): void {
     this.pageIndex = event.page;
+    this.loadData();
+  }
+
+  onPageSizeChange(): void {
+    this.pageIndex = 1;
     this.loadData();
   }
 

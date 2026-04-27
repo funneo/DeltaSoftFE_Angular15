@@ -1,11 +1,12 @@
 
 import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
+import { HttpParams } from '@angular/common/http';
 import { NgForm } from '@angular/forms';
 import { MessageContstants } from '@app/shared/constants';
 import { ResponseValue } from '@app/shared/models';
-import { GroupPorts } from '@app/shared/models/danhmuc/group-ports.model';
+import { OtherCategories } from '@app/shared/models/other-categories.model';
 import { Ports } from '@app/shared/models/danhmuc/ports.model';
-import { UtilityService, NotificationService } from '@app/shared/services';
+import { UtilityService, NotificationService, OtherCategoriesService } from '@app/shared/services';
 import { PortsService } from '@app/shared/services/danhmuc/ports.service';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { Subscription } from 'rxjs';
@@ -16,39 +17,38 @@ import { Subscription } from 'rxjs';
   styleUrls: ['./modal-ports.component.css']
 })
 export class ModalPortsComponent implements OnInit {
-  public entity:Ports;
+  public entity: Ports;
   public flagXem: boolean = false;
   public flagSave: boolean = false;
-  public provinceCode?:string;
   public busy: Subscription;
   maskNumber = UtilityService.maskNumber;
   mask0 = UtilityService.mask0;
-  listGroupPorts:GroupPorts[]=[];
+  listGroupPorts: OtherCategories[] = [];
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter;
   @ViewChild('modalAddEdit', { static: false }) modalAddEdit: ModalDirective;
-  constructor(private _notificationService: NotificationService,private portsService:PortsService
+
+  constructor(
+    private _notificationService: NotificationService,
+    private portsService: PortsService,
+    private _otherCategoriesService: OtherCategoriesService
   ) { }
 
   ngOnInit(): void {
     this.loadGroupPorts();
   }
-  
-  loadGroupPorts(){
-    this.portsService.getAllGroupPorts().subscribe((res: ResponseValue<GroupPorts[]>) => {
+
+  loadGroupPorts() {
+    const params = new HttpParams().set('type', 'GROUPPORTS');
+    this._otherCategoriesService.getAll(params).subscribe((res: ResponseValue<OtherCategories[]>) => {
       if (res.code == '200' || res.code == '201') {
-        this.listGroupPorts=res.data;
-      }
-      else {
-        this._notificationService.printErrorMessage(MessageContstants.SYSTEM_ERROR_MSG);
+        this.listGroupPorts = res.data;
       }
     });
   }
-  
+
   add() {
-    this.entity={
-      checked:false
-    };
+    this.entity = { checked: false };
     this.flagXem = false;
     this.flagSave = false;
     this.modalAddEdit.show();
@@ -57,13 +57,11 @@ export class ModalPortsComponent implements OnInit {
   edit(code: string, flag: boolean) {
     this.portsService.getDetail(code).subscribe((res: ResponseValue<Ports>) => {
       if (res.code == '200' || res.code == '201') {
-        console.log(res.data);
         this.entity = res.data;
         this.flagXem = flag;
         this.flagSave = false;
         this.modalAddEdit.show();
-      }
-      else {
+      } else {
         this._notificationService.printErrorMessage(MessageContstants.SYSTEM_ERROR_MSG);
       }
     });
@@ -79,30 +77,23 @@ export class ModalPortsComponent implements OnInit {
             form.resetForm();
             this._notificationService.printSuccessMessage(MessageContstants.CREATED_OK_MSG);
             this.SaveSuccess.emit(res.data);
-          }
-          else {
+          } else {
             this._notificationService.printErrorMessage(MessageContstants.CREATED_ERR_MSG + res.code);
             this.flagSave = false;
           }
-        }, () => {
-          this.flagSave = false;
-        });
-      }
-      else {
+        }, () => { this.flagSave = false; });
+      } else {
         this.portsService.update(this.entity).subscribe((res: ResponseValue<any>) => {
           if (res.code == '200' || res.code == '201') {
             this.modalAddEdit.hide();
             form.resetForm();
             this._notificationService.printSuccessMessage(MessageContstants.UPDATED_OK_MSG);
             this.SaveSuccess.emit(res.data);
-          }
-          else {
-            this._notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG +res.code);
+          } else {
+            this._notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG + res.code);
             this.flagSave = false;
           }
-        }, () => {
-          this.flagSave = false;
-        });
+        }, () => { this.flagSave = false; });
       }
     }
   }
@@ -110,5 +101,4 @@ export class ModalPortsComponent implements OnInit {
   OnHidden() {
     this.CloseModal.emit();
   }
-
 }

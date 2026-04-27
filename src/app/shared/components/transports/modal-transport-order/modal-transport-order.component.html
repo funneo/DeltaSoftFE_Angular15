@@ -39,16 +39,23 @@
         <!-- ═══════════════════════════════════════════════════════
              CỘT TRÁI: Pool các điểm từ ShippingTask
              ═══════════════════════════════════════════════════════ -->
-        <div class="to-col-pool">
-          <div class="to-col-header">
-            <div class="to-col-header-title">
-              <i class="fa fa-map-marker text-danger"></i>
-              Điểm hàng từ công việc
-            </div>
-            <span class="badge badge-secondary">{{ locationPool.length }} điểm</span>
+        <div class="to-col-pool" [class.to-col-pool--collapsed]="!showPoolPanel">
+          <div class="to-col-header pool-col-header">
+            <button class="pool-toggle-btn"
+              (click)="showPoolPanel = !showPoolPanel"
+              [title]="showPoolPanel ? 'Ẩn danh sách điểm' : 'Hiện danh sách điểm'">
+              <i class="fa" [class.fa-angle-double-left]="showPoolPanel" [class.fa-angle-double-right]="!showPoolPanel"></i>
+            </button>
+            <ng-container *ngIf="showPoolPanel">
+              <div class="to-col-header-title">
+                <i class="fa fa-map-marker text-danger"></i>
+                Điểm hàng từ công việc
+              </div>
+              <span class="badge badge-secondary">{{ locationPool.length }} điểm</span>
+            </ng-container>
           </div>
 
-          <div class="pool-list">
+          <div class="pool-list" *ngIf="showPoolPanel">
             <!-- Nhóm theo từng ShippingTask -->
             <div *ngFor="let task of entity.listDetailed" class="task-group">
               <div class="task-group-header">
