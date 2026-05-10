@@ -1,0 +1,220 @@
+<div class="to-list-page">
+  <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f5f6fa" size="medium" color="#3a7afe"
+    type="ball-clip-rotate">
+    <p class="loading-text">Đang tải dữ liệu...</p>
+  </ngx-spinner>
+
+  <!-- ── Toolbar ─────────────────────────────────────────────── -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <h4 class="page-title"><i class="fa fa-truck"></i> Lệnh vận chuyển</h4>
+    </div>
+
+    <div class="toolbar-filters">
+      <div class="filter-item filter-date">
+        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+          class="form-control input-sm" placeholder="Chọn khoảng ngày...">
+      </div>
+
+      <div class="filter-item filter-branch">
+        <ng-select [items]="listBranch" bindLabel="branchCode" bindValue="id" [(ngModel)]="branchId"
+          (change)="changedBranch($event)" placeholder="Chi nhánh..." [disabled]="!adminPermission"
+          [clearable]="false">
+        </ng-select>
+      </div>
+
+      <div class="filter-item filter-driver">
+        <ng-select [items]="listDriver" bindLabel="employeeFullName" bindValue="id" [(ngModel)]="driverId"
+          (change)="changeDriver()" placeholder="Lái xe..." [clearable]="true">
+        </ng-select>
+      </div>
+
+      <div class="filter-item filter-keyword">
+        <div class="input-group input-group-sm">
+          <input type="text" class="form-control" [(ngModel)]="keyword" (keyup.enter)="timKiem()"
+            placeholder="Từ khóa...">
+          <span class="input-group-btn">
+            <button class="btn btn-default" (click)="timKiem()"><i class="fa fa-search"></i></button>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar-actions">
+      <button class="btn btn-to btn-to-edit" (click)="openEdit()" [disabled]="!flagEdit"
+        appPermission appFunction="DISPATCHORDER" appAction="UPDATE">
+        <i class="fa fa-pencil"></i> Sửa
+      </button>
+      <button *ngIf="adminPermission" class="btn btn-to btn-to-delete" (click)="deleteConfirm()" [disabled]="!flagDelete"
+        appPermission appFunction="DISPATCHORDER" appAction="DELETE">
+        <i class="fa fa-trash"></i> Xóa
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Table ───────────────────────────────────────────────── -->
+  <div class="table-card">
+    <div class="table-responsive">
+      <table class="table to-table">
+        <thead>
+          <!-- Header row -->
+          <tr class="header-row">
+            <th class="col-cb">
+              <label class="custom-checkbox">
+                <input type="checkbox" [checked]="isAllChecked()" (change)="checkAll($event)">
+                <span class="helping-el"></span>
+              </label>
+            </th>
+            <th class="col-status">Tình trạng</th>
+            <th class="col-refno">RefNo</th>
+            <th class="col-refer">Mã tham chiếu</th>
+            <th class="col-date">Ngày tạo</th>
+            <th class="col-creator">Người lập</th>
+            <th class="col-unit">Đơn vị vận chuyển</th>
+            <th class="col-driver">Lái xe</th>
+            <th class="col-plate">Biển số</th>
+            <th class="col-mooc">Mooc</th>
+            <th class="col-route">Lộ trình</th>
+            <th class="col-km">Tổng Km</th>
+            <th class="col-fuel">Dầu (L)</th>
+            <th class="col-note">Ghi chú</th>
+            <th class="col-flags"></th>
+          </tr>
+          <!-- Filter row -->
+          <tr class="filter-row">
+            <th></th>
+            <th>
+              <ng-select [(ngModel)]="statusSelected" [items]="statusArray" bindLabel="text" bindValue="value"
+                [clearable]="false" (change)="filterData()" placeholder="Tất cả">
+              </ng-select>
+            </th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.refNo" (input)="filterData()" type="text"></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.referCode" (input)="filterData()" type="text"></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.createdDate" (input)="filterData()" type="text"></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.createdByName" (input)="filterData()" type="text"></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.shippingUnitName" (input)="filterData()" type="text"></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.driverName" (input)="filterData()" type="text"></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.vehiclelLicensePlates" (input)="filterData()" type="text"></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.moocLicensePlates" (input)="filterData()" type="text"></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.fullRoute" (input)="filterData()" type="text"></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.tongKm" (input)="filterData()" type="text"></th>
+            <th></th>
+            <th><input class="form-control" [(ngModel)]="filterColumns.note" (input)="filterData()" type="text"></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of visibleData"
+            (click)="clickRow(item)"
+            [class.row-checked]="item.checked"
+            [class.row-subcontractor]="item.isSubcontractors"
+            class="data-row">
+
+            <!-- Checkbox -->
+            <td class="col-cb" (click)="$event.stopPropagation()">
+              <label class="custom-checkbox">
+                <input type="checkbox" [checked]="item.checked" (change)="clickRow(item)">
+                <span class="helping-el"></span>
+              </label>
+            </td>
+
+            <!-- Status -->
+            <td class="col-status">
+              <span [ngClass]="getStatusClass(item)">{{ item.rStatus }}</span>
+            </td>
+
+            <!-- RefNo -->
+            <td class="col-refno">
+              <a class="refno-link" (click)="openEdit(item.id); $event.stopPropagation()">
+                <b>{{ item.refNo }}</b>
+              </a>
+            </td>
+
+            <!-- Mã tham chiếu -->
+            <td class="col-refer"><span class="text-muted">{{ item.referCode }}</span></td>
+
+            <!-- Ngày tạo -->
+            <td class="col-date">{{ item.createdDate | date:'dd/MM/yyyy' }}</td>
+
+            <!-- Người lập -->
+            <td class="col-creator">{{ item.createdByName }}</td>
+
+            <!-- Đơn vị vận chuyển -->
+            <td class="col-unit">
+              <span *ngIf="item.isSubcontractors" class="sub-tag">NCC</span>
+              <b>{{ item.shippingUnitName }}</b>
+            </td>
+
+            <!-- Lái xe -->
+            <td class="col-driver">
+              <div class="driver-cell">
+                <span>{{ item.driverName }}</span>
+                <small *ngIf="item.driverTel" class="tel">{{ item.driverTel }}</small>
+              </div>
+            </td>
+
+            <!-- Biển số -->
+            <td class="col-plate">
+              <span class="plate-badge">{{ item.vehiclelLicensePlates }}</span>
+            </td>
+
+            <!-- Mooc -->
+            <td class="col-mooc">
+              <span *ngIf="item.moocLicensePlates" class="plate-badge plate-mooc">{{ item.moocLicensePlates }}</span>
+            </td>
+
+            <!-- Lộ trình -->
+            <td class="col-route" [title]="item.fullRoute">
+              <span class="route-text">{{ item.fullRoute }}</span>
+            </td>
+
+            <!-- Tổng Km -->
+            <td class="col-km text-right">
+              <span *ngIf="item.tongKm" class="num-val">{{ item.tongKm | number:'1.0-1' }}</span>
+            </td>
+
+            <!-- Dầu -->
+            <td class="col-fuel text-right">
+              <span *ngIf="item.tongdau" class="num-val">{{ item.tongdau | number:'1.0-1' }}</span>
+            </td>
+
+            <!-- Ghi chú -->
+            <td class="col-note" [title]="item.note">{{ item.note }}</td>
+
+            <!-- Flags / icons -->
+            <td class="col-flags">
+              <span *ngIf="item.isFuelApproval" class="flag-icon" title="Đã duyệt dầu">
+                <i class="fa fa-tint text-info"></i>
+              </span>
+              <span *ngIf="item.isSummarized" class="flag-icon" title="Đã tổng hợp">
+                <i class="fa fa-check-circle text-success"></i>
+              </span>
+            </td>
+          </tr>
+
+          <tr *ngIf="!listFilter?.length">
+            <td colspan="15" class="empty-row">
+              <i class="fa fa-inbox"></i> Không có bản ghi nào
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── Footer / Pagination ────────────────────────────────── -->
+  <div *ngIf="totalRows > 0" class="list-footer">
+    <span class="total-label">Tổng: <b>{{ totalRows }}</b> bản ghi</span>
+    <pagination
+      [totalItems]="totalRows"
+      [(ngModel)]="pageIndex"
+      [maxSize]="9"
+      [itemsPerPage]="50"
+      (pageChanged)="pageChanged($event)"
+      previousText="‹" nextText="›" firstText="«" lastText="»">
+    </pagination>
+  </div>
+</div>
+
+<!-- ── Modal ──────────────────────────────────────────────────── -->
+<modal-transport-order (SaveSuccess)="saveSuccess()"></modal-transport-order>

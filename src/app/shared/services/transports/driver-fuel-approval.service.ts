@@ -198,6 +198,19 @@ export class DriverFuelApprovalService  extends BaseService{
     }), catchError(this.handleError));
   }
 
+  getBySupplierForAccount(supplierId: number) {
+    let p: FromBodyBase<DriverFuelApproval> = {};
+    let item: DriverFuelApproval = { supplierId };
+    p.item = item;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DriverFuelApproval/get-by-supplier-for-account`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
+  }
+
   updateIgas() {
     let p: FromBodyBase<DriverFuelApproval> = {};
     let item:DriverFuelApproval={};

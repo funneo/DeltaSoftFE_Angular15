@@ -24,7 +24,7 @@
         <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="THU" appAction="CREATE">
           <i class="fa fa-plus"></i> Thêm
         </button>
-        <button class="btn btn-success btn-sm" (click)="export()" appFunction="PAYMENT" appAction="EXPORT">
+        <button class="btn btn-success btn-sm" (click)="exportExcel()" appFunction="PAYMENT" appAction="EXPORT">
           <i class="fa fa-file-excel-o" style=" padding-right: 3px;"></i>Export
         </button>
         <button class="btn btn-warning btn-sm" (click)="print()" appFunction="PAYMENT" appAction="EXPORT">
@@ -168,7 +168,8 @@
         <div class="col-md-2">
           <div style="display:flex; align-items:center; gap:6px;">
             <span style="white-space:nowrap; font-size:12px;">Hiển thị:</span>
-            <select class="form-control input-sm" style="width:70px;" [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+            <select class="form-control input-sm" style="width:70px;" [(ngModel)]="pageSize"
+              (ngModelChange)="onPageSizeChange()">
               <option *ngFor="let s of listPageSizes" [value]="s">{{s}}</option>
             </select>
           </div>

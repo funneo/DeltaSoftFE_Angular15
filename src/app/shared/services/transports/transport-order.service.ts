@@ -4,7 +4,7 @@ import { environment } from '@environments/environment';
 import { catchError, map } from 'rxjs/operators';
 import { AuthService } from '..';
 import { FromBodyBase } from '../../models';
-import { TransportOrder, TransportOrderSegment, UnifiedLocation } from '../../models/transports/dispatchorders/transport-order.model';
+import { RouteSegmentDefault, TransportOrder, TransportOrderSegment, UnifiedLocation } from '../../models/transports/dispatchorders/transport-order.model';
 import { BaseService } from '../base.service';
 import { JwtService } from '../jwt.service';
 
@@ -114,12 +114,23 @@ export class TransportOrderService extends BaseService {
       );
   }
 
-  getSegmentHistory(startLocationId: number, endLocationId: number) {
+  saveSegmentDefault(item: RouteSegmentDefault) {
+    const p: FromBodyBase<RouteSegmentDefault> = { item, tokenKey: this.token };
+    return this.http.post(`${environment.apiUrl}/api/TransportOrder/SaveSegmentDefault`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401') this.authenService.logout();
+        else return response;
+      }), catchError(this.handleError));
+  }
+
+  getSegmentHistory(startLocationId: number, startLocationType: number, endLocationId: number, endLocationType: number) {
     let p: FromBodyBase<TransportOrderSegment> = {
       tokenKey: this.token,
       item: {
-        startLocationId: startLocationId,
-        endLocationId: endLocationId
+        startLocationId,
+        startLocationType,
+        endLocationId,
+        endLocationType
       } as TransportOrderSegment
     };
     return this.http.post(`${environment.apiUrl}/api/TransportOrder/GetSegmentHistory`, p)

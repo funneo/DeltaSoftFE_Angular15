@@ -1,0 +1,5 @@
+Lưu toàn bộ trạng thái hiện tại:
+- Cập nhật .claude/context/done.md
+- Cập nhật .claude/context/todo.md
+- Git commit toàn bộ file đang thay đổi
+Sau đó /compact

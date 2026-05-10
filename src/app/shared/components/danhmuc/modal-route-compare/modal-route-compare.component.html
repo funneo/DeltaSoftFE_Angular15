@@ -53,9 +53,27 @@
                   Không có trạm
                 </span>
               </div>
-              <button class="btn btn-primary btn-sm cmp-btn-select" (click)="selectVietmap()">
-                <i class="fa fa-check"></i> Dùng tuyến Vietmap
+              <button class="btn btn-primary btn-sm cmp-btn-select" (click)="selectVietmap()" [disabled]="showWarning">
+                <i class="fa fa-check"></i> Xác nhận cung đường
               </button>
+              <div *ngIf="showWarning" class="cmp-warning-box">
+                <div class="cmp-warning-msg">
+                  <i class="fa fa-exclamation-triangle text-warning"></i>
+                  <strong>Hãy điều chỉnh lại cung đường theo Google Maps, nếu vẫn muốn sử dụng VietMap, hãy trình bày lý do tại sao lại sử dụng cung đường dài hơn.</strong>
+                  <br><span class="text-muted" style="font-size:11px;">Vietmap: {{ vietmapStats?.km }} km — Google Maps: {{ googleStats?.km }} km</span>
+                </div>
+                <textarea class="form-control form-control-sm cmp-reason-input"
+                  [(ngModel)]="warningReason" placeholder="Nhập lý do chọn cung đường dài hơn..." rows="2">
+                </textarea>
+                <div class="cmp-warning-actions">
+                  <button class="btn btn-success btn-sm" (click)="confirmVietmapSelection()" [disabled]="!warningReason.trim()">
+                    <i class="fa fa-check"></i> Xác nhận
+                  </button>
+                  <button class="btn btn-secondary btn-sm" (click)="showWarning = false; warningReason = ''">
+                    Hủy
+                  </button>
+                </div>
+              </div>
             </ng-container>
             <div *ngIf="vietmapLoading" class="cmp-stats-loading">
               <i class="fa fa-spinner fa-spin"></i> Đang tính toán...
@@ -100,9 +118,7 @@
                   Phí BOT xem trong modal Google
                 </span>
               </div>
-              <button class="btn btn-warning btn-sm cmp-btn-select" (click)="selectGoogle()">
-                <i class="fa fa-check"></i> Dùng tuyến Google
-              </button>
+              <!-- Nút chọn Google ẩn — chỉ dùng để tham khảo -->
             </ng-container>
             <div *ngIf="googleLoading" class="cmp-stats-loading">
               <i class="fa fa-spinner fa-spin"></i> Đang tính toán...

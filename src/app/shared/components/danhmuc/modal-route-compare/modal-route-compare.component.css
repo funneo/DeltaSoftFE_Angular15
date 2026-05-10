@@ -159,3 +159,35 @@
   color: #777;
   padding: 6px 0;
 }
+
+.cmp-warning-box {
+  margin-top: 8px;
+  background: #fff8e1;
+  border: 1px solid #ffc107;
+  border-radius: 6px;
+  padding: 8px 10px;
+  width: 100%;
+}
+
+.cmp-warning-msg {
+  font-size: 12px;
+  color: #5d4037;
+  margin-bottom: 6px;
+  line-height: 1.4;
+}
+
+.cmp-reason-input {
+  font-size: 12px;
+  resize: none;
+}
+
+.cmp-warning-actions {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.cmp-warning-actions .btn {
+  font-size: 11px;
+  padding: 3px 10px;
+}

@@ -42,5 +42,6 @@ export interface DriverFuelApproval {
     startKm?:number;
     finishKm?:number;
     realOilPrice?:number;
+    isPaymented?:boolean;
     detaileds?:DriverFuelApprovalDetailed[];
 }

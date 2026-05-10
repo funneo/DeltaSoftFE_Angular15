@@ -3,8 +3,10 @@ import { ModalDirective } from 'ngx-bootstrap/modal';
 import { NotificationService } from '@app/shared/services';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '@environments/environment';
+import { SegmentStation } from '@app/shared/models/transports/dispatchorders/transport-order.model';
 
 export interface TollStation {
+  id?: number;
   name: string;
   cost: string | null;
   priceRaw?: number;
@@ -55,8 +57,8 @@ export class ModalVietmapRoutesComponent {
     km: number;
     waypoints: { lat: number; lng: number }[];
     steps: { lat: number; lng: number; name: string; distanceM: number }[];
-    polyline: string; // JSON [[lng,lat],...] full road geometry để vẽ mượt
-    tollStations: { stationId: string; stationName: string; price: number }[];
+    polyline: string;
+    tollStations: SegmentStation[];
   }>();
 
   public lstRoutes: RouteOption[] = [];
@@ -71,6 +73,7 @@ export class ModalVietmapRoutesComponent {
   private currentSteps: { lat: number; lng: number; name: string; distanceM: number }[] = [];
   private currentPolyline: string = null; // JSON [[lng,lat],...] raw geometry
   private fetchTimer: any;
+  private _lastTollRaw: any[] = [];
   isSavedMode = false; // true = đang xem lộ trình đã lưu, không gọi lại API
 
   private originLat: number;
@@ -183,10 +186,22 @@ export class ModalVietmapRoutesComponent {
   }
 
   selectRoute(route: RouteOption) {
-    const tollStations = (route.tollInfo?.stations || []).map((s, i) => ({
-      stationId: `vietmap_${i}`,
+    // Build allPrices per station: {stationId → {vehicle: price}}
+    const priceByStation: { [id: number]: { [v: number]: number } } = {};
+    if (this._lastTollRaw) {
+      this._lastTollRaw.forEach((entry: any) => {
+        entry.data?.tolls?.forEach((t: any) => {
+          if (!priceByStation[t.id]) priceByStation[t.id] = {};
+          priceByStation[t.id][entry.vehicle] = t.price || 0;
+        });
+      });
+    }
+
+    const tollStations: SegmentStation[] = (route.tollInfo?.stations || []).map(s => ({
+      vietmapId: s.id,
       stationName: s.name,
-      price: s.priceRaw || 0
+      price: s.priceRaw || 0,
+      allPrices: JSON.stringify(priceByStation[s.id] || {})
     }));
     this.RouteSelected.emit({
       summary: route.summary,
@@ -395,12 +410,15 @@ export class ModalVietmapRoutesComponent {
     // Extract toll info from the new toll array structure
     let tollInfo: TollInfo | null = null;
     if (res.toll && Array.isArray(res.toll) && res.toll.length > 0) {
+      this._lastTollRaw = res.toll; // lưu để selectRoute() build allPrices
+
       let vehicleCosts = [];
       let allStations: any[] = [];
       let baseToll1 = res.toll.find((x: any) => x.vehicle === 1)?.data;
       
       if (baseToll1 && baseToll1.tolls) {
         allStations = baseToll1.tolls.map((t: any) => ({
+          id: t.id,
           name: t.name,
           cost: t.price ? `${t.price.toLocaleString('vi-VN')} ₫` : 'Miễn phí',
           priceRaw: t.price || 0

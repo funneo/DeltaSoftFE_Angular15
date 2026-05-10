@@ -73,6 +73,7 @@
           <th>Lượng hàng (Kg)</th>
           <th>Số khối (cbm)</th>
           <th>Kiện hàng</th>
+          <th>Ghi chú</th>
           </tr>
           <tr>
             <th></th>
@@ -89,6 +90,7 @@
             <th><input class="form-control" #luonghangSearchInput [(ngModel)]="luonghangSearch" (input)="filter()" type="text" name="luonghangSearch"/></th>
             <th><input class="form-control" #cbmSearchInput [(ngModel)]="cbmSearch" (input)="filter()" type="text" name="cbmSearch"/></th>
             <th><input class="form-control" #kienhangSearchInput [(ngModel)]="kienhangSearch" (input)="filter()" type="text" name="kienhangSearch"/></th>
+            <th><input class="form-control" #ghichuSearchInput [(ngModel)]="ghichuSearch" (input)="filter()" type="text" name="ghichuSearch"/></th>
           </tr>
       </thead>
       <tbody>
@@ -114,6 +116,7 @@
           <td>{{item.gw}}</td>
           <td>{{item.cbm}}</td>
           <td>{{item.package}}</td>
+          <td>{{item.note}}</td>
         </tr>
         <tr *ngIf="listFilter?.length == 0">
           <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>

@@ -25,14 +25,11 @@ export interface TransportOrder {
     fuelDriverId?: number;
     weight?: number;
     volume?: number;
-    isExport?: boolean;
     contType?: string;
     fullRoute?: string;
     oilPrice?: number;
     oilCompensation?: number;
     reasonOilCompensation?: string;
-    luotdiQuabai?:boolean;
-    luotveQuabai?:boolean;
     subcontractorsQuoteCode?: string;
     subcontractorsQuoteRouteCode?: string;
     subcontractorsPurchaseCost?: number;
@@ -97,7 +94,20 @@ export interface TransportOrderDetail {
     id?: number;
     transportOrderId?: number;
     shippingTaskId?: number;
-    shippingTaskItem?:ShippingTask;
+    shippingTaskItem?: ShippingTask;
+    // Flat fields từ SP_TransportOrder_GetById (khi edit)
+    customerCode?: string;
+    customerName?: string;
+    jobId?: string;
+    contType?: string;
+    containerNumber?: string;
+    sealNumber?: string;
+    referCode?: string;
+    pickupLocation?: string;
+    deliveryLocation?: string;
+    pickupTime?: string;
+    portOfLiftingName?: string;
+    portOfLiftOffName?: string;
 }
 
 export interface UnifiedLocation {
@@ -131,10 +141,28 @@ export interface TransportOrderSegment {
     // Full polyline GeoJSON coordinates [[lng,lat],...] để vẽ đường mượt
     routePolyline?: string;
 
-    // 1 Cung đường có thể có nhiều trạm thu phí
-    listEtc?: TransportOrderSegmentEtc[];
+    // Trạm phí từ Vietmap (id thật + allPrices 5 loại xe)
+    listStations?: SegmentStation[];
     // Turn-by-turn steps (để hiển thị & sync Google Maps)
     listWaypoints?: TransportOrderSegmentWaypoint[];
+    // Filled by GetSegmentHistory only
+    waypointsJson?: string;
+    isDefault?: boolean;
+    note?: string;
+}
+
+export interface RouteSegmentDefault {
+    startLocationId?: number;
+    startLocationType?: number;
+    endLocationId?: number;
+    endLocationType?: number;
+    distanceKm?: number;
+    fuelNorm?: number;
+    fuelAmountCalculated?: number;
+    etcCost?: number;
+    routePolyline?: string;
+    waypointsJson?: string;
+    listStations?: SegmentStation[];
 }
 
 export interface TransportOrderSegmentWaypoint {
@@ -145,6 +173,14 @@ export interface TransportOrderSegmentWaypoint {
     lng: number;
     name?: string;    // Tên đường / chỉ dẫn: "Rẽ phải QL.10"
     distanceM?: number; // Khoảng cách đến điểm tiếp theo (mét)
+}
+
+export interface SegmentStation {
+    vietmapId?: number;    // id trạm từ Vietmap API (77, 168, ...)
+    stationName?: string;
+    price?: number;        // giá áp dụng theo loại xe của lệnh
+    allPrices?: string;    // JSON: {"1":216000,"2":309000,"3":412000,"4":659000,"5":849000}
+    isAvoided?: boolean;
 }
 
 export interface TransportOrderSegmentEtc {

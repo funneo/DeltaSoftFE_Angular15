@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
 import { HttpClient } from '@angular/common/http';
@@ -12,7 +12,7 @@ import {
 import { TransportOrderService } from '@app/shared/services/transports/transport-order.service';
 import {
   TransportOrder, TransportOrderDetail, TransportOrderFee,
-  TransportOrderSegment, TransportOrderSegmentEtc, UnifiedLocation
+  TransportOrderSegment, SegmentStation, UnifiedLocation, RouteSegmentDefault
 } from '@app/shared/models/transports/dispatchorders/transport-order.model';
 import { ShippingTask } from '@app/shared/models/transports/shipping-task.model';
 import { Vihicle, Employee, Fee, OtherCategories, Supplier, ResponseValue } from '@app/shared/models';
@@ -47,12 +47,16 @@ export interface LocationItem {
   templateUrl: './modal-transport-order.component.html',
   styleUrls: ['./modal-transport-order.component.scss']
 })
-export class ModalTransportOrderComponent {
+export class ModalTransportOrderComponent implements OnInit {
   @ViewChild('modalMain', { static: false }) modalMain: ModalDirective;
   @Output() SaveSuccess = new EventEmitter<any>();
 
   entity: TransportOrder = this._emptyEntity();
   locations: LocationItem[] = [];
+
+  routeConfirmed = false;
+  closing_permission = false;
+  accept_permission = false;
 
   // Getter: tập hợp tất cả điểm có thể thêm (từ listDetailed)
   get locationPool(): LocationItem[] {
@@ -94,10 +98,10 @@ export class ModalTransportOrderComponent {
   // Flag: chặng cuối đã chọn → không cho thêm điểm nữa
   lastSegmentFinal = false;
 
-  get allTollStations(): TransportOrderSegmentEtc[] {
-    const stations: TransportOrderSegmentEtc[] = [];
-    (this.entity.segments || []).forEach(s => (s.listEtc || []).forEach(e => stations.push(e)));
-    return stations;
+  get allTollStations(): SegmentStation[] {
+    const stations: SegmentStation[] = [];
+    (this.entity.segments || []).forEach(s => (s.listStations || []).forEach(e => stations.push(e)));
+    return stations.filter(e => (e.price || 0) > 0);
   }
 
   onLastSegmentFinalChange() {
@@ -159,6 +163,7 @@ export class ModalTransportOrderComponent {
   isCalculating = false;
   isSaving = false;
   segmentCalculating: boolean[] = [];
+  private _vehicleBotTypeId: number | null = null;
 
   // Danh sách định mức dầu (lượng hàng) của xe đang chọn
   listOilQuota: VehicleOilQuota[] = [];
@@ -206,13 +211,21 @@ export class ModalTransportOrderComponent {
 
   // ── PUBLIC LIFECYCLE ──
 
+  ngOnInit() {
+    const user = this._authService.getLoggedInUser();
+    this.closing_permission = this._authService.hasPermission('TO_CLOSING') || user?.isAdmin;
+    this.accept_permission = this._authService.hasPermission('TO_ACCEPT') || user?.isAdmin;
+  }
+
   add(listTasks: ShippingTask[]) {
     this.entity = this._emptyEntity();
     this.entity.listDetailed = listTasks.map(t => ({ shippingTaskId: t.id, shippingTaskItem: t }));
     this.locations = [];
     this.listOilQuota = [];
+    this._vehicleBotTypeId = null;
     this.lastSegmentFinal = false;
-    this.showVehiclePanel = false;
+    this.routeConfirmed = false;
+    this.showVehiclePanel = true;
     this.showBottomPanel = false;
     this.showPoolPanel = true;
     this.showAddCustomPoint = false;
@@ -225,12 +238,11 @@ export class ModalTransportOrderComponent {
       if (res.code === '200') {
         this.entity = res.data;
         this.locations = this._segmentsToLocations(this.entity.segments || []);
-        this.listVehiclesFiltered = [];
-        if (this.entity.vehicleType) this._loadVehiclesByType(this.entity.vehicleType);
         if (this.entity.vehicleId) this.loadVehicle(this.entity.vehicleId);
         this.calculateTotal();
-        this.lastSegmentFinal = false;
-        this.showVehiclePanel = false;
+        this.lastSegmentFinal = true;
+        this.routeConfirmed = true;
+        this.showVehiclePanel = true;
         this.showBottomPanel = false;
         this.showPoolPanel = true;
         this.showAddCustomPoint = false;
@@ -246,14 +258,16 @@ export class ModalTransportOrderComponent {
 
   // ── LOCATION POOL ──
 
-  isLocInRoute(locationId: number): boolean {
-    return this.locations.some(l => l.locationId === locationId);
+  isLocInRoute(locationId: number, taskId?: number, type?: 'pickup' | 'delivery'): boolean {
+    return this.locations.some(l =>
+      l.locationId === locationId && l.taskId === taskId && l.type === type
+    );
   }
 
   addToRoute(task: ShippingTask, type: 'pickup' | 'delivery') {
     if (this.lastSegmentFinal) return;
     const locationId = type === 'pickup' ? task.pickupLocationId : task.deliveryLocationId;
-    if (this.isLocInRoute(locationId)) return; // đã có rồi
+    if (this.isLocInRoute(locationId, task.id, type)) return; // đã có rồi
 
     this.locations.push({
       locationId,
@@ -296,17 +310,10 @@ export class ModalTransportOrderComponent {
     return 'index-mid';
   }
 
-  // ── ETC ──
+  // ── Trạm phí ──
 
-  addManualEtc(segIndex: number) {
-    if (!this.entity.segments[segIndex].listEtc) {
-      this.entity.segments[segIndex].listEtc = [];
-    }
-    this.entity.segments[segIndex].listEtc.push({ stationName: 'Trạm mới', price: 0 });
-  }
-
-  removeEtc(segIndex: number, etcIndex: number) {
-    this.entity.segments[segIndex].listEtc.splice(etcIndex, 1);
+  removeStation(segIndex: number, stationIndex: number) {
+    this.entity.segments[segIndex].listStations.splice(stationIndex, 1);
     this.calculateTotal();
   }
 
@@ -314,9 +321,9 @@ export class ModalTransportOrderComponent {
     let totalKm = 0;
     let totalEtc = 0;
     (this.entity.segments || []).forEach(s => {
-      totalKm += (s.distanceKm || 0);
+      if (s.routePolyline) totalKm += (s.distanceKm || 0);
       let segEtc = 0;
-      (s.listEtc || []).forEach(e => segEtc += (e.price || 0));
+      (s.listStations || []).forEach(e => segEtc += (e.price || 0));
       s.etcCost = segEtc;
       totalEtc += segEtc;
     });
@@ -363,7 +370,7 @@ export class ModalTransportOrderComponent {
     // Gom tất cả trạm phí từ các segments
     const combinedTolls: { stationName: string; price: number }[] = [];
     segments.forEach(seg => {
-      (seg.listEtc || []).forEach(e => {
+      (seg.listStations || []).forEach(e => {
         combinedTolls.push({ stationName: e.stationName || '', price: e.price || 0 });
       });
     });
@@ -396,10 +403,32 @@ export class ModalTransportOrderComponent {
 
   /** Xử lý khi user chọn tuyến từ compare modal */
   onCompareRouteSelected(event: CompareRouteResult) {
-    const seg = this.entity.segments?.[this._currentMapSegmentIndex];
+    const segIndex = this._currentMapSegmentIndex;
+    const seg = this.entity.segments?.[segIndex];
     if (!seg) return;
+
+    if (event.provider === 'google') {
+      this._notif.printConfirmationDialog(
+        'Nếu chọn Bản đồ Google Maps thì hiện tại chưa lấy được thông tin về Trạm thu phí. Bạn có tiếp tục không?',
+        () => this._applyCompareRoute(event, segIndex, seg, false)
+      );
+    } else {
+      this._applyCompareRoute(event, segIndex, seg, true);
+    }
+  }
+
+  private _rebuildDispatchSummarize() {
+    const lines = (this.entity.segments || [])
+      .map((s, i) => s.note?.trim() ? `Chặng ${i + 1}: ${s.note.trim()}` : null)
+      .filter(l => !!l);
+    this.entity.dispatchSummarize = lines.join('\n');
+  }
+
+  private _applyCompareRoute(event: CompareRouteResult, segIndex: number, seg: TransportOrderSegment, fetchToll: boolean) {
     seg.distanceKm = +(event.km).toFixed(1);
     seg.routePolyline = event.polyline;
+    seg.note = event.note || '';
+    this._rebuildDispatchSummarize();
     seg.listWaypoints = event.steps.map((s, i) => ({
       orderIndex: i, lat: s.lat, lng: s.lng, name: s.name, distanceM: s.distanceM
     }));
@@ -412,7 +441,13 @@ export class ModalTransportOrderComponent {
     }
     this.calculateTotal();
     this.calulateOil();
-    this._fetchTollForSegment(this._currentMapSegmentIndex);
+    if (fetchToll) {
+      const pts = event.steps.filter(s => s.lat && s.lng).map(s => ({ lat: s.lat, lng: s.lng }));
+      this._fetchTollForSegment(segIndex, pts.length >= 2 ? pts : undefined);
+    } else {
+      seg.listStations = [];
+      seg.etcCost = 0;
+    }
   }
 
 
@@ -459,16 +494,15 @@ export class ModalTransportOrderComponent {
   }
 
   /** Nhận kết quả từ modal-vietmap-routes khi user bấm "Chọn tuyến này" */
-  onRouteSelected(event: { summary: string; km: number; waypoints: { lat: number; lng: number }[]; steps: { lat: number; lng: number; name: string; distanceM: number }[]; polyline: string; tollStations?: { stationId: string; stationName: string; price: number }[] }) {
+  onRouteSelected(event: { summary: string; km: number; waypoints: { lat: number; lng: number }[]; steps: { lat: number; lng: number; name: string; distanceM: number }[]; polyline: string; tollStations?: SegmentStation[] }) {
     if (this._currentMapSegmentIndex !== null) {
       const seg = this.entity.segments?.[this._currentMapSegmentIndex];
       if (seg) {
         seg.distanceKm = +(event.km).toFixed(1);
         seg.routePolyline = event.polyline;
         seg.listWaypoints = event.steps.map((s, i) => ({ orderIndex: i, lat: s.lat, lng: s.lng, name: s.name, distanceM: s.distanceM }));
-        // Dùng toll stations từ event (đã có sẵn từ VietMap response)
         if (event.tollStations?.length) {
-          seg.listEtc = event.tollStations.map(s => ({ stationId: s.stationId, stationName: s.stationName, price: s.price }));
+          seg.listStations = event.tollStations;
         }
         if (seg.payloadWeight) {
           const quota = this.listOilQuota.find(x => x.id === seg.payloadWeight);
@@ -477,7 +511,7 @@ export class ModalTransportOrderComponent {
             seg.fuelAmountCalculated = +(seg.fuelNorm * seg.distanceKm / 100).toFixed(2);
           }
         }
-        this.calculateTotal();
+        this._applyTollPrices();
         this.calulateOil();
       }
     }
@@ -549,9 +583,9 @@ export class ModalTransportOrderComponent {
         if (res.route?.paths?.[0]) {
           seg.distanceKm = +(res.route.paths[0].distance / 1000).toFixed(2);
         }
-        seg.listEtc = this._parseTollStations(res.toll, 2); // loại xe 2 (xe tải)
+        seg.listStations = this._parseTollStations(res.toll);
       });
-      this.calculateTotal();
+      this._applyTollPrices();
       this.isCalculating = false;
     });
   }
@@ -571,13 +605,13 @@ export class ModalTransportOrderComponent {
         }
         // Toàn trình: gán tổng km cho chặng đầu, các chặng còn lại = 0
         const totalKm = +(res.route.paths[0].distance / 1000).toFixed(2);
-        const etcs = this._parseTollStations(res.toll, 2);
+        const stations = this._parseTollStations(res.toll);
 
         this.entity.segments.forEach((seg, i) => {
           seg.distanceKm = i === 0 ? totalKm : 0;
-          seg.listEtc = i === 0 ? etcs : [];
+          seg.listStations = i === 0 ? stations : [];
         });
-        this.calculateTotal();
+        this._applyTollPrices();
       }, () => {
         this.isCalculating = false;
         this._notif.printErrorMessage('Lỗi kết nối VietMap API');
@@ -598,8 +632,8 @@ export class ModalTransportOrderComponent {
       const seg = this.entity.segments[segIndex];
       if (!seg || !res?.route?.paths?.[0]) return;
       seg.distanceKm = +(res.route.paths[0].distance / 1000).toFixed(2);
-      seg.listEtc = this._parseTollStations(res.toll, 2);
-      this.calculateTotal();
+      seg.listStations = this._parseTollStations(res.toll);
+      this._applyTollPrices();
     }, () => {
       this.segmentCalculating[segIndex] = false;
     });
@@ -622,31 +656,38 @@ export class ModalTransportOrderComponent {
 
   loadVehicle(id: number) {
     this._vihicleService.getDetail(id).subscribe((res: ResponseValue<Vihicle>) => {
+      if (this.entity.vehicleId !== id) return;
       if (res.code === '200' || res.code === '201') {
         this.listOilQuota = res.data?.listOilQuota || [];
+        this._vehicleBotTypeId = res.data?.vihicleTypeBotId ?? null;
       } else {
         this.listOilQuota = [];
+        this._vehicleBotTypeId = null;
       }
+      this._applyTollPrices();
     });
   }
 
   onVehicleChange(event: Vihicle) {
-    if (event) {
-      this.entity.vehicleId = event.id;
-      this.entity.vehiclelLicensePlates = event.licensePlates;
-      // Lái xe gán với xe → tự động bind lái xe 1 + SĐT
-      const driver = this.listEmployees.find(e => e.id === event.employeeId);
-      this.entity.driverId = event.employeeId;
-      this.entity.driverName = driver?.employeeFullName || '';
-      this.entity.driverTel = driver?.telephone || '';
-      // Mặc định lái xe nhận dầu = lái xe 1
-      this.entity.fuelDriverId = event.employeeId;
-      this.loadVehicle(event.id);
-    } else {
+    if (!event) {
       this.entity.vehicleId = undefined;
       this.entity.vehiclelLicensePlates = '';
+      this.entity.vehicleType = undefined;
       this.listOilQuota = [];
+      this._vehicleBotTypeId = null;
+      this._applyTollPrices();
+      return;
     }
+    const vehicle = this.listVehicles.find(v => v.id === event.id) ?? event;
+    this.entity.vehicleId = vehicle.id;
+    this.entity.vehiclelLicensePlates = vehicle.licensePlates;
+    this.entity.vehicleType = vehicle.vihicleTypeId;
+    const driver = this.listEmployees.find(e => e.id === vehicle.employeeId);
+    this.entity.driverId = vehicle.employeeId;
+    this.entity.driverName = driver?.employeeFullName || '';
+    this.entity.driverTel = driver?.telephone || '';
+    this.entity.fuelDriverId = vehicle.employeeId;
+    this.loadVehicle(vehicle.id);
   }
 
   onSegmentQuotaChange(segIndex: number, event: VehicleOilQuota) {
@@ -690,41 +731,114 @@ export class ModalTransportOrderComponent {
 
   // ── SAVE ──
 
+  confirmRoute() {
+    if (this.locations.length < 2) {
+      this._notif.printErrorMessage('Lộ trình cần ít nhất 2 điểm');
+      return;
+    }
+    if (!this.entity.driverId) {
+      this._notif.printErrorMessage('Vui lòng chọn lái xe trước khi chốt cung đường');
+      return;
+    }
+    const missingPayload = this.entity.segments?.some(s => !s.payloadWeight);
+    if (missingPayload) {
+      this._notif.printErrorMessage('Vui lòng chọn tải trọng cho tất cả các chặng trước khi chốt cung đường');
+      return;
+    }
+    if (this.entity.vehicleType === 16 && !this.entity.moocId) {
+      this._notif.printErrorMessage('Xe Container bắt buộc phải chọn Mooc trước khi chốt cung đường');
+      return;
+    }
+    this.isSaving = true;
+    const user = this._authService.getLoggedInUser();
+    this.entity.branchId = +user.branchId;
+    this._transportService.add(this.entity).subscribe({
+      next: res => {
+        this.isSaving = false;
+        if (res.code === '200') {
+          this.entity.id = res.data?.id;
+          this.entity.refNo = res.data?.refNo;
+          this.routeConfirmed = true;
+          this.showVehiclePanel = true;
+          this._notif.printSuccessMessage('Đã chốt cung đường — Lệnh ' + (this.entity.refNo || ''));
+        } else {
+          this._notif.printErrorMessage(res.message || 'Có lỗi xảy ra');
+        }
+      },
+      error: () => { this.isSaving = false; this._notif.printErrorMessage('Lỗi kết nối server'); }
+    });
+  }
+
   save() {
-    if (!this.entity.isSubcontractors && !this.entity.vehicleId) {
-      this._notif.printErrorMessage('Vui lòng chọn số xe');
+    if (!this.entity.vehicleId) {
+      this._notif.printErrorMessage('Vui lòng chọn biển số xe');
       return;
     }
     if (!this.entity.driverId) {
       this._notif.printErrorMessage('Vui lòng chọn tài xế');
       return;
     }
-    if (this.locations.length < 2) {
-      this._notif.printErrorMessage('Lộ trình cần ít nhất 2 điểm');
-      return;
-    }
-
     this.isSaving = true;
-    const user = this._authService.getLoggedInUser();
-    this.entity.branchId = +user.branchId;
-
-    const action = this.entity.id
-      ? this._transportService.update(this.entity)
-      : this._transportService.add(this.entity);
-
-    action.subscribe(res => {
-      this.isSaving = false;
-      if (res.code === '200') {
-        this._notif.printSuccessMessage('Lưu lệnh vận chuyển thành công');
-        this.SaveSuccess.emit(res.data);
-        this.hide();
-      } else {
-        this._notif.printErrorMessage(res.message || 'Có lỗi xảy ra');
-      }
-    }, () => {
-      this.isSaving = false;
-      this._notif.printErrorMessage('Lỗi kết nối server');
+    this._transportService.update(this.entity).subscribe({
+      next: res => {
+        this.isSaving = false;
+        if (res.code === '200') {
+          this._notif.printSuccessMessage('Lưu lệnh vận chuyển thành công');
+          this.SaveSuccess.emit(res.data);
+          this.hide();
+        } else {
+          this._notif.printErrorMessage(res.message || 'Có lỗi xảy ra');
+        }
+      },
+      error: () => { this.isSaving = false; this._notif.printErrorMessage('Lỗi kết nối server'); }
     });
+  }
+
+  updateState(status: number, feedback?: string) {
+    const item = Object.assign({}, this.entity);
+    item.status = status;
+    if (feedback !== undefined) item.feedback = feedback;
+    this._transportService.update(item).subscribe({
+      next: res => {
+        if (res.code === '200') {
+          this._notif.printSuccessMessage(MessageContstants.UPDATED_OK_MSG);
+          this.SaveSuccess.emit(res.data);
+          this.hide();
+        } else {
+          this._notif.printErrorMessage(MessageContstants.UPDATED_ERR_MSG + res.code);
+        }
+      }
+    });
+  }
+
+  duyetB1() {
+    this._notif.printConfirmationYesNo('Chốt duyệt B1 lệnh vận chuyển?', () => {
+      this._transportService.update(this.entity).subscribe({
+        next: res => { if (res.code === '200') this.updateState(3); }
+      });
+    }, () => { });
+  }
+
+  duyetB2() {
+    this._notif.printConfirmationYesNo('Duyệt B2 lệnh vận chuyển?', () => {
+      this.updateState(4);
+    }, () => { });
+  }
+
+  chotLenh() {
+    this._notif.printConfirmationYesNo('Chốt lệnh vận chuyển này?', () => {
+      this.updateState(6);
+    }, () => { });
+  }
+
+  tuchoiB1() {
+    const retVal = prompt('Lý do từ chối duyệt B2', '');
+    if (retVal && retVal.length > 0) this.updateState(2, retVal);
+  }
+
+  tuchoiChotLenh() {
+    const retVal = prompt('Lý do từ chối chốt lệnh', '');
+    if (retVal && retVal.length > 0) this.updateState(3, retVal);
   }
 
   // ── CHI TIẾT CÔNG VIỆC ──
@@ -809,6 +923,9 @@ export class ModalTransportOrderComponent {
     this.entity.segments = this.locations.slice(0, -1).map((loc, i) => {
       const next = this.locations[i + 1];
       const prev = existing.find(s => s.startLocationId === loc.locationId && s.endLocationId === next.locationId);
+      if (!prev && loc.locationId && next.locationId) {
+        this._fetchSegmentHistory(i, loc.locationId, loc.locationType ?? 1, next.locationId, next.locationType ?? 1);
+      }
       return {
         orderIndex: i,
         startLocationId: loc.locationId,
@@ -827,12 +944,61 @@ export class ModalTransportOrderComponent {
         fuelAmountCalculated: prev?.fuelAmountCalculated,
         routePolyline: prev?.routePolyline,
         listWaypoints: prev?.listWaypoints ?? [],
-        listEtc: prev?.listEtc ?? []
+        listStations: prev?.listStations ?? []
       };
     });
     this.segmentCalculating = new Array(this.entity.segments.length).fill(false);
     this.calculateTotal();
     this.calulateOil();
+  }
+
+  private _fetchSegmentHistory(index: number, startId: number, startType: number, endId: number, endType: number) {
+    this._transportService.getSegmentHistory(startId, startType, endId, endType).subscribe({
+      next: res => {
+        if (res?.code !== '200' || !res.data) return;
+        const seg = this.entity.segments?.[index];
+        if (!seg || seg.startLocationId !== startId || seg.endLocationId !== endId) return;
+        const d = res.data;
+        if (d.routePolyline) {
+          seg.routePolyline = d.routePolyline;
+          if (d.distanceKm) seg.distanceKm = d.distanceKm;
+          if (d.fuelNorm) seg.fuelNorm = d.fuelNorm;
+          if (d.fuelAmountCalculated) seg.fuelAmountCalculated = d.fuelAmountCalculated;
+          if (d.etcCost) seg.etcCost = d.etcCost;
+        }
+        if (d.waypointsJson) {
+          try { seg.listWaypoints = JSON.parse(d.waypointsJson); } catch { }
+        }
+        // Chỉ load stations từ defaults (isDefault=true), không load từ lịch sử lệnh
+        if (d.isDefault && d.listStations?.length) seg.listStations = d.listStations;
+        this._applyTollPrices();
+        this.calulateOil();
+      }
+    });
+  }
+
+  saveSegmentDefault(index: number) {
+    const seg = this.getSegment(index);
+    if (!seg?.distanceKm || !seg.startLocationId || !seg.endLocationId) return;
+    const payload: RouteSegmentDefault = {
+      startLocationId: seg.startLocationId,
+      startLocationType: seg.startLocationType ?? 1,
+      endLocationId: seg.endLocationId,
+      endLocationType: seg.endLocationType ?? 1,
+      distanceKm: seg.distanceKm,
+      fuelNorm: seg.fuelNorm,
+      fuelAmountCalculated: seg.fuelAmountCalculated,
+      etcCost: seg.etcCost,
+      routePolyline: seg.routePolyline,
+      waypointsJson: seg.listWaypoints?.length ? JSON.stringify(seg.listWaypoints) : null,
+      listStations: seg.listStations ?? []
+    };
+    this._transportService.saveSegmentDefault(payload).subscribe({
+      next: res => {
+        if (res?.code === '200') this._notif.printSuccessMessage('Đã lưu làm mặc định cho cung đường này.');
+      },
+      error: () => this._notif.printErrorMessage('Lưu mặc định thất bại.')
+    });
   }
 
   private _segmentsToLocations(segments: TransportOrderSegment[]): LocationItem[] {
@@ -847,33 +1013,58 @@ export class ModalTransportOrderComponent {
     return locs;
   }
 
-  /** Parse toll data từ VietMap response — lấy loại xe `vehicleType` */
-  private _parseTollStations(tollData: any, vehicleType: number): TransportOrderSegmentEtc[] {
+  /** Parse toll data từ VietMap response — build SegmentStation với allPrices đầy đủ */
+  private _parseTollStations(tollData: any): SegmentStation[] {
     if (!tollData || !Array.isArray(tollData)) return [];
-    const entry = tollData.find((t: any) => t.vehicle === vehicleType);
-    if (!entry?.data) return [];
-    try {
-      const d = typeof entry.data === 'string' ? JSON.parse(entry.data) : entry.data;
-      const stations: any[] = d?.stations || d?.toll_stations || [];
-      return stations.map((s: any) => ({
-        stationId: s.id || s.station_id,
-        stationName: s.name || s.station_name || 'Trạm thu phí',
-        price: s.price || s.fee || 0
-      }));
-    } catch { return []; }
+    // Build map: vietmapId → {vehicle: price}
+    const priceMap: { [id: number]: { [v: number]: number } } = {};
+    tollData.forEach((entry: any) => {
+      entry.data?.tolls?.forEach((t: any) => {
+        if (!priceMap[t.id]) priceMap[t.id] = {};
+        priceMap[t.id][entry.vehicle] = t.price || 0;
+      });
+    });
+    // Lấy danh sách trạm từ vehicle=1 (tên nhất quán giữa các loại)
+    const base = tollData.find((t: any) => t.vehicle === 1);
+    if (!base?.data?.tolls) return [];
+    return base.data.tolls.map((t: any) => ({
+      vietmapId: t.id,
+      stationName: t.name || 'Trạm thu phí',
+      price: 0,
+      allPrices: JSON.stringify(priceMap[t.id] || {})
+    }));
   }
 
-  private _fetchTollForSegment(segIndex: number) {
+  // vihicleTypeBotId (DB) → Vietmap vehicle type key (1-5)
+  private readonly _botTypeMap: Record<number, number> = { 1132: 1, 1133: 2, 1134: 3, 1135: 4, 1136: 5 };
+
+  private _applyTollPrices() {
+    const vietmapKey = this._vehicleBotTypeId ? (this._botTypeMap[this._vehicleBotTypeId] ?? null) : null;
+    (this.entity.segments || []).forEach(seg => {
+      (seg.listStations || []).forEach(station => {
+        if (!station.allPrices) return;
+        try {
+          const prices = JSON.parse(station.allPrices);
+          station.price = vietmapKey ? (prices[vietmapKey] || 0) : 0;
+        } catch { station.price = 0; }
+      });
+    });
+    this.calculateTotal();
+  }
+
+  private _fetchTollForSegment(segIndex: number, waypoints?: { lat: number; lng: number }[]) {
     const seg = this.entity.segments?.[segIndex];
     if (!seg?.startLat || !seg?.endLat) return;
-    this.http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, {
-      points: [{ lat: seg.startLat, lng: seg.startLng }, { lat: seg.endLat, lng: seg.endLng }]
-    }).pipe(catchError(() => of(null))).subscribe(res => {
-      if (res?.toll) {
-        seg.listEtc = this._parseTollStations(res.toll, 2);
-        this.calculateTotal();
-      }
-    });
+    const points = (waypoints?.length >= 2)
+      ? waypoints
+      : [{ lat: seg.startLat, lng: seg.startLng }, { lat: seg.endLat, lng: seg.endLng }];
+    this.http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, { points })
+      .pipe(catchError(() => of(null))).subscribe(res => {
+        if (res?.toll) {
+          seg.listStations = this._parseTollStations(res.toll);
+          this._applyTollPrices();
+        }
+      });
   }
 
   private _loadAllLocations() {
@@ -895,7 +1086,7 @@ export class ModalTransportOrderComponent {
     this._vihicleService.getAll(
       new HttpParams().set('branchid', branchId).set('vihicletype', typeId.toString())
     ).subscribe((res: ResponseValue<Vihicle[]>) => {
-      this.listVehiclesFiltered = res.data || [];
+      this.listVehiclesFiltered = (res.data || []).filter(v => ![17, 18, 1309].includes(v.vihicleTypeId));
     });
   }
 
@@ -903,9 +1094,16 @@ export class ModalTransportOrderComponent {
     const user = this._authService.getLoggedInUser();
     const branchId = user?.branchId?.toString() || '0';
 
-    this._vihicleService.getAllMooc(
-      new HttpParams().set('branchid', branchId)
-    ).subscribe((res: ResponseValue<Vihicle[]>) => this.listMoocs = res.data || []);
+    forkJoin({
+      vehicles: this._vihicleService.getAll(new HttpParams().set('branchid', branchId).set('vihicletype', '0')),
+      moocs: this._vihicleService.getAllMooc(new HttpParams().set('branchid', branchId))
+    }).subscribe(({ vehicles, moocs }: { vehicles: ResponseValue<Vihicle[]>, moocs: ResponseValue<Vihicle[]> }) => {
+      this.listMoocs = [
+        { id: 0, licensePlates: 'Đầu kéo không' } as Vihicle,
+        ...(moocs.data || [])
+      ];
+      this.listVehicles = (vehicles.data || []).filter(v => ![17, 18, 1309].includes(v.vihicleTypeId));
+    });
 
     this._otherService.getAll(
       new HttpParams().set('type', 'VIHITYPE')

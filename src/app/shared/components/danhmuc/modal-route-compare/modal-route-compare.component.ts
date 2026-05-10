@@ -12,6 +12,7 @@ export interface CompareRouteResult {
   km: number;
   steps: { lat: number; lng: number; name: string; distanceM: number }[];
   polyline: string;
+  note?: string;
 }
 
 interface RouteStats {
@@ -41,6 +42,9 @@ export class ModalRouteCompareComponent {
   googleError: string | null = null;
   vietmapStats: RouteStats | null = null;
   googleStats: RouteStats | null = null;
+
+  showWarning = false;
+  warningReason = '';
 
   private vietmapMap: any;
   private googleMap: any;
@@ -78,6 +82,8 @@ export class ModalRouteCompareComponent {
     this.vietmapMarkers = [];
     this.vietmapCurrentPolyline = null;
     this.vietmapCurrentSteps = [];
+    this.showWarning = false;
+    this.warningReason = '';
     this.modalCompare.show();
   }
 
@@ -88,24 +94,28 @@ export class ModalRouteCompareComponent {
 
   selectVietmap() {
     if (!this.vietmapStats) return;
+    const kmDiff = this.googleStats ? (this.vietmapStats.km - this.googleStats.km) : 0;
+    if (kmDiff >= 1) {
+      this.showWarning = true;
+      this.warningReason = '';
+    } else {
+      this._emitVietmap('');
+    }
+  }
+
+  confirmVietmapSelection() {
+    if (!this.warningReason.trim()) return;
+    this._emitVietmap(this.warningReason.trim());
+  }
+
+  private _emitVietmap(note: string) {
     this.RouteSelected.emit({
       provider: 'vietmap',
       summary: 'Vietmap',
       km: this.vietmapStats.km,
       steps: this.vietmapStats.steps,
-      polyline: this.vietmapStats.polyline
-    });
-    this.modalCompare.hide();
-  }
-
-  selectGoogle() {
-    if (!this.googleStats) return;
-    this.RouteSelected.emit({
-      provider: 'google',
-      summary: 'Google Maps',
-      km: this.googleStats.km,
-      steps: this.googleStats.steps,
-      polyline: this.googleStats.polyline
+      polyline: this.vietmapStats.polyline,
+      note
     });
     this.modalCompare.hide();
   }

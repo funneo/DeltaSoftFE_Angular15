@@ -30,6 +30,7 @@ import { SummarySupplierCostsService } from "@app/shared/services/accounting/sum
 import { MessageContstants } from "@app/shared/constants";
 import { NgForm } from "@angular/forms";
 import { DispatchOrderCbt } from "@app/shared/models/cbt/dispatch-order-cbt.model";
+import { DriverFuelApproval } from "@app/shared/models/transports/driver-fuel-approval.model";
 import * as moment from "moment";
 import { Dispatchorder } from "@app/shared/models/transports/dispatchorders/dispatchorder";
 import { ModalPhieuChiComponent } from "../modal-phieu-chi/modal-phieu-chi.component";
@@ -79,6 +80,7 @@ export class ModalSummarySupplierCostComponent implements OnInit {
     private supplierService: SupplierService,
     private _utilityService: UtilityService,
     private dispatchOrderService: DispatchordersService,
+    private driverFuelApprovalService: DriverFuelApprovalService,
   ) { }
 
   ngOnInit(): void {
@@ -284,8 +286,24 @@ export class ModalSummarySupplierCostComponent implements OnInit {
           }
         );
         break;
-      case 1: //Nếu là lệnh CBT
-        this.isLoadingDetails = false;
+      case 1: //Phiếu mua dầu
+        this.driverFuelApprovalService.getBySupplierForAccount(event.id).subscribe({
+          next: (res: ResponseValue<DriverFuelApproval[]>) => {
+            this.isLoadingDetails = false;
+            if (res.code == '200' || res.code == '201') {
+              this.entity.details = res.data.map((item) => ({
+                refNo: item.refNo,
+                contents: item.driverName + (item.licensePlate ? ' - ' + item.licensePlate : ''),
+                amount: item.totalCostIgas ?? 0,
+                notes: item.note,
+                createdDate: item.createdDate,
+                selected: true
+              }));
+              this.calculateTotal();
+            }
+          },
+          error: () => { this.isLoadingDetails = false; }
+        });
         break;
       case 2: //Nếu là phiếu cấp dầu
         this.isLoadingDetails = false;

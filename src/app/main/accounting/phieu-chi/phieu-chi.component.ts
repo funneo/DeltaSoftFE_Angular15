@@ -354,9 +354,6 @@ export class PhieuChiComponent implements OnInit {
       }
     });
   }
-  export() {
-    this._export.exportExcel(this.listFilter, 'bao-cao-phieu-chi');
-  }
 
   print() {
     let listChecks = this.listAccounts.filter(x => x.checked);

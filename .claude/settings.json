@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//d/Delta/DeltaSoft/NewAPI/API/Controllers/Categories/**)",
+      "Read(//d/Delta/DeltaSoft/NewAPI/API/**)",
+      "Read(//d/Delta/DeltaSoft/NewAPI/**)",
+      "Read(//d/Delta/DeltaSoft/**)",
+      "Bash(xargs grep *)",
+      "Bash(ng build *)"
+    ],
+    "additionalDirectories": [
+      "d:\\Delta\\DeltaSoft\\NewAPI\\API\\Controllers\\Categories",
+      "d:\\Delta\\DeltaSoft\\NewAPI\\API\\Repositories",
+      "d:\\Delta\\DeltaSoft\\NewAPI\\API\\Services",
+      "d:\\Delta\\DeltaSoft\\NewAPI\\API\\Models\\Transports"
+    ]
+  }
+}

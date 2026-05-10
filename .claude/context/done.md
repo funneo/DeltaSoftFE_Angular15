@@ -77,7 +77,35 @@
 - ShippingTask BE model: thêm PickupLatitude, PickupLongitude, DeliveryLatitude, DeliveryLongitude
 - Transport order SQL migration: ALTER TABLE Segments (StartLocationType, EndLocationType, RoutePolyline), CREATE TABLE Tbl_TransportOrder_Segment_Waypoints, DROP/CREATE TVP TypeTransportOrderSegment + TypeTransportOrderSegmentWaypoint, SP_TransportOrder_Create/Update/GetById cập nhật waypoints
 - Transport order modal: **bảng tải trọng + km per-segment** — tách khỏi giữa các điểm, đặt thành table riêng (Chặng / Tải trọng / Km / Dầu ĐM) ngay trên Tổng dầu ĐM; ng-select appendTo="body" tránh bị clip; km change gọi cả calulateOil() để ra số lít ngay
-- Transport order modal: **_rebuildSegments fix** — match theo startLocationId+endLocationId thay vì index, giữ nguyên payloadWeight/fuelNorm/fuelAmountCalculated/routePolyline/listWaypoints/listEtc khi thêm/xóa/kéo thả điểm
+- Transport order modal: **_rebuildSegments fix** — match theo startLocationId+endLocationId thay vì index, giữ nguyên payloadWeight/fuelNorm/fuelAmountCalculated/routePolyline/listWaypoints/listStations khi thêm/xóa/kéo thả điểm
+- Transport order: **bỏ 3 field DB** `LuotdiQuabai`, `LuotveQuabai`, `IsExport` — xóa khỏi SQL migration (STEP 0 idempotent), BE model, BE repository (CreateAsync + UpdateAsync), FE model
+- Transport order: **fix SQL migration TVP drop order** — `SP_RouteSegmentDefault_Save` phải DROP trước `TypeRouteSegmentDefaultStation`
+- Transport order: **fix CreateAsync trả 400** — đổi từ `ExecuteAsync` → `ExecuteScalarAsync<int>` để đọc `SELECT @NewId AS NewId`; controller sau create gọi `GetById(newId)` trả entity đầy đủ (có `id` + `refNo`) cho FE
+- Transport order: **fix UpdateAsync trả 400** — `ExecuteAsync` + `SET NOCOUNT ON` trả 0; thêm `return 1` sau ExecuteAsync
+- Transport order: **fix ToDataTable TVP** — thay `Enumerable.Empty<dynamic>()` bằng typed empty collections tránh lỗi "not enough fields in Structured type"
+- Transport order: **fix Dapper parse error** — `CreatedBy`/`UpdatedBy` giữ `Guid?` trong BE model; user tự sửa kiểu cột trong DB thành `uniqueidentifier`
+- Transport order list: **trang list mới** tại `/main/transports/transport-order` — toolbar (date range + chi nhánh + lái xe + keyword + Sửa/Xóa), bảng 15 cột + filter row, badge trạng thái semantic, pagination 50/trang, localStorage filter state, click RefNo mở modal edit; không có nút Thêm mới
+- Transport order modal: **khi edit khóa cung đường** — `lastSegmentFinal=true`, dropdown chặng cuối `disabled`, ẩn cột trái pool điểm (`*ngIf="!routeConfirmed"`)
+- Transport order modal: **RefNo header badge** — tách RefNo thành `<span class="to-header-refno">` với nền vàng `#f0b429`, `font-weight: 800`, shadow
+- Transport order modal: **chi tiết công việc flat fields** — BE `TransportOrderDetail` thêm `JobId`, `ContType`, `SealNumber`, `ReferCode`, `PickupTime`, `PortOfLiftingName`, `PortOfLiftOffName`; FE model + HTML tab dùng `item.shippingTaskItem?.xxx || item.xxx` fallback; SP Result 6 cần UPDATE tay trong SSMS (template SQL đã cung cấp)
+- Transport order: **Segment_Etcs → Segment_Stations** (2026-04-28):
+  - Xóa nút "Thêm trạm thủ công" khỏi TO modal; tab "Chi phí" ẩn đến khi chốt cung đường; xe/lái xe luôn hiển thị
+  - Model mới `SegmentStation` (FE) / `TransportOrderSegmentStation` (BE): `vietmapId INT`, `stationName`, `price` (theo loại xe), `allPrices` (JSON 5 loại), `isAvoided`; thay `listEtc` → `listStations` trên segment
+  - `modal-vietmap-routes`: `_lastTollRaw` cache raw API response; `selectRoute()` build `allPrices` JSON từ 5 vehicle entries; emit `SegmentStation[]` với real Vietmap station ID
+  - SQL migration: `Migration_TransportOrder_Stations_20260428.sql` — Drop Segment_Etcs table + TVP, Create Segment_Stations + TVP, Recreate SP_Create/Update/GetById, thêm `SP_TransportOrder_GetSegmentHistory` (trả 2 result sets)
+  - BE: mới `TransportOrderSegmentStation.cs`; cập nhật `TransportOrderSegment.cs` (ListEtc→ListStations); `TransportOrderRepository` — CreateAsync/UpdateAsync/GetById/GetSegmentHistory đều dùng SP, xóa toàn bộ inline SQL
+  - `TransportOrder.cs` BE thêm 8 field còn thiếu: `StartedDate`, `Finished`, `NoteFinished`, `FinishedDate`, `StartVehicleOdor`, `StartEupOdor`, `FinishVehicleOdor`, `FinishEupOdor`
+  - SP_Create + SP_Update bổ sung đủ 11 tham số vận hành: `IsFuelApproval`, `IsRePaymentEtc`, `IsEmployeeDebitClosing`, `StartedDate`, `Finished`, `NoteFinished`, `FinishedDate`, 4 Odor fields
+  - ✅ Migration SQL đã chạy thành công trong SSMS (2026-04-29)
+- Transport order modal: **2-bước redesign** (2026-04-28):
+  - Bước 1 "Khởi tạo cung đường": bỏ toggle nhà thầu phụ; panel phải luôn hiện chứa bảng chặng (chọn chặng cuối); xe/lái xe/bù dầu ẩn cho đến khi chốt; footer 1 nút "Hủy cung đường" → xuất hiện "Chốt cung đường" khi chọn chặng cuối
+  - Bước 2 "Lệnh Vận Chuyển — REFNO": `confirmRoute()` gọi `add()` → nhận `{id, refNo}`, set `routeConfirmed=true`; xe/lái xe/bù dầu hiện ra; footer "Hủy" + "Lưu" + duyệt B1/B2/Chốt/Từ chối theo status
+  - Biển số xe: ng-select toàn bộ xe (`listVehicles` load khi mở modal, `vihicletype=0`), chọn xe auto-set `entity.vehicleType = vehicle.vihicleTypeId` (ẩn)
+  - Bỏ "Loại xe" và "Loại Cont" khỏi form
+  - Thêm `ngOnInit()`, permissions `TO_CLOSING` / `TO_ACCEPT`
+  - Approval methods: `updateState()`, `duyetB1()`, `duyetB2()`, `chotLenh()`, `tuchoiB1()`, `tuchoiChotLenh()`
+  - SCSS: thêm `.to-action-footer` + `.to-footer-spacer`
+  - Toggle bar: "Thông tin cung đường" + "Chi tiết công việc & Chi phí lệnh"
 - SP_GetAllLocations: UNION ALL CustomerLocations + Ports với locationType discriminator (1=KH, 2=Cảng)
 - SP_CustomerLocations_UpdateGeocode, SP_Ports_UpdateGeocode
 - ShippingTask SP getBy*: JOIN thêm PickupLatitude, PickupLongitude, DeliveryLatitude, DeliveryLongitude
@@ -124,6 +152,9 @@
 - On-behalf payments
 - Summary supplier costs
 - Debit/credit reports
+- **DriverFuelApproval.IsPaymented** bool — thêm vào BE model (`DriverFuelApproval.cs`) + FE interface (`driver-fuel-approval.model.ts`)
+- **SP_DriverFuelApproval_GetBySupplier_ForAccount** — interface + repo + controller endpoint `POST /api/DriverFuelApproval/get-by-supplier-for-account`; FE: `getBySupplierForAccount(supplierId)` trong `DriverFuelApprovalService`
+- **modal-summary-supplier-cost type=1 "Phiếu mua dầu"**: `supplierChanged()` case 1 load phiếu dầu theo NCC; mapping `driverName + licensePlate → contents`, `totalCost → amount`, `note → notes`
 - **phiếu chi / phiếu thu list**: server-side paging — pageSize mặc định 20, dropdown chọn 10/20/50/100, totalRows từ `res.data.totalRows`, pagination controls ngx-bootstrap
 - **modal-phieu-chi-lenh** redesign toàn diện:
   - Checkbox chọn từng dòng phí; chọn 1 dòng → auto check/uncheck toàn bộ dòng cùng refNo
@@ -194,6 +225,12 @@
 - **AI Invoice Extraction — frontend hoàn chỉnh**: `GeminiAiService` gọi `POST /api/geminiAI/extract-invoice`; `modal-doc-hoa-don` hiển thị kết quả (vendor, customer, hóa đơn, bảng hàng hóa, link + URL đầy đủ, ảnh preview); nút "Đọc hóa đơn" ở header list Thanh toán; modal rộng 90vw
 - **Pending Invoice — SQL Migration**: `Tbl_PendingInvoice` + 7 SPs: Create, GetPending (filter EmployeeId/ngày/vendor), GetById, MarkPaid, Delete, CheckDuplicate; lưu FileName + PathFile (local + S3); CreatedDate convention
 
+## Module Tính Lương Lái Xe — Thiết kế (2026-05-03)
+- **Thiết kế đầy đủ, chưa implement**: Tài liệu `KeHoach_TOANBO_LuongLaiXe.docx` (33.8 KB) tại `D:\Delta\DeltaSoft\NewAPI\` — công thức tổng quát, schema DB (ALTER 4 bảng hiện có + 5 bảng mới + 2 type OtherCategories), bảng cấu hình DayWage (~30 rows) + Km (5 rows) + Milkrun 42 tuyến, kế hoạch 4 phase. Lưu vào memory `project_driver_salary_module.md`.
+- **Công thức**: `LuongPhaiTra = MAX(5.310.000, LuongKinhDoanh)` trong đó `LuongKinhDoanh = SUM(per lệnh: DayWage + MAX(LuongKms, TripMin) + PhuCapLenh) + PhuCapThangCoDinh + ThuongPhatDau`
+- **Schema**: ALTER `Tbl_VehicleTypes` (+SalaryVehicleClassId), `Tbl_Employees` (+DriverSalaryTypeId TINYINT), `Tbl_TransportOrders` (+RouteGroupId), `Tbl_Routes` (+TripSalaryMin); tái dụng `OtherCategories` với 2 type mới (SALARY_ROUTE_GROUP: GR01-GR10, SALARY_VEHICLE_CLASS: VC01-VC05)
+- **Bảng mới**: `Tbl_DriverSalaryDayWageConfig`, `Tbl_DriverSalaryKmsConfig`, `Tbl_DriverSalaryMilkrunConfig` (42 tuyến MC/MF/MK/MZ/MG/MN), `Tbl_DriverSalary`, `Tbl_DriverSalaryDetail`
+
 ## Ports (Cảng bãi)
 - Model FE: đổi `groupPort` (string) → `groupPortId: number` + `groupPortName: string`
 - SQL migration `Ports_GroupPort_And_IsAvoided_Migration.sql` (file tại `NewAPI/`):
@@ -201,6 +238,42 @@
   - Part B: hướng dẫn patch SP_TransportOrder_Create/Update thêm `IsAvoided` vào INSERT Tbl_TransportOrder_Segment_Etcs
   - ⚠️ Migration chưa chạy — cần chạy trong SSMS trước khi BE hoạt động đúng
 - GroupPorts FCL: `getAllGroupPorts()` trong `PortsService` vẫn giữ nguyên; FCL modal components tiếp tục dùng
+
+## Transport Order (TO) — Fixes & Data Layer (2026-04-29)
+- **Xóa 3 field không dùng**: `LuotdiQuabai`, `LuotveQuabai`, `IsExport` bị loại khỏi `Tbl_TransportOrders` (STEP 0 migration: `ALTER TABLE DROP COLUMN` idempotent), khỏi SP_Create/Update (param + INSERT + SET), BE model `TransportOrder.cs`, FE model `transport-order.model.ts`
+- **Fix TVP drop order**: STEP 12 migration — drop `SP_RouteSegmentDefault_Save` trước khi drop `TypeRouteSegmentDefaultStation` (SQL Server không cho drop TVP đang được tham chiếu)
+- **Fix `ToDataTable<dynamic>` bug**: `?? Enumerable.Empty<dynamic>()` khiến compiler suy ra `T=dynamic=object` → DataTable 0 cột → SQL Server error "not enough fields in Structured type". Fix: thay bằng `(coll ?? Enumerable.Empty<ConcreteType>()).Select(...)` trong cả CreateAsync lẫn UpdateAsync cho cả 4 TVP (segments, stations, waypoints, details, fees)
+- **Fix CreateAsync luôn trả 0**: `ExecuteAsync` với `SET NOCOUNT ON` luôn = 0 → controller branch `"400"/"Error"`. Fix: đổi sang `_conn.QueryFirstOrDefaultAsync<int>()` để đọc `SELECT @NewId AS NewId` từ SP → controller nhận `newId > 0` → `"200"/"Success"`
+- **Fix notification method names**: `this._notif.success/error` → `printSuccessMessage/printErrorMessage` trong `saveSegmentDefault()`
+- **"Lưu mặc định" button**: thêm nút `btn-segment-save-default` vào `segment-map-btn-row` (HTML + SCSS); hiện khi `distanceKm` có giá trị, disabled khi chưa có `routePolyline`; gọi `saveSegmentDefault(i)`
+
+## Transport Order List — trang danh sách `/main/transports/transport-order` (2026-04-29)
+- Lazy-loaded module `TransportOrderModule` → route `/main/transports/transport-order`
+- Filter bar: date range + branch (admin) + driver (client-side) + keyword (server-side)
+- Table: 15 cột — status badge, RefNo link, referCode, ngày, người lập, đơn vị VC, lái xe + SĐT, biển số (plate badge), mooc, lộ trình, tongKm, tongdau, ghi chú, flags (isFuelApproval, isSummarized)
+- Filter row per-column + status dropdown (9 trạng thái) — client-side
+- Paging 50/trang với ngx-bootstrap pagination
+- Click row chọn; click RefNo mở modal edit; Sửa/Xóa buttons (xóa chỉ cho phép status=0)
+- Save params vào localStorage khi mở modal → restore khi quay về
+- Không có nút "Thêm mới" — thêm mới phải từ giao diện thực hiện việc
+- Design hiện đại: card + shadow, gradient header, status pill badge màu semantic, plate badge, spinner
+
+## Transport Order (TO) — Fixes (2026-05-09)
+- **Warning compare modal — tiêu đề rõ**: đổi text cảnh báo khi Vietmap > Google ≥1km thành *"Hãy điều chỉnh lại cung đường theo Google Maps, nếu vẫn muốn sử dụng VietMap, hãy trình bày lý do tại sao lại sử dụng cung đường lớn hơn."* + hiển thị km 2 bên nhỏ phía dưới
+- **Tóm tắt lệnh ẩn trạm 0đ**: getter `allTollStations` filter `price > 0` → bảng tự ẩn khi toàn bộ trạm chưa có giá (chưa chọn xe)
+
+## Transport Order (TO) — Fixes (2026-05-08)
+- **Fix DeleteAsync trả 400**: `ExecuteAsync` với `SET NOCOUNT ON` trả 0 → controller `result > 0` false → báo lỗi dù đã xóa. Fix: `await ExecuteAsync(...)` rồi `return 1` (cùng pattern với UpdateAsync). BE: `TransportOrderRepository.DeleteAsync`
+- **Fix list TO reload sau xóa**: bỏ `list.filter + filterData()` thừa trong `deleteConfirm()`, chỉ giữ `loadData()` (nó gọi `filterData()` bên trong)
+- **Nút xóa chỉ admin thấy**: `*ngIf="adminPermission"` trên delete button trong `transport-order.component.html`
+- **Lọc mooc khỏi listVehicles**: hardcode `![17, 18, 1309].includes(v.vihicleTypeId)` cho cả `listVehicles` (load khi mở modal) lẫn `listVehiclesFiltered` (load khi chọn loại xe)
+- **Fix mapping giá trạm thu phí**: `vihicleTypeBotId` trong DB dùng giá trị `1132–1136`, không phải `1–5`. Thêm `_botTypeMap: {1132:1, 1133:2, 1134:3, 1135:4, 1136:5}` → `_applyTollPrices()` dùng map này tra key Vietmap trước khi đọc `allPrices`
+- **Toll price = 0 khi chưa chọn xe**: `_parseTollStations()` luôn gán `price: 0`; `_applyTollPrices()` chỉ fill giá khi `_vehicleBotTypeId` có giá trị và tồn tại trong `_botTypeMap`
+- **Google Maps compare chỉ tham khảo**: ẩn nút "Dùng tuyến Google" trong `modal-route-compare`; đổi tên Vietmap button → **"Xác nhận cung đường"**
+- **Warning khi Vietmap > Google ≥ 1km**: nếu `vietmapKm - googleKm >= 1` → hiện box cảnh báo + textarea bắt buộc nhập lý do trước khi confirm; `CompareRouteResult` thêm `note?: string`; `TransportOrderSegment` thêm `note?: string`; `_applyCompareRoute()` lưu `seg.note = event.note`; nếu km nhỏ hơn thì `seg.note = ''`
+- **Tải trọng (payloadWeight) readonly khi đã tạo lệnh**: `[disabled]="routeConfirmed"` trên ng-select tải trọng
+- **Km per-segment luôn readonly**: `[readonly]="true"` trên input distanceKm — chỉ cập nhật qua Vietmap/compare, không cho nhập tay ở bất kỳ bước nào
+- **Tổng km chỉ tính từ segment có cung đường**: `calculateTotal()` chỉ cộng `distanceKm` của segment có `routePolyline`; `_fetchSegmentHistory()` chỉ fill `distanceKm/fuelNorm/etcCost` khi response cũng có `routePolyline` → chọn điểm xong tổng km vẫn = 0 cho đến khi chọn cung đường Vietmap
 
 ## Transport Order (TO) — UI & Logic Enhancements
 - **Layout 3:7** — cột lộ trình : thông tin lệnh (SCSS flex 3 / 6→7)

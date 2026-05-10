@@ -51,6 +51,7 @@ export class ReportShipmentNotDebitComponent implements OnInit {
   luonghangSearch?:string='';
   cbmSearch?:string='';
   kienhangSearch?:string='';
+  ghichuSearch?:string='';
 
   dateOptions = this._utilityService.dateOptionMultis(this.ngayBatDau, this.ngayKetThuc);
   listBranch:Branch[];
@@ -301,6 +302,10 @@ export class ReportShipmentNotDebitComponent implements OnInit {
     if(this.kienhangSearch?.length>0)
     this.listFilter=this.listFilter.filter((data)=>{
       return data.package?.toString().toLowerCase().includes(this.kienhangSearch.trim().toLocaleLowerCase());
+    });
+    if(this.ghichuSearch?.length>0)
+    this.listFilter=this.listFilter.filter((data)=>{
+      return data.note?.toLowerCase().includes(this.ghichuSearch.trim().toLocaleLowerCase());
     });
   }
 

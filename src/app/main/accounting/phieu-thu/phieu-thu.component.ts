@@ -333,10 +333,6 @@ export class PhieuThuComponent implements OnInit {
       }
     });
   }
-  export() {
-    this._export.exportExcel(this.listFilter, 'bao-cao-phieu-thu');
-  }
-
   print() {
     let listChecks = this.listAccounts.filter(x => x.checked);
     if (listChecks.length == 0) {
