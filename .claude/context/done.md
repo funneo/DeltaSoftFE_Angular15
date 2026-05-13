@@ -111,6 +111,24 @@
 - ShippingTask SP getBy*: JOIN thêm PickupLatitude, PickupLongitude, DeliveryLatitude, DeliveryLongitude
 - Transport order: onAttachFileChanged() → S3 upload ảnh hiện trường
 - modal-route-compare: Google Maps phí BOT via Distance Matrix API
+- Transport order: **lọc mooc khỏi listVehicles** — hardcode `[17, 18, 1309]` là typeId mooc, lọc cả `listVehicles` lẫn `listVehiclesFiltered` trong `_loadVehiclesByType()`
+- Transport order: **fix toll price mapping** — `_botTypeMap: Record<number,number>` ánh xạ `vihicleTypeBotId` DB (1132-1136) → Vietmap API key (1-5); `_applyTollPrices()` dùng map trước khi tra `allPrices` JSON
+- Transport order list: **fix DeleteAsync 400** — `await ExecuteAsync(...)` rồi `return 1` (SET NOCOUNT ON trả 0, tương tự UpdateAsync fix); reload list sau xóa dùng `loadData()` thay filter local
+- Transport order modal: **payloadWeight readonly khi đã chốt** — `[disabled]="routeConfirmed"` trên ng-select tải trọng; km field luôn `[readonly]="true"`
+- Transport order list: **nút Xóa chỉ admin thấy** — `*ngIf="adminPermission"` trên delete button
+- **modal-route-compare redesign** (2026-05-10):
+  - Ẩn nút "Dùng tuyến Google" (Google chỉ để tham khảo)
+  - Đổi tên nút Vietmap → "Xác nhận cung đường"; `[disabled]="showWarning"` khi cảnh báo đang mở
+  - Cảnh báo km: nếu Vietmap > Google ≥ 1km → hiện warning box + textarea lý do; phải nhập lý do mới confirm
+  - Warning text: "dài hơn" (thay "lớn hơn")
+  - `CompareRouteResult` interface thêm `note?: string`; `_emitVietmap(note)` helper; `confirmVietmapSelection()` emit kèm note
+  - `show()` reset `showWarning` + `warningReason` mỗi lần mở modal
+- Transport order modal: **tổng km chỉ tính chặng đã chốt** — `calculateTotal()` + `_fetchSegmentHistory()` chỉ cộng/điền km khi `s.routePolyline` tồn tại
+- Transport order modal: **mooc "Đầu kéo không"** — prepend `{id:0, licensePlates:'Đầu kéo không'}` vào `listMoocs`
+- Transport order modal: **Container bắt buộc chọn mooc** — `confirmRoute()` kiểm tra `vehicleType===16 && entity.moocId == null` → toast lỗi; dùng `== null` thay `!moocId` vì `id=0` là falsy, tránh false-positive khi chọn "Đầu kéo không"
+- Transport order modal: **fix isLocInRoute** — signature `(locationId, taskId?, type?)`, check composite `locationId + taskId + type`; `addToRoute()` truyền `task.id + type`; HTML cập nhật 4 chỗ gọi; tránh gray nhầm card khi cùng địa điểm
+- Transport order modal: **Hướng dẫn cung đường** — `_rebuildDispatchSummarize()` gom `seg.note` thành "Chặng N: lý do"; gọi từ `_applyCompareRoute()` sau khi nhận note từ compare modal; HTML section `*ngIf="entity.dispatchSummarize"` với `<pre>` display; CSS `.dsg-route-note` / `.dsg-route-note-title` / `.dsg-route-note-content`
+- Transport order modal: **fix note accumulate** — `_applyCompareRoute()` dùng append thay ghi đè: `seg.note = seg.note ? old+'\n'+new : new`; nếu `event.note` rỗng (không cần lý do) giữ nguyên note cũ
 - Quotation subcontractors
 - Shipping tasks: CS, LG, OpMan views
 - Fuel/gas management: driver fuel approval, debit, limit

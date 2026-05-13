@@ -427,7 +427,9 @@ export class ModalTransportOrderComponent implements OnInit {
   private _applyCompareRoute(event: CompareRouteResult, segIndex: number, seg: TransportOrderSegment, fetchToll: boolean) {
     seg.distanceKm = +(event.km).toFixed(1);
     seg.routePolyline = event.polyline;
-    seg.note = event.note || '';
+    if (event.note) {
+      seg.note = seg.note?.trim() ? `${seg.note.trim()}\n${event.note}` : event.note;
+    }
     this._rebuildDispatchSummarize();
     seg.listWaypoints = event.steps.map((s, i) => ({
       orderIndex: i, lat: s.lat, lng: s.lng, name: s.name, distanceM: s.distanceM
@@ -745,7 +747,7 @@ export class ModalTransportOrderComponent implements OnInit {
       this._notif.printErrorMessage('Vui lòng chọn tải trọng cho tất cả các chặng trước khi chốt cung đường');
       return;
     }
-    if (this.entity.vehicleType === 16 && !this.entity.moocId) {
+    if (this.entity.vehicleType === 16 && this.entity.moocId == null) {
       this._notif.printErrorMessage('Xe Container bắt buộc phải chọn Mooc trước khi chốt cung đường');
       return;
     }
