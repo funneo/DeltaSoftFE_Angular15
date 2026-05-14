@@ -747,6 +747,11 @@ export class ModalTransportOrderComponent implements OnInit {
       this._notif.printErrorMessage('Vui lòng chọn tải trọng cho tất cả các chặng trước khi chốt cung đường');
       return;
     }
+    const missingFuelNorm = this.entity.segments?.some(s => !s.fuelNorm || s.fuelNorm <= 0);
+    if (missingFuelNorm) {
+      this._notif.printErrorMessage('Định mức dầu phải > 0 — vui lòng chọn xe có định mức dầu trước khi chốt cung đường');
+      return;
+    }
     if (this.entity.vehicleType === 16 && this.entity.moocId == null) {
       this._notif.printErrorMessage('Xe Container bắt buộc phải chọn Mooc trước khi chốt cung đường');
       return;

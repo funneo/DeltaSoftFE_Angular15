@@ -5,7 +5,17 @@
       "Bash(git commit -m ' *)",
       "Bash(npx tsc *)",
       "Bash(dotnet build *)",
-      "Bash(findstr \"error CS\")"
+      "Bash(findstr \"error CS\")",
+      "PowerShell($content = Get-Content -Path 'D:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\dispatchOrderFcl.sql' -Encoding Unicode; $matches = $content | Select-String -Pattern 'CREATE TABLE' -CaseSensitive; foreach \\($m in $matches\\) { Write-Output \\(\"Line {0}: {1}\" -f $m.LineNumber, $m.Line.Trim\\(\\)\\) })",
+      "Bash(powershell -Command \"Get-Content -Path 'transportOrder.sql' -Encoding Unicode | Select-String -Pattern 'CREATE TABLE \\\\[dbo\\\\]\\\\.\\\\[Tbl_TransportOrders\\\\]' -Context 0,3\")",
+      "PowerShell($content = Get-Content -Path 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\transportOrder.sql' -Encoding Unicode; $startLine = \\($content | Select-String -Pattern 'CREATE TABLE \\\\[dbo\\\\]\\\\.\\\\[Tbl_TransportOrders\\\\]\\\\\\('\\).LineNumber; $endLine = \\($content | Select-String -Pattern '^GO' | Where-Object { $_.LineNumber -gt $startLine } | Select-Object -First 1\\).LineNumber; $content[\\($startLine - 1\\)..\\($endLine - 1\\)])",
+      "Bash(tasklist)",
+      "Bash(findstr /I \"git\")",
+      "Bash(cd \"d:/Delta/DeltaSoft/web-app-update\" && rm .git/index.lock && echo \"lock removed\")",
+      "Bash(git config *)"
+    ],
+    "additionalDirectories": [
+      "d:\\Delta\\DeltaSoft\\web-app-update\\.git"
     ]
   }
 }

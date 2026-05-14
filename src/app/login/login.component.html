@@ -1,51 +1,127 @@
 <div class="login-page">
-<div class="login-box">
-  <!-- <div class="login-logo">
-    <a href="#">
-      <b>HỆ THỐNG </b>
-    </a>
-  </div> -->
-  <!-- /.login-logo -->
-  <div class="login-box-body">
-    <!-- <p class="login-box-msg">Đăng nhập hệ thống</p> -->
-    <div class="logo-img">
-      <img src="/assets/img/logo-delta.png" />
-    </div>
-    <br>
-    <!-- <div>
-      <h2 style="color: red;">TESTING - SYSTEM</h2>
-    </div> -->
-    <!-- <h3 class="login-box-msg" style="font-weight: bold;">DELTA-ERP</h3> -->
-    <form name="form" (ngSubmit)="f.form.valid && login()" #f="ngForm" novalidate>
-      <div [ngClass]="{'form-group': true, 'has-warning': f.submitted && !username.valid, 'third': false}">
+  <div class="login-bg-overlay"></div>
 
-        <input type="text" class="form-control" name="username" [(ngModel)]="user.userName" #username="ngModel" required
-          placeholder="Tên đăng nhập" focus>
-        <span class="glyphicon glyphicon-user form-control-feedback"></span>
-        <span *ngIf="f.submitted && !username.valid" class="help-block">Nhập tên đăng nhập</span>
+  <!-- LEFT: brand + quotes -->
+  <aside class="login-brand">
+    <div class="login-brand-inner">
+      <div class="login-brand-top">
+        <img src="/assets/img/logo-delta.png" alt="Delta" class="login-brand-logo" />
+        <span class="login-brand-name">DELTAJSC</span>
       </div>
-      <div [ngClass]="{'form-group': true, 'has-warning': f.submitted && !password.valid, 'third': false}">
-        <input type="password" class="form-control" name="password" [(ngModel)]="user.passWord" #password="ngModel"
-          required placeholder="Mật khẩu">
-        <span class="glyphicon glyphicon-lock form-control-feedback"></span>
-        <span *ngIf="f.submitted && !password.valid" class="help-block">Nhập mật khẩu</span>
-      </div>
-      <div [ngClass]="{'form-group': true, 'has-warning': f.submitted && !branch.valid, 'third': false}">
-        <ng-select name="branch" [items]="listBranch" bindLabel="name" bindValue="id" [(ngModel)]="user.branchId"
-          #branch="ngModel" required placeholder="Chọn chi nhánh">
-        </ng-select>
-        <span *ngIf="f.submitted && !branch.valid" class="help-block">Chọn chi nhánh</span>
-      </div>
-      <div class="row">
-        <div class="col-xs-7">
+
+      <div class="login-brand-main">
+        <h2 class="login-brand-headline">Vận tải thông minh<br/>Đồng hành cùng doanh nghiệp</h2>
+        <p class="login-brand-sub">Hệ thống quản lý logistics toàn diện — lệnh vận chuyển, kho bãi, công nợ, lương lái xe.</p>
+
+        <div class="login-quote-box">
+          <span class="login-quote-mark">&ldquo;</span>
+          <div class="login-quote-stage">
+            <div *ngFor="let q of quotes; let i = index"
+                 class="login-quote-item"
+                 [class.active]="i === quoteIndex">
+              <p class="login-quote-text">{{ q.text }}</p>
+              <span class="login-quote-author">— {{ q.author }}</span>
+            </div>
+          </div>
+          <div class="login-quote-dots">
+            <button type="button"
+                    *ngFor="let q of quotes; let i = index"
+                    class="login-quote-dot"
+                    [class.active]="i === quoteIndex"
+                    (click)="goToQuote(i)"
+                    [attr.aria-label]="'Trích dẫn ' + (i + 1)"></button>
+          </div>
         </div>
-        <!-- /.col -->
-        <div class="col-xs-5">
-          <button [disabled]="loading" type="submit" class="btn btn-success btn-block btn-flat">Đăng nhập</button>
-        </div>
-        <!-- /.col -->
       </div>
-    </form>
-  </div>
-</div>
+
+      <div class="login-brand-foot">© DeltaJSC · Logistics Solutions</div>
+    </div>
+  </aside>
+
+  <!-- RIGHT: form -->
+  <main class="login-form-wrap">
+    <div class="login-card">
+      <div class="login-logo-wrap mobile-only">
+        <img src="/assets/img/logo-delta.png" alt="Delta" />
+      </div>
+
+      <h1 class="login-title">Chào mừng trở lại</h1>
+      <p class="login-subtitle">Đăng nhập để tiếp tục với DeltaJSC</p>
+
+      <form name="form" (ngSubmit)="f.form.valid && login()" #f="ngForm" novalidate class="login-form">
+        <div class="login-field" [class.has-error]="f.submitted && !username.valid">
+          <span class="login-field-icon">
+            <i class="fa fa-user"></i>
+          </span>
+          <input type="text"
+                 class="login-input"
+                 name="username"
+                 [(ngModel)]="user.userName"
+                 #username="ngModel"
+                 required
+                 autocomplete="username"
+                 placeholder=" "
+                 focus />
+          <label class="login-label">Tên đăng nhập</label>
+          <span *ngIf="f.submitted && !username.valid" class="login-error">Vui lòng nhập tên đăng nhập</span>
+        </div>
+
+        <div class="login-field" [class.has-error]="f.submitted && !password.valid">
+          <span class="login-field-icon">
+            <i class="fa fa-lock"></i>
+          </span>
+          <input [type]="showPassword ? 'text' : 'password'"
+                 class="login-input with-suffix"
+                 name="password"
+                 [(ngModel)]="user.passWord"
+                 #password="ngModel"
+                 required
+                 autocomplete="current-password"
+                 placeholder=" " />
+          <label class="login-label">Mật khẩu</label>
+          <button type="button"
+                  class="login-suffix-btn"
+                  (click)="togglePassword()"
+                  [attr.aria-label]="showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'">
+            <i class="fa" [class.fa-eye]="!showPassword" [class.fa-eye-slash]="showPassword"></i>
+          </button>
+          <span *ngIf="f.submitted && !password.valid" class="login-error">Vui lòng nhập mật khẩu</span>
+        </div>
+
+        <div class="login-field login-field-select" [class.has-error]="f.submitted && !branch.valid">
+          <span class="login-field-icon">
+            <i class="fa fa-building"></i>
+          </span>
+          <ng-select name="branch"
+                     class="login-ng-select"
+                     [items]="listBranch"
+                     bindLabel="name"
+                     bindValue="id"
+                     [(ngModel)]="user.branchId"
+                     #branch="ngModel"
+                     required
+                     [clearable]="false"
+                     placeholder="Chọn chi nhánh">
+          </ng-select>
+          <span *ngIf="f.submitted && !branch.valid" class="login-error">Vui lòng chọn chi nhánh</span>
+        </div>
+
+        <label class="login-remember">
+          <input type="checkbox" name="rememberMe" [(ngModel)]="rememberMe" />
+          <span class="login-remember-box"></span>
+          <span class="login-remember-text">Ghi nhớ tài khoản &amp; chi nhánh</span>
+        </label>
+
+        <button [disabled]="loading" type="submit" class="login-submit">
+          <span *ngIf="!loading">Đăng nhập</span>
+          <span *ngIf="loading" class="login-spinner-wrap">
+            <span class="login-spinner"></span>
+            Đang đăng nhập...
+          </span>
+        </button>
+      </form>
+
+      <div class="login-footer">© DeltaJSC</div>
+    </div>
+  </main>
 </div>

@@ -1,5 +1,99 @@
 # Pending / In-Progress Work
 
+## Refactor TO ↔ FCL Architecture — DESIGN DONE / SQL WRITTEN (2026-05-14)
+
+### Tiến độ hiện tại
+- ✅ Khảo sát schema TO + FCL
+- ✅ Chốt design (3 câu hỏi đã xác nhận)
+- ✅ Viết `Migration_TO_FCL_Phase1A_20260514.sql` (chờ chạy SSMS tối nay)
+- ✅ Viết `Migration_TO_FCL_Phase1C_20260514.sql` (chờ — sau khi BE/FE deploy)
+- ⏳ Mai: refactor BE (TransportOrderRepository + DispatchOrderFCLRepository transaction)
+- ⏳ Mai: refactor FE (modal-transport-order strip + modal-dispatch-order-fcl tích hợp + TO list read-only)
+
+
+### Mục tiêu
+- **TO** trở thành module cung đường thuần (segments + km + trạm thu phí)
+- **FCL** chứa toàn bộ xe/lái xe/ghi chú/tóm tắt/duyệt — link sang TO qua `TransportOrderId` FK
+- **Quan hệ 1-1 bắt buộc**: tạo FCL phải tạo TO cùng lúc (transactional). Không có flow tạo TO độc lập.
+- **Không có nhân bản FCL**
+- **Dùng chung table `Tbl_DispatchOrderFCL`** + thêm field `IsLegacy` phân biệt lệnh cũ vs mới
+- **TO list page** giữ vai trò read-only route viewer; muốn sửa → mở FCL gốc
+- **RefNo**: TO + FCL giữ RefNo độc lập song song (vd `TO-2026-001` + `FCL-2026-001`)
+
+### Design đã chốt (2026-05-14)
+- ✅ `IsLegacy` default: record cũ UPDATE thành 1, record mới = 0
+- ✅ Phase 1C tách riêng, chạy sau khi deploy ổn
+- ✅ Không backfill TO cho lệnh FCL cũ; FE detect `IsLegacy=1` → read-only
+- ✅ **Đổi hướng link** (giảm ảnh hưởng FCL): link bên TO (`Tbl_TransportOrders.FclRefNo`) thay vì FCL trỏ sang TO
+
+### Schema design (đã khảo sát xong)
+**Giữ trên `Tbl_TransportOrders`** (TO trim):
+- Id (INT IDENTITY), RefNo, BranchId, ShortWay, FullRoute, TongKm, Status (giảm còn 2 trạng thái: 0=Draft, 1=Locked)
+- **`FclRefNo NVARCHAR(50) NULL` mới — link sang DispatchOrderFCL.RefNo (UNIQUE)**
+- Audit: CreatedDate/By/ByName, UpdatedBy/Date, Deleted
+- Quan hệ: Tbl_TransportOrder_Segments (Id, TransportOrderId, OrderIndex, Start/End Location*, DistanceKm, FuelNorm, FuelAmountCalculated, ETCCost, RoutePolyline, Note, listStations, listWaypoints)
+- Tbl_TransportOrder_Segment_Stations + Tbl_TransportOrder_Segment_Waypoints — giữ nguyên
+
+**Drop khỏi `Tbl_TransportOrders`** (~40 cột chuyển sang FCL):
+- ShippingUnit*, Vehicle*, Mooc*, Driver*, SecondDriver*, FuelDriverId, Weight, Volume, IsExport, ContType
+- OilPrice, OilCompensation, ReasonOilCompensation, Subcontractors*, DispatchSummarize, InquiryTime*, ContactInformation, Note
+- StartVehicleOdor/StartEupOdor/FinishVehicleOdor/FinishEupOdor, Grade*, Evaluation*
+- Started/Finished/NoteFinished/FinishedDate, IsDeny, Feedback, ClosingBy/Date
+- IsFuelApproval, IsRePaymentEtc, IsEmployeeDebitClosing, Tongdau, Chiphidau, IsSummarized, AccountingDate
+
+**Drop tables** (FCL đã có tương đương):
+- `Tbl_TransportOrder_Fees` → dùng `DispatchOrderFCLFee`
+- `Tbl_TransportOrder_Details` → dùng `DispatchOrderFclDetailed`
+
+**ADD vào `DispatchOrderFCL`** (chạm tối thiểu):
+- `IsLegacy BIT NOT NULL DEFAULT 0` — record cũ UPDATE thành 1 ngay sau ADD
+- ❌ KHÔNG thêm `TransportOrderId` (đã đổi sang link bên TO)
+
+### Flow tạo lệnh mới (transactional)
+1. Generate FCL RefNo trước (logic hiện có)
+2. INSERT TO với `FclRefNo = newFclRefNo` → lấy `newToId`
+3. INSERT FCL với `RefNo = newFclRefNo, IsLegacy = 0`
+4. COMMIT
+
+### Lookup
+- Mở FCL: nếu `IsLegacy=1` → FE hiện banner "Lệnh legacy", ẩn nút "Thiết kế cung đường"
+- Mở FCL: nếu `IsLegacy=0` → query `Tbl_TransportOrders WHERE FclRefNo = @fclRefNo` lấy TO data
+
+### Migration 3 phase
+- **Phase 1A** `Migration_TO_FCL_Phase1A_20260514.sql` (non-breaking):
+  - ALTER TABLE DispatchOrderFCL ADD IsLegacy BIT NOT NULL DEFAULT 0
+  - UPDATE existing FCL records SET IsLegacy = 1
+  - ALTER TABLE Tbl_TransportOrders ADD FclRefNo NVARCHAR(50) NULL
+  - ADD UNIQUE constraint `UQ_TransportOrders_FclRefNo` (filtered: WHERE FclRefNo IS NOT NULL)
+  - CREATE INDEX `IX_TransportOrders_FclRefNo`
+- **Phase 1B** Backfill — **SKIP** (đã chốt không backfill)
+- **Phase 1C** `Migration_TO_FCL_Phase1C_20260514.sql` (chạy sau khi deploy ổn 1-2 tuần):
+  - DROP các cột không dùng trên Tbl_TransportOrders (~40 cột)
+  - DROP TABLE Tbl_TransportOrder_Fees
+  - DROP TABLE Tbl_TransportOrder_Details
+  - DROP TVP / SP liên quan
+
+### TODO sau khi user xác nhận 3 câu hỏi
+- [ ] Viết `Phase1A_TO_FCL_Refactor_ColumnAdd.sql`
+- [ ] Viết `Phase1C_TO_Cleanup.sql`
+- [ ] **BE — TransportOrderRepository**: cắt vehicle/driver/approval khỏi Create/Update; giữ Create chỉ nhận route data
+- [ ] **BE — DispatchOrderFCLRepository**: `CreateAsync` wrap trong `BEGIN TRAN` → tạo TO trước (lấy `newToId`) → tạo FCL với `TransportOrderId = newToId, IsLegacy = 0` → COMMIT/ROLLBACK
+- [ ] **BE — DispatchOrderFCL Model + ViewModel**: thêm `TransportOrderId`, `IsLegacy`, payload route (nested object)
+- [ ] **FE — modal-transport-order**: strip thành pure route editor (xóa hết block xe/lái/duyệt/ghi chú); 2 trạng thái Draft/Locked
+- [ ] **FE — modal-dispatch-order-fcl**: thêm nested tab/section "Thiết kế cung đường" embed modal-transport-order; truyền payload TO khi save FCL
+- [ ] **FE — TO list page**: chuyển sang read-only route viewer; bỏ button Sửa/Xóa hoặc redirect sang FCL khi click; hiển thị badge "Lệnh legacy" khi mở FCL cũ có `IsLegacy=1`
+- [ ] **FE — listTO không nút Thêm mới**: đã có sẵn, giữ nguyên (chỉ tạo qua FCL)
+
+### Files cần chỉnh chính
+- BE: `NewAPI/API/Controllers/Transports/DispatchOrderFCLController.cs`, `NewAPI/API/Repositories/DispatchOrderFCLRepository.cs`, `NewAPI/API/Repositories/TransportOrderRepository.cs`, models `TransportOrder.cs`, `DispatchOrderFCL.cs`
+- FE: `src/app/shared/components/transports/modal-dispatch-order-fcl/`, `src/app/shared/components/transports/modal-transport-order/`, `src/app/main/transports/transport-order/`
+
+### Tham chiếu
+- File schema TO đầy đủ: `D:\Delta\DeltaSoft\web-app-update\transportOrder.sql` (UTF-16 LE)
+- File schema FCL đầy đủ: `D:\Delta\DeltaSoft\web-app-update\dispatchOrderFcl.sql` (UTF-16 LE, ~94k tokens — đọc bằng `Get-Content -Encoding Unicode` chia khúc)
+
+---
+
 ## Hóa đơn chờ thanh toán (Pending Invoice) — IN PROGRESS
 
 ### BE — Phase 2+3 (chờ migration chạy xong)

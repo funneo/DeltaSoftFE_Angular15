@@ -1,6 +1,14 @@
 # Completed Features
 
 ## Core Infrastructure
+- **Login page redesign** (2026-05-14): layout 2 cột (brand panel trái + form phải)
+  - Brand panel: logo Delta + headline "Vận tải thông minh — Đồng hành cùng doanh nghiệp" + 6 quotes xoay vòng auto-rotate 6s, dots indicator click chọn quote thủ công, `setInterval` cleanup trong `ngOnDestroy`
+  - Form: 3 field (username + password + branch ng-select) với floating label, icon prefix (`fa-user`/`fa-lock`/`fa-building`), error inline khi `f.submitted && !valid`
+  - Toggle hiện/ẩn mật khẩu: `showPassword` flag + suffix button (`fa-eye` ↔ `fa-eye-slash`)
+  - "Ghi nhớ tài khoản & chi nhánh": checkbox `rememberMe` lưu `{userName, branchId}` vào `localStorage['DELTA_LOGIN_REMEMBER']` (KHÔNG lưu password); `_loadRemembered()` restore khi `ngOnInit`, validate `branchId` còn tồn tại trong `listBranch` trước khi gán
+  - Loading state: nút submit hiển thị spinner + "Đang đăng nhập..." khi `loading=true`; `[disabled]="loading"` chặn click double-submit
+  - Mobile: `mobile-only` logo wrap hiện khi brand panel ẩn
+  - File diff: `login.component.html` +164 / `login.component.css` +531 / `login.component.ts` +79
 - JWT authentication with multi-branch login (user selects branch on login)
 - Role-based + function-code permission system embedded in JWT claims
 - Multi-level approval workflows (authorisationLevel, advanceConfirmLevel, paymentConfirmLevel, transportConfirmLevel)
@@ -129,6 +137,20 @@
 - Transport order modal: **fix isLocInRoute** — signature `(locationId, taskId?, type?)`, check composite `locationId + taskId + type`; `addToRoute()` truyền `task.id + type`; HTML cập nhật 4 chỗ gọi; tránh gray nhầm card khi cùng địa điểm
 - Transport order modal: **Hướng dẫn cung đường** — `_rebuildDispatchSummarize()` gom `seg.note` thành "Chặng N: lý do"; gọi từ `_applyCompareRoute()` sau khi nhận note từ compare modal; HTML section `*ngIf="entity.dispatchSummarize"` với `<pre>` display; CSS `.dsg-route-note` / `.dsg-route-note-title` / `.dsg-route-note-content`
 - Transport order modal: **fix note accumulate** — `_applyCompareRoute()` dùng append thay ghi đè: `seg.note = seg.note ? old+'\n'+new : new`; nếu `event.note` rỗng (không cần lý do) giữ nguyên note cũ
+- Transport order modal: **fix chốt cung đường thiếu định mức dầu** — `confirmRoute()` thêm guard `missingFuelNorm = segments.some(s => !s.fuelNorm || s.fuelNorm <= 0)` → toast "Định mức dầu phải > 0 — vui lòng chọn xe có định mức dầu trước khi chốt cung đường" (chặn trường hợp chọn tải trọng nhưng xe chưa có oilQuota khớp)
+
+## TO ↔ FCL Refactor — SQL Migration đã viết (2026-05-14)
+- **`Migration_TO_FCL_Phase1A_20260514.sql`** (file tại `NewAPI/`, non-breaking, idempotent):
+  - ADD `IsLegacy BIT NOT NULL DEFAULT 0` vào `DispatchOrderFCL`
+  - UPDATE record cũ SET `IsLegacy = 1` (1-time qua extended property `MS_TO_FCL_Phase1A_LegacyMarked`)
+  - ADD `FclRefNo NVARCHAR(50) NULL` vào `Tbl_TransportOrders`
+  - CREATE UNIQUE filtered index `UX_TransportOrders_FclRefNo` (1-1 enforce ở DB level)
+  - Wrap `TRY/CATCH + TRAN`, dùng `IF NOT EXISTS` mỗi STEP
+- **`Migration_TO_FCL_Phase1C_20260514.sql`** (breaking, idempotent — chờ deploy ổn mới chạy):
+  - Drop default constraints trước (dynamic SQL)
+  - DROP 59 cột trên `Tbl_TransportOrders`: ShippingUnit*, Vehicle*, Mooc*, Driver*/SecondDriver*, FuelDriverId, Weight, Volume, IsExport, ContType, OilPrice, OilCompensation, ReasonOilCompensation, Subcontractors*, DispatchSummarize, InquiryTime*, ContactInformation, Note, Odor*, Grade*, Evaluation*, Started/Finished*, IsDeny, Feedback, Closing*, IsFuelApproval, IsRePaymentEtc, IsEmployeeDebitClosing, Tongdau, Chiphidau, IsSummarized, AccountingDate, ReferCode, LuotdiQuabai, LuotveQuabai
+  - DROP `Tbl_TransportOrder_Fees`, `Tbl_TransportOrder_Details`
+  - Comment hậu migration: DROP TVP/SP + verification query (còn lại ~13 cột)
 - Quotation subcontractors
 - Shipping tasks: CS, LG, OpMan views
 - Fuel/gas management: driver fuel approval, debit, limit

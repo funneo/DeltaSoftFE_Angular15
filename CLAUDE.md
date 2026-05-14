@@ -12,6 +12,19 @@ DeltaSoft ERP — logistics/transport management system for a Vietnamese freight
 - **Realtime**: SignalR hub at `/signalr`
 - **Push notifications**: Firebase Cloud Messaging
 
+## Active Major Refactor — TO ↔ FCL (2026-05-14, IN PROGRESS)
+
+Restructuring relationship between Transport Order (TO) and FCL Dispatch Order:
+- **TO**: pure route module (segments + km + toll stations only)
+- **FCL**: owns vehicle/driver/notes/approval workflow (all moved out of TO)
+- **Link**: `Tbl_TransportOrders.FclRefNo` → `DispatchOrderFCL.RefNo` (1-1 enforced via UNIQUE filtered index on TO side; FCL untouched for minimum impact)
+- **Legacy detection**: `DispatchOrderFCL.IsLegacy BIT` (=1 for pre-refactor records, =0 for new ones)
+- **Flow**: tạo FCL bắt buộc tạo TO cùng lúc (transactional); không có nhân bản FCL
+- **Migration files** at `D:\Delta\DeltaSoft\NewAPI\`:
+  - `Migration_TO_FCL_Phase1A_20260514.sql` — non-breaking column adds (run first)
+  - `Migration_TO_FCL_Phase1C_20260514.sql` — DROP ~59 cột TO + 2 bảng phụ (run AFTER BE/FE refactor + 1-2 tuần thử nghiệm)
+- **Full design + checklist**: `.claude/context/todo.md` section đầu
+
 ## Commands
 
 ### Frontend (Angular 15)
