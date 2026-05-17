@@ -51,6 +51,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     if (remembered) {
       this.rememberMe = true;
       if (remembered.userName) this.user.userName = remembered.userName;
+      if (remembered.passWord) this.user.passWord = remembered.passWord;
     }
     this.getBranch().subscribe((data) => {
       this.listBranch = data.listBranch;
@@ -113,12 +114,16 @@ export class LoginComponent implements OnInit, OnDestroy {
     return this.http.get("./assets/data/branch.json");
   }
 
-  private _loadRemembered(): { userName?: string; branchId?: number } | null {
+  private _loadRemembered(): { userName?: string; passWord?: string; branchId?: number } | null {
     try {
       const raw = localStorage.getItem(REMEMBER_KEY);
       if (!raw) return null;
       const data = JSON.parse(raw);
-      return data && typeof data === "object" ? data : null;
+      if (!data || typeof data !== "object") return null;
+      if (data.passWord) {
+        try { data.passWord = atob(data.passWord); } catch { data.passWord = ""; }
+      }
+      return data;
     } catch {
       return null;
     }
@@ -128,6 +133,7 @@ export class LoginComponent implements OnInit, OnDestroy {
     if (this.rememberMe) {
       const payload = {
         userName: this.user.userName,
+        passWord: this.user.passWord ? btoa(this.user.passWord) : "",
         branchId: this.user.branchId,
       };
       localStorage.setItem(REMEMBER_KEY, JSON.stringify(payload));

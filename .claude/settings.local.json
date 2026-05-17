@@ -12,7 +12,23 @@
       "Bash(tasklist)",
       "Bash(findstr /I \"git\")",
       "Bash(cd \"d:/Delta/DeltaSoft/web-app-update\" && rm .git/index.lock && echo \"lock removed\")",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "PowerShell($content = Get-Content -Path 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\sp_dispatchFCL.sql' -Encoding Unicode; $refNoLines = $content | Select-String -Pattern 'RefNo|@RefNo|FCL/|NextRefNumber|SET @' | Select-Object -First 30; foreach \\($l in $refNoLines\\) { Write-Output \\(\"Line \" + $l.LineNumber + \": \" + $l.Line\\) })",
+      "PowerShell($content = Get-Content -Path 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\sp_dispatchFCL.sql' -Encoding Unicode; $content[115..150] | ForEach-Object { $_ })",
+      "PowerShell($content = Get-Content -Path 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\sp_transportOrder.sql'; $matches = $content | Select-String -Pattern 'CREATE PROCEDURE|CREATE TYPE'; foreach \\($m in $matches\\) { Write-Output \\(\"Line \" + $m.LineNumber + \": \" + $m.Line\\) })",
+      "PowerShell($content = Get-Content -Path 'd:\\\\Delta\\\\DeltaSoft\\\\NewAPI\\\\Migration_TransportOrder_Stations_20260428.sql'; \\($content | Select-String -Pattern 'CREATE PROCEDURE|CREATE TYPE|ALTER PROCEDURE'\\) | ForEach-Object { \"Line \" + $_.LineNumber + \": \" + $_.Line })",
+      "PowerShell($f = Get-Item 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\sp_transportOrder.sql'; Write-Output \"Size: $\\($f.Length\\) bytes, Modified: $\\($f.LastWriteTime\\)\"; $bytes = [System.IO.File]::ReadAllBytes\\($f.FullName\\)[0..5]; $bytes | ForEach-Object { [Convert]::ToString\\($_, 16\\) })",
+      "PowerShell($content = Get-Content -Path 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\sp_transportOrder.sql' -Encoding Unicode; \\($content | Select-String -Pattern 'CREATE PROCEDURE|CREATE TYPE|ALTER PROCEDURE'\\) | ForEach-Object { \"Line \" + $_.LineNumber + \": \" + $_.Line }; Write-Output \"---\"; Write-Output \\(\"Total lines: \" + $content.Count\\))",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\('d:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\sp_transportOrder.sql'\\); Write-Output \\(\"Total bytes: \" + $bytes.Length\\); Write-Output \\(\"BOM: \" + [Convert]::ToString\\($bytes[0], 16\\) + \" \" + [Convert]::ToString\\($bytes[1], 16\\)\\); Write-Output \\(\"Byte at 10000: \" + [Convert]::ToString\\($bytes[10000], 16\\) + \" \" + [Convert]::ToString\\($bytes[10001], 16\\) + \" \" + [Convert]::ToString\\($bytes[10002], 16\\)\\))",
+      "PowerShell($content = Get-Content -Path 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\sp_transportOrder.sql' -Encoding Unicode; \\($content | Select-String -Pattern 'ShippingUnitId|VehicleId|DriverId|InquiryTime|Subcontractors|StartVehicleOdor|IsExport|LuotdiQuabai' | Select-Object -First 30\\) | ForEach-Object { \"Line \" + $_.LineNumber + \": \" + \\($_.Line -replace '^\\\\s+', ''\\) })",
+      "PowerShell($content = Get-Content -Path 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\sp_transportOrder.sql' -Encoding Unicode; \\($content | Select-String -Pattern 'Tbl_TransportOrder_Fees|Tbl_TransportOrder_Details|TypeTransportOrderFee|TypeTransportOrderDetail' | Select-Object -First 20\\) | ForEach-Object { \"Line \" + $_.LineNumber + \": \" + \\($_.Line -replace '^\\\\s+', ''\\) })",
+      "PowerShell($content = Get-Content -Path 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\dispatchOrderFcl.sql' -Encoding Unicode; \\($content | Select-String -Pattern 'CREATE PROCEDURE|CREATE TYPE'\\) | ForEach-Object { \"Line \" + $_.LineNumber + \": \" + $_.Line })",
+      "Bash(powershell -NoProfile -Command \"\\(Get-Content 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\dispatchOrderFcl.sql' -Encoding Unicode | Measure-Object -Line\\).Lines\")",
+      "PowerShell($bytes = [System.IO.File]::ReadAllBytes\\('d:\\\\Delta\\\\DeltaSoft\\\\NewAPI\\\\Migration_TO_FCL_Phase2_SPs_20260515.sql'\\)[0..3]; $bytes | ForEach-Object { \"{0:x2}\" -f $_ })",
+      "PowerShell($dst = 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\src\\\\app\\\\shared\\\\components\\\\transports\\\\modal-dispatch-order-fcl-v2'; Get-ChildItem $dst -File | ForEach-Object { $newName = $_.Name -replace 'modal-dispatch-order-fcl\\\\.', 'modal-dispatch-order-fcl-v2.'; Rename-Item -Path $_.FullName -NewName $newName }; Get-ChildItem $dst)",
+      "Bash(npx ng *)",
+      "Bash(ls C:/Users/Dell/.claude/projects/d--Delta-DeltaSoft-web-app-update/memory/)",
+      "Read(//c/Users/Dell/.claude/projects/d--Delta-DeltaSoft-web-app-update/memory/**)"
     ],
     "additionalDirectories": [
       "d:\\Delta\\DeltaSoft\\web-app-update\\.git"

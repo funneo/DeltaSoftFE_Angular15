@@ -1,96 +1,84 @@
 # Pending / In-Progress Work
 
-## Refactor TO ↔ FCL Architecture — DESIGN DONE / SQL WRITTEN (2026-05-14)
+## Refactor TO ↔ FCL — FE wiring + chạy migration (cập nhật 2026-05-16)
 
-### Tiến độ hiện tại
-- ✅ Khảo sát schema TO + FCL
-- ✅ Chốt design (3 câu hỏi đã xác nhận)
-- ✅ Viết `Migration_TO_FCL_Phase1A_20260514.sql` (chờ chạy SSMS tối nay)
-- ✅ Viết `Migration_TO_FCL_Phase1C_20260514.sql` (chờ — sau khi BE/FE deploy)
-- ⏳ Mai: refactor BE (TransportOrderRepository + DispatchOrderFCLRepository transaction)
-- ⏳ Mai: refactor FE (modal-transport-order strip + modal-dispatch-order-fcl tích hợp + TO list read-only)
+### Trạng thái hiện tại
+- ✅ Phase 1A đã chạy (IsLegacy + FclRefNo + UNIQUE filtered index)
+- ✅ Phase 1C đã chạy (DROP ~59 cột TO + 2 bảng phụ `Tbl_TransportOrder_Details` / `Tbl_TransportOrder_Fees`)
+- ✅ Phase 2 SQL đã viết xong (`Migration_TO_FCL_Phase2_SPs_20260515.sql`) — anh đã chỉnh thêm GetAll theo ý anh. **CHỜ CHẠY trên DB**.
+- ✅ BE refactor xong, build 0 errors (FCL WithTO methods + endpoints / TO trim / model+ViewModel)
+- ✅ FE service `createWithTo/updateWithTo/getDetailWithTo` đã thêm
+- ✅ Model FCL đã thêm `isLegacy/toRefNo/segments`
+- ✅ Modal V2 đã tạo (`modal-dispatch-order-fcl-v2/`) — tab "Cung đường" route builder inline + 3 ViewChild modal helpers + ~25 route methods
+- ✅ Redesign UI v2 iter 1: width 90%, header gradient navy/vàng, inputs 28px gọn, tab modern
+- ✅ Fix form wrap (footer truy cập `addEditForm.form.valid`) — `<form>` wrap cả body+footer, SCSS `display:flex column`
+- ✅ Bảng tải trọng per-segment + dispatch-summary với giá trạm phí theo loại xe (`loadVehicle` set `_vehicleBotTypeId`)
+- ✅ Tab "Cung đường" 3 cột dọc giống TO (pool collapse / route builder / tải trọng+tóm tắt)
+- ✅ Width modal: 95vw (final)
+- ✅ Wiring entry: list FCL route theo `isLegacy`, shipping-task-opman nút "Lập lệnh (Location)" → modal v2
+- ✅ Build FE pass 0 errors
 
+### Việc còn lại
 
-### Mục tiêu
-- **TO** trở thành module cung đường thuần (segments + km + trạm thu phí)
-- **FCL** chứa toàn bộ xe/lái xe/ghi chú/tóm tắt/duyệt — link sang TO qua `TransportOrderId` FK
-- **Quan hệ 1-1 bắt buộc**: tạo FCL phải tạo TO cùng lúc (transactional). Không có flow tạo TO độc lập.
-- **Không có nhân bản FCL**
-- **Dùng chung table `Tbl_DispatchOrderFCL`** + thêm field `IsLegacy` phân biệt lệnh cũ vs mới
-- **TO list page** giữ vai trò read-only route viewer; muốn sửa → mở FCL gốc
-- **RefNo**: TO + FCL giữ RefNo độc lập song song (vd `TO-2026-001` + `FCL-2026-001`)
+#### 1. SQL — anh chạy Phase 2 trên SSMS
+- File: `D:/Delta/DeltaSoft/NewAPI/Migration_TO_FCL_Phase2_SPs_20260515.sql`
+- Verification queries ở cuối file (check 4 SP mới + xác nhận SP cũ vẫn còn)
+- **ALTER `SP_DispatchOrderFCL_GetAll`**: thêm `m.IsLegacy` vào SELECT output (anh nói sẽ tự làm)
 
-### Design đã chốt (2026-05-14)
-- ✅ `IsLegacy` default: record cũ UPDATE thành 1, record mới = 0
-- ✅ Phase 1C tách riêng, chạy sau khi deploy ổn
-- ✅ Không backfill TO cho lệnh FCL cũ; FE detect `IsLegacy=1` → read-only
-- ✅ **Đổi hướng link** (giảm ảnh hưởng FCL): link bên TO (`Tbl_TransportOrders.FclRefNo`) thay vì FCL trỏ sang TO
+#### 2. ⚠️ FE — Kiểm tra luồng lưu DB + đọc lại dữ liệu Modal V2 (PRIORITY)
+- **Save (Create)**: tạo lệnh mới từ modal v2 → POST `/CreateWithTO` → BE gọi `SP_DispatchOrderFCL_CreateWithTO`. Verify:
+  - Trả về `{ NewToId, NewToRefNo, NewFclRefNo }` đầy đủ
+  - `Tbl_TransportOrders` insert row mới với `FclRefNo` link + segments/stations/waypoints qua 3 TVPs
+  - `DispatchOrderFCL` insert row với `IsLegacy=0`, `Tongdau = SUM(FuelAmountCalculated) + OilCompensation`, `TongKm = SUM(DistanceKm)`, `Chiphidau = Tongdau * OilPrice`
+  - `DispatchOrderFCL.TongKm` ghi đúng (cột mới Phase 2)
+- **Save (Update)**: edit lệnh `IsLegacy=0` từ modal v2 → POST `/UpdateWithTO`. Verify:
+  - BEGIN TRAN OK, không RAISERROR (chỉ raise cho legacy)
+  - Segments update (delete + insert lại qua TVP)
+  - FCL fields cập nhật đúng (Tongdau/Chiphidau/TongKm/OilCompensation/ListEtc/ListFee...)
+- **Load (Edit)**: click row `IsLegacy=0` → modal v2 → `getDetailWithTo(refNo)` → 9 result sets:
+  - 5 RS legacy FCL (header / listEtc / listFee / listDetailed / Quabai)
+  - 4 RS TO (header dynamic / segments / stations / waypoints)
+  - Verify FE Repository attach `stations[]/waypoints[]` vào segments by `SegmentId`
+  - Verify `_segmentsToLocations(entity.segments)` rebuild `locations[]` đúng thứ tự + đủ pickup/delivery
+  - Verify bảng tải trọng load đúng `payloadWeight` per chặng từ DB
+  - Verify giá trạm phí hiển thị (cần `entity.vehicleId` → `loadVehicle()` → `_applyTollPrices()`)
+- **Edge cases cần thử**:
+  - Chặng cuối được flag `lastSegmentFinal` khi mở lại
+  - Lệnh có `dispatchSummarize` (note per-segment) → "Hướng dẫn cung đường" hiển thị
+  - Khi tab Thông tin chung đổi xe → bảng tóm tắt giá trạm cập nhật theo loại xe mới
+  - `Tongdau / Chiphidau` công thức mới có đúng khớp giữa FE compute + BE persist không
 
-### Schema design (đã khảo sát xong)
-**Giữ trên `Tbl_TransportOrders`** (TO trim):
-- Id (INT IDENTITY), RefNo, BranchId, ShortWay, FullRoute, TongKm, Status (giảm còn 2 trạng thái: 0=Draft, 1=Locked)
-- **`FclRefNo NVARCHAR(50) NULL` mới — link sang DispatchOrderFCL.RefNo (UNIQUE)**
-- Audit: CreatedDate/By/ByName, UpdatedBy/Date, Deleted
-- Quan hệ: Tbl_TransportOrder_Segments (Id, TransportOrderId, OrderIndex, Start/End Location*, DistanceKm, FuelNorm, FuelAmountCalculated, ETCCost, RoutePolyline, Note, listStations, listWaypoints)
-- Tbl_TransportOrder_Segment_Stations + Tbl_TransportOrder_Segment_Waypoints — giữ nguyên
+#### 3. FE — TO list page (`src/app/main/transports/transport-order/`)
+- Chuyển sang **read-only route viewer**:
+  - Bỏ nút Thêm/Sửa (giữ Xem + Xóa nếu cần)
+  - Hiển thị badge "Legacy" nếu `IsLegacy=1` (đọc từ response GetAll mới)
+  - Click row → mở modal viewer hiển thị segments + map; có nút "Mở FCL" → navigate sang modal FCL nếu cần sửa
+- Cập nhật service `transport-order.service.ts`:
+  - Bỏ `createAsync` / `updateAsync` (endpoint đã DROP)
+  - `updateStatus(id, status)` — signature mới (không còn feedback/isRejection)
 
-**Drop khỏi `Tbl_TransportOrders`** (~40 cột chuyển sang FCL):
-- ShippingUnit*, Vehicle*, Mooc*, Driver*, SecondDriver*, FuelDriverId, Weight, Volume, IsExport, ContType
-- OilPrice, OilCompensation, ReasonOilCompensation, Subcontractors*, DispatchSummarize, InquiryTime*, ContactInformation, Note
-- StartVehicleOdor/StartEupOdor/FinishVehicleOdor/FinishEupOdor, Grade*, Evaluation*
-- Started/Finished/NoteFinished/FinishedDate, IsDeny, Feedback, ClosingBy/Date
-- IsFuelApproval, IsRePaymentEtc, IsEmployeeDebitClosing, Tongdau, Chiphidau, IsSummarized, AccountingDate
+#### 4. FE — Cleanup
+- Search & remove dead code các form field cũ (Chang/Luonghang/Cang/Nhamay/etc.) trong template modal v2 nếu còn (đã chuyển qua segments rồi không dùng)
 
-**Drop tables** (FCL đã có tương đương):
-- `Tbl_TransportOrder_Fees` → dùng `DispatchOrderFCLFee`
-- `Tbl_TransportOrder_Details` → dùng `DispatchOrderFclDetailed`
+### Files cần chỉnh chính (FE)
+- ~~`src/app/shared/services/dispatch-order-fcl.service.ts`~~ ✅
+- `src/app/shared/services/transport-order.service.ts` (bỏ create/update)
+- ~~`src/app/shared/components/transports/modal-dispatch-order-fcl-v2/`~~ ✅
+- `src/app/main/transports/transport-order/` (list + viewer)
 
-**ADD vào `DispatchOrderFCL`** (chạm tối thiểu):
-- `IsLegacy BIT NOT NULL DEFAULT 0` — record cũ UPDATE thành 1 ngay sau ADD
-- ❌ KHÔNG thêm `TransportOrderId` (đã đổi sang link bên TO)
-
-### Flow tạo lệnh mới (transactional)
-1. Generate FCL RefNo trước (logic hiện có)
-2. INSERT TO với `FclRefNo = newFclRefNo` → lấy `newToId`
-3. INSERT FCL với `RefNo = newFclRefNo, IsLegacy = 0`
-4. COMMIT
-
-### Lookup
-- Mở FCL: nếu `IsLegacy=1` → FE hiện banner "Lệnh legacy", ẩn nút "Thiết kế cung đường"
-- Mở FCL: nếu `IsLegacy=0` → query `Tbl_TransportOrders WHERE FclRefNo = @fclRefNo` lấy TO data
-
-### Migration 3 phase
-- **Phase 1A** `Migration_TO_FCL_Phase1A_20260514.sql` (non-breaking):
-  - ALTER TABLE DispatchOrderFCL ADD IsLegacy BIT NOT NULL DEFAULT 0
-  - UPDATE existing FCL records SET IsLegacy = 1
-  - ALTER TABLE Tbl_TransportOrders ADD FclRefNo NVARCHAR(50) NULL
-  - ADD UNIQUE constraint `UQ_TransportOrders_FclRefNo` (filtered: WHERE FclRefNo IS NOT NULL)
-  - CREATE INDEX `IX_TransportOrders_FclRefNo`
-- **Phase 1B** Backfill — **SKIP** (đã chốt không backfill)
-- **Phase 1C** `Migration_TO_FCL_Phase1C_20260514.sql` (chạy sau khi deploy ổn 1-2 tuần):
-  - DROP các cột không dùng trên Tbl_TransportOrders (~40 cột)
-  - DROP TABLE Tbl_TransportOrder_Fees
-  - DROP TABLE Tbl_TransportOrder_Details
-  - DROP TVP / SP liên quan
-
-### TODO sau khi user xác nhận 3 câu hỏi
-- [ ] Viết `Phase1A_TO_FCL_Refactor_ColumnAdd.sql`
-- [ ] Viết `Phase1C_TO_Cleanup.sql`
-- [ ] **BE — TransportOrderRepository**: cắt vehicle/driver/approval khỏi Create/Update; giữ Create chỉ nhận route data
-- [ ] **BE — DispatchOrderFCLRepository**: `CreateAsync` wrap trong `BEGIN TRAN` → tạo TO trước (lấy `newToId`) → tạo FCL với `TransportOrderId = newToId, IsLegacy = 0` → COMMIT/ROLLBACK
-- [ ] **BE — DispatchOrderFCL Model + ViewModel**: thêm `TransportOrderId`, `IsLegacy`, payload route (nested object)
-- [ ] **FE — modal-transport-order**: strip thành pure route editor (xóa hết block xe/lái/duyệt/ghi chú); 2 trạng thái Draft/Locked
-- [ ] **FE — modal-dispatch-order-fcl**: thêm nested tab/section "Thiết kế cung đường" embed modal-transport-order; truyền payload TO khi save FCL
-- [ ] **FE — TO list page**: chuyển sang read-only route viewer; bỏ button Sửa/Xóa hoặc redirect sang FCL khi click; hiển thị badge "Lệnh legacy" khi mở FCL cũ có `IsLegacy=1`
-- [ ] **FE — listTO không nút Thêm mới**: đã có sẵn, giữ nguyên (chỉ tạo qua FCL)
-
-### Files cần chỉnh chính
-- BE: `NewAPI/API/Controllers/Transports/DispatchOrderFCLController.cs`, `NewAPI/API/Repositories/DispatchOrderFCLRepository.cs`, `NewAPI/API/Repositories/TransportOrderRepository.cs`, models `TransportOrder.cs`, `DispatchOrderFCL.cs`
-- FE: `src/app/shared/components/transports/modal-dispatch-order-fcl/`, `src/app/shared/components/transports/modal-transport-order/`, `src/app/main/transports/transport-order/`
+### Quy ước quan trọng (đã chốt với anh)
+- KHÔNG đụng BE/SP/FE hiện có của FCL legacy → tất cả tạo song song (`WithTO`)
+- Tongdau mới = `SUM(FuelAmountCalculated) trên @ListSegments + @OilCompensation`
+- TongKm mới  = `SUM(DistanceKm) trên @ListSegments`, persist vào **cả FCL.TongKm + TO.TongKm**
+- Chiphidau mới = `Tongdau * OilPrice`
+- TO không có `ShortWay`, không có `CreatedByName` (xóa khỏi insert), `FullRoute` của TO = hướng dẫn cung đường (dùng chung `@FullRoute` với FCL)
+- `IsLegacy=0` set explicit khi INSERT FCL mới
 
 ### Tham chiếu
-- File schema TO đầy đủ: `D:\Delta\DeltaSoft\web-app-update\transportOrder.sql` (UTF-16 LE)
-- File schema FCL đầy đủ: `D:\Delta\DeltaSoft\web-app-update\dispatchOrderFcl.sql` (UTF-16 LE, ~94k tokens — đọc bằng `Get-Content -Encoding Unicode` chia khúc)
+- Schema dump TO: `D:/Delta/DeltaSoft/web-app-update/sp_transportOrder.sql` (UTF-16 LE, đã reflect Phase 1C)
+- Schema dump FCL: `D:/Delta/DeltaSoft/web-app-update/dispatchOrderFcl.sql` (UTF-16 LE)
+- Phase 2 file: `D:/Delta/DeltaSoft/NewAPI/Migration_TO_FCL_Phase2_SPs_20260515.sql`
+- Memory: `feedback_keep_legacy_create_new` — luôn tạo SP/endpoint song song khi thay đổi behavior lớn
 
 ---
 

@@ -200,4 +200,49 @@ export class DispatchOrderFclService extends BaseService {
       else return response;
     }), catchError(this.handleError));
   }
+
+  // =====================================================================
+  // TO refactor (2026-05-15): các method WithTO — tạo/sửa/đọc atomic FCL+TO.
+  //   • Method cũ (add/update/getDetail) GIỮ NGUYÊN cho lệnh legacy.
+  //   • FE gọi *WithTo khi tạo/sửa lệnh MỚI và khi mở xem lệnh — backend trả
+  //     m.IsLegacy để FE rẽ nhánh hiển thị.
+  // Response createWithTo: { newToId, newToRefNo, newFclRefNo }.
+  // =====================================================================
+
+  createWithTo(entity: DispatchOrderFcl) {
+    let p: FromBodyBase<DispatchOrderFcl> = {};
+    p.item = entity;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/CreateWithTO`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+  updateWithTo(entity: DispatchOrderFcl) {
+    let p: FromBodyBase<DispatchOrderFcl> = {};
+    p.item = entity;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/UpdateWithTO`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+  getDetailWithTo(refNo: string) {
+    let p: FromBodyBase<DispatchOrderFcl> = {};
+    let item: DispatchOrderFcl = { refNo: refNo };
+    p.item = item;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/GetByRefNoWithTO`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
 }

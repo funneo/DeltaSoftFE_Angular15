@@ -86,6 +86,7 @@
           <th>M/Bill</th>
           <th>Booking No</th>
           <th style="min-width: 100px;">Lượng hàng</th>
+          <th style="min-width: 140px;">Cont No</th>
           <th>Ghi chú</th>
           <th rowspan="1" style="min-width: 120px;">Người lập/Ngày lập</th>
           <th rowspan="2" style="min-width: 100px;">CN làm hàng</th>
@@ -114,6 +115,8 @@
               name="sobookingSearch" /></th>
           <th><input class="form-control" #sobookingInput1 [(ngModel)]="luonghangSearch" (input)="filter()" type="text"
               name="luonghangSearch" /></th>
+          <th><input class="form-control" #contnoInput [(ngModel)]="contnoSearch" (input)="filter()" type="text"
+              name="contnoSearch" /></th>
           <th><input class="form-control" #invoiceInput [(ngModel)]="ghichuSearch" (input)="filter()" type="text"
               name="ghichuSearch" /></th>
           <th><input class="form-control" #nguoilapInput [(ngModel)]="nguoilapSearch" (input)="filter()" type="text"
@@ -140,6 +143,7 @@
           <td>{{item.mawB_MBL}}</td>
           <td>{{item.bookingNo}}</td>
           <td>{{item.weight}}</td>
+          <td>{{item.conts}}</td>
           <td>{{item.notes }}</td>
           <td>
             <span>

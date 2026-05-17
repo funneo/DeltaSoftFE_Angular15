@@ -3,6 +3,7 @@ import { HttpParams } from '@angular/common/http';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { ModalAttachfileComponent } from '@app/shared/components/systems/modal-attachfile/modal-attachfile.component';
 import { ModalDispatchOrderFclComponent } from '@app/shared/components/transports/modal-dispatch-order-fcl/modal-dispatch-order-fcl.component';
+import { ModalDispatchOrderFclV2Component } from '@app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component';
 import { ModalShippingTaskCsComponent } from '@app/shared/components/transports/modal-shipping-task-cs/modal-shipping-task-cs.component';
 import { ModalShippingTaskOpmanComponent } from '@app/shared/components/transports/modal-shipping-task-opman/modal-shipping-task-opman.component';
 import { ModalTransportOrderComponent } from '@app/shared/components/transports/modal-transport-order/modal-transport-order.component';
@@ -27,14 +28,14 @@ export class ShippingTaskOpmanComponent implements OnInit {
   pageIndex=1;
   flagDelete = false;
   keyword = '';
-  listWorkflow: ShippingTask[];
-  filteredData:ShippingTask[];
+  listWorkflow: ShippingTask[]= [];
+  filteredData:ShippingTask[] = [];
   listNhanviec:ShippingTask[]=[];
-  listCustomer: Customer[];
+  listCustomer: Customer[] = [];
   listBranch:Branch[]=[];
   branchId?:number;
   userLoged?: Profile;
-  busy: Subscription;
+  busy: Subscription = new Subscription();
   viewModal = false;
   viewModalOpMan=false;
   viewGrade: boolean = false;
@@ -48,18 +49,21 @@ export class ShippingTaskOpmanComponent implements OnInit {
   selectedTypeCs=0;
   listGroup: number[] = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
   selecteDate: string = moment(new Date()).format('DD/MM/YYYY');
-  listShipmentType :any[];
+  listShipmentType :any[] = [];
   public flagLinkEdit: boolean = false;
   public ngayBatDau: Date = this._utilityService.ngayBanDau;
   public ngayKetThuc: Date = this._utilityService.ngayKetThuc;
   public dateOptions = this._utilityService.dateOptionMultis(this.ngayBatDau, this.ngayKetThuc);
   viewModalDispatchOrder:boolean=false;
   viewModalTransportOrder: boolean = false;
+  // TO refactor (2026-05-15): cờ cho modal v2 — tạo lệnh FCL mới (atomic + TO segments).
+  viewModalDispatchOrderV2: boolean = false;
   filterColumns: { [key: string]: string } = {};
 
   maskNumber = UtilityService.maskNumber;
 
   @ViewChild(ModalDispatchOrderFclComponent, { static: false }) modalDispatchOrder: ModalDispatchOrderFclComponent
+  @ViewChild(ModalDispatchOrderFclV2Component, { static: false }) modalDispatchOrderV2: ModalDispatchOrderFclV2Component;
   @ViewChild(ModalTransportOrderComponent, { static: false }) modalTransportOrder: ModalTransportOrderComponent;
   @ViewChild(ModalShippingTaskCsComponent, { static: false }) modalAddEdit: ModalShippingTaskCsComponent
   @ViewChild(ModalShippingTaskOpmanComponent, { static: false }) modalOpManEdit: ModalShippingTaskOpmanComponent
@@ -294,11 +298,16 @@ export class ShippingTaskOpmanComponent implements OnInit {
     }, 50);
   }
   createTransportOrder(): void {
+    // TO refactor (2026-05-15): nút "Lập lệnh (Location)" giờ tạo lệnh FCL MỚI
+    // (isLegacy=0) qua modal v2 — KHÔNG còn tạo TransportOrder standalone nữa.
     let listChecks = this.listWorkflow.filter(x => x.checked);
-    this.viewModalTransportOrder = true;
+    this.viewModalDispatchOrderV2 = true;
     setTimeout(() => {
-      this.modalTransportOrder.add(listChecks);
+      this.modalDispatchOrderV2.add(listChecks);
     }, 50);
+  }
+  closeModalDispatchOrderV2(): void {
+    this.viewModalDispatchOrderV2 = false;
   }
 
   delete(id: number): void {

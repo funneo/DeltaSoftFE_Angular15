@@ -284,6 +284,10 @@
 <modal-dispatch-order-fcl *ngIf="viewModalDispatchOrder" (SaveSuccess)="saveSuccess()"
   (CloseModal)="closeModalDispatchOrder()">
 </modal-dispatch-order-fcl>
+<!-- TO refactor (2026-05-15): modal FCL v2 cho lệnh mới (gắn TO segments + map Vietmap) -->
+<modal-dispatch-order-fcl-v2 *ngIf="viewModalDispatchOrderV2" (SaveSuccess)="saveSuccess()"
+  (CloseModal)="closeModalDispatchOrderV2()">
+</modal-dispatch-order-fcl-v2>
 <modal-transport-order *ngIf="viewModalTransportOrder" (SaveSuccess)="saveSuccess()"
   (CloseModal)="closeModalTransportOrder()">
 </modal-transport-order>

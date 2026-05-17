@@ -16,6 +16,7 @@ import { TabsModule } from 'ngx-bootstrap/tabs';
 import { NgxSpinnerModule } from 'ngx-spinner';
 import { ModalShippingTaskOpmanModule } from '@app/shared/components/transports/modal-shipping-task-opman/modal-shipping-task-opman.module';
 import { ModalDispatchOrderFclModule } from '@app/shared/components/transports/modal-dispatch-order-fcl/modal-dispatch-order-fcl.module';
+import { ModalDispatchOrderFclV2Module } from '@app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.module';
 import { UtilityService } from '@app/shared/services';
 import { NgxMaskModule } from 'ngx-mask';
 import { ModalTransportOrderModule } from '@app/shared/components/transports/modal-transport-order/modal-transport-order.module';
@@ -40,6 +41,7 @@ import { ModalTransportOrderModule } from '@app/shared/components/transports/mod
     NgxSpinnerModule,
     NgxMaskModule.forRoot(UtilityService.maskConfig),
     ModalDispatchOrderFclModule,
+    ModalDispatchOrderFclV2Module,
     ModalTransportOrderModule,
   ],providers:[
     DatePipe

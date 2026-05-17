@@ -1,5 +1,81 @@
 # Completed Features
 
+## Refactor TO ↔ FCL — Phase 3 FE Modal V2 (2026-05-16)
+
+### FE service + model
+- **`dispatch-order-fcl.service.ts`** — thêm 3 method song song:
+  - `createWithTo(entity)` → POST `/api/DispatchOrderFCL/CreateWithTO` (trả `{ NewToId, NewToRefNo, NewFclRefNo }`)
+  - `updateWithTo(entity)` → POST `/api/DispatchOrderFCL/UpdateWithTO`
+  - `getDetailWithTo(refNo)` → POST `/api/DispatchOrderFCL/GetByRefNoWithTO` (trả model kèm `Segments[]`, `IsLegacy`, `ToRefNo`)
+- **Model `dispatch-order-fcl.ts`**: thêm `isLegacy?: boolean`, `toRefNo?: string`, `segments?: TransportOrderSegment[]`
+
+### FE Modal V2 — `modal-dispatch-order-fcl-v2/` (clone từ modal cũ, song song)
+- Folder mới: `src/app/shared/components/transports/modal-dispatch-order-fcl-v2/`
+- Class `ModalDispatchOrderFclV2Component`, selector `modal-dispatch-order-fcl-v2`
+- Service calls đổi sang WithTO: `create` → `createWithTo`, `update` → `updateWithTo` (4 chỗ), `getDetail` → `getDetailWithTo`
+- `add(listItem)` khởi tạo `segments=[]`, `isLegacy=false` explicit
+- `edit(refNo)` rebuild `locations = _segmentsToLocations(entity.segments)` để route builder load đúng
+- **Tab "Cung đường"** inline copy từ `modal-transport-order` (~333 dòng template + ~1500 dòng SCSS), nhưng **bỏ hoàn toàn vehicle panel** (cột phải TO modal) — modal v2 đã có tab "Thông tin chung" riêng cho xe/lái xe/dầu
+- **3 ViewChild modal helpers** embed cuối template: `<modal-vietmap-routes>`, `<modal-map-routes>`, `<modal-route-compare>`
+- **~25 route methods** copy vào component: `isLocInRoute`, `addToRoute`, `onDropLocation`, `removeLocation`, `getSegment`, `calculateTotal`, `showFullRouteMap`, `editSegmentRoute`, `openCompareModal`, `_applyCompareRoute`, `onRouteSelected`, `saveSegmentDefault`, `_rebuildSegments`, `_fetchSegmentHistory`, `_parseTollStations`, `_applyTollPrices`, `_fetchTollForSegment`, `_loadAllLocations`, `_segmentsToLocations`, `calulateOilSegments`, `_rebuildDispatchSummarize`, `toggleAddCustomPoint`, `confirmAddCustomPoint`, `sortLoc`, `hasGeoCoord`, `selectLocation`, `locationTypeName`, `removeStation`, `isSegmentCalculating`, `getIndexClass`
+- **Module v2**: thêm `DragDropModule` + `ModalMapRoutesModule`
+- **Wiring entry point**:
+  - `dispatch-order-fcl.component.ts` (list FCL): row click check `selectedItem.isLegacy === false` → mở modal v2; có 2 nút "Tạo lệnh mới (v2)" + "Tạo lệnh cũ" riêng
+  - `shipping-task-opman.component.ts`: nút "Lập lệnh (Location)" → mở modal v2 (entry point chính cho luồng tạo mới)
+
+### Redesign UI Modal V2 (2026-05-16, iter 2)
+- **Width**: `.fcl-v2-dialog` 95vw (sau 2 lần điều chỉnh: 70% → 90% → 95%), max-height 97vh, border-radius 10px, shadow lớn
+- **Header**: gradient navy → blue, viền vàng 2px dưới; icon truck + tiêu đề; RefNo badge vàng; pill người tạo + ngày tạo; nút X tròn xoay khi hover
+- **Body**: nền `#f6f8fa`, box-body trắng bo 8px shadow nhẹ; bỏ duplicate row RefNo/Ngày trong tab "Thông tin chung" (header đã hiển thị), chỉ giữ nút "Đính kèm hồ sơ"
+- **Tab nav**: padding 6/14px, font 12.5px, active border-bottom 2px navy
+- **Form inputs compact**: `.form-control` + `ng-select` đồng bộ height 28px, padding 2/8px, font 12.5px, focus glow xanh nhạt; gutter cột thu 8px; `form-group margin-bottom: 6px`; `control-label padding-top: 5px`
+- **Fieldset/legend**: bo 6px, padding 8/12/4, legend pill navy uppercase
+- **Table**: header `#eaf3fb` navy đậm, td padding 4/6px, row hover sáng
+- **Form wrap fix**: ban đầu tách footer ra ngoài form gây bug `Cannot read properties of undefined (reading 'form')` ở `addEditForm.form.valid`. Fix: `<form class="fcl-v2-form">` wrap CẢ body + footer; SCSS `.fcl-v2-form { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }` giữ flex chain modal-content → form → body(scroll) → footer(shrink:0). Nút Lưu giữ `type="submit"`
+
+### Tab "Cung đường" — 3 cột giống TO (2026-05-16, iter 3)
+Restructure tab "Cung đường" từ 2 cột → **3 cột dọc** chính:
+- **Cột trái `.to-col-pool`** (300px, collapse → 38px): "Điểm hàng từ công việc" — có nút `pool-toggle-btn` (mũi tên `‹‹/››`) ẩn/hiện. Ẩn khi `routeConfirmed`
+- **Cột giữa `.to-col-route`** (flex 1): lộ trình drag-drop + per-segment buttons (Lộ trình đã lưu / Tính lại Vietmap / So sánh / Lưu mặc định) + "Thêm điểm khác" + route-summary tổng kết
+- **Cột phải `.to-col-info`** (flex 6): MỚI — header "Tải trọng & Tóm tắt lệnh" + bảng `seg-km-table` (Chặng/Mô tả/Tải trọng/Km/Dầu định mức/Trạm phí) + `dispatch-summary-grid` (tổng km/dầu + bảng `allTollStations` theo loại xe + hướng dẫn cung đường)
+- **Bảng tải trọng + giá trạm thu phí**: chọn payloadWeight per chặng (ng-select listOilQuota) → `onSegmentQuotaChange()` set fuelNorm + fuelAmountCalculated. Khi chọn xe ở tab Thông tin chung → `loadVehicle()` set `_vehicleBotTypeId` + gọi `_applyTollPrices()` → bảng `allTollStations` cập nhật giá theo loại xe BOT (1132-1136 → vietmap key 1-5)
+- **Methods MỚI thêm cho V2**: `onSegmentQuotaChange(segIndex, event)`, `onLastSegmentFinalChange()`; `loadVehicle()` rewrite để set `_vehicleBotTypeId` từ response + call `_applyTollPrices()` sau load
+- **SCSS `.to-body`**: `display:flex; height:70vh; background #f6f8fa; border 1px bo 6px`; 3 cột `height:100%` cuộn độc lập
+- **Build status**: 0 errors
+
+---
+
+## Refactor TO ↔ FCL — Phase 2 SQL + BE (2026-05-15)
+
+### SQL — `D:/Delta/DeltaSoft/NewAPI/Migration_TO_FCL_Phase2_SPs_20260515.sql`
+- **Section 0** (idempotent): `ALTER TABLE DispatchOrderFCL ADD TongKm DECIMAL(18,2) NULL` (chỉ chạy nếu chưa có)
+- **Section A — TO SPs theo schema 14 cột**:
+  - DROP `SP_TransportOrder_Create`, `SP_TransportOrder_Update` (TO không còn standalone — merge vào FCL CreateWithTO)
+  - `SP_TransportOrder_GetById` (4 RS: master+FCL preview / segments / stations / waypoints)
+  - `SP_TransportOrder_GetAll` rewrite — bỏ JOIN `Tbl_TransportOrder_Details` (đã DROP Phase 1C), JOIN FCL qua FclRefNo show xe/lái xe/IsLegacy (anh đã tự chỉnh thêm)
+  - `SP_TransportOrder_UpdateStatus` — bỏ `IsDeny/Feedback` (cột đã DROP), signature đơn giản (id/status/userId)
+- **Section B — 3 SP MỚI cho FCL (song song, KHÔNG đụng SP cũ)**:
+  - `SP_DispatchOrderFCL_CreateWithTO` — clone Create cũ + bỏ ~57 param legacy (Chang*, Luonghang*, Cang*, Nhamay*, Trungchuyen*, InquiryTime*, ShippingTaskId, LuotdiQuabai/LuotveQuabai) + thêm @ListSegments/@ListSegmentStations/@ListSegmentWaypoints (TVPs từ TO). Tongdau = SUM(FuelAmountCalculated) + @OilCompensation. TongKm = SUM(DistanceKm) (persist vào cả FCL.TongKm + TO.TongKm). IsLegacy = 0 explicit. Trả về `(NewToId, NewToRefNo, NewFclRefNo)`.
+  - `SP_DispatchOrderFCL_UpdateWithTO` — tương tự, kèm BEGIN TRAN, lookup TO via FclRefNo, RAISERROR nếu lệnh legacy.
+  - `SP_DispatchOrderFcl_GetByRefNoWithTO` — clone GetByRefNo cũ (5 RS) + thêm 4 RS TO (header/segments/stations/waypoints). SELECT TongKm dùng `COALESCE(m.TongKm, [công thức cũ])` để cover cả lệnh mới (đọc FCL.TongKm) và legacy (fallback sum Km*).
+
+### BE FCL — giữ nguyên method cũ, chỉ THÊM
+- **Model `DispatchOrderFCL`**: thêm `IsLegacy bool?`, `TongKm decimal?`, `ToRefNo string`, `Segments IEnumerable<TransportOrderSegment>`
+- **ViewModel**: bỏ field `int TongKm` cũ (do model giờ là decimal?)
+- **`IDispatchOrderFCL`**: thêm 3 method `CreateWithTOAsync` / `UpdateWithTOAsync` / `GetByRefNoWithTOAsync` + class `DispatchOrderFCLCreateWithTOResult { NewToId, NewToRefNo, NewFclRefNo }`
+- **Repository** (cuối file): helpers `BuildSegmentsTvp` / `BuildSegmentStationsTvp` / `BuildSegmentWaypointsTvp` / `AddFclWithTOCommonParams` (chỉ tham số FCL non-legacy) + 3 impl
+- **Controller**: 3 endpoint mới `/CreateWithTO`, `/UpdateWithTO`, `/GetByRefNoWithTO` (file [DispatchOrderFCLController.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Controllers/FCL/DispatchOrderFCLController.cs))
+
+### BE TO — trim về route-only
+- **`TransportOrder` model**: chỉ còn 14 fields (Id, RefNo, BranchId, ShortWay, FullRoute, Status, CreatedDate, CreatedBy, CreatedByName, UpdatedBy, UpdatedDate, Deleted, TongKm, FclRefNo) + `Segments`
+- **`TransportOrderViewModel`**: gắn `IsLegacy` + FCL preview info (VehiclelLicensePlates, DriverName, OilPrice, Tongdau, Chiphidau...)
+- **`ITransportOrder`**: drop `CreateAsync/UpdateAsync`; `UpdateStatus` signature đơn giản (id/status/userId)
+- **`TransportOrderRepository`** rewrite — chỉ còn read (GetAll/GetById), Delete (soft), UpdateStatus, GetSegmentHistory, SaveSegmentDefaultAsync, GetAllLocations
+- **Controller**: drop endpoint `/Create` và `/Update` (kèm comment dẫn sang FCL WithTO); `UpdateStatus` đổi signature
+- **Build status**: 0 errors (chỉ warning CA2200 cũ trong codebase)
+
+---
+
 ## Core Infrastructure
 - **Login page redesign** (2026-05-14): layout 2 cột (brand panel trái + form phải)
   - Brand panel: logo Delta + headline "Vận tải thông minh — Đồng hành cùng doanh nghiệp" + 6 quotes xoay vòng auto-rotate 6s, dots indicator click chọn quote thủ công, `setInterval` cleanup trong `ngOnDestroy`

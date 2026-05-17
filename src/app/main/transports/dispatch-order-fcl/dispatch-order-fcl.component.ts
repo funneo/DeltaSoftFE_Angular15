@@ -3,6 +3,7 @@ import { HttpParams } from "@angular/common/http";
 import { ChangeDetectorRef, Component, OnInit, ViewChild } from "@angular/core";
 import { ModalClosingFclProcessComponent } from "@app/shared/components/transports/modal-closing-fcl-process/modal-closing-fcl-process.component";
 import { ModalDispatchOrderFclComponent } from "@app/shared/components/transports/modal-dispatch-order-fcl/modal-dispatch-order-fcl.component";
+import { ModalDispatchOrderFclV2Component } from "@app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component";
 import { ModalPerformFclComponent } from "@app/shared/components/transports/modal-perform-fcl/modal-perform-fcl.component";
 import { MessageContstants } from "@app/shared/constants";
 import { SystemContstants } from "@app/shared/constants/SystemConstants";
@@ -80,7 +81,10 @@ export class DispatchOrderFclComponent implements OnInit {
     this.ngayKetThuc
   );
   viewModalProgress = false;
+  // TO refactor: viewModalV2 cho modal mới (isLegacy=0). viewModal giữ cho modal cũ (legacy).
+  viewModalV2 = false;
   @ViewChild(ModalDispatchOrderFclComponent, { static: false }) modalDispatchOrderFclAddEdit: ModalDispatchOrderFclComponent;
+  @ViewChild(ModalDispatchOrderFclV2Component, { static: false }) modalDispatchOrderFclV2AddEdit: ModalDispatchOrderFclV2Component;
   @ViewChild(ModalPerformFclComponent, { static: false }) modalPerformDispatchOrderFcl: ModalPerformFclComponent;
   @ViewChild(ModalClosingFclProcessComponent, { static: false }) modalChotMulti: ModalClosingFclProcessComponent;
   @ViewChild(ModalPhieuChiLenhComponent, { static: false }) modalPayment: ModalPhieuChiLenhComponent;
@@ -291,21 +295,33 @@ export class DispatchOrderFclComponent implements OnInit {
     };
     UtilityService.setLocalParams(p, this._functionId);
     let selectedRefNo = refNo;
+    let selectedItem: DispatchOrderFcl = null;
     if (!selectedRefNo) {
       const index = this.listDispatchOrderFcl.findIndex((x) => x.checked);
       if (index >= 0) {
-        selectedRefNo = this.listDispatchOrderFcl[index].refNo;
+        selectedItem = this.listDispatchOrderFcl[index];
+        selectedRefNo = selectedItem.refNo;
       }
+    } else {
+      selectedItem = this.listDispatchOrderFcl.find((x) => x.refNo === selectedRefNo);
     }
 
     if (selectedRefNo) {
-      this.viewModal = true;
-      setTimeout(() => {
-        this.modalDispatchOrderFclAddEdit.edit(
-          selectedRefNo,
-          flag
-        );
-      }, 50);
+      // TO refactor (2026-05-15): pre-check isLegacy từ list data để chọn modal.
+      // Lệnh legacy (isLegacy=1 hoặc thiếu field — coi như legacy) → modal cũ.
+      // Lệnh mới (isLegacy=0)                                       → modal v2.
+      const useV2 = selectedItem && selectedItem.isLegacy === false;
+      if (useV2) {
+        this.viewModalV2 = true;
+        setTimeout(() => {
+          this.modalDispatchOrderFclV2AddEdit.edit(selectedRefNo, flag);
+        }, 50);
+      } else {
+        this.viewModal = true;
+        setTimeout(() => {
+          this.modalDispatchOrderFclAddEdit.edit(selectedRefNo, flag);
+        }, 50);
+      }
     }
   }
   export(type: number) {
@@ -428,6 +444,9 @@ export class DispatchOrderFclComponent implements OnInit {
 
   closeModal(): void {
     this.viewModal = false;
+  }
+  closeModalV2(): void {
+    this.viewModalV2 = false;
   }
   closeModalProgress(): void {
     this.viewModalProgress = false;

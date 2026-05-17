@@ -50,6 +50,7 @@ export class ShipmentNormalComponent implements OnInit {
   hbillSearch?: string;
   mbillSearch?: string;
   sobookingSearch?: string;
+  contnoSearch?: string;
   ghichuSearch?: string;
   nguoilapSearch?: string;
   luonghangSearch = '';
@@ -206,6 +207,10 @@ export class ShipmentNormalComponent implements OnInit {
     if (this.invoiceSearch?.length > 0)
       this.listFilter = this.listFilter.filter((data) => {
         return data.invoiceNo?.toLowerCase().includes(this.invoiceSearch.trim().toLocaleLowerCase());
+      });
+    if (this.contnoSearch?.length > 0)
+      this.listFilter = this.listFilter.filter((data) => {
+        return data.conts?.toLowerCase().includes(this.contnoSearch.trim().toLocaleLowerCase());
       });
     if (this.ghichuSearch?.length > 0)
       this.listFilter = this.listFilter.filter((data) => {

@@ -2,6 +2,7 @@
 import { DispatchOrderEtc } from "@app/shared/models";
 import { DispatchOrderFee } from "@app/shared/models/transports/dispatchorders/dispatch-order-fee";
 import { ShippingTask } from "@app/shared/models/transports/shipping-task.model";
+import { TransportOrderSegment } from "@app/shared/models/transports/dispatchorders/transport-order.model";
 
 export interface DispatchOrderFcl {
     id?: number;
@@ -160,6 +161,15 @@ export interface DispatchOrderFcl {
     hawB_HBL?: string;
     mawB_MBL?: string;
     bookingNo?: string;
+
+    // ===== TO refactor (2026-05-15) =====
+    // isLegacy=1: lệnh cũ (pre-refactor), modal v1.
+    // isLegacy=0: lệnh mới, modal v2 — có route segments + map Vietmap, không có Chang/Luonghang/Cang/Nhamay.
+    isLegacy?: boolean;
+    // RefNo của TO link (server set sau khi CreateWithTO). Chỉ output.
+    toRefNo?: string;
+    // Segments của TO (truyền vào createWithTo/updateWithTo; nhận từ getDetailWithTo).
+    segments?: TransportOrderSegment[];
 }
 
 export interface DispatchOrderFclDetail {

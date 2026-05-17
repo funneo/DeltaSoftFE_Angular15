@@ -119,9 +119,8 @@
         <tr *ngFor="let item of visibleData" [style.background-color]="item.isSubcontractors ? '#DFF6FF' : 'white'"
           (click)="clickRow(item)" [ngClass]="{'bgColorSkyblue': item.checked}" style="cursor: pointer;">
           <td class="table-checkbox">
-            <label class="custom-checkbox">
-              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked"
-                (click)="$event.stopPropagation()" />
+            <label class="custom-checkbox" (click)="$event.preventDefault()">
+              <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" />
               <span class="helping-el"></span>
             </label>
           </td>
@@ -206,6 +205,9 @@
 
 <modal-dispatch-order-fcl *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
 </modal-dispatch-order-fcl>
+<!-- TO refactor (2026-05-15): modal v2 cho lệnh mới (isLegacy=0) -->
+<modal-dispatch-order-fcl-v2 *ngIf="viewModalV2" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModalV2()">
+</modal-dispatch-order-fcl-v2>
 <modal-closing-fcl-process *ngIf="viewModalProgress" (CloseModal)="closeModalProgress()">
 </modal-closing-fcl-process>
 <modal-phieu-chi-lenh *ngIf="viewModalPayment" (CloseModal)="closePayment()" (SaveSuccess)="saveSuccess()">
