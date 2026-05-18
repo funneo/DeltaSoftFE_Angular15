@@ -1,6 +1,14 @@
 # Pending / In-Progress Work
 
-## Refactor TO ↔ FCL — FE wiring + chạy migration (cập nhật 2026-05-16)
+## DB Verify — SP_Shipment_GetPagingNormal phải SELECT cột Conts
+- File hiện tại: SP gọi từ `ShipmentRepository.GetPagingNormal` (line 619-640) — tên SP `SP_Shipment_GetPagingNormal`
+- FE shipment-normal list vừa thêm cột "Cont No" (2026-05-17), bind `{{item.conts}}` + filter `contnoSearch`
+- **Cần verify SP**: có SELECT cột `Conts` không. Nếu chưa → ALTER SP thêm subquery gom `ContainerNumber` từ `Tbl_ShippingTasks` JOIN `Tbl_Shipments` → STRING_AGG / FOR XML PATH theo ShipmentId
+- Khi confirm xong: cột Cont No sẽ hiện data, filter + export Excel hoạt động end-to-end
+
+---
+
+## Refactor TO ↔ FCL — FE wiring + chạy migration (cập nhật 2026-05-17)
 
 ### Trạng thái hiện tại
 - ✅ Phase 1A đã chạy (IsLegacy + FclRefNo + UNIQUE filtered index)
@@ -15,7 +23,11 @@
 - ✅ Bảng tải trọng per-segment + dispatch-summary với giá trạm phí theo loại xe (`loadVehicle` set `_vehicleBotTypeId`)
 - ✅ Tab "Cung đường" 3 cột dọc giống TO (pool collapse / route builder / tải trọng+tóm tắt)
 - ✅ Width modal: 95vw (final)
+- ✅ `routeConfirmed` đổi thành getter `status > 2` (khác TO — sửa cung đường được đến hết status=2, lock từ Duyệt B1)
 - ✅ Wiring entry: list FCL route theo `isLegacy`, shipping-task-opman nút "Lập lệnh (Location)" → modal v2
+- ✅ List FCL: click checkbox = click row (fix stopPropagation)
+- ✅ Login: lưu mật khẩu (base64 obfuscation) + đổi label "Lưu thông tin đăng nhập"
+- ✅ shipment-normal: thêm cột "Cont No" + filter (chờ verify SP trả Conts)
 - ✅ Build FE pass 0 errors
 
 ### Việc còn lại

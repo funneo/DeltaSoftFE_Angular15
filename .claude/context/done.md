@@ -1,5 +1,55 @@
 # Completed Features
 
+## FE polish — 2026-05-17
+
+### modal-dispatchorder-route — Box-footer luôn pin đáy + 1 scroll duy nhất
+- **Bug 1**: `box-footer` trước đây nằm trong `<form>` → trong `.modal-body` → khi table dài, footer cuộn ra khỏi viewport, user không thấy nút Lưu/Hủy
+- **Fix layout**: di chuyển `<div class="box-footer">` ra ngoài `<form>` + `<div class="modal-body">`, thành sibling của `.modal-body` trong `.modal-content`
+- **CSS** ([modal-dispatchorder-route.component.css](src/app/shared/components/transports/modal-dispatchorder-route/modal-dispatchorder-route.component.css)):
+  - `.modal-content`: `display: flex; flex-direction: column; max-height: 90vh` (chia 3 vùng dọc, không vượt viewport)
+  - `.modal-header` + `.box-footer`: `flex-shrink: 0` (luôn giữ kích thước)
+  - `.modal-body`: `flex: 1 1 auto; min-height: 0; overflow: hidden` (chiếm chỗ trống, KHÔNG cuộn)
+  - `.box-footer`: padding 10/15px, nền `#f5f5f5`, border-top — visual rõ ràng
+- **Bug 2**: cả `.modal-body` và `table tbody` đều có scroll → 2 thanh cuộn lồng nhau, khó dùng
+- **Fix scroll**: `.modal-body { overflow: hidden }` (loại bỏ scroll #1); `table tbody { height: calc(90vh - 280px); max-height: 580px; overflow-y: auto }` — duy trì 1 scroll trong table, height động theo viewport
+  - Viewport cao (≥960px): tbody = 580px (cap)
+  - Viewport thấp (~720px): tbody ~368px → filter row + pagination + footer luôn nhìn thấy
+
+### Login — Lưu thông tin đăng nhập kèm mật khẩu
+- Đổi label `Ghi nhớ tài khoản & chi nhánh` → **`Lưu thông tin đăng nhập`** ([login.component.html:112](src/app/login/login.component.html#L112))
+- Trước đây cố ý KHÔNG lưu password (lý do bảo mật). User yêu cầu lưu cả password.
+- `_persistRemembered`: thêm `passWord: btoa(this.user.passWord)` (encode base64 để chống đọc lướt khi xem localStorage)
+- `_loadRemembered`: `atob(data.passWord)` decode khi restore + bind vào `this.user.passWord` trong `ngOnInit`
+- Field model FE đúng tên là `passWord` (camelCase W hoa), không phải `password`
+- ⚠️ Base64 KHÔNG phải mã hoá — chỉ chống đọc casual. Acceptable cho nội bộ doanh nghiệp; cần thay refresh token + httpOnly cookie nếu mở rộng ra ngoài
+
+### FCL list — Click checkbox = click row
+- Trước: `<input type="checkbox" (click)="$event.stopPropagation()">` → click checkbox không bubble lên row → `item.checked` Angular không sync với DOM
+- Sau: bỏ stopPropagation trên input; thêm `(click)="$event.preventDefault()"` trên `<label>` để chặn browser double-toggle (label + input)
+- Bubble đúng cách lên `<tr (click)="clickRow(item)">` → toggle `item.checked` → Angular re-render `[checked]` đồng bộ ([html:121-127](src/app/main/transports/dispatch-order-fcl/dispatch-order-fcl.component.html#L121))
+
+### Modal V2 — routeConfirmed theo workflow FCL (khác TO)
+- TO có bước "Chốt cung đường" tách biệt, sau khi chốt mới hiện xe/lái xe → `routeConfirmed` là stored bool, set true khi click "Chốt cung đường"
+- V2 (FCL) không có bước này — tất cả info (cung đường, xe, lái xe, tải trọng) cùng 1 form, sửa thoải mái đến khi DUYỆT B1
+- Convert `routeConfirmed` từ property → **getter** dựa trên status:
+  ```typescript
+  get routeConfirmed(): boolean {
+    return (this.entity?.status ?? 0) > 2 || this.flagXem;
+  }
+  ```
+- Status 0 (Mới) / 1 (Gửi lệnh) / 2 (Nhận lệnh): vẫn cho sửa cung đường + tải trọng + pool col hiện
+- Status 3 (Duyệt B1) / 4 (Duyệt B2) / 5 (CHỐT): route locked, pool col ẩn, buttons Vietmap/So sánh/Lưu mặc định ẩn
+- Khớp pattern modal FCL legacy (`status > 2` lock)
+- Bỏ dòng `this.routeConfirmed = false` trong `add()` reset (getter tự suy)
+
+### shipment-normal — Cột Cont No + filter + export
+- Thêm cột "Cont No" trước "Ghi chú" trong list lô hàng thường (dùng field `conts` có sẵn ở `Shipment.model.ts` + `ShipmentViewModel`)
+- Filter row input: `[(ngModel)]="contnoSearch"` → method `filter()` thêm 1 case lọc `data.conts.toLowerCase().includes(...)`
+- Nút Export Excel đã có sẵn (header `<button (click)="exportExcel()">`) — đã dùng `listFilter` (data đã lọc theo tất cả filter)
+- ⚠️ Cần verify SP `SP_Shipment_GetPagingNormal` SELECT `Conts` (nếu chưa thì cột rỗng, cần ALTER SP gom container number từ shipping tasks)
+
+---
+
 ## Refactor TO ↔ FCL — Phase 3 FE Modal V2 (2026-05-16)
 
 ### FE service + model

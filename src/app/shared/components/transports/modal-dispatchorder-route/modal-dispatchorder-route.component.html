@@ -97,15 +97,16 @@
             </div>
           </div>
           <!-- /.box-body -->
-          <div class="box-footer text-right">
-            <button type="button" class="btn btn-primary btn-sm" [disabled]="!flagOk" (click)="saveChange()">
-              <i class="fa fa-save"></i> Lưu</button>
-            <button type="button" (click)="modalRoute.hide()" class="btn btn-danger btn-sm">
-              <i class="fa fa-close"></i> Hủy</button>
-          </div>
-          <!-- /.box-footer -->
         </form>
       </div>
+      <!-- /.modal-body -->
+      <div class="box-footer text-right">
+        <button type="button" class="btn btn-primary btn-sm" [disabled]="!flagOk" (click)="saveChange()">
+          <i class="fa fa-save"></i> Lưu</button>
+        <button type="button" (click)="modalRoute.hide()" class="btn btn-danger btn-sm">
+          <i class="fa fa-close"></i> Hủy</button>
+      </div>
+      <!-- /.box-footer -->
     </div>
   </div>
 </div>
