@@ -28,10 +28,16 @@
       "PowerShell($dst = 'd:\\\\Delta\\\\DeltaSoft\\\\web-app-update\\\\src\\\\app\\\\shared\\\\components\\\\transports\\\\modal-dispatch-order-fcl-v2'; Get-ChildItem $dst -File | ForEach-Object { $newName = $_.Name -replace 'modal-dispatch-order-fcl\\\\.', 'modal-dispatch-order-fcl-v2.'; Rename-Item -Path $_.FullName -NewName $newName }; Get-ChildItem $dst)",
       "Bash(npx ng *)",
       "Bash(ls C:/Users/Dell/.claude/projects/d--Delta-DeltaSoft-web-app-update/memory/)",
-      "Read(//c/Users/Dell/.claude/projects/d--Delta-DeltaSoft-web-app-update/memory/**)"
+      "Read(//c/Users/Dell/.claude/projects/d--Delta-DeltaSoft-web-app-update/memory/**)",
+      "Bash(ls D:/Delta/ 2>/dev/null && echo \"---\" && [ -d \"D:/Delta/DeltaSoft-v21-plan\" ] && echo \"folder exists\" || echo \"folder NOT exists yet\")",
+      "Read(//d/Delta/**)",
+      "Bash(mkdir -p \"D:/Delta/DeltaSoft-v21-plan/plan\" \"D:/Delta/DeltaSoft-v21-plan/docs\" \"D:/Delta/DeltaSoft-v21-plan/memory\" && ls \"D:/Delta/DeltaSoft-v21-plan/\")",
+      "Bash(grep -rln \"TypeDispatchOrderFCLEtc\\\\b\\\\|CREATE TYPE TypeDispatchOrderFCLEtc\\\\|TypeDispatchOrderFCLEtc \" --include=\"*.sql\" .)",
+      "Bash(grep -rn \"CREATE TYPE \\\\[*dbo\\\\]*\\\\.*\\\\[*TypeDispatchOrderFCLEtc\" --include=\"*.sql\" .)"
     ],
     "additionalDirectories": [
-      "d:\\Delta\\DeltaSoft\\web-app-update\\.git"
+      "d:\\Delta\\DeltaSoft\\web-app-update\\.git",
+      "D:\\Delta\\DeltaSoft-v21-plan"
     ]
   }
 }

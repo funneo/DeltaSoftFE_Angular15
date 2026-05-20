@@ -78,6 +78,7 @@ export class ShippingTaskOpmanComponent implements OnInit {
   ngOnInit(): void {
     this.userLoged = this._authService.getLoggedInUser();
     this.branchId=Number.parseInt(this.userLoged.branchId);
+    this.loadBranch();
     this.loadData();
     this.loadOtherCategory();
   }

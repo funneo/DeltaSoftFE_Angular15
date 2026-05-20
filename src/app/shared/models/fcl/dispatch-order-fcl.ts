@@ -2,7 +2,7 @@
 import { DispatchOrderEtc } from "@app/shared/models";
 import { DispatchOrderFee } from "@app/shared/models/transports/dispatchorders/dispatch-order-fee";
 import { ShippingTask } from "@app/shared/models/transports/shipping-task.model";
-import { TransportOrderSegment } from "@app/shared/models/transports/dispatchorders/transport-order.model";
+import { TransportOrderExtraSegment, TransportOrderSegment } from "@app/shared/models/transports/dispatchorders/transport-order.model";
 
 export interface DispatchOrderFcl {
     id?: number;
@@ -168,8 +168,13 @@ export interface DispatchOrderFcl {
     isLegacy?: boolean;
     // RefNo của TO link (server set sau khi CreateWithTO). Chỉ output.
     toRefNo?: string;
+    // Id của TO link — dùng khi gọi AddExtraSegment.
+    toId?: number;
     // Segments của TO (truyền vào createWithTo/updateWithTo; nhận từ getDetailWithTo).
     segments?: TransportOrderSegment[];
+    // Cung đường phát sinh — populate trong getDetailWithTo; quản lý qua endpoint riêng
+    // (TransportOrderService.addExtraSegment/updateExtraSegment/deleteExtraSegment).
+    extraSegments?: TransportOrderExtraSegment[];
 }
 
 export interface DispatchOrderFclDetail {

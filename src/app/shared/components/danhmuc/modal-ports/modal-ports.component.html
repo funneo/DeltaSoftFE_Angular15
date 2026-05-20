@@ -46,7 +46,7 @@
               <div class="form-group">
                 <label for="inputEmail3" class="col-sm-2 control-label">Kinh độ</label>
                 <div class="col-sm-4">
-                  <input type="number"  [(ngModel)]="entity.longtitude" step="0.000001"
+                  <input type="number" readonly [(ngModel)]="entity.longtitude" step="0.000001"
                     name="longtitude" class="form-control" placeholder="Nhập kinh độ"
                     [readonly]="flagXem" />
                 </div>
@@ -73,9 +73,10 @@
                 <label class="col-sm-2 control-label">Nhóm cảng</label>
               <div class="col-sm-4">
                   <ng-select [items]="listGroupPorts" name="groupPortId"
-                  bindLabel="categoryName"
+                  bindLabel="name"
                   bindValue="id"
                   [(ngModel)]="entity.groupPortId"
+                  [readonly]="flagXem"
                   placeholder="Chọn nhóm cảng...">
                   </ng-select>
               </div>

@@ -11,7 +11,7 @@
       </div>
       <div class="col-md-1">
         <ng-select class="auto-grow" name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
-          [(ngModel)]="branchId" (change)="changedBranch($event)" [readonly]="!userLoged.isAdmin">
+          [(ngModel)]="branchId" (change)="changedBranch($event)" [disabled]="!userLoged.isAdmin">
         </ng-select>
       </div>
       <div class="col-md-3">

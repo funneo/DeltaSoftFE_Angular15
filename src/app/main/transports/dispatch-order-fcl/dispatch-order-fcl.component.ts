@@ -117,22 +117,25 @@ export class DispatchOrderFclComponent implements OnInit {
     var p = UtilityService.getLocalParams(this._functionId);
     localStorage.removeItem(this._functionId);
 
+    const defaultFrom = new Date(moment().subtract(7, "d").toString());
+    const defaultTo = new Date(
+      moment().hours(23).minutes(59).seconds(59).endOf("month").toString()
+    );
     if (p != null) {
-      this.ngayBatDau = new Date(p.d1);
-      this.ngayKetThuc = new Date(p.d2);
+      const d1 = p.d1 ? new Date(p.d1) : null;
+      const d2 = p.d2 ? new Date(p.d2) : null;
+      this.ngayBatDau = d1 && !isNaN(d1.getTime()) ? d1 : defaultFrom;
+      this.ngayKetThuc = d2 && !isNaN(d2.getTime()) ? d2 : defaultTo;
       this.filterColumns = p.filterColumns || {};
-      this.keyword = p.keyword;
+      this.keyword = p.keyword || "";
     } else {
-      this.ngayBatDau = new Date(moment().subtract(7, "d").toString());
-      this.ngayKetThuc = new Date(
-        moment().hours(23).minutes(59).seconds(59).endOf("month").toString()
-      );
-      this.dateOptions = this._utilityService.dateOptionMultis(
-        this.ngayBatDau,
-        this.ngayKetThuc
-      );
-      //this.loadCustomer();
+      this.ngayBatDau = defaultFrom;
+      this.ngayKetThuc = defaultTo;
     }
+    this.dateOptions = this._utilityService.dateOptionMultis(
+      this.ngayBatDau,
+      this.ngayKetThuc
+    );
     this.loadData();
     this.loadBranch();
   }
@@ -165,8 +168,27 @@ export class DispatchOrderFclComponent implements OnInit {
       });
   }
   loadBranch() {
-    this.branchService.getAll().subscribe((res: ResponseValue<Branch[]>) => {
-      this.listBranch = res.data;
+    this.branchService.getAll().subscribe({
+      next: (res: ResponseValue<Branch[]>) => {
+        if ((res?.code == "200" || res?.code == "201") && Array.isArray(res.data) && res.data.length > 0) {
+          this.listBranch = res.data;
+        } else {
+          this._loadBranchFresh();
+        }
+      },
+      error: () => this._loadBranchFresh(),
+    });
+  }
+
+  private _loadBranchFresh() {
+    this.branchService.clearCache?.();
+    this.branchService.getAll(false).subscribe({
+      next: (res: ResponseValue<Branch[]>) => {
+        this.listBranch = Array.isArray(res?.data) ? res.data : [];
+      },
+      error: () => {
+        this.listBranch = [];
+      },
     });
   }
 
@@ -289,6 +311,8 @@ export class DispatchOrderFclComponent implements OnInit {
 
   edit(flag: boolean, refNo: string = null) {
     let p = {
+      d1: this.ngayBatDau,
+      d2: this.ngayKetThuc,
       filterColumns: this.filterColumns,
       keyword: this.keyword,
       pageinex: this.pageIndex,

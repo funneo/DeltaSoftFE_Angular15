@@ -20,6 +20,7 @@ import { ModalShippingTaskCsModule } from '../modal-shipping-task-cs/modal-shipp
 import { ModalViewShippingTaskModule } from '../modal-view-shipping-task/modal-view-shipping-task.module';
 import { ModalShippingTaskAttachFileModule } from '../modal-shipping-task-attach-file/modal-shipping-task-attach-file.module';
 import { ModalMapRoutesModule } from '../../danhmuc/modal-map-routes/modal-map-routes.module';
+import { ModalAddExtraSegmentModule } from '../modal-add-extra-segment/modal-add-extra-segment.module';
 
 @NgModule({
   declarations: [ModalDispatchOrderFclV2Component],
@@ -42,7 +43,8 @@ import { ModalMapRoutesModule } from '../../danhmuc/modal-map-routes/modal-map-r
     ModalShippingTaskCsModule,
     ModalViewShippingTaskModule,
     ModalShippingTaskAttachFileModule,
-    ModalMapRoutesModule
+    ModalMapRoutesModule,
+    ModalAddExtraSegmentModule
   ],
   exports: [ModalDispatchOrderFclV2Component]
 })

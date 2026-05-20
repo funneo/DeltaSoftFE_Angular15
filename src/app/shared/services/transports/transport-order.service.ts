@@ -4,7 +4,7 @@ import { environment } from '@environments/environment';
 import { catchError, map } from 'rxjs/operators';
 import { AuthService } from '..';
 import { FromBodyBase } from '../../models';
-import { RouteSegmentDefault, TransportOrder, TransportOrderSegment, UnifiedLocation } from '../../models/transports/dispatchorders/transport-order.model';
+import { RouteSegmentDefault, TransportOrder, TransportOrderExtraSegment, TransportOrderExtraSegmentAddResult, TransportOrderSegment, TransportOrderTotalsResult, UnifiedLocation } from '../../models/transports/dispatchorders/transport-order.model';
 import { BaseService } from '../base.service';
 import { JwtService } from '../jwt.service';
 
@@ -137,6 +137,39 @@ export class TransportOrderService extends BaseService {
       .pipe(map((response: any) => {
         if (response.code == '401') this.authenService.logout();
         else return response;
+      }), catchError(this.handleError));
+  }
+
+  // ===== Cung đường phát sinh (2026-05-19) =====
+  // Auto-save per action. BE recompute + trả totals → FE cập nhật display.
+
+  addExtraSegment(item: TransportOrderExtraSegment) {
+    const p: FromBodyBase<TransportOrderExtraSegment> = { item, tokenKey: this.token };
+    return this.http.post(`${environment.apiUrl}/api/TransportOrder/AddExtraSegment`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401') this.authenService.logout();
+        return response as { code: string; message: string; data: TransportOrderExtraSegmentAddResult };
+      }), catchError(this.handleError));
+  }
+
+  updateExtraSegment(item: TransportOrderExtraSegment) {
+    const p: FromBodyBase<TransportOrderExtraSegment> = { item, tokenKey: this.token };
+    return this.http.post(`${environment.apiUrl}/api/TransportOrder/UpdateExtraSegment`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401') this.authenService.logout();
+        return response as { code: string; message: string; data: TransportOrderTotalsResult };
+      }), catchError(this.handleError));
+  }
+
+  deleteExtraSegment(id: number) {
+    const p: FromBodyBase<TransportOrderExtraSegment> = {
+      item: { id } as TransportOrderExtraSegment,
+      tokenKey: this.token
+    };
+    return this.http.post(`${environment.apiUrl}/api/TransportOrder/DeleteExtraSegment`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401') this.authenService.logout();
+        return response as { code: string; message: string; data: TransportOrderTotalsResult };
       }), catchError(this.handleError));
   }
 

@@ -1,12 +1,11 @@
 
 import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
-import { HttpParams } from '@angular/common/http';
 import { NgForm } from '@angular/forms';
 import { MessageContstants } from '@app/shared/constants';
 import { ResponseValue } from '@app/shared/models';
-import { OtherCategories } from '@app/shared/models/other-categories.model';
+import { GroupPorts } from '@app/shared/models/danhmuc/group-ports.model';
 import { Ports } from '@app/shared/models/danhmuc/ports.model';
-import { UtilityService, NotificationService, OtherCategoriesService } from '@app/shared/services';
+import { UtilityService, NotificationService } from '@app/shared/services';
 import { PortsService } from '@app/shared/services/danhmuc/ports.service';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { Subscription } from 'rxjs';
@@ -23,15 +22,14 @@ export class ModalPortsComponent implements OnInit {
   public busy: Subscription;
   maskNumber = UtilityService.maskNumber;
   mask0 = UtilityService.mask0;
-  listGroupPorts: OtherCategories[] = [];
+  listGroupPorts: GroupPorts[] = [];
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter;
   @ViewChild('modalAddEdit', { static: false }) modalAddEdit: ModalDirective;
 
   constructor(
     private _notificationService: NotificationService,
-    private portsService: PortsService,
-    private _otherCategoriesService: OtherCategoriesService
+    private portsService: PortsService
   ) { }
 
   ngOnInit(): void {
@@ -39,10 +37,10 @@ export class ModalPortsComponent implements OnInit {
   }
 
   loadGroupPorts() {
-    const params = new HttpParams().set('type', 'GROUPPORTS');
-    this._otherCategoriesService.getAll(params).subscribe((res: ResponseValue<OtherCategories[]>) => {
+    this.portsService.getAllGroupPorts().subscribe((res: ResponseValue<GroupPorts[]>) => {
       if (res.code == '200' || res.code == '201') {
-        this.listGroupPorts = res.data;
+        this.listGroupPorts = res.data ?? [];
+        console.log(this.listGroupPorts);     
       }
     });
   }

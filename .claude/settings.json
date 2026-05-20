@@ -6,7 +6,10 @@
       "Read(//d/Delta/DeltaSoft/NewAPI/**)",
       "Read(//d/Delta/DeltaSoft/**)",
       "Bash(xargs grep *)",
-      "Bash(ng build *)"
+      "Bash(ng build *)",
+      "Bash(echo \"exit: $?  \\(no output = sạch\\)\")",
+      "Bash(find src *)",
+      "Bash(grep -rln \"interface DispatchOrderEtc\" src/app/shared/models)"
     ],
     "additionalDirectories": [
       "d:\\Delta\\DeltaSoft\\NewAPI\\API\\Controllers\\Categories",

@@ -656,3 +656,9 @@ legend {
 .ng-dropdown-panel {
     z-index: 9999 !important;
 }
+
+/* Modal Vietmap / So sánh lộ trình: nâng z-index trên popup "cung đường phát sinh" (1060)
+   để khi mở từ popup, các modal này nổi lên trên còn popup vẫn hiển thị ở dưới. */
+.modal.route-submodal {
+    z-index: 1080;
+}

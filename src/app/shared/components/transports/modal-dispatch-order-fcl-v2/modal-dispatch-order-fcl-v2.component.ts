@@ -12,12 +12,14 @@ import { forkJoin, of } from "rxjs";
 import { catchError } from "rxjs/operators";
 // ===== TO refactor (2026-05-15): route builder imports =====
 import {
-  TransportOrderSegment, SegmentStation, UnifiedLocation, RouteSegmentDefault
+  TransportOrderSegment, SegmentStation, UnifiedLocation, RouteSegmentDefault,
+  TransportOrderExtraSegment, TransportOrderTotalsResult
 } from "@app/shared/models/transports/dispatchorders/transport-order.model";
 import { TransportOrderService } from "@app/shared/services/transports/transport-order.service";
 import { ModalVietmapRoutesComponent } from "../../danhmuc/modal-vietmap-routes/modal-vietmap-routes.component";
 import { ModalMapRoutesComponent } from "../../danhmuc/modal-map-routes/modal-map-routes.component";
 import { ModalRouteCompareComponent, CompareRouteResult } from "../../danhmuc/modal-route-compare/modal-route-compare.component";
+import { ModalAddExtraSegmentComponent, ExtraSegmentSavedResult } from "../modal-add-extra-segment/modal-add-extra-segment.component";
 import { NgForm } from "@angular/forms";
 import { Route } from "@angular/router";
 import { MessageContstants } from "@app/shared/constants";
@@ -190,7 +192,10 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
   km: number = 0;
   isExport: boolean = false;
   public listTollStation: TollStation[] = [];
-  totalEtc = 0;
+  // Tổng tiền trạm phí (ETC) = tổng totalCost các dòng listEtc (auto + nhập tay)
+  get totalEtc(): number {
+    return (this.entity?.listEtc || []).reduce((s, e) => s + (+e.totalCost || 0), 0);
+  }
   listHandover: HandOver[];
   listOilQuota: VehicleOilQuota[] = [];
   cangExpanded = false;
@@ -218,12 +223,11 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
 
   // ===== TO refactor (2026-05-15): route builder state + ViewChild =====
   locations: LocationItem[] = [];
-  // V2 không có bước "Chốt cung đường" như TO — route + tải trọng luôn editable đến khi DUYỆT B1.
-  // status: 0 = mới tạo, 1 = đã gửi lệnh, 2 = đã nhận lệnh, 3 = duyệt B1, 4 = duyệt B2, 5 = chốt
-  // status <= 2 → vẫn cho sửa cung đường (cùng pattern modal FCL legacy)
-  // status > 2 → route locked
+  // Cung đường vận tải (main): khóa NGAY khi khởi tạo lệnh xong (có refNo) → muốn
+  // chỉnh route → dùng "Cung đường phát sinh".
+  // status: 0 = mới, 1 = gửi lệnh, 2 = nhận lệnh, 3 = duyệt B1, 4 = duyệt B2, 5 = chốt
   get routeConfirmed(): boolean {
-    return (this.entity?.status ?? 0) > 2 || this.flagXem;
+    return !!this.entity?.refNo || this.flagXem;
   }
   showPoolPanel = true;
   lastSegmentFinal = false;
@@ -238,6 +242,46 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
   segmentCalculating: boolean[] = [];
   private _vehicleBotTypeId: number | null = null;
   totalEtcCost = 0;
+
+  // ===== Cung đường phát sinh (2026-05-19) =====
+  // Sau khi tạo lệnh xong (có refNo + ToId), section "Cung đường phát sinh" hiện
+  // dưới bảng "Thông tin cung đường". Mỗi action (add/update/delete) auto-save → BE
+  // recompute totals → trả về FE cập nhật display.
+  extraSegments: TransportOrderExtraSegment[] = [];
+  private _extraDebounce: { [id: number]: any } = {};
+  // Context cho route modals (của các CHẶNG ĐÃ CÓ — recalc/xem map). Việc THÊM mới
+  // cung đường phát sinh đã tách sang modal-add-extra-segment riêng.
+  // 'segment' = chặng chính | 'extra-view' = chỉ xem map của extra đã có | 'extra-existing' = recalc extra
+  private _routeContext: 'segment' | 'extra-view' | 'extra-existing' = 'segment';
+  private _extraExistingId: number | null = null;
+
+  get showExtraSegmentsSection(): boolean {
+    // Hiện luôn trong modal V2 (V2 = lệnh mới, không phải legacy). Trước khi save thì
+    // hiện trạng thái disabled + hint "Lưu lệnh trước"; sau khi save hiện full controls.
+    return this.entity?.isLegacy !== true;
+  }
+  get canAddExtraSegment(): boolean {
+    return !!this.entity?.refNo && !!this.entity?.toId
+      && (this.entity?.status ?? 0) < 3 && !this.flagXem;
+  }
+  extraSegmentLabel(seg: TransportOrderExtraSegment, index: number): string {
+    if (this.extraSegments.length === 1) return 'Chặng đầu';
+    if (index === 0) return 'Chặng đầu';
+    if (index === this.extraSegments.length - 1) return 'Chặng cuối';
+    return `Chặng ${index + 1}`;
+  }
+  // Hint chính xác theo state — cover hết case mutually exclusive
+  get extraEmptyHint(): string {
+    if (!this.entity?.refNo)
+      return 'Cần lưu lệnh trước (chọn "Chặng cuối" ở cung đường vận tải) — sau khi có RefNo bạn mới thêm được cung đường phát sinh.';
+    if (this.flagXem)
+      return 'Chế độ xem — không thể thêm cung đường phát sinh.';
+    if ((this.entity?.status ?? 0) >= 3)
+      return 'Lệnh đã chốt B1 — không thể thêm cung đường phát sinh.';
+    if (!this.entity?.toId)
+      return 'Không lấy được ToId — BE chưa restart sau update? Đóng modal và mở lại.';
+    return 'Chưa có cung đường phát sinh. Bấm "Thêm cung đường phát sinh" để bổ sung.';
+  }
 
   get locationPool(): LocationItem[] {
     const pool: LocationItem[] = [];
@@ -295,6 +339,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
   @ViewChild(ModalVietmapRoutesComponent, { static: false }) modalVietmap: ModalVietmapRoutesComponent;
   @ViewChild(ModalMapRoutesComponent, { static: false }) modalGoogle: ModalMapRoutesComponent;
   @ViewChild(ModalRouteCompareComponent, { static: false }) modalCompare: ModalRouteCompareComponent;
+  @ViewChild(ModalAddExtraSegmentComponent, { static: false }) modalAddExtra: ModalAddExtraSegmentComponent;
 
   constructor(
     private notificationService: NotificationService,
@@ -854,7 +899,6 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
             };
             if (item.tollStationId != null) {
               this.entity.listEtc.push(item);
-              this.totalEtc += item.totalCost;
             }
           }
         }
@@ -1048,6 +1092,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
           };
           // Reset route builder state cho lệnh mới
           this.locations = [];
+          this.extraSegments = [];
           // routeConfirmed là getter → tự suy ra từ entity.status (status=0 mới → false)
           this.lastSegmentFinal = false;
           this.showPoolPanel = true;
@@ -1152,6 +1197,12 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
       .subscribe((res: ResponseValue<DispatchOrderFcl>) => {
         if (res.code == "200" || res.code == "201") {
           this.entity = res.data;
+          // Hydrate cung đường phát sinh: parse stationsJson/waypointsJson → mảng
+          this.extraSegments = (this.entity.extraSegments || []).map(e => ({
+            ...e,
+            listStations: e.stationsJson ? this._safeJsonParse<SegmentStation[]>(e.stationsJson, []) : [],
+            listWaypoints: e.waypointsJson ? this._safeJsonParse<any[]>(e.waypointsJson, []) : []
+          }));
           if (!this.entity.isSubcontractors) {
             this.loadListVihicles();
             const checksToDelete = this.entity.listDetailed.map(
@@ -1225,6 +1276,36 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
           MessageContstants.FUEL_REQUIED_ERROR
         );
         return;
+      }
+      // Điều kiện tiên quyết lập lệnh FCL: MỌI chặng (cung đường vận tải) phải chọn
+      // lượng hàng (payloadWeight) VÀ lượng hàng đó phải có định mức dầu > 0.
+      if (!this.entity.isSubcontractors && (this.entity.segments?.length ?? 0) > 0) {
+        const idx = (this.entity.segments || []).findIndex(
+          s => !s.payloadWeight || !s.fuelNorm || s.fuelNorm <= 0
+        );
+        if (idx >= 0) {
+          const seg = this.entity.segments[idx];
+          const label = idx === 0 ? 'Chặng đầu' : (idx === this.entity.segments.length - 1 ? 'Chặng cuối' : `Chặng ${idx + 1}`);
+          const reason = !seg.payloadWeight
+            ? 'chưa chọn lượng hàng'
+            : 'lượng hàng chưa có định mức dầu (> 0) — kiểm tra lại định mức dầu của xe';
+          this.notificationService.printErrorMessage(
+            `${label} (${seg.startLocationName || ''} → ${seg.endLocationName || ''}): ${reason}. Vui lòng chọn lượng hàng có định mức dầu cho toàn bộ các chặng trước khi lập lệnh.`
+          );
+          return;
+        }
+      }
+      // Kiểm tra trạm phí (ETC): có TÊN trạm mà thiếu/không hợp lệ số tiền (<1) → cảnh báo + chặn
+      if (!this.entity.isSubcontractors) {
+        const badEtc = (this.entity.listEtc || []).find(
+          e => (e.tollStationName || '').trim() && (!e.cost || +e.cost < 1)
+        );
+        if (badEtc) {
+          this.notificationService.printErrorMessage(
+            `Trạm phí "${badEtc.tollStationName}" chưa có số tiền hợp lệ (≥ 1). Vui lòng nhập số tiền hoặc xóa trạm trước khi lập lệnh.`
+          );
+          return;
+        }
       }
       //Kiểm tra xem nếu chọn lượng hàng trung chuyển cảng, và nhà máy thì phải có thông tin cảng và nhà máy
       const trungChuyenChecks = [
@@ -1417,16 +1498,63 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
     }, 50);
   }
   newEtc() {
-    let item: DispatchOrderEtc = {
+    if (!this.entity.listEtc) this.entity.listEtc = [];
+    const item: DispatchOrderEtc = {
+      feeId: environment.tollFeeId,
+      tollStationName: '',
       cost: 0,
       vat: 0,
-      feeId: environment.tollFeeId,
+      totalCost: 0,
+      isPassed: false,
+      note: '',
+      _auto: false,
     };
     this.entity.listEtc.push(item);
   }
 
   deleteEtc(index: number) {
     this.entity.listEtc.splice(index, 1);
+  }
+
+  // ===== Trạm phí auto từ Vietmap (2026-05-20) =====
+  // Đồng bộ các dòng ETC auto của 1 chặng: xóa dòng auto cũ của chặng đó rồi thêm
+  // từ seg.listStations (đã áp giá theo loại xe). Giữ nguyên dòng user nhập tay.
+  private _syncEtcFromSegment(segIndex: number) {
+    if (!this.entity) return;
+    if (!this.entity.listEtc) this.entity.listEtc = [];
+    // Bỏ dòng auto cũ của chặng này
+    this.entity.listEtc = this.entity.listEtc.filter(e => !(e._auto && e._segIndex === segIndex));
+    const seg = this.entity.segments?.[segIndex];
+    (seg?.listStations || []).forEach(st => {
+      if (st.isAvoided) return; // tránh trạm → không tính phí
+      const cost = +(st.price || 0);
+      this.entity.listEtc.push({
+        feeId: environment.tollFeeId,
+        tollStationName: st.stationName,
+        cost: cost,
+        vat: 0,
+        totalCost: cost,
+        isPassed: false,
+        note: '',
+        _auto: true,
+        _segIndex: segIndex,
+        _allPrices: st.allPrices,
+        _vietmapId: st.vietmapId,
+      });
+    });
+  }
+
+  // Đổi loại xe → tính lại Cost các dòng ETC auto theo allPrices (giữ vat/note/trốn vé user đã sửa).
+  private _recomputeAutoEtcPrices() {
+    const vietmapKey = this._vehicleBotTypeId ? (this._botTypeMap[this._vehicleBotTypeId] ?? null) : null;
+    (this.entity?.listEtc || []).forEach(e => {
+      if (!e._auto || !e._allPrices) return;
+      try {
+        const prices = JSON.parse(e._allPrices);
+        e.cost = vietmapKey ? (+prices[vietmapKey] || 0) : 0;
+        e.totalCost = (+e.cost || 0) + (+e.vat || 0);
+      } catch { /* giữ nguyên */ }
+    });
   }
 
   onFileChanged(event) {
@@ -2065,6 +2193,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
   editSegmentRoute(segIndex: number) {
     const seg = this.entity.segments?.[segIndex];
     if (!seg) return;
+    this._routeContext = 'segment';
     this._currentMapSegmentIndex = segIndex;
     this.modalVietmap.show([
       { lat: seg.startLat, lng: seg.startLng },
@@ -2075,6 +2204,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
   openCompareModal(segIndex: number) {
     const seg = this.entity.segments?.[segIndex];
     if (!seg) return;
+    this._routeContext = 'segment';
     this._currentMapSegmentIndex = segIndex;
     this.modalCompare.show([
       { lat: seg.startLat, lng: seg.startLng },
@@ -2083,6 +2213,22 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
   }
 
   onCompareRouteSelected(event: CompareRouteResult) {
+    // ===== Cung đường phát sinh — recalculate existing row =====
+    if (this._routeContext === 'extra-existing' && this._extraExistingId) {
+      const item = this.extraSegments.find(x => x.id === this._extraExistingId);
+      if (item) {
+        this._applyRouteToExtra(item, { km: event.km, polyline: event.polyline, steps: event.steps || [] });
+        if (event.note) {
+          const cur = (item.note || '').trim();
+          item.note = cur ? `${cur}\n${event.note}` : event.note;
+        }
+        this._sendUpdateExtra(item);
+      }
+      this._routeContext = 'segment';
+      this._extraExistingId = null;
+      return;
+    }
+    // ===== Segment chính (luồng cũ) =====
     const segIndex = this._currentMapSegmentIndex;
     const seg = this.entity.segments?.[segIndex];
     if (!seg) return;
@@ -2162,13 +2308,33 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
   }
 
   onRouteSelected(event: { summary: string; km: number; waypoints: { lat: number; lng: number }[]; steps: { lat: number; lng: number; name: string; distanceM: number }[]; polyline: string; tollStations?: SegmentStation[] }) {
+    // ===== Cung đường phát sinh — recalculate existing row =====
+    if (this._routeContext === 'extra-existing' && this._extraExistingId) {
+      const item = this.extraSegments.find(x => x.id === this._extraExistingId);
+      if (item) {
+        this._applyRouteToExtra(item, event);
+        this._sendUpdateExtra(item);
+      }
+      this._routeContext = 'segment';
+      this._extraExistingId = null;
+      return;
+    }
+    // ===== Chế độ xem extra — không emit (showSaved mode) =====
+    if (this._routeContext === 'extra-view') {
+      this._routeContext = 'segment';
+      return;
+    }
+    // ===== Segment chính (luồng cũ) =====
     if (this._currentMapSegmentIndex !== null) {
       const seg = this.entity.segments?.[this._currentMapSegmentIndex];
       if (seg) {
         seg.distanceKm = +(event.km).toFixed(1);
         seg.routePolyline = event.polyline;
         seg.listWaypoints = event.steps.map((s, i) => ({ orderIndex: i, lat: s.lat, lng: s.lng, name: s.name, distanceM: s.distanceM }));
-        if (event.tollStations?.length) seg.listStations = event.tollStations;
+        // LUÔN ghi đè listStations theo route mới — route khác không có trạm thì XÓA trạm cũ
+        // (trước đây chỉ set khi event.tollStations có phần tử → giữ nguyên trạm default sai).
+        seg.listStations = event.tollStations?.length ? event.tollStations : [];
+        seg.etcCost = 0;
         if (seg.payloadWeight) {
           const quota = this.listOilQuota.find(x => x.id === seg.payloadWeight);
           if (quota) {
@@ -2178,6 +2344,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
         }
         this._applyTollPrices();
         this.calulateOilSegments();
+        this._syncEtcFromSegment(this._currentMapSegmentIndex);
       }
     }
     this._currentMapSegmentIndex = null;
@@ -2239,6 +2406,11 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
     this.segmentCalculating = new Array(this.entity.segments.length).fill(false);
     this.calculateTotal();
     this.calulateOilSegments();
+    // Auto-mark "Chặng cuối" khi chỉ có 1 chặng — vì chặng duy nhất hiển nhiên là cuối.
+    // User vẫn có thể toggle về "Chặng đầu" để thêm điểm khác nếu cần.
+    if (this.entity.segments.length === 1 && !this.routeConfirmed) {
+      this.lastSegmentFinal = true;
+    }
   }
 
   private _fetchSegmentHistory(index: number, startId: number, startType: number, endId: number, endType: number) {
@@ -2261,6 +2433,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
         if (d.isDefault && d.listStations?.length) seg.listStations = d.listStations;
         this._applyTollPrices();
         this.calulateOilSegments();
+        this._syncEtcFromSegment(index);
       }
     });
   }
@@ -2298,6 +2471,8 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
       });
     });
     this.calculateTotal();
+    // Đổi loại xe / áp lại giá → cập nhật Cost các dòng ETC auto
+    this._recomputeAutoEtcPrices();
   }
 
   private _fetchTollForSegment(segIndex: number, waypoints?: { lat: number; lng: number }[]) {
@@ -2308,10 +2483,10 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
       : [{ lat: seg.startLat, lng: seg.startLng }, { lat: seg.endLat, lng: seg.endLng }];
     this._http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, { points })
       .pipe(catchError(() => of(null))).subscribe(res => {
-        if (res?.toll) {
-          seg.listStations = this._parseTollStations(res.toll);
-          this._applyTollPrices();
-        }
+        // Route mới không có trạm → xóa trạm cũ (tránh giữ stale)
+        seg.listStations = res?.toll ? this._parseTollStations(res.toll) : [];
+        this._applyTollPrices();
+        this._syncEtcFromSegment(segIndex);
       });
   }
 
@@ -2350,5 +2525,191 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
       .map((s, i) => s.note?.trim() ? `Chặng ${i + 1}: ${s.note.trim()}` : null)
       .filter(l => !!l);
     this.entity.dispatchSummarize = lines.join('\n');
+  }
+
+  // ============================================================
+  // ===== Cung đường phát sinh (2026-05-19) ====================
+  // ============================================================
+  // Mở modal "Thêm cung đường phát sinh" (tách riêng — tự chứa Vietmap/So sánh).
+  openExtraSegmentPopup() {
+    if (!this.canAddExtraSegment) return;
+    if (!this.entity.toId) {
+      this.notificationService.printErrorMessage('Lệnh chưa link TO — không thể thêm cung đường phát sinh.');
+      return;
+    }
+    this.modalAddExtra.open({
+      transportOrderId: this.entity.toId,
+      locations: this.listAllLocations,
+      vehicleBotTypeId: this._vehicleBotTypeId
+    });
+  }
+
+  // Modal con lưu xong → gộp vào list + cập nhật totals.
+  onExtraSegmentSaved(e: ExtraSegmentSavedResult) {
+    if (!e?.newItem) return;
+    this.extraSegments = [...this.extraSegments, e.newItem];
+    this._applyTotals(e.totals);
+  }
+
+  onExtraPayloadChange(item: TransportOrderExtraSegment) {
+    if (!this.canAddExtraSegment) return;
+    const quota = this.listOilQuota.find(x => x.id === item.payloadWeight);
+    if (quota) {
+      item.fuelNorm = this.entity.shortWay ? quota.shortWayValue : quota.value;
+      item.fuelAmountCalculated = +((item.fuelNorm || 0) * (item.distanceKm || 0) / 100).toFixed(2);
+    } else {
+      item.fuelNorm = 0;
+      item.fuelAmountCalculated = 0;
+    }
+    this._debouncedUpdateExtra(item);
+  }
+
+  private _debouncedUpdateExtra(item: TransportOrderExtraSegment) {
+    if (!item.id) return;
+    clearTimeout(this._extraDebounce[item.id]);
+    this._extraDebounce[item.id] = setTimeout(() => this._sendUpdateExtra(item), 400);
+  }
+
+  private _sendUpdateExtra(item: TransportOrderExtraSegment) {
+    const payload: TransportOrderExtraSegment = {
+      id: item.id,
+      startLocationId: item.startLocationId,
+      startLocationType: item.startLocationType,
+      startLocationName: item.startLocationName,
+      startLat: item.startLat,
+      startLng: item.startLng,
+      endLocationId: item.endLocationId,
+      endLocationType: item.endLocationType,
+      endLocationName: item.endLocationName,
+      endLat: item.endLat,
+      endLng: item.endLng,
+      distanceKm: item.distanceKm,
+      payloadWeight: item.payloadWeight,
+      fuelNorm: item.fuelNorm,
+      fuelAmountCalculated: item.fuelAmountCalculated,
+      routePolyline: item.routePolyline,
+      stationsJson: item.listStations?.length ? JSON.stringify(item.listStations) : null,
+      waypointsJson: item.listWaypoints?.length ? JSON.stringify(item.listWaypoints) : null,
+      note: item.note
+    };
+    this._transportService.updateExtraSegment(payload).subscribe({
+      next: (res) => { if (res.code === '200') this._applyTotals(res.data); },
+      error: () => this.notificationService.printErrorMessage('Cập nhật thất bại.')
+    });
+  }
+
+  deleteExtraSegment(item: TransportOrderExtraSegment) {
+    if (!this.canAddExtraSegment || !item.id) return;
+    const label = `${item.startLocationName || ''} → ${item.endLocationName || ''}`;
+    this.notificationService.printConfirmationDialog(
+      `Xóa cung đường phát sinh: ${label}?`,
+      () => {
+        this._transportService.deleteExtraSegment(item.id).subscribe({
+          next: (res) => {
+            if (res.code === '200') {
+              this.extraSegments = this.extraSegments
+                .filter(x => x.id !== item.id)
+                .map((x, i) => ({ ...x, seqNo: i + 1 }));
+              this._applyTotals(res.data);
+              this.notificationService.printSuccessMessage('Đã xóa.');
+            } else {
+              this.notificationService.printErrorMessage(res.message || 'Xóa thất bại.');
+            }
+          },
+          error: () => this.notificationService.printErrorMessage('Xóa thất bại.')
+        });
+      }
+    );
+  }
+
+  viewExtraSegmentMap(item: TransportOrderExtraSegment) {
+    if (!item.routePolyline && !item.listWaypoints?.length) {
+      this.notificationService.printErrorMessage('Cung đường chưa được tính — bấm "Tính lại Vietmap" trước.');
+      return;
+    }
+    this._routeContext = 'extra-view';
+    const steps = (item.listWaypoints || []).map(w => ({
+      lat: w.lat, lng: w.lng, name: w.name || '', distanceM: w.distanceM || 0
+    }));
+    const tolls = (item.listStations || []).map(s => ({ stationName: s.stationName || '', price: s.price || 0 }));
+    this.modalVietmap.showSaved(steps, item.routePolyline, tolls.length ? tolls : undefined);
+  }
+
+  recalcExtraVietmap(item: TransportOrderExtraSegment) {
+    if (!this.canAddExtraSegment || !item.id) return;
+    if (!item.startLat || !item.endLat) {
+      this.notificationService.printErrorMessage('Điểm chưa có tọa độ GPS.');
+      return;
+    }
+    this._routeContext = 'extra-existing';
+    this._extraExistingId = item.id;
+    this.modalVietmap.show([
+      { lat: item.startLat, lng: item.startLng },
+      { lat: item.endLat, lng: item.endLng }
+    ]);
+  }
+
+  compareExtraRoute(item: TransportOrderExtraSegment) {
+    if (!this.canAddExtraSegment || !item.id) return;
+    if (!item.startLat || !item.endLat) {
+      this.notificationService.printErrorMessage('Điểm chưa có tọa độ GPS.');
+      return;
+    }
+    this._routeContext = 'extra-existing';
+    this._extraExistingId = item.id;
+    this.modalCompare.show([
+      { lat: item.startLat, lng: item.startLng },
+      { lat: item.endLat, lng: item.endLng }
+    ]);
+  }
+
+  private _applyTotals(t: TransportOrderTotalsResult) {
+    if (!t) return;
+    if (t.tongKm != null) this.entity.tongKm = t.tongKm as any;
+    if (t.tongdau != null) this.entity.tongdau = t.tongdau as any;
+    if (t.chiphidau != null) this.entity.chiphidau = t.chiphidau as any;
+  }
+
+  // Apply route result (từ Vietmap / Compare) vào draft hoặc extra existing
+  private _applyRouteToExtra(target: TransportOrderExtraSegment, event: {
+    km: number; polyline: string; tollStations?: SegmentStation[];
+    steps?: { lat: number; lng: number; name: string; distanceM: number }[];
+  }) {
+    target.distanceKm = +(event.km).toFixed(1);
+    target.routePolyline = event.polyline;
+    if (event.steps?.length) {
+      target.listWaypoints = event.steps.map((s, i) => ({
+        orderIndex: i, lat: s.lat, lng: s.lng, name: s.name, distanceM: s.distanceM
+      })) as any;
+    }
+    if (event.tollStations?.length) {
+      target.listStations = event.tollStations;
+      this._applyExtraTollPrices(target);
+    } else {
+      target.listStations = [];
+    }
+    if (target.payloadWeight) {
+      const quota = this.listOilQuota.find(x => x.id === target.payloadWeight);
+      if (quota) {
+        target.fuelNorm = this.entity.shortWay ? quota.shortWayValue : quota.value;
+        target.fuelAmountCalculated = +((target.fuelNorm || 0) * (target.distanceKm || 0) / 100).toFixed(2);
+      }
+    }
+  }
+
+  // Áp giá trạm BOT theo loại xe (giống _applyTollPrices nhưng cho 1 extra segment)
+  private _applyExtraTollPrices(item: TransportOrderExtraSegment) {
+    const vietmapKey = this._vehicleBotTypeId ? (this._botTypeMap[this._vehicleBotTypeId] ?? null) : null;
+    (item.listStations || []).forEach(station => {
+      if (!station.allPrices) return;
+      try {
+        const prices = JSON.parse(station.allPrices);
+        station.price = vietmapKey ? (prices[vietmapKey] || 0) : 0;
+      } catch { station.price = 0; }
+    });
+  }
+
+  private _safeJsonParse<T>(s: string, fallback: T): T {
+    try { return JSON.parse(s) as T; } catch { return fallback; }
   }
 }

@@ -712,8 +712,8 @@
         <div class="to-col-info">
           <div class="to-col-header">
             <div class="to-col-header-title">
-              <i class="fa fa-map-signs text-secondary"></i>
-              Tải trọng & Tóm tắt lệnh
+              <i class="fa fa-road text-secondary"></i>
+              Cung đường vận tải
             </div>
           </div>
 
@@ -785,10 +785,10 @@
               </table>
             </div>
 
-            <!-- Tóm tắt lệnh: tổng km + tổng dầu + bảng trạm phí theo loại xe -->
-            <div class="dispatch-summary-grid" *ngIf="locations.length >= 2">
+            <!-- Thông tin cung đường: tổng km + tổng dầu + bảng trạm phí theo loại xe + cung đường phát sinh -->
+            <div class="dispatch-summary-grid" *ngIf="locations.length >= 2 || entity.refNo">
               <div class="dsg-title">
-                <i class="fa fa-list-alt"></i> Tóm tắt lệnh
+                <i class="fa fa-list-alt"></i> Thông tin cung đường
               </div>
               <div class="dsg-stats">
                 <div class="dsg-stat-item">
@@ -800,27 +800,71 @@
                   <span class="dsg-stat-value text-success">{{ entity.tongdau | number:'1.2-2' }} lít</span>
                 </div>
               </div>
-              <table class="dsg-toll-table" *ngIf="allTollStations.length">
+              <!-- Trạm thu phí (ETC) — gộp từ tab ETC cũ, dùng TÊN trạm; tự thêm từ Vietmap -->
+              <div class="dsg-etc-header">
+                <span class="dsg-etc-title"><i class="fa fa-money text-warning"></i> Trạm thu phí (ETC)</span>
+                <button type="button" class="btn btn-xs btn-primary dsg-etc-add"
+                  *ngIf="!routeConfirmed && !entity.isSubcontractors"
+                  (click)="newEtc()">
+                  <i class="fa fa-plus"></i> Thêm trạm
+                </button>
+              </div>
+              <table class="dsg-toll-table dsg-etc-table" *ngIf="entity.listEtc?.length">
                 <thead>
                   <tr>
-                    <th>Trạm phí</th>
-                    <th class="text-right">Giá tiền (theo loại xe)</th>
-                    <th class="text-center">Tránh trạm</th>
+                    <th>Tên trạm</th>
+                    <th class="text-right dsg-etc-num">Số tiền</th>
+                    <th class="text-right dsg-etc-num">VAT</th>
+                    <th class="text-right dsg-etc-num">Tổng tiền</th>
+                    <th class="text-center dsg-etc-pass">Trốn vé</th>
+                    <th>Ghi chú</th>
+                    <th class="dsg-etc-act" *ngIf="!routeConfirmed"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let s of allTollStations" [class.dsg-row-avoided]="s.isAvoided">
-                    <td>{{ s.stationName }}</td>
-                    <td class="text-right">{{ s.price | number:'1.0-0' }} đ</td>
-                    <td class="text-center">
-                      <input type="checkbox" [(ngModel)]="s.isAvoided" [ngModelOptions]="{standalone: true}" [disabled]="flagXem">
+                  <tr *ngFor="let item of entity.listEtc; let i = index" [class.dsg-etc-row-auto]="item._auto">
+                    <td>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="item.tollStationName"
+                        [ngModelOptions]="{standalone:true}" [readonly]="routeConfirmed" placeholder="Tên trạm">
+                    </td>
+                    <td class="dsg-etc-num">
+                      <input type="text" class="form-control form-control-sm text-right" [(ngModel)]="item.cost"
+                        [ngModelOptions]="{standalone:true}" (change)="updateTotalCost(item)"
+                        [mask]="maskNumber" [allowNegativeNumbers]="false" [readonly]="routeConfirmed">
+                    </td>
+                    <td class="dsg-etc-num">
+                      <input type="text" class="form-control form-control-sm text-right" [(ngModel)]="item.vat"
+                        [ngModelOptions]="{standalone:true}" (change)="updateTotalCost(item)"
+                        [mask]="maskNumber" [allowNegativeNumbers]="false" [readonly]="routeConfirmed">
+                    </td>
+                    <td class="dsg-etc-num text-right">{{ item.totalCost | number:'1.0-0' }}</td>
+                    <td class="text-center dsg-etc-pass">
+                      <input type="checkbox" [(ngModel)]="item.isPassed" [ngModelOptions]="{standalone:true}" [disabled]="routeConfirmed">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="item.note"
+                        [ngModelOptions]="{standalone:true}" [readonly]="routeConfirmed" placeholder="Ghi chú">
+                    </td>
+                    <td class="dsg-etc-act text-center" *ngIf="!routeConfirmed">
+                      <button type="button" class="btn-esb-icon btn-esb-delete" title="Xóa" (click)="deleteEtc(i)">
+                        <i class="fa fa-trash"></i>
+                      </button>
                     </td>
                   </tr>
                 </tbody>
+                <tfoot>
+                  <tr class="dsg-etc-foot">
+                    <td class="text-right"><strong>Tổng</strong></td>
+                    <td colspan="2"></td>
+                    <td class="dsg-etc-num text-right"><strong>{{ totalEtc | number:'1.0-0' }}</strong></td>
+                    <td [attr.colspan]="routeConfirmed ? 2 : 3"></td>
+                  </tr>
+                </tfoot>
               </table>
-              <div class="dsg-no-toll" *ngIf="!allTollStations.length">
+              <div class="dsg-no-toll" *ngIf="!entity.listEtc?.length">
                 <i class="fa fa-info-circle"></i>
-                {{ entity.vehicleId ? 'Chưa có thông tin trạm phí' : 'Chọn xe ở tab "Thông tin chung" để hiển thị giá trạm theo loại xe' }}
+                <span *ngIf="!routeConfirmed">Chưa có trạm thu phí — chọn cung đường Vietmap có trạm sẽ tự thêm, hoặc bấm "Thêm trạm".</span>
+                <span *ngIf="routeConfirmed">Không có trạm thu phí.</span>
               </div>
               <div class="dsg-route-note" *ngIf="entity.dispatchSummarize">
                 <div class="dsg-route-note-title">
@@ -828,102 +872,87 @@
                 </div>
                 <pre class="dsg-route-note-content">{{ entity.dispatchSummarize }}</pre>
               </div>
+
+              <!-- ═══════════════════════════════════════════════════════════════
+                   Cung đường phát sinh (2026-05-19) — chỉ hiện sau khi đã có refNo
+                   ═══════════════════════════════════════════════════════════════ -->
+              <div class="extra-segments-block" *ngIf="showExtraSegmentsSection">
+                <div class="extra-segments-header">
+                  <div class="esb-title">
+                    <i class="fa fa-plus-square text-warning"></i> Cung đường phát sinh
+                    <span class="badge badge-warning" *ngIf="extraSegments.length">{{ extraSegments.length }}</span>
+                  </div>
+                  <button type="button" class="btn btn-sm btn-warning esb-add-btn"
+                    *ngIf="canAddExtraSegment"
+                    (click)="openExtraSegmentPopup()">
+                    <i class="fa fa-plus"></i> Thêm cung đường phát sinh
+                  </button>
+                </div>
+                <table class="esb-table" *ngIf="extraSegments.length">
+                  <thead>
+                    <tr>
+                      <th class="esb-th-seq">Chặng</th>
+                      <th class="esb-th-route">Điểm đi → Điểm đến</th>
+                      <th class="esb-th-payload">Tải trọng</th>
+                      <th class="esb-th-km text-right">Km</th>
+                      <th class="esb-th-fuel text-right">Dầu ĐM</th>
+                      <th class="esb-th-note">Ghi chú</th>
+                      <th class="esb-th-actions"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of extraSegments; let i = index">
+                      <td class="esb-td-seq">{{ extraSegmentLabel(item, i) }}</td>
+                      <td class="esb-td-route">
+                        <span class="esb-loc">{{ item.startLocationName }}</span>
+                        <i class="fa fa-long-arrow-right text-muted esb-arrow"></i>
+                        <span class="esb-loc">{{ item.endLocationName }}</span>
+                      </td>
+                      <td class="esb-td-payload">
+                        <ng-select [items]="listOilQuota" bindLabel="oilQuotaName" bindValue="id"
+                          [(ngModel)]="item.payloadWeight"
+                          (change)="onExtraPayloadChange(item)"
+                          [ngModelOptions]="{standalone: true}"
+                          [disabled]="!canAddExtraSegment"
+                          appendTo="body"
+                          placeholder="Tải trọng...">
+                        </ng-select>
+                      </td>
+                      <td class="esb-td-km text-right">{{ item.distanceKm | number:'1.0-1' }}</td>
+                      <td class="esb-td-fuel text-right">{{ item.fuelAmountCalculated | number:'1.2-2' }}</td>
+                      <td class="esb-td-note" [title]="item.note">{{ item.note }}</td>
+                      <td class="esb-td-actions">
+                        <button type="button" class="btn-esb-icon" title="Xem lộ trình"
+                          (click)="viewExtraSegmentMap(item)">
+                          <i class="fa fa-map-marker text-info"></i>
+                        </button>
+                        <button type="button" class="btn-esb-icon" title="Tính lại Vietmap"
+                          *ngIf="canAddExtraSegment"
+                          (click)="recalcExtraVietmap(item)">
+                          <i class="fa fa-refresh text-warning"></i>
+                        </button>
+                        <button type="button" class="btn-esb-icon" title="So sánh Vietmap/Google"
+                          *ngIf="canAddExtraSegment"
+                          (click)="compareExtraRoute(item)">
+                          <i class="fa fa-balance-scale text-primary"></i>
+                        </button>
+                        <button type="button" class="btn-esb-icon btn-esb-delete" title="Xóa"
+                          *ngIf="canAddExtraSegment"
+                          (click)="deleteExtraSegment(item)">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+                <div class="esb-empty" *ngIf="!extraSegments.length">
+                  <i class="fa fa-info-circle"></i> {{ extraEmptyHint }}
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
-                </div>
-              </tab>
-              <tab heading="ETC" *ngIf="!entity.isSubcontractors">
-                <div class="form-group">
-                  <div class="col-sm-2">
-                    <button [disabled]="entity.status>=4 || job_locked || flagXem " type="button"
-                      class="btn btn-sm btn-primary" (click)="newEtc()">Thêm</button>
-                    <input style="display: none" type="file" class="custom-file-input" id="customFile" #fileUpload
-                      (change)="onChange($event)" accept=".xlsx">
-                    <button type="button" class="btn btn-sm btn-success" (click)="fileUpload.click()"
-                      [disabled]="entity.status>=4 || job_locked || flagXem ">
-                      <i class="fa fa-upload" aria-hidden="true"></i> Import Excel
-                    </button>
-                  </div>
-                  <div class="col-sm-5">
-
-                  </div>
-                  <div class="col-sm-1" style="text-align: right;">
-                    <span>Số lượng:</span>
-                  </div>
-                  <div class="col-sm-1" style="text-align: left;">
-                    {{entity.listEtc?.length}}
-                  </div>
-                  <div class="col-sm-1" style="text-align: right;">
-                    <span>Tổng tiền:</span>
-                  </div>
-                  <div class="col-sm-2" style="text-align: left; font-weight: 800;">
-                    {{totalEtc | number}}
-                  </div>
-                </div>
-                <div class="form-group">
-                  <div class="table-responsive  fixed-height" style="padding-left:15px; padding-right:15px">
-                    <table class="table table-bordered table-striped table-hover">
-                      <thead>
-                        <tr>
-                          <th>Tên trạm</th>
-                          <th>Số tiềm</th>
-                          <th>Vat</th>
-                          <th>Tổng tiền</th>
-                          <th>Trốn vé</th>
-                          <th>Ghi chú</th>
-                          <th *ngIf="entity.status<5"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr *ngFor="let item of entity.listEtc;let indexOfelement=index;">
-                          <td>
-                            <ng-select name="tollStationId{{indexOfelement}}" [items]="listTollStation"
-                              bindLabel="tollStationName" bindValue="id" [(ngModel)]="item.tollStationId" required>
-                            </ng-select>
-                          </td>
-                          <td style="width: 100px;">
-                            <input type="text" class="form-control" name="sotienEtc{{indexOfelement}}"
-                              (change)="updateTotalCost(item)" style="text-align: right;" [(ngModel)]="item.cost"
-                              placeholder="Số tiền" [readonly]="flagXem" [mask]="maskNumber"
-                              [allowNegativeNumbers]="false" required />
-                          </td>
-                          <td style="width: 100px;">
-                            <input type="text" class="form-control" name="vatEtc{{indexOfelement}}"
-                              (change)="updateTotalCost(item)" style="text-align: right;" [(ngModel)]="item.vat"
-                              placeholder="Vat" [readonly]="flagXem" [mask]="maskNumber" [allowNegativeNumbers]="false"
-                              required />
-                          </td>
-                          <td style="width: 100px;">
-                            <input type="text" class="form-control" name="totalCostEtc{{indexOfelement}}"
-                              style="text-align: right;" [(ngModel)]="item.totalCost" placeholder="Tổng tiền"
-                              [readonly]="flagXem" [mask]="maskNumber" [allowNegativeNumbers]="false" required />
-                          </td>
-                          <td class="table-checkbox" (click)="clickRowEtc(item)">
-                            <label class="custom-checkbox">
-                              <input type="checkbox" value="{{ item.id }}" name="isPassed" [checked]="item.isPassed"
-                                disabled />
-                              <span class="helping-el"></span>
-                            </label>
-                          </td>
-                          <td style="width:20%">
-                            <input class="form-control" [(ngModel)]="item.note" type="text"
-                              name="note{{indexOfelement}}" [readonly]="flagXem" />
-                            <!-- {{item.note}} -->
-                          </td>
-                          <td style="width:60px">
-                            <button *ngIf="entity.status<4" [disabled]=" flagXem || entity.status>=4" type="button"
-                              class="btn btn-warning btn-sm" (click)="deleteEtc(indexOfelement)">
-                              <i class="fa fa-trash"></i>
-                            </button>
-                          </td>
-                        </tr>
-                        <tr *ngIf="entity.listEtc?.length == 0">
-                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
                 </div>
               </tab>
               <tab heading="Chi phí">
@@ -1094,7 +1123,10 @@
         <button *ngIf="closing_permission && entity.status==5 " type="button" class="btn btn-duyet btn-sm"
           (click)="chotlenh()">
           <i class="fa fa-lock"></i> CHỐT LỆNH</button>
-        <button *ngIf="!flagXem &&  entity.status<3 " type="submit" class="btn btn-primary btn-sm"
+        <!-- Nút Lưu: khi tạo mới (chưa có refNo) yêu cầu phải chốt chặng cuối trước.
+             Sau khi đã có refNo (edit mode) thì Lưu hiện như bình thường. -->
+        <button *ngIf="!flagXem && entity.status<3 && (entity.refNo || lastSegmentFinal)" type="submit"
+          class="btn btn-primary btn-sm"
           [disabled]=" !addEditForm.form.valid || flagSave ">
           <i class="fa fa-save"></i> Lưu</button>
         <button type="button" (click)="modalDispatchOrderFcl.hide()" class="btn btn-danger btn-sm">
@@ -1119,3 +1151,6 @@
 <modal-vietmap-routes (RouteSelected)="onRouteSelected($event)"></modal-vietmap-routes>
 <modal-map-routes (RouteSelected)="onGoogleRouteSelected($event)"></modal-map-routes>
 <modal-route-compare (RouteSelected)="onCompareRouteSelected($event)"></modal-route-compare>
+
+<!-- Modal "Thêm cung đường phát sinh" — tách riêng (tự chứa Vietmap/So sánh) -->
+<modal-add-extra-segment (SaveSuccess)="onExtraSegmentSaved($event)"></modal-add-extra-segment>

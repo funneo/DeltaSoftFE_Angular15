@@ -1,5 +1,126 @@
 # Completed Features
 
+## Trạm thu phí (ETC) gộp vào cung đường + tách modal cung đường phát sinh — 2026-05-20
+
+### Gộp tab ETC vào "Thông tin cung đường" (modal FCL v2)
+Bỏ tab "ETC" riêng; quản lý trạm thu phí ngay trong section "Thông tin cung đường" dưới dạng **bảng editable** bind `entity.listEtc`. Đổi từ `tollStationId` → **`tollStationName`** (tên trạm thay vì id).
+- **SQL (anh tự chạy SSMS)**: `DispatchOrderFCLEtc` ADD `TollStationName NVARCHAR(255)`; type mới `TypeDispatchOrderFCLEtcV2` (thứ tự cột: Id, RefNo, TollStationId, TollStationName, FeeId, FeeCode, FeeName, Cost, Vat, TotalCost, Note, IsPassed); ALTER `SP_DispatchOrderFCL_CreateWithTO` + `UpdateWithTO` dùng type V2 + insert TollStationName; ALTER `SP_DispatchOrderFCL_GetByRefNoWithTO` đọc TollStationName đã lưu (bỏ INNER JOIN drop row).
+- **BE** [DispatchOrderFCLRepository.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Repositories/FCL/DispatchOrderFCLRepository.cs): `listEtcDt` anonymous Select reorder khớp ĐÚNG thứ tự cột type V2 (TVP map theo ORDINAL). `item.ListEtc` là `IEnumerable<DispatchOrderFCLEtc>` (đã có `TollStationName`).
+- **FE model** [dispatch-order-etc.model.ts](../../src/app/shared/models/transports/dispatchorders/dispatch-order-etc.model.ts): thêm helper FE-only KHÔNG gửi BE — `_auto`, `_segIndex`, `_allPrices` (JSON giá theo loại xe), `_vietmapId`.
+- **FE bảng editable** (`modal-dispatch-order-fcl-v2.component.html` quanh dòng 803): cột Tên trạm (input), Số tiền (mask), VAT (mask), Tổng tiền (display), Trốn vé (checkbox), Ghi chú (input), nút Xóa; header `dsg-etc-header` có nút "Thêm trạm"; tfoot tổng. SCSS: `.dsg-etc-header/.dsg-etc-title/.dsg-etc-add/.dsg-etc-table` (input-sm 26px), row auto nền `#fffaf0`.
+- **Auto-populate từ Vietmap per-chặng** (`_syncEtcFromSegment(segIndex)`): xóa các dòng `_auto && _segIndex===segIndex` rồi push lại từ `seg.listStations` (bỏ `isAvoided`), gắn `_auto/_segIndex/_allPrices/_vietmapId`. Gọi sau `onRouteSelected` (main), `_fetchTollForSegment`, `_fetchSegmentHistory`. Giữ nguyên dòng nhập tay.
+- **Recompute giá theo loại xe** (`_recomputeAutoEtcPrices()`): với dòng `_auto && _allPrices` tính lại `cost` từ JSON theo `_botTypeMap`; gọi cuối `_applyTollPrices()`.
+- **`totalEtc` → getter**: `reduce` trên `listEtc.totalCost` (bỏ field + bỏ `this.totalEtc += ...` chỗ Excel import cũ).
+- **`newEtc()`** push dòng trống `{feeId: environment.tollFeeId, tollStationName:'', cost:0, vat:0, totalCost:0, isPassed:false, _auto:false}`.
+- **Validation lập lệnh** (trong `saveChange()`, chỉ khi `!isSubcontractors`): nếu trạm có tên mà `cost < 1` → `printErrorMessage` + chặn lưu.
+- **Khóa sau khi tạo lệnh** (`routeConfirmed = !!entity.refNo || flagXem`): ẩn nút "Thêm trạm", ẩn cột action header + ô Xóa, input `[readonly]`, checkbox `[disabled]`, tfoot colspan co lại, empty-hint đổi "Không có trạm thu phí.".
+- **Caveat**: sửa lệnh CŨ rồi tính lại Vietmap 1 chặng có thể nhân đôi dòng trạm (dòng load từ DB thiếu `_auto`); luồng tạo mới sạch.
+
+### Tách "Thêm cung đường phát sinh" thành modal riêng — `modal-add-extra-segment/`
+Trước đây popup viết inline trong FCL v2 (overlay), bị lỗi z-index khi mở Vietmap/So sánh. Tách thành component standalone gọi qua `@ViewChild` + `.open()`, Vietmap/Compare modal nằm BÊN TRONG modal mới (modal stack chuẩn).
+- **4 file mới** `src/app/shared/components/transports/modal-add-extra-segment/`: `.component.ts` (`ModalAddExtraSegmentComponent`, exports `ExtraSegmentSavedResult {newItem, totals}` + `ExtraSegmentOpenContext {transportOrderId, locations, vehicleBotTypeId}`; có riêng `@ViewChild` ModalVietmapRoutes + ModalRouteCompare; methods open/close/filteredLocations/togglePicker/selectLocation/openVietmap/openCompare/onVietmapRouteSelected/onCompareRouteSelected/save); `.html` (point boxes điểm đi/đến đẹp như route FCL v2, dropdown picker `*ngIf="pickerOpen"`, nút Vietmap/So sánh disabled khi `!hasBothPoints`); `.scss` self-contained; `.module.ts` (`ModalAddExtraSegmentModule` import `ModalMapRoutesModule`).
+- **FCL v2 dọn sạch**: bỏ toàn bộ state `extraDraft`/picker/draft + branch `'extra-draft'`; `_routeContext` còn `'segment' | 'extra-view' | 'extra-existing'`; thêm `@ViewChild(ModalAddExtraSegmentComponent) modalAddExtra`, `openExtraSegmentPopup()` truyền context, `onExtraSegmentSaved(e)` merge `{newItem, totals}`. HTML: thay popup inline bằng `<modal-add-extra-segment (SaveSuccess)="onExtraSegmentSaved($event)">`. Giữ 3 route modal cho main-segment + extra-existing.
+- Build FE + BE: 0 error (BE chỉ file-lock IIS Express).
+
+### shipping-task-opman — fix list chi nhánh trống + admin-only
+- `loadBranch()` chưa từng gọi trong `ngOnInit` → `listBranch` rỗng. Thêm `this.loadBranch();` vào `ngOnInit`.
+- Dropdown chi nhánh: `[readonly]` → `[disabled]="!userLoged.isAdmin"` (chỉ admin enable). Mặc định luôn chọn ngày hiện tại.
+
+---
+
+## Cung đường phát sinh (Extra Segments) — 2026-05-19
+
+Tính năng mới: cho phép thêm cung đường phát sinh **SAU** khi đã khởi tạo lệnh FCL. Mỗi extra là 1 chặng độc lập (2 điểm), có ghi chú bắt buộc. Lưu song song với cung đường vận tải, công thức tổng km/dầu cộng dồn cả 2 nguồn.
+
+### SQL — `Migration_TO_ExtraSegments_20260519.sql` đã chạy production
+- **Bảng mới** `Tbl_TransportOrder_ExtraSegments`: lưu inline JSON `StationsJson` + `WaypointsJson` (đỡ 2 bảng phụ + 2 TVP); FK tới `Tbl_TransportOrders.Id`; `Note NVARCHAR(1000) NOT NULL` bắt buộc
+- **5 SP mới** (tuân thủ convention `SP_<TableName>_<Action>`):
+  - `SP_TransportOrder_RecomputeTotals(@TransportOrderId)` — helper internal, gọi sau mỗi action; recompute `FCL.TongKm/Tongdau/Chiphidau` + `TO.TongKm` trong cùng transaction
+  - `SP_TransportOrder_ExtraSegments_Add` — auto-gen `SeqNo = MAX+1`, validate Note required, trả 2 RS: `{TongKm, Tongdau, Chiphidau}` + `{NewExtraSegmentId, NewSeqNo}`
+  - `SP_TransportOrder_ExtraSegments_Update` — UPDATE full row + recompute, trả totals
+  - `SP_TransportOrder_ExtraSegments_Delete` — DELETE + tái đánh SeqNo liên tiếp (1,2,3…) + recompute
+  - `SP_TransportOrder_ExtraSegments_GetByFclRefNo(@FclRefNo)` — BE gọi tách (KHÔNG sửa `SP_DispatchOrderFcl_GetByRefNoWithTO` 142 dòng để tránh risky)
+- **Công thức tổng**:
+  - `TongKm    = SUM(Segments.DistanceKm) + SUM(ExtraSegments.DistanceKm)`
+  - `Tongdau   = SUM(Segments.FuelAmountCalculated) + SUM(ExtraSegments.FuelAmountCalculated) + FCL.OilCompensation`
+  - `Chiphidau = ROUND(Tongdau * FCL.OilPrice, 0)`
+
+### BE
+- **Model mới** [TransportOrderExtraSegment.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Models/Transports/TransportOrderExtraSegment.cs) — mirror table fields + `TransportOrderTotalsResult` + `TransportOrderExtraSegmentAddResult`
+- `DispatchOrderFCL.cs`: thêm `ExtraSegments` + `ToId` (Id của TO link — cần khi FE gọi AddExtraSegment)
+- `ITransportOrder` + `TransportOrderRepository`: 3 method `AddExtraSegmentAsync` / `UpdateExtraSegmentAsync` / `DeleteExtraSegmentAsync`
+- `TransportOrderController`: 3 endpoint `/api/TransportOrder/AddExtraSegment` / `UpdateExtraSegment` / `DeleteExtraSegment`
+- `DispatchOrderFCLRepository.GetByRefNoWithTOAsync` mở rộng:
+  - Load extras qua SP riêng (`SP_TransportOrder_ExtraSegments_GetByFclRefNo`) cho lệnh non-legacy
+  - Extract `ToId` + `ToRefNo` qua `IDictionary<string,object>` cast của DapperRow (an toàn hơn dynamic dispatch — `try (int)th.Id` từng fail silent)
+
+### FE Models + Service
+- [transport-order.model.ts](../../src/app/shared/models/transports/dispatchorders/transport-order.model.ts): thêm `TransportOrderExtraSegment`, `TransportOrderTotalsResult`, `TransportOrderExtraSegmentAddResult` (UI helper `listStations` + `listWaypoints` deserialized từ JSON khi load; serialize lại khi save)
+- `dispatch-order-fcl.ts`: thêm `extraSegments` + `toId`
+- `transport-order.service.ts`: 3 method `addExtraSegment` / `updateExtraSegment` / `deleteExtraSegment`
+
+### FE — Modal V2 integration (`modal-dispatch-order-fcl-v2/`)
+- **Rename labels theo yêu cầu**: "Tải trọng & Tóm tắt lệnh" → **"Cung đường vận tải"**; "Tóm tắt lệnh" → **"Thông tin cung đường"**
+- **Section "Cung đường phát sinh"** đặt dưới bảng trạm phí trong "Thông tin cung đường" (cột phải), `*ngIf="showExtraSegmentsSection"` (luôn hiện cho lệnh V2, không phải legacy)
+- **Bảng list extras**: cột Chặng (đầu/N/cuối auto-label theo SeqNo), Điểm đi→đến, Tải trọng (ng-select inline editable), Km, Dầu ĐM, Ghi chú, Actions (Xem map / Tính lại Vietmap / So sánh / Xóa)
+- **Visibility ma trận**:
+  - `routeConfirmed = !!entity.refNo || flagXem` — cung đường vận tải KHÓA NGAY khi có RefNo (đã khởi tạo lệnh xong); Vietmap/So sánh/Lưu mặc định/payload main ẩn
+  - `canAddExtraSegment = !!refNo && !!toId && status < 3 && !flagXem` — extras editable cho đến trước khi chốt B1 (status < 3); từ status ≥ 3 chỉ còn "Xem map"
+- **Nút Lưu main** require `lastSegmentFinal=true` khi tạo mới (chưa có refNo): `*ngIf="!flagXem && status<3 && (refNo || lastSegmentFinal)"`
+- **Auto-set `lastSegmentFinal=true`** trong `_rebuildSegments()` khi `segments.length === 1` (chặng duy nhất hiển nhiên là "Chặng cuối")
+- **Popup "Thêm cung đường phát sinh"** (inline overlay z-index 1060):
+  - Picker table 2-mode (Điểm đi / Điểm đến) clone pattern "Thêm điểm khác" của main route — có sortable header + filter row (dropdown loại + input địa chỉ) — KHÔNG dùng ng-select đơn giản nữa
+  - Click row → assign vào active mode → auto-switch sang "Điểm đến"
+  - Row đã chọn highlight: xanh lá `#e8f5e9` + badge "Điểm đi" hoặc đỏ `#ffebee` + badge "Điểm đến"
+  - Nút "Tính Vietmap" + "So sánh" CHỈ HIỆN khi `extraDraftHasBothPoints` — chưa đủ 2 điểm thì hiện hint thay vì button
+  - Note required (textarea), disable Lưu khi rỗng hoặc chưa có distanceKm
+- **Auto-save per action** (3 endpoint riêng):
+  - Add: popup submit → `addExtraSegment()` → BE INSERT + recompute → trả `{Id, SeqNo, Totals}` → FE thêm row + cập nhật display totals
+  - Update payload inline: ng-select change → `_debouncedUpdateExtra` (400ms) → BE UPDATE + recompute → totals mới
+  - Delete: confirm → BE DELETE + tái đánh SeqNo + recompute → FE remove row
+- **`_routeContext` dispatch** (`'segment' | 'extra-draft' | 'extra-existing' | 'extra-view'`) để vietmap/compare modals chia sẻ với cả main route + extras:
+  - `extra-draft`: popup chưa save, result fill vào `extraDraft`
+  - `extra-existing`: recalc extra đã có, result fill row + auto-update BE
+  - `extra-view`: showSaved mode chỉ vẽ map từ polyline có sẵn
+- **Hint empty state** dùng getter `extraEmptyHint` (mutually exclusive, ưu tiên theo thứ tự): chưa save / chế độ xem / chốt B1 / thiếu ToId / sẵn sàng thêm
+
+### Files đụng tới
+- SQL: [Migration_TO_ExtraSegments_20260519.sql](../../d:/Delta/DeltaSoft/NewAPI/Migration_TO_ExtraSegments_20260519.sql)
+- BE: [TransportOrderExtraSegment.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Models/Transports/TransportOrderExtraSegment.cs), `DispatchOrderFCL.cs` (+ToId), `ITransportOrder.cs`, `TransportOrderRepository.cs`, `TransportOrderController.cs`, `DispatchOrderFCLRepository.cs` (GetByRefNoWithTOAsync mở rộng load extras)
+- FE: `transport-order.model.ts`, `dispatch-order-fcl.ts`, `transport-order.service.ts`, [modal-dispatch-order-fcl-v2](../../src/app/shared/components/transports/modal-dispatch-order-fcl-v2/) (`.ts` +~300 dòng methods, `.html` +section + popup, `.scss` +~160 dòng)
+- Build status: BE 0 error C# (chỉ file-lock warning IIS Express); FE `ng build` PASS
+
+### Quy ước anh chốt
+- SP naming **bắt buộc** `SP_<TableName>_<Action>` — KHÔNG dùng `SP_TransportOrder_AddExtraSegment` (lẫn lộn bảng), đúng là `SP_TransportOrder_ExtraSegments_Add` (memory: [feedback_sp_naming_convention](../../C:/Users/Dell/.claude/projects/d--Delta-DeltaSoft-web-app-update/memory/feedback_sp_naming_convention.md))
+- Threshold trạng thái B1: `status >= 3` mới là chốt B1; "tạo lệnh xong" = có `refNo` (khác B1)
+
+---
+
+## TO↔FCL Phase 2 cutover + Modal V2 E2E verified — 2026-05-19
+
+### SQL Phase 2 đã chạy production
+- `Migration_TO_FCL_Phase2_SPs_20260515.sql` chạy thành công trên SSMS
+- 3 SP WithTO mới đã hoạt động: `SP_DispatchOrderFCL_CreateWithTO`, `SP_DispatchOrderFCL_UpdateWithTO`, `SP_DispatchOrderFcl_GetByRefNoWithTO`
+- 4 SP TO refactor: `SP_TransportOrder_GetById` (4 RS), `SP_TransportOrder_GetAll` (JOIN FCL via FclRefNo có IsLegacy), `SP_TransportOrder_UpdateStatus` simplified, DROP `SP_TransportOrder_Create/Update`
+- `ALTER SP_DispatchOrderFCL_GetAll` thêm cột `IsLegacy` vào SELECT (anh tự làm)
+- Cột `DispatchOrderFCL.TongKm DECIMAL(18,2) NULL` đã có ở DB
+
+### Modal V2 FCL — E2E test PASS
+End-to-end test cả 3 luồng đều pass sạch, không có regression:
+- **Create**: tạo lệnh mới qua `shipping-task-opman` "Lập lệnh (Location)" → `POST /CreateWithTO` → trả `{NewToId, NewToRefNo, NewFclRefNo}` đầy đủ → DB insert đúng `Tbl_TransportOrders` (có FclRefNo link) + `DispatchOrderFCL` (IsLegacy=0 explicit, TongKm/Tongdau/Chiphidau đúng công thức mới)
+- **Update**: edit lệnh `IsLegacy=0` → `POST /UpdateWithTO` → BEGIN TRAN OK, không RAISERROR, segments delete+insert lại qua 3 TVPs đúng
+- **Load**: click row `IsLegacy=0` → `getDetailWithTo(refNo)` → 9 result sets (5 FCL + 4 TO) → repository attach stations/waypoints theo SegmentId → `_segmentsToLocations` rebuild `locations[]` chuẩn pickup/delivery
+- Bảng tải trọng load đúng `payloadWeight` per chặng
+- Giá trạm phí cập nhật khi đổi xe (qua `loadVehicle()` → `_vehicleBotTypeId` → `_applyTollPrices()`)
+- Công thức `Tongdau = SUM(FuelAmountCalculated) + OilCompensation` + `TongKm = SUM(DistanceKm)` + `Chiphidau = Tongdau * OilPrice` khớp 100% FE compute vs BE persist
+- Lệnh `IsLegacy=1` (cũ) vẫn mở modal legacy thường — zero regression
+
+### shipment-normal — Conts hiển thị end-to-end
+- SP `SP_Shipment_GetPagingNormal` đã ALTER thêm SELECT cột `Conts` (STRING_AGG ContainerNumber từ ShippingTasks)
+- Cột "Cont No" trên list lô hàng thường hiển thị data thực, filter `contnoSearch` + export Excel theo `listFilter` hoạt động đầy đủ
+
+---
+
 ## FE polish — 2026-05-17
 
 ### modal-dispatchorder-route — Box-footer luôn pin đáy + 1 scroll duy nhất

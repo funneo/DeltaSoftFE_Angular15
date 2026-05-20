@@ -1,96 +1,67 @@
 # Pending / In-Progress Work
 
-## DB Verify — SP_Shipment_GetPagingNormal phải SELECT cột Conts
-- File hiện tại: SP gọi từ `ShipmentRepository.GetPagingNormal` (line 619-640) — tên SP `SP_Shipment_GetPagingNormal`
-- FE shipment-normal list vừa thêm cột "Cont No" (2026-05-17), bind `{{item.conts}}` + filter `contnoSearch`
-- **Cần verify SP**: có SELECT cột `Conts` không. Nếu chưa → ALTER SP thêm subquery gom `ContainerNumber` từ `Tbl_ShippingTasks` JOIN `Tbl_Shipments` → STRING_AGG / FOR XML PATH theo ShipmentId
-- Khi confirm xong: cột Cont No sẽ hiện data, filter + export Excel hoạt động end-to-end
+## Trạm thu phí gộp + tách modal cung đường phát sinh — hoàn tất 2026-05-20
+
+Đã code xong + build pass (xem done.md section đầu). **Anh cần test E2E + restart IIS Express** (BE DLL bị khóa khi build):
+
+1. **Trạm thu phí trong "Thông tin cung đường"**: chọn cung đường Vietmap có trạm → tự thêm dòng auto (nền vàng) với tên + tiền theo loại xe; nút "Thêm trạm" để thêm dòng nhập tay; đổi loại xe → giá auto cập nhật
+2. **Validation lập lệnh**: trạm có tên mà tiền < 1 → cảnh báo + chặn lưu
+3. **Khóa sau khi tạo lệnh** (có refNo): ẩn nút Thêm, không sửa/xóa được
+4. **Modal cung đường phát sinh tách riêng**: bấm "+ Thêm" → modal `modal-add-extra-segment` mở; bấm Vietmap/So sánh → sub-modal hiện ĐÈ LÊN (modal phát sinh vẫn thấy ở dưới); lưu → totals cập nhật
+
+### Caveat đã flag với anh (xử lý nếu test thấy)
+- Sửa lệnh CŨ rồi tính lại Vietmap 1 chặng có thể nhân đôi dòng trạm (dòng load từ DB thiếu `_auto`) — nếu cần, thêm nhận diện dòng auto khi load
+- Thiết kế báo cáo riêng cho extras (anh nói "để sau này" — chưa implement)
 
 ---
 
-## Refactor TO ↔ FCL — FE wiring + chạy migration (cập nhật 2026-05-17)
+## Cung đường phát sinh — hoàn tất 2026-05-19
+
+Feature đã code xong toàn bộ (SQL chạy production + BE 0 error + FE build pass). Đã chuyển popup inline → modal riêng `modal-add-extra-segment` (2026-05-20, xem section trên). Anh test E2E:
+
+1. **Tạo mới lệnh**: chưa chốt "Chặng cuối" → nút Lưu KHÔNG hiện. Chốt → Lưu hiện. Trường hợp chỉ 1 chặng → auto-default "Chặng cuối"
+2. **Sau khi save → reopen**: Vietmap/So sánh/Lưu mặc định ở cung đường vận tải biến mất; section "Cung đường phát sinh" hiện kèm nút "+ Thêm"
+3. **Đổi tải trọng inline** trên row extra → debounce 400ms gọi `UpdateExtraSegment` → totals tự cập nhật
+4. **Sau B1 (status≥3)**: extras locked, chỉ còn icon "Xem map"
+
+### Việc còn lại (nếu test phát sinh issue)
+- Có thể cần thêm endpoint `Get-By-Id` cho extra (hiện chỉ Get-By-FclRefNo qua bundle GetByRefNoWithTOAsync)
+
+---
+
+## Refactor TO ↔ FCL — Phase 2 còn việc nhỏ
 
 ### Trạng thái hiện tại
-- ✅ Phase 1A đã chạy (IsLegacy + FclRefNo + UNIQUE filtered index)
-- ✅ Phase 1C đã chạy (DROP ~59 cột TO + 2 bảng phụ `Tbl_TransportOrder_Details` / `Tbl_TransportOrder_Fees`)
-- ✅ Phase 2 SQL đã viết xong (`Migration_TO_FCL_Phase2_SPs_20260515.sql`) — anh đã chỉnh thêm GetAll theo ý anh. **CHỜ CHẠY trên DB**.
-- ✅ BE refactor xong, build 0 errors (FCL WithTO methods + endpoints / TO trim / model+ViewModel)
-- ✅ FE service `createWithTo/updateWithTo/getDetailWithTo` đã thêm
-- ✅ Model FCL đã thêm `isLegacy/toRefNo/segments`
-- ✅ Modal V2 đã tạo (`modal-dispatch-order-fcl-v2/`) — tab "Cung đường" route builder inline + 3 ViewChild modal helpers + ~25 route methods
-- ✅ Redesign UI v2 iter 1: width 90%, header gradient navy/vàng, inputs 28px gọn, tab modern
-- ✅ Fix form wrap (footer truy cập `addEditForm.form.valid`) — `<form>` wrap cả body+footer, SCSS `display:flex column`
-- ✅ Bảng tải trọng per-segment + dispatch-summary với giá trạm phí theo loại xe (`loadVehicle` set `_vehicleBotTypeId`)
-- ✅ Tab "Cung đường" 3 cột dọc giống TO (pool collapse / route builder / tải trọng+tóm tắt)
-- ✅ Width modal: 95vw (final)
-- ✅ `routeConfirmed` đổi thành getter `status > 2` (khác TO — sửa cung đường được đến hết status=2, lock từ Duyệt B1)
-- ✅ Wiring entry: list FCL route theo `isLegacy`, shipping-task-opman nút "Lập lệnh (Location)" → modal v2
-- ✅ List FCL: click checkbox = click row (fix stopPropagation)
-- ✅ Login: lưu mật khẩu (base64 obfuscation) + đổi label "Lưu thông tin đăng nhập"
-- ✅ shipment-normal: thêm cột "Cont No" + filter (chờ verify SP trả Conts)
-- ✅ Build FE pass 0 errors
+- ✅ Phase 1A, 1C, 2 SQL đã chạy production
+- ✅ BE refactor xong (0 errors), FE Modal V2 đầy đủ + E2E pass
+- ✅ Cung đường phát sinh đã thêm (xem section trên)
 
 ### Việc còn lại
 
-#### 1. SQL — anh chạy Phase 2 trên SSMS
-- File: `D:/Delta/DeltaSoft/NewAPI/Migration_TO_FCL_Phase2_SPs_20260515.sql`
-- Verification queries ở cuối file (check 4 SP mới + xác nhận SP cũ vẫn còn)
-- **ALTER `SP_DispatchOrderFCL_GetAll`**: thêm `m.IsLegacy` vào SELECT output (anh nói sẽ tự làm)
-
-#### 2. ⚠️ FE — Kiểm tra luồng lưu DB + đọc lại dữ liệu Modal V2 (PRIORITY)
-- **Save (Create)**: tạo lệnh mới từ modal v2 → POST `/CreateWithTO` → BE gọi `SP_DispatchOrderFCL_CreateWithTO`. Verify:
-  - Trả về `{ NewToId, NewToRefNo, NewFclRefNo }` đầy đủ
-  - `Tbl_TransportOrders` insert row mới với `FclRefNo` link + segments/stations/waypoints qua 3 TVPs
-  - `DispatchOrderFCL` insert row với `IsLegacy=0`, `Tongdau = SUM(FuelAmountCalculated) + OilCompensation`, `TongKm = SUM(DistanceKm)`, `Chiphidau = Tongdau * OilPrice`
-  - `DispatchOrderFCL.TongKm` ghi đúng (cột mới Phase 2)
-- **Save (Update)**: edit lệnh `IsLegacy=0` từ modal v2 → POST `/UpdateWithTO`. Verify:
-  - BEGIN TRAN OK, không RAISERROR (chỉ raise cho legacy)
-  - Segments update (delete + insert lại qua TVP)
-  - FCL fields cập nhật đúng (Tongdau/Chiphidau/TongKm/OilCompensation/ListEtc/ListFee...)
-- **Load (Edit)**: click row `IsLegacy=0` → modal v2 → `getDetailWithTo(refNo)` → 9 result sets:
-  - 5 RS legacy FCL (header / listEtc / listFee / listDetailed / Quabai)
-  - 4 RS TO (header dynamic / segments / stations / waypoints)
-  - Verify FE Repository attach `stations[]/waypoints[]` vào segments by `SegmentId`
-  - Verify `_segmentsToLocations(entity.segments)` rebuild `locations[]` đúng thứ tự + đủ pickup/delivery
-  - Verify bảng tải trọng load đúng `payloadWeight` per chặng từ DB
-  - Verify giá trạm phí hiển thị (cần `entity.vehicleId` → `loadVehicle()` → `_applyTollPrices()`)
-- **Edge cases cần thử**:
-  - Chặng cuối được flag `lastSegmentFinal` khi mở lại
-  - Lệnh có `dispatchSummarize` (note per-segment) → "Hướng dẫn cung đường" hiển thị
-  - Khi tab Thông tin chung đổi xe → bảng tóm tắt giá trạm cập nhật theo loại xe mới
-  - `Tongdau / Chiphidau` công thức mới có đúng khớp giữa FE compute + BE persist không
-
-#### 3. FE — TO list page (`src/app/main/transports/transport-order/`)
+#### FE — TO list page (`src/app/main/transports/transport-order/`)
 - Chuyển sang **read-only route viewer**:
   - Bỏ nút Thêm/Sửa (giữ Xem + Xóa nếu cần)
   - Hiển thị badge "Legacy" nếu `IsLegacy=1` (đọc từ response GetAll mới)
   - Click row → mở modal viewer hiển thị segments + map; có nút "Mở FCL" → navigate sang modal FCL nếu cần sửa
 - Cập nhật service `transport-order.service.ts`:
-  - Bỏ `createAsync` / `updateAsync` (endpoint đã DROP)
+  - Bỏ `createAsync` / `updateAsync` (endpoint đã DROP — service file vẫn còn ref dùng `/Create`, `/Update` URL, sẽ 404)
   - `updateStatus(id, status)` — signature mới (không còn feedback/isRejection)
 
-#### 4. FE — Cleanup
-- Search & remove dead code các form field cũ (Chang/Luonghang/Cang/Nhamay/etc.) trong template modal v2 nếu còn (đã chuyển qua segments rồi không dùng)
-
-### Files cần chỉnh chính (FE)
-- ~~`src/app/shared/services/dispatch-order-fcl.service.ts`~~ ✅
-- `src/app/shared/services/transport-order.service.ts` (bỏ create/update)
-- ~~`src/app/shared/components/transports/modal-dispatch-order-fcl-v2/`~~ ✅
-- `src/app/main/transports/transport-order/` (list + viewer)
+#### FE — Cleanup
+- Search & remove dead code các form field cũ (Chang/Luonghang/Cang/Nhamay/etc.) trong template modal v2 nếu còn
 
 ### Quy ước quan trọng (đã chốt với anh)
 - KHÔNG đụng BE/SP/FE hiện có của FCL legacy → tất cả tạo song song (`WithTO`)
-- Tongdau mới = `SUM(FuelAmountCalculated) trên @ListSegments + @OilCompensation`
-- TongKm mới  = `SUM(DistanceKm) trên @ListSegments`, persist vào **cả FCL.TongKm + TO.TongKm**
-- Chiphidau mới = `Tongdau * OilPrice`
-- TO không có `ShortWay`, không có `CreatedByName` (xóa khỏi insert), `FullRoute` của TO = hướng dẫn cung đường (dùng chung `@FullRoute` với FCL)
+- SP naming: `SP_<TableName>_<Action>` — KHÔNG gộp action với tên bảng khác
+- "Tạo lệnh xong" = có `refNo` (khóa cung đường vận tải main); "Chốt B1" = `status >= 3` (khóa extras)
+- Tongdau/TongKm/Chiphidau công thức gộp main segments + extra segments + OilCompensation
 - `IsLegacy=0` set explicit khi INSERT FCL mới
 
 ### Tham chiếu
 - Schema dump TO: `D:/Delta/DeltaSoft/web-app-update/sp_transportOrder.sql` (UTF-16 LE, đã reflect Phase 1C)
 - Schema dump FCL: `D:/Delta/DeltaSoft/web-app-update/dispatchOrderFcl.sql` (UTF-16 LE)
-- Phase 2 file: `D:/Delta/DeltaSoft/NewAPI/Migration_TO_FCL_Phase2_SPs_20260515.sql`
-- Memory: `feedback_keep_legacy_create_new` — luôn tạo SP/endpoint song song khi thay đổi behavior lớn
+- Migration files: `Migration_TO_FCL_Phase1A`, `Phase1C`, `Phase2_SPs_20260515`, `Migration_TO_ExtraSegments_20260519`
+- Memory: `feedback_keep_legacy_create_new`, `feedback_sp_naming_convention`, `feedback_compact_ui_density`
 
 ---
 

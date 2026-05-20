@@ -1,0 +1,174 @@
+<div bsModal #modalAddExtra="bs-modal" [config]="{backdrop: 'static'}" class="modal fade" tabindex="-1"
+  role="dialog" (onHidden)="onHidden()">
+  <div class="modal-dialog extra-popup-modal-dialog" role="document" *ngIf="draft">
+    <div class="modal-content extra-popup-dialog">
+      <div class="extra-popup-header">
+        <i class="fa fa-plus-square"></i>
+        <span>Thêm cung đường phát sinh</span>
+        <button type="button" class="extra-popup-close" (click)="close()" title="Đóng">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+
+      <div class="extra-popup-body">
+        <!-- Hai ô chọn điểm — rõ ràng. Bấm để mở dropdown chọn. -->
+        <div class="extra-points">
+          <button type="button" class="extra-point-box"
+            [class.active]="pickerOpen && pickerMode === 'start'"
+            [class.filled]="draft.startLocationName"
+            (click)="togglePicker('start')">
+            <span class="epb-marker epb-marker--start"><i class="fa fa-map-marker"></i></span>
+            <span class="epb-body">
+              <span class="epb-label">Điểm đi</span>
+              <span class="epb-value" *ngIf="draft.startLocationName">{{ draft.startLocationName }}</span>
+              <span class="epb-placeholder" *ngIf="!draft.startLocationName">Bấm để chọn điểm đi…</span>
+            </span>
+            <i class="fa epb-caret"
+               [class.fa-chevron-up]="pickerOpen && pickerMode === 'start'"
+               [class.fa-chevron-down]="!(pickerOpen && pickerMode === 'start')"></i>
+          </button>
+
+          <div class="extra-points-arrow"><i class="fa fa-long-arrow-down text-muted"></i></div>
+
+          <button type="button" class="extra-point-box"
+            [class.active]="pickerOpen && pickerMode === 'end'"
+            [class.filled]="draft.endLocationName"
+            (click)="togglePicker('end')">
+            <span class="epb-marker epb-marker--end"><i class="fa fa-map-marker"></i></span>
+            <span class="epb-body">
+              <span class="epb-label">Điểm đến</span>
+              <span class="epb-value" *ngIf="draft.endLocationName">{{ draft.endLocationName }}</span>
+              <span class="epb-placeholder" *ngIf="!draft.endLocationName">Bấm để chọn điểm đến…</span>
+            </span>
+            <i class="fa epb-caret"
+               [class.fa-chevron-up]="pickerOpen && pickerMode === 'end'"
+               [class.fa-chevron-down]="!(pickerOpen && pickerMode === 'end')"></i>
+          </button>
+        </div>
+
+        <!-- Dropdown chọn cảng/nhà máy — chỉ hiện khi bấm vào ô điểm đi/đến -->
+        <div class="extra-picker-dropdown" *ngIf="pickerOpen">
+          <div class="extra-picker-dropdown-title">
+            <i class="fa fa-search"></i>
+            Chọn <strong>{{ pickerMode === 'start' ? 'điểm đi' : 'điểm đến' }}</strong>
+          </div>
+          <div class="loc-table-wrap extra-picker-wrap">
+            <table class="loc-table">
+              <thead>
+                <tr class="loc-table-header">
+                  <th class="loc-th loc-th-type" (click)="sortPicker('locationType')">
+                    Loại
+                    <i class="fa" [class.fa-sort-asc]="pickerSortCol==='locationType' && pickerSortDir==='asc'"
+                       [class.fa-sort-desc]="pickerSortCol==='locationType' && pickerSortDir==='desc'"
+                       [class.fa-sort]="pickerSortCol!=='locationType'"></i>
+                  </th>
+                  <th class="loc-th loc-th-addr" (click)="sortPicker('address')">
+                    Tên / Địa chỉ
+                    <i class="fa" [class.fa-sort-asc]="pickerSortCol==='address' && pickerSortDir==='asc'"
+                       [class.fa-sort-desc]="pickerSortCol==='address' && pickerSortDir==='desc'"
+                       [class.fa-sort]="pickerSortCol!=='address'"></i>
+                  </th>
+                </tr>
+                <tr class="loc-table-filter">
+                  <td>
+                    <select class="form-control loc-filter-input"
+                      [(ngModel)]="pickerFilter.type" [ngModelOptions]="{standalone: true}">
+                      <option value="">Tất cả</option>
+                      <option value="1">Nhà máy</option>
+                      <option value="2">Cảng/Bãi</option>
+                    </select>
+                  </td>
+                  <td>
+                    <input type="text" class="form-control loc-filter-input"
+                      [(ngModel)]="pickerFilter.address" [ngModelOptions]="{standalone: true}"
+                      placeholder="Lọc địa chỉ..." focus>
+                  </td>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let loc of filteredLocations"
+                  class="loc-table-row"
+                  [class.loc-table-row--selected-start]="isPickerSelected(loc) === 'start'"
+                  [class.loc-table-row--selected-end]="isPickerSelected(loc) === 'end'"
+                  [class.loc-table-row--disabled]="!hasGeoCoord(loc)"
+                  [title]="hasGeoCoord(loc) ? '' : 'Chưa có tọa độ GPS — không thể chọn'"
+                  (click)="selectLocation(loc)">
+                  <td>
+                    <span class="badge"
+                      [class.badge-primary]="loc.locationType===1"
+                      [class.badge-warning]="loc.locationType===2">
+                      {{ locationTypeName(loc.locationType) }}
+                    </span>
+                  </td>
+                  <td class="loc-td-addr">
+                    {{ loc.address }}
+                    <span *ngIf="isPickerSelected(loc) === 'start'" class="extra-loc-tag tag-start">Điểm đi</span>
+                    <span *ngIf="isPickerSelected(loc) === 'end'" class="extra-loc-tag tag-end">Điểm đến</span>
+                    <span *ngIf="!hasGeoCoord(loc)" class="loc-no-coord" title="Chưa có tọa độ GPS">
+                      <i class="fa fa-map-marker" style="color:#ccc;"></i>
+                    </span>
+                  </td>
+                </tr>
+                <tr *ngIf="!filteredLocations.length">
+                  <td colspan="2" class="text-center text-muted" style="padding:12px;">
+                    <i class="fa fa-search"></i> Không tìm thấy
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tính cung đường: nút luôn hiện, disable khi chưa đủ 2 điểm -->
+        <div class="extra-route-actions">
+          <button type="button" class="btn btn-sm btn-warning" (click)="openVietmap()"
+            [disabled]="!hasBothPoints"
+            [title]="hasBothPoints ? '' : 'Chọn cả Điểm đi và Điểm đến trước'">
+            <i class="fa fa-refresh"></i> Tính Vietmap
+          </button>
+          <button type="button" class="btn btn-sm btn-primary" (click)="openCompare()"
+            [disabled]="!hasBothPoints"
+            [title]="hasBothPoints ? '' : 'Chọn cả Điểm đi và Điểm đến trước'">
+            <i class="fa fa-balance-scale"></i> So sánh
+          </button>
+          <div class="extra-route-summary" *ngIf="hasBothPoints && draft.distanceKm">
+            <i class="fa fa-check-circle text-success"></i>
+            <span><strong>{{ draft.distanceKm | number:'1.0-1' }}</strong> km</span>
+            <span *ngIf="draft.listStations?.length">
+              • <strong>{{ draft.listStations.length }}</strong> trạm phí
+            </span>
+          </div>
+          <div class="extra-route-summary text-muted" *ngIf="hasBothPoints && !draft.distanceKm">
+            <i class="fa fa-info-circle"></i> Bấm "Tính Vietmap" hoặc "So sánh" để có km + lộ trình.
+          </div>
+          <div class="extra-route-summary text-muted" *ngIf="!hasBothPoints">
+            <i class="fa fa-info-circle"></i> Chọn cả Điểm đi và Điểm đến để tính cung đường.
+          </div>
+        </div>
+
+        <div class="extra-form-row">
+          <label class="extra-form-label">Ghi chú phát sinh <span class="text-danger">*</span></label>
+          <textarea class="form-control form-control-sm"
+            [(ngModel)]="draft.note"
+            [ngModelOptions]="{standalone: true}"
+            rows="2" placeholder="Lý do phát sinh chuyến này..."></textarea>
+        </div>
+      </div>
+
+      <div class="extra-popup-footer">
+        <button type="button" class="btn btn-sm btn-default" (click)="close()">
+          <i class="fa fa-close"></i> Hủy
+        </button>
+        <button type="button" class="btn btn-sm btn-success"
+          [disabled]="!canSave()"
+          (click)="save()">
+          <i class="fa fa-save"></i> Lưu cung đường phát sinh
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal con: Vietmap + So sánh (có class route-submodal → z-index nổi trên modal này) -->
+<modal-vietmap-routes (RouteSelected)="onVietmapRouteSelected($event)"></modal-vietmap-routes>
+<modal-route-compare (RouteSelected)="onCompareRouteSelected($event)"></modal-route-compare>

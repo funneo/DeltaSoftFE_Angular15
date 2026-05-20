@@ -9,7 +9,6 @@ export interface Ports {
     distance?: number;
     km?: number;
     deleted?: boolean;
-    groupPortId?: number;
-    groupPortName?: string;
+    groupPort?: string;
     checked?: boolean;
 }

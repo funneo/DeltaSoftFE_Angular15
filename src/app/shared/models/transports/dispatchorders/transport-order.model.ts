@@ -175,6 +175,59 @@ export interface TransportOrderSegmentWaypoint {
     distanceM?: number; // Khoảng cách đến điểm tiếp theo (mét)
 }
 
+// Cung đường phát sinh — 1 chặng độc lập (2 điểm), Note BẮT BUỘC.
+// Stations + Waypoints lưu inline JSON ở DB (StationsJson/WaypointsJson).
+// FE: parse JSON → 2 mảng listStations/listWaypoints khi load; serialize lại khi save.
+export interface TransportOrderExtraSegment {
+    id?: number;
+    transportOrderId?: number;
+    seqNo?: number;
+
+    startLocationId?: number;
+    startLocationType?: number;
+    startLocationName?: string;
+    startLat?: number;
+    startLng?: number;
+
+    endLocationId?: number;
+    endLocationType?: number;
+    endLocationName?: string;
+    endLat?: number;
+    endLng?: number;
+
+    distanceKm?: number;
+    payloadWeight?: number;
+    fuelNorm?: number;
+    fuelAmountCalculated?: number;
+
+    routePolyline?: string;
+    stationsJson?: string;
+    waypointsJson?: string;
+
+    note?: string;
+
+    createdBy?: string;
+    createdDate?: string;
+    updatedBy?: string;
+    updatedDate?: string;
+
+    // UI helper (deserialized from JSON; NOT sent to BE)
+    listStations?: SegmentStation[];
+    listWaypoints?: TransportOrderSegmentWaypoint[];
+}
+
+export interface TransportOrderTotalsResult {
+    tongKm?: number;
+    tongdau?: number;
+    chiphidau?: number;
+}
+
+export interface TransportOrderExtraSegmentAddResult {
+    newExtraSegmentId: number;
+    newSeqNo: number;
+    totals: TransportOrderTotalsResult;
+}
+
 export interface SegmentStation {
     vietmapId?: number;    // id trạm từ Vietmap API (77, 168, ...)
     stationName?: string;
