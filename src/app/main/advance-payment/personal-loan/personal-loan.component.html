@@ -77,9 +77,20 @@
           <th>Trạng thái</th>
           <th style="width: 80px;">Tác vụ</th>
         </tr>
+        <tr class="filter-row">
+          <th></th>
+          <th><input class="form-control input-sm" name="fEmployee" [(ngModel)]="fEmployee" (input)="applyFilter()" placeholder="Lọc..." /></th>
+          <th><input class="form-control input-sm" name="fRefNo" [(ngModel)]="fRefNo" (input)="applyFilter()" placeholder="Lọc..." /></th>
+          <th><input class="form-control input-sm" name="fDate" [(ngModel)]="fDate" (input)="applyFilter()" placeholder="dd/MM/yyyy" /></th>
+          <th><input class="form-control input-sm" name="fAmount" [(ngModel)]="fAmount" (input)="applyFilter()" placeholder="Lọc..." /></th>
+          <th><input class="form-control input-sm" name="fReason" [(ngModel)]="fReason" (input)="applyFilter()" placeholder="Lọc..." /></th>
+          <th><input class="form-control input-sm" name="fRepayment" [(ngModel)]="fRepayment" (input)="applyFilter()" placeholder="Lọc..." /></th>
+          <th><input class="form-control input-sm" name="fStatus" [(ngModel)]="fStatus" (input)="applyFilter()" placeholder="Lọc..." /></th>
+          <th></th>
+        </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of listPersonalLoan" (click)="clickRow(item)">
+        <tr *ngFor="let item of pagedList" (click)="clickRow(item)">
           <td class="table-checkbox">
             <label class="custom-checkbox">
               <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
@@ -130,7 +141,7 @@
         </button> -->
           </td>
         </tr>
-        <tr *ngIf="listPersonalLoan?.length == 0">
+        <tr *ngIf="listFilter?.length == 0">
           <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
         </tr>
       </tbody>
@@ -138,7 +149,7 @@
   </div>
   <!-- /.box-body -->
   <div class="box-footer no-padding">
-    <div *ngIf="listPersonalLoan?.length > 0" class="col-md-12 footer-phantrang">
+    <div *ngIf="listFilter?.length > 0" class="col-md-12 footer-phantrang">
       <div class="row">
         <div class="col-md-5">
           <div class="dataTables_info">

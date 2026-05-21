@@ -88,9 +88,11 @@ export class AdvanceService extends BaseService {
     p.employeeId = Number.parseInt(params.get('employeeId'));
     p.branchId = Number.parseInt(params.get('branchId'));
     let isTransfer = params.get('isTransfer');
+    let supplierId = params.get('supplierId');
     p.item = {
       acceptStep: Number.parseInt(params.get('step')),
-      isTransfer: isTransfer ? Boolean(JSON.parse(isTransfer)) : null
+      isTransfer: isTransfer ? Boolean(JSON.parse(isTransfer)) : null,
+      supplierId: supplierId ? Number.parseInt(supplierId) : null
     }
     return this.http.post(`${environment.apiUrl}/api/advance/getpaging`, p)
       .pipe(map((response: any) => {

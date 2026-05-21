@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import { HttpParams } from '@angular/common/http';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { MessageContstants } from '@app/shared/constants';
@@ -18,7 +19,8 @@ import { ExportService } from '@app/shared/services/export-excel.service';
 @Component({
   selector: 'app-personal-loan',
   templateUrl: './personal-loan.component.html',
-  styleUrls: ['./personal-loan.component.css']
+  styleUrls: ['./personal-loan.component.css'],
+  providers: [DatePipe]
 })
 export class PersonalLoanComponent implements OnInit {
   pageIndex = 1;
@@ -29,6 +31,15 @@ export class PersonalLoanComponent implements OnInit {
   flagView = false;
   keyword = '';
   listPersonalLoan: PersonalLoan[];
+  listFilter: PersonalLoan[];          // danh sách sau khi lọc client-side (bind ra bảng)
+  // ===== Bộ lọc theo cột (FE only) =====
+  fEmployee = '';
+  fRefNo = '';
+  fDate = '';
+  fAmount = '';
+  fReason = '';
+  fRepayment = '';
+  fStatus = '';
   listEmployee: Employee[];
   employeeId?: number;
   busy: Subscription;
@@ -60,7 +71,8 @@ export class PersonalLoanComponent implements OnInit {
   viewListLog = false;
   constructor(private personalLoanService: PersonalLoanService, private notificationService: NotificationService,
     private _utilityService: UtilityService,
-    private exportService: ExportService, private employeeService: EmployeeService, private authService: AuthService, private branchService: BranchService) {
+    private exportService: ExportService, private employeeService: EmployeeService, private authService: AuthService, private branchService: BranchService,
+    private datepipe: DatePipe) {
     let user = this.authService.getLoggedInUser();
     this._auth = Number.parseInt(user.authorisationLevel);
     this._employeeId = Number.parseInt(user.employeeId);
@@ -138,39 +150,9 @@ export class PersonalLoanComponent implements OnInit {
     this.totalMoney = 0;
     let tuNgay = moment(this.ngayBatDau).format('YYYYMMDD');
     let denNgay = moment(this.ngayKetThuc).format('YYYYMMDD');
+    // Load TOÀN BỘ bản ghi trong kỳ → lọc + phân trang client-side để filter/tổng tiền/export nhất quán
     const params = new HttpParams()
-      .set('pageIndex', this.pageIndex.toString())
-      .set('pageSize', this.pageSize.toString())
-      .set('keyword', this.keyword)
-      .set('fromDate', tuNgay)
-      .set('toDate', denNgay)
-      .set('branchId', this._branchId?.toString())
-      .set('employeeId', this._employeeId?.toString());
-    this.busy = this.personalLoanService.getPaging(params).subscribe((res: ResponseValue<Pagination<PersonalLoan>>) => {
-      if (res.code == '200' || res.code == '201') {
-        this.listPersonalLoan = res.data?.items;
-        this.totalRows = res.data?.totalRows;
-        this.listPersonalLoan.forEach(x => {
-          this.totalMoney += x.amount;
-          x.step = x.acceptStep.toString();
-          if (!x.status)
-            x.step = "Locked";
-          if (x.isComplete)
-            x.step = 'Completed';
-          if (x.isPayment)
-            x.step = 'Paymented';
-        })
-      }
-      else {
-        this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
-      }
-    });
-  }
-  export() {
-    let tuNgay = moment(this.ngayBatDau).format('YYYYMMDD');
-    let denNgay = moment(this.ngayKetThuc).format('YYYYMMDD');
-    const params = new HttpParams()
-      .set('pageIndex', this.pageIndex.toString())
+      .set('pageIndex', '1')
       .set('pageSize', '99999')
       .set('keyword', this.keyword)
       .set('fromDate', tuNgay)
@@ -179,18 +161,63 @@ export class PersonalLoanComponent implements OnInit {
       .set('employeeId', this._employeeId?.toString());
     this.busy = this.personalLoanService.getPaging(params).subscribe((res: ResponseValue<Pagination<PersonalLoan>>) => {
       if (res.code == '200' || res.code == '201') {
-
-        let printList = res.data?.items.map(({ id, status, branchId, employeeId, advanceGroupId,
-          type, isTransfer, ...item }) => item);
-        this.exportService.exportExcel(printList, 'vay-ca-nhan');
-
+        this.listPersonalLoan = res.data?.items ?? [];
+        this.listPersonalLoan.forEach(x => {
+          x.step = x.acceptStep.toString();
+          if (!x.status)
+            x.step = "Locked";
+          if (x.isComplete)
+            x.step = 'Completed';
+          if (x.isPayment)
+            x.step = 'Paymented';
+        })
+        this.applyFilter();
       }
       else {
         this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
       }
     });
+  }
 
+  // Lọc client-side trên trang đang hiển thị (không gọi lại API)
+  applyFilter(): void {
+    let list = this.listPersonalLoan || [];
+    const txt = (v: any) => (v ?? '').toString().toLowerCase().trim();
+    if (txt(this.fEmployee)) list = list.filter(x => txt(x.employeeName).includes(txt(this.fEmployee)));
+    if (txt(this.fRefNo)) list = list.filter(x => txt(x.refNo).includes(txt(this.fRefNo)));
+    if (txt(this.fDate)) list = list.filter(x => txt(x.refDate ? this.datepipe.transform(x.refDate, 'dd/MM/yyyy') : '').includes(txt(this.fDate)));
+    if (txt(this.fAmount)) list = list.filter(x => txt(x.amount).includes(txt(this.fAmount)));
+    if (txt(this.fReason)) list = list.filter(x => txt(x.reason).includes(txt(this.fReason)));
+    if (txt(this.fRepayment)) list = list.filter(x => txt(x.amountRepayment).includes(txt(this.fRepayment)));
+    if (txt(this.fStatus)) list = list.filter(x => txt(this.statusText(x.step)).includes(txt(this.fStatus)));
+    this.listFilter = list;
+    // Tổng tiền + tổng số bản ghi đổi theo danh sách đã lọc (toàn bộ kỳ)
+    this.totalMoney = list.reduce((s, x) => s + (x.amount ?? 0), 0) as any;
+    this.totalRows = list.length;
+    this.pageIndex = 1;
+  }
 
+  // Trang hiện tại sau khi lọc (phân trang client-side)
+  get pagedList(): PersonalLoan[] {
+    const list = this.listFilter || [];
+    const start = (this.pageIndex - 1) * this.pageSize;
+    return list.slice(start, start + this.pageSize);
+  }
+
+  // Nhãn trạng thái hiển thị (để lọc theo chữ người dùng thấy)
+  statusText(step: string): string {
+    return this.listStatus.find(s => s.id === step)?.text ?? '';
+  }
+
+  export() {
+    // Xuất đúng danh sách đang hiển thị sau khi lọc (client-side)
+    let printList = (this.listFilter || []).map(({ id, status, branchId, employeeId, advanceGroupId,
+      type, isTransfer, checked, step, ...item }) => item);
+    if (printList.length == 0) {
+      this.notificationService.printErrorMessage('Không có dữ liệu để xuất!');
+      return;
+    }
+    this.exportService.exportExcel(printList, 'vay-ca-nhan');
   }
 
   clickRow(item: PersonalLoan): void {
@@ -204,8 +231,8 @@ export class PersonalLoanComponent implements OnInit {
   }
 
   pageChanged(event: PageChangedEvent): void {
+    // Phân trang client-side — chỉ đổi trang, không gọi lại API
     this.pageIndex = event.page;
-    this.loadData();
   }
 
   add(): void {
@@ -244,13 +271,13 @@ export class PersonalLoanComponent implements OnInit {
   }
 
   checkAll(ev) {
-    this.listPersonalLoan.forEach(x => x.checked = ev.target.checked)
+    this.pagedList.forEach(x => x.checked = ev.target.checked)
     this.icheck();
   }
 
   isAllChecked() {
-    if (this.listPersonalLoan)
-      return this.listPersonalLoan.every(_ => _.checked);
+    const page = this.pagedList;
+    return page.length ? page.every(_ => _.checked) : false;
   }
 
   icheck() {

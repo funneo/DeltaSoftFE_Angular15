@@ -689,6 +689,11 @@ export class PaymentDetailComponent implements OnInit {
   }
   showAdvances(): void {
     if (this.flagXem) return;
+    // Thanh toán Nhà cung cấp: bắt buộc chọn NCC trước để lọc đúng tạm ứng của NCC đó
+    if (this._type == 1 && !this.entity.supplierId) {
+      this._notificationService.printAlert("THÔNG BÁO", 'Vui lòng chọn Nhà cung cấp trước khi chọn tạm ứng!');
+      return;
+    }
     this.viewListAdvances = true;
     setTimeout(() => {
       this.modalAdvances.show();

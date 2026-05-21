@@ -1,6 +1,6 @@
 import { DatePipe } from '@angular/common';
 import { HttpParams } from '@angular/common/http';
-import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { MessageContstants } from '@app/shared/constants';
 import { Advance, Pagination, Profile, ResponseValue } from '@app/shared/models';
 import { AdvanceService, AuthService, NotificationService, UtilityService } from '@app/shared/services';
@@ -31,6 +31,11 @@ export class ModalListAdvanceComponent implements OnInit {
   advancesRefno?:string='';
   tienSearch?:string='';
   isSelected=false;
+
+  // false = tạm ứng cá nhân, true = tạm ứng nhà cung cấp
+  @Input() isTransfer: boolean = false;
+  // chỉ lọc khi là tạm ứng NCC; 0/null = không lọc theo NCC
+  @Input() supplierId?: number;
 
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter;
@@ -103,7 +108,9 @@ export class ModalListAdvanceComponent implements OnInit {
       .set('toDate', denNgay)
       .set('employeeId',this.userLoged.employeeId)
       .set('step', '3')
-      .set('branchId',this.userLoged.branchId);
+      .set('branchId',this.userLoged.branchId)
+      .set('isTransfer', String(!!this.isTransfer))
+      .set('supplierId', (this.isTransfer && this.supplierId ? this.supplierId : 0).toString());
     this.busy = this.advanceService.getPaging(params).subscribe((res: ResponseValue<Pagination<Advance>>) => {
       if (res.code == '200' || res.code == '201') {
         this.listAdvance = res.data?.items;

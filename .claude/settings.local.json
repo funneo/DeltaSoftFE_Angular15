@@ -33,7 +33,8 @@
       "Read(//d/Delta/**)",
       "Bash(mkdir -p \"D:/Delta/DeltaSoft-v21-plan/plan\" \"D:/Delta/DeltaSoft-v21-plan/docs\" \"D:/Delta/DeltaSoft-v21-plan/memory\" && ls \"D:/Delta/DeltaSoft-v21-plan/\")",
       "Bash(grep -rln \"TypeDispatchOrderFCLEtc\\\\b\\\\|CREATE TYPE TypeDispatchOrderFCLEtc\\\\|TypeDispatchOrderFCLEtc \" --include=\"*.sql\" .)",
-      "Bash(grep -rn \"CREATE TYPE \\\\[*dbo\\\\]*\\\\.*\\\\[*TypeDispatchOrderFCLEtc\" --include=\"*.sql\" .)"
+      "Bash(grep -rn \"CREATE TYPE \\\\[*dbo\\\\]*\\\\.*\\\\[*TypeDispatchOrderFCLEtc\" --include=\"*.sql\" .)",
+      "Bash(sqlcmd -S 115.84.178.66 -d DELTASOFT -U delta.erp -P 'khsd89#$\\)?h>24' -Q \"SET NOCOUNT ON; SELECT OBJECT_DEFINITION\\(OBJECT_ID\\('SP_Advances_GetPaging'\\)\\)\" -y 0 -h -1)"
     ],
     "additionalDirectories": [
       "d:\\Delta\\DeltaSoft\\web-app-update\\.git",

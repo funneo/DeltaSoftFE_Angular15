@@ -374,7 +374,7 @@
 </modal-shipment>
 <modal-list-approved-log *ngIf="viewListApprovedLog" (CloseModal)="closeModalviewListApprovedLog()">
 </modal-list-approved-log>
-<modal-list-advance *ngIf="viewListAdvances" (SaveSuccess)="saveSuccessAdvances($event)" (CloseModal)="closeModalAdvances()">
+<modal-list-advance *ngIf="viewListAdvances" [isTransfer]="_type == 1" [supplierId]="entity.supplierId" (SaveSuccess)="saveSuccessAdvances($event)" (CloseModal)="closeModalAdvances()">
 </modal-list-advance>
 <modal-list-payment-accept *ngIf="viewListAccept" (CloseModal)="closeModalListUserAccept()">
 </modal-list-payment-accept>

@@ -1,5 +1,44 @@
 # Completed Features
 
+## Vay cá nhân — filter row client-side (tổng tiền + export theo lọc) — 2026-05-21
+
+Màn `personal-loan` (Vay cá nhân) trước đây phân trang **server 20 dòng/trang** → không có filter theo cột. Chuyển sang **load toàn bộ kỳ 1 lần → lọc + phân trang client-side** để filter/tổng tiền/export nhất quán trên TẤT CẢ bản ghi.
+- **TS** [personal-loan.component.ts](../../src/app/main/advance-payment/personal-loan/personal-loan.component.ts):
+  - `loadData()`: gọi API `pageSize=99999` nạp hết bản ghi trong kỳ vào `listPersonalLoan`.
+  - 7 field lọc theo cột (`fEmployee/fRefNo/fDate/fAmount/fReason/fRepayment/fStatus`) + `applyFilter()` lọc dạng contains → `listFilter`; tính lại `totalMoney` + `totalRows` = số dòng sau lọc, reset trang 1.
+  - `get pagedList`: cắt `listFilter` theo trang (phân trang client-side); `pageChanged()` chỉ đổi trang KHÔNG gọi API.
+  - `statusText(step)`: map `step`→nhãn trạng thái để lọc theo chữ hiển thị; inject `DatePipe` (lọc ngày `dd/MM/yyyy`) + `providers:[DatePipe]`.
+  - `export()`: xuất đúng `listFilter` (toàn bộ sau lọc, không chỉ trang hiện tại); strip field FE `checked`/`step`; báo nếu rỗng.
+  - `checkAll`/`isAllChecked`: theo trang đang hiển thị (`pagedList`).
+- **HTML** [personal-loan.component.html](../../src/app/main/advance-payment/personal-loan/personal-loan.component.html): thêm `<tr class="filter-row">` 7 ô lọc; bảng `*ngFor` qua `pagedList`; pagination dùng `totalRows` (=số dòng sau lọc); footer + empty-state theo `listFilter`.
+- **CSS**: `.filter-row` gọn (input 26px).
+- Kết quả: gõ filter → lọc toàn bộ kỳ, "Tổng số bản ghi" + "Tổng tiền" + phân trang + Export đều đổi theo bộ lọc.
+
+---
+
+## Bảo mật đăng nhập + lọc tạm ứng theo loại thanh toán — 2026-05-21
+
+### Tạm ứng ở thanh toán lọc theo cá nhân / nhà cung cấp
+Bug: modal chọn tạm ứng khi lập thanh toán ([modal-list-advance](../../src/app/shared/components/advance-payment/modal-list-advance/modal-list-advance.component.ts)) trước đây list TẤT CẢ tạm ứng (lẫn cá nhân + NCC) vì `loadData()` không truyền `isTransfer`. Phân loại cá nhân/NCC dựa trên field **`isTransfer`** (false=cá nhân, true=NCC), KHÔNG phải `type`.
+- **SQL (anh tự ALTER)**: `SP_Advances_GetPaging` thêm param `@SupplierId INT = NULL` (và **`@SupplierId = 0` ≡ NULL** = không lọc); nhánh `@Step=3` thêm `AND (@SupplierId IS NULL OR ad.SupplierId=@SupplierId)` + nới lọc `EmployeeId` cho luồng NCC. `@IsTransfer BIT=0` đã có sẵn từ trước.
+- **BE** (3 file): [IAdvances.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Interfaces/AdvanceAndPayments/IAdvances.cs) + [AdvancesRepository.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Repositories/AdvanceAndPayments/AdvancesRepository.cs) `GetPaging` thêm param `int? supplierId` → `@SupplierId`; [AdvanceController.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Controllers/AdvanceAndPayments/AdvanceController.cs) đọc `obj.Item?.SupplierId` truyền vào.
+- **FE** (4 file): `advance.service.ts` getPaging đọc `supplierId` param → `p.item.supplierId`; `modal-list-advance.component.ts` thêm `@Input() isTransfer` + `@Input() supplierId`, gửi qua `loadData()` (NCC gửi supplierId, cá nhân gửi 0); `payment-detail.component.ts` `showAdvances()` cảnh báo *"Vui lòng chọn Nhà cung cấp trước khi chọn tạm ứng!"* khi `_type==1 && !entity.supplierId`; `payment-detail.component.html` truyền `[isTransfer]="_type==1" [supplierId]="entity.supplierId"`.
+- Kết quả: TT cá nhân (`_type=0`) chỉ thấy tạm ứng cá nhân của chính user; TT NCC (`_type=1`) bắt buộc chọn NCC trước rồi chỉ thấy tạm ứng của đúng NCC đó.
+
+### Rate limit login (.NET 9) — chống brute-force
+- [Program.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Program.cs): `AddRateLimiter` + policy `"login"` (FixedWindow, phân vùng theo **IP client thật**), `app.UseRateLimiter()` sau `UseRouting`. Vượt ngưỡng → HTTP **429** + JSON `{code:"429", message:...}` + header `Retry-After`.
+- IP client lấy theo thứ tự `CF-Connecting-IP` → `X-Forwarded-For` → `RemoteIpAddress` → đúng cả khi gọi trực tiếp lẫn khi sau này đặt sau **Cloudflare** (không bị gộp chung 1 rổ). Áp dụng cho cả web lẫn app di động (chung endpoint).
+- [appsettings.json](../../d:/Delta/DeltaSoft/NewAPI/API/appsettings.json): section `RateLimit:Login` (`PermitLimit:10`, `WindowSeconds:60`) — chỉnh không cần build lại.
+- [AccountController.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Controllers/AccountController.cs): `[EnableRateLimiting("login")]` trên `Login` + `ExternalLogin`.
+
+### Hợp nhất cảnh báo login — chống dò tài khoản (account enumeration)
+- Trước: sai mật khẩu trả `400 PASSWORD_INCORRECT`, user không tồn tại trả `404 USER_NOTFOUND` → khác status + nội dung → dò được username có thật.
+- Giờ: cả 2 nhánh (sai mật khẩu + user không tồn tại + không phải tài khoản external) đều trả **giống hệt** `400 BadRequest` + `{code:"LOGIN_FAILED", message:"Tên đăng nhập hoặc mật khẩu không đúng!"}`. Áp dụng cho cả `Login` và `ExternalLogin`.
+- [MessageViewModel.cs](../../d:/Delta/DeltaSoft/NewAPI/API/ViewModels/MessageViewModel.cs): thêm message chung `LOGIN_FAILED`.
+- **Giữ nguyên có chủ đích** (chỉ xảy ra SAU khi mật khẩu đã đúng → không giúp dò tài khoản): `USER_LOCK` (khóa), `USER_NOACTIVE` (chưa kích hoạt), `USER_NOBRANCH` (không có quyền chi nhánh). Log nội bộ vẫn ghi chi tiết để điều tra.
+
+---
+
 ## Trạm thu phí (ETC) gộp vào cung đường + tách modal cung đường phát sinh — 2026-05-20
 
 ### Gộp tab ETC vào "Thông tin cung đường" (modal FCL v2)
