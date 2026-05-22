@@ -1,0 +1,145 @@
+<div class="dof-page">
+  <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f5f6fa" size="medium" color="#3a7afe"
+    type="ball-clip-rotate">
+    <p class="dof-loading">Tải dữ liệu ...</p>
+  </ngx-spinner>
+
+  <!-- Toolbar -->
+  <div class="dof-toolbar">
+    <div class="dof-toolbar__title">
+      <i class="fa fa-truck"></i>
+      <span>Lệnh vận chuyển FCL</span>
+    </div>
+
+    <div class="dof-toolbar__filters">
+      <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+        class="form-control dof-input dof-input--date" placeholder="Khoảng ngày">
+      <ng-select class="dof-select" name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+        [(ngModel)]="branchId" (change)="changedBranch($event)" placeholder="Chi nhánh..."
+        [disabled]="!adminPermission">
+      </ng-select>
+      <ng-select class="dof-select" name="laixe" [items]="listDriver" bindLabel="employeeFullName" bindValue="id"
+        [(ngModel)]="driverId" (change)="changeDriver()" placeholder="Lái xe...">
+      </ng-select>
+      <div class="dof-search">
+        <input type="text" class="form-control dof-input" name="filter" (keyup.enter)="timKiem()"
+          [(ngModel)]="keyword" placeholder="Từ khóa..." />
+        <button class="dof-search__btn" type="button" (click)="timKiem()"><i class="fa fa-search"></i></button>
+      </div>
+    </div>
+
+    <div class="dof-toolbar__actions">
+      <button class="dof-btn dof-btn--primary" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+        appFunction="FCL" appAction="UPDATE">
+        <i class="fa fa-edit"></i> Sửa
+      </button>
+      <button class="dof-btn dof-btn--danger" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+        appFunction="FCL" appAction="DELETE">
+        <i class="fa fa-trash"></i> Xóa
+      </button>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="dof-table-wrap">
+    <table class="dof-table">
+      <thead>
+        <tr class="dof-table__head">
+          <th class="dof-col-check">
+            <label class="dof-checkbox" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="isAllChecked()" (change)="checkAll($event)" />
+            </label>
+          </th>
+          <th>Tình trạng</th>
+          <th class="dof-col-md">RefNo</th>
+          <th class="dof-col-md">Mã tham chiếu</th>
+          <th class="dof-col-md">Ngày</th>
+          <th class="dof-col-md">Người lập</th>
+          <th>Đơn vị vận chuyển</th>
+          <th class="dof-col-md">Lái xe</th>
+          <th class="dof-col-md">Biển số xe</th>
+          <th>Mooc</th>
+          <th class="dof-col-md">Số Cont</th>
+          <th class="dof-col-lg">Điểm giao nhận hàng</th>
+          <th>Tổng Km</th>
+          <th>Tổng dầu</th>
+          <th>Ghi chú</th>
+        </tr>
+        <tr class="dof-table__filter">
+          <th></th>
+          <th>
+            <ng-select class="dof-fselect" name="filterType" (change)="filterData()" [(ngModel)]="statusSelected"
+              [clearable]="false" [items]="array" bindLabel="text" bindValue="value">
+            </ng-select>
+          </th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.refNo" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.referCode" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.createdDate" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.createdByName" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.shippingUnitName" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.driverName" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.vehiclelLicensePlates" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.moocLicensePlates" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.containerList" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.locationList" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.tongKm" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.tongdau" (input)="filterData()" type="text" /></th>
+          <th><input class="dof-finput" [(ngModel)]="filterColumns.note" (input)="filterData()" type="text" /></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of visibleData" class="dof-row"
+          [class.dof-row--sub]="item.isSubcontractors" [class.dof-row--checked]="item.checked"
+          (click)="clickRow(item)">
+          <td class="dof-col-check">
+            <!-- chỉ hiển thị trạng thái; click cả dòng do (click)="clickRow(item)" xử lý -->
+            <label class="dof-checkbox dof-checkbox--ro">
+              <input type="checkbox" [checked]="item.checked" />
+            </label>
+          </td>
+          <td><span [class]="getStatusClass(item)">{{item.rStatus}}</span></td>
+          <td><a class="dof-link" (click)="edit(true, item.refNo); $event.stopPropagation()">{{item.refNo}}</a></td>
+          <td><b>{{item.referCode}}</b></td>
+          <td>{{item.createdDate | date:'dd/MM/yyyy'}}</td>
+          <td>{{item.createdByName}}</td>
+          <td><b>{{item.shippingUnitName}}</b></td>
+          <td><b>{{item.driverName}}</b></td>
+          <td>{{item.vehiclelLicensePlates}}</td>
+          <td>{{item.moocLicensePlates}}</td>
+          <td class="dof-col-lg">
+            <div *ngIf="item.containerList?.length > 0">
+              <span *ngFor="let c of item.containerList" class="dof-chip">{{ c }}</span>
+            </div>
+          </td>
+          <td class="dof-col-lg">
+            <div *ngIf="item.locationList?.length > 0">
+              <div *ngFor="let l of item.locationList" class="dof-loc">{{ '• ' + l }}</div>
+            </div>
+          </td>
+          <td class="dof-num">{{item.tongKm}}</td>
+          <td class="dof-num">{{item.tongdau}}</td>
+          <td>{{item.note}}</td>
+        </tr>
+        <tr *ngIf="listFilter?.length == 0">
+          <td colspan="100%" class="dof-empty">Không có bản ghi nào được tìm thấy!</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Footer -->
+  <div class="dof-footer" *ngIf="listFilter?.length > 0">
+    <span class="dof-footer__count">Tổng số bản ghi: <b>{{ listFilter?.length }}</b></span>
+    <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="9" (pageChanged)="pageChanged($event)"
+      [itemsPerPage]="50" previousText="&lsaquo;" nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
+    </pagination>
+  </div>
+</div>
+
+<!-- Modals (KHÔNG có modal FCL legacy) -->
+<modal-dispatch-order-fcl-v2 *ngIf="viewModalV2" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModalV2()">
+</modal-dispatch-order-fcl-v2>
+<modal-closing-fcl-process *ngIf="viewModalProgress" (CloseModal)="closeModalProgress()">
+</modal-closing-fcl-process>
+<modal-phieu-chi-lenh *ngIf="viewModalPayment" (CloseModal)="closePayment()" (SaveSuccess)="saveSuccess()">
+</modal-phieu-chi-lenh>

@@ -22,7 +22,7 @@ const routes: Routes = [
   { path: 'repaymentetc', loadChildren: () => import('./repayment-etc/repayment-etc.module').then(m => m.RepaymentEtcModule), data: { functionCode: 'RPE' }, canActivate: [AuthGuard] },
   { path: 'shippingopman', loadChildren: () => import('./shipping-task-opman/shipping-task-opman.module').then(m => m.ShippingTaskOpmanModule), data: { functionCode: 'F010' }, canActivate: [AuthGuard] },
   { path: 'shippingcs', loadChildren: () => import('./shipping-task-cs/shipping-task-cs.module').then(m => m.ShippingTaskCsModule), data: { functionCode: 'WORKFLOW' }, canActivate: [AuthGuard] },
-  { path: 'transport-order', loadChildren: () => import('./transport-order/transport-order.module').then(m => m.TransportOrderModule), data: { functionCode: 'DISPATCHORDER' }, canActivate: [AuthGuard] },
+  { path: 'transport-order', loadChildren: () => import('./dispatch-order-fcl-new/dispatch-order-fcl-new.module').then(m => m.DispatchOrderFclNewModule), data: { functionCode: 'DISPATCHORDER' }, canActivate: [AuthGuard] },
 ];
 
 @NgModule({

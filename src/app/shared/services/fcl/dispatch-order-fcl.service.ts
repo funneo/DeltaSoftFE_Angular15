@@ -151,6 +151,9 @@ export class DispatchOrderFclService extends BaseService {
     p.fromDate=params.get('fromDate');
     p.toDate=params.get('toDate');
     p.branchId=Number.parseInt(params.get('branchid'));
+    // Lọc theo loại lệnh: '1' = lệnh cũ legacy, '0' = lệnh mới; không truyền → SP mặc định lấy lệnh mới (NULL ~ 0)
+    const il = params.get('isLegacy');
+    if (il !== null && il !== '') p.item.isLegacy = il === '1' || il === 'true';
     return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/getPaging`, p)
     .pipe(map((response: any) => {
       if (response.code == '401')

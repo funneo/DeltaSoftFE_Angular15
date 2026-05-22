@@ -60,14 +60,11 @@ Feature đã code xong toàn bộ (SQL chạy production + BE 0 error + FE build
 
 ### Việc còn lại
 
-#### FE — TO list page (`src/app/main/transports/transport-order/`)
-- Chuyển sang **read-only route viewer**:
-  - Bỏ nút Thêm/Sửa (giữ Xem + Xóa nếu cần)
-  - Hiển thị badge "Legacy" nếu `IsLegacy=1` (đọc từ response GetAll mới)
-  - Click row → mở modal viewer hiển thị segments + map; có nút "Mở FCL" → navigate sang modal FCL nếu cần sửa
-- Cập nhật service `transport-order.service.ts`:
-  - Bỏ `createAsync` / `updateAsync` (endpoint đã DROP — service file vẫn còn ref dùng `/Create`, `/Update` URL, sẽ 404)
-  - `updateStatus(id, status)` — signature mới (không còn feedback/isRejection)
+#### FE — Trang list lệnh mới (ĐÃ XONG cơ bản 2026-05-22)
+- ✅ Tạo component MỚI `dispatch-order-fcl-new` (list FCL isLegacy=0, UI hiện đại), repoint route `transport-order` → module mới. KHÔNG đụng FCL list cũ & TO (user tự lo phần FCL cũ). Chi tiết: done.md section đầu.
+- ⚠️ Cần: (a) user thêm param `@IsLegacy` vào `SP_DispatchOrderFCL_GetAll`; (b) user xử lý FCL list cũ truyền `isLegacy=1`; (c) `ng serve` + test giao diện.
+- Việc trước mắt đã ẩn (bật lại sau khi cần): Export, Chốt lệnh (SLL + từng dòng), Thanh toán.
+- `TransportOrderModule`/component cũ còn nguyên nhưng không route nào dùng → cân nhắc xóa sau.
 
 #### FE — Cleanup
 - Search & remove dead code các form field cũ (Chang/Luonghang/Cang/Nhamay/etc.) trong template modal v2 nếu còn

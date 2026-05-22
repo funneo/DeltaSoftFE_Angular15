@@ -1,0 +1,275 @@
+// ===== Lệnh FCL mới — giao diện hiện đại =====
+$primary: #3a7afe;
+$border: #e6e9f0;
+$muted: #6b7280;
+$bg: #f5f6fa;
+
+:host {
+  display: block;
+}
+
+.dof-page {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 90px);
+  background: $bg;
+  padding: 10px;
+  gap: 10px;
+}
+
+.dof-loading { color: $primary; font-weight: 600; }
+
+/* ---------- Toolbar ---------- */
+.dof-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: 12px;
+  padding: 10px 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, .06);
+
+  &__title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1f2937;
+    margin-right: 6px;
+    i { color: $primary; }
+  }
+
+  &__filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    flex: 1 1 auto;
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-left: auto;
+  }
+}
+
+.dof-input {
+  height: 34px;
+  border: 1px solid $border;
+  border-radius: 8px;
+  padding: 0 10px;
+  font-size: 13px;
+  &--date { width: 200px; }
+}
+
+.dof-select { min-width: 150px; }
+
+.dof-search {
+  display: flex;
+  align-items: stretch;
+  .dof-input { border-radius: 8px 0 0 8px; width: 170px; }
+  &__btn {
+    border: 1px solid $primary;
+    background: $primary;
+    color: #fff;
+    border-radius: 0 8px 8px 0;
+    padding: 0 12px;
+    cursor: pointer;
+    &:hover { filter: brightness(1.05); }
+  }
+}
+
+/* ---------- Buttons ---------- */
+.dof-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: filter .15s, opacity .15s;
+  &:hover:not(:disabled) { filter: brightness(1.07); }
+  &:disabled { opacity: .5; cursor: not-allowed; }
+
+  &--primary { background: $primary; }
+  &--success { background: #16a34a; }
+  &--danger  { background: #ef4444; }
+  &--warning { background: #f59e0b; }
+  &--chot    { background: #0ea5e9; }
+  &--sm { height: 26px; padding: 0 10px; font-size: 11px; border-radius: 6px; }
+}
+
+/* ---------- Dropdown export ---------- */
+.dof-dropdown {
+  position: relative;
+  &__menu {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 36px;
+    min-width: 150px;
+    background: #fff;
+    border: 1px solid $border;
+    border-radius: 8px;
+    box-shadow: 0 8px 20px rgba(16, 24, 40, .12);
+    overflow: hidden;
+    z-index: 30;
+    div {
+      padding: 9px 14px;
+      font-size: 13px;
+      cursor: pointer;
+      &:hover { background: #eef4ff; color: $primary; }
+    }
+  }
+  &:hover .dof-dropdown__menu { display: block; }
+}
+
+/* ---------- Table ---------- */
+.dof-table-wrap {
+  flex: 1 1 auto;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, .06);
+}
+
+.dof-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+
+  th, td {
+    padding: 8px 10px;
+    border-bottom: 1px solid $border;
+    text-align: left;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+
+  &__head th {
+    position: sticky;
+    top: 0;
+    z-index: 12;
+    background: #f8fafc;
+    color: #374151;
+    font-weight: 700;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .02em;
+    border-bottom: 2px solid $border;
+  }
+
+  &__filter th {
+    position: sticky;
+    top: 35px;
+    z-index: 11;
+    background: #fff;
+    padding: 4px 6px;
+  }
+}
+
+.dof-finput {
+  width: 100%;
+  height: 28px;
+  border: 1px solid $border;
+  border-radius: 6px;
+  padding: 0 8px;
+  font-size: 12px;
+  &:focus { outline: none; border-color: $primary; }
+}
+
+.dof-fselect ::ng-deep .ng-select-container { min-height: 28px; height: 28px; border-radius: 6px; }
+
+.dof-row {
+  cursor: pointer;
+  transition: background .12s;
+  &:nth-child(even) { background: #fcfcfd; }
+  &:hover { background: #eef4ff; }
+  &--sub { background: #f0f9ff; }
+  &--checked { background: #dbeafe !important; }
+}
+
+.dof-col-check { width: 38px; text-align: center; }
+.dof-col-md { min-width: 120px; }
+.dof-col-lg { min-width: 240px; max-width: 420px; white-space: normal; }
+.dof-col-act { width: 90px; }
+.dof-num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.dof-link {
+  color: $primary;
+  font-weight: 700;
+  cursor: pointer;
+  &:hover { text-decoration: underline; }
+}
+
+.dof-checkbox input { width: 16px; height: 16px; cursor: pointer; }
+// Checkbox dòng chỉ để hiển thị — click xuyên qua xuống <tr> để clickRow toggle đúng dòng
+.dof-checkbox--ro { pointer-events: none; }
+
+.dof-chip {
+  display: inline-block;
+  background: #eef2ff;
+  color: #3730a3;
+  border-radius: 6px;
+  padding: 1px 7px;
+  margin: 1px 3px 1px 0;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dof-loc { color: #374151; line-height: 1.5; }
+
+.dof-empty {
+  text-align: center;
+  color: $muted;
+  padding: 24px;
+  font-style: italic;
+}
+
+/* ---------- Status badges ---------- */
+.dof-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+
+  &--init     { background: #f1f5f9; color: #475569; }
+  &--sent     { background: #dcfce7; color: #15803d; }
+  &--received { background: #e0e7ff; color: #4338ca; }
+  &--b1       { background: #fef9c3; color: #a16207; }
+  &--b2       { background: #cffafe; color: #0e7490; }
+  &--waiting  { background: #ffedd5; color: #c2410c; }
+  &--closed   { background: #dbeafe; color: #1d4ed8; }
+  &--deny     { background: #fee2e2; color: #b91c1c; }
+}
+
+/* ---------- Footer ---------- */
+.dof-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: 12px;
+  padding: 6px 14px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, .06);
+
+  &__count { font-size: 13px; color: #374151; }
+
+  ::ng-deep .pagination { margin: 0; }
+}

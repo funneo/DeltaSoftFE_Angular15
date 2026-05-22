@@ -1,5 +1,16 @@
 # Completed Features
 
+## List lệnh FCL mới (giao diện hiện đại) thay trang TO — 2026-05-22
+
+Tạo **component MỚI HOÀN TOÀN** `dispatch-order-fcl-new` (KHÔNG sửa FCL list cũ, KHÔNG sửa trang TO — xem [[feedback_no_touch_fcl_legacy]]). Kế thừa toàn bộ logic FCL list, lọc **`isLegacy=0`** (lệnh mới), giao diện table hiện đại hơn.
+- **5 file mới** `src/app/main/transports/dispatch-order-fcl-new/`: `.component.ts` (copy logic FCL: load/filter cột/search/branch/driver; chỉ `@ViewChild` modal v2 + closing + phiếu chi; `edit()` luôn mở modal v2; localStorage key riêng `DISPATCHORDER_NEW`; `getStatusClass()` cho badge), `.component.html` (toolbar card + filter + bảng sticky header + badge pill + zebra/hover + chip cont + hàng filter theo cột + footer phân trang; cuối chỉ 3 modal: `modal-dispatch-order-fcl-v2`, `modal-closing-fcl-process`, `modal-phieu-chi-lenh` — KHÔNG có modal FCL legacy), `.component.scss` (style hiện đại: card/shadow/bo góc/badge màu), `.module.ts` (chỉ import 3 modal module cần), `-routing.module.ts`.
+- **BE/service dùng chung (additive)**: `SP_DispatchOrderFCL_GetAll` thêm param `@IsLegacy` (user tự chạy SQL: NULL/0→lấy 0, 1→lấy 1); [IDispatchOrderFCL.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Interfaces/FCL/IDispatchOrderFCL.cs) + [DispatchOrderFCLRepository.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Repositories/FCL/DispatchOrderFCLRepository.cs) `GetAll` thêm `bool? isLegacy`; [DispatchOrderFCLController.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Controllers/FCL/DispatchOrderFCLController.cs) GetPaging truyền `obj.Item?.IsLegacy`; FE `dispatch-order-fcl.service.ts` getAll đọc param `isLegacy`. FCL list cũ KHÔNG truyền isLegacy → user tự xử lý phần đó.
+- **Route**: `transports/transport-order` repoint loadChildren → `DispatchOrderFclNewModule` (menu cũ tự hiển thị list mới, không đổi menu/DB). `TransportOrderModule`/component còn nguyên nhưng không route nào dùng.
+- **Trước mắt ẩn**: Export, Chốt lệnh (SLL + nút CHỐT từng dòng → bỏ cột Tác vụ), Thanh toán — chỉ giữ Sửa + Xóa (method vẫn còn trong TS để bật lại sau).
+- **Fix check dòng**: checkbox dòng `pointer-events:none` (chỉ hiển thị); click ô bất kỳ → `clickRow(item)` check đúng dòng; RefNo `stopPropagation` để chỉ mở xem.
+
+---
+
 ## Vay cá nhân — filter row client-side (tổng tiền + export theo lọc) — 2026-05-21
 
 Màn `personal-loan` (Vay cá nhân) trước đây phân trang **server 20 dòng/trang** → không có filter theo cột. Chuyển sang **load toàn bộ kỳ 1 lần → lọc + phân trang client-side** để filter/tổng tiền/export nhất quán trên TẤT CẢ bản ghi.

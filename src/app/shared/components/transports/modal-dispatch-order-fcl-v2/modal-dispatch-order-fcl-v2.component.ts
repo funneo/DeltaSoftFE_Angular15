@@ -1197,6 +1197,9 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
       .subscribe((res: ResponseValue<DispatchOrderFcl>) => {
         if (res.code == "200" || res.code == "201") {
           this.entity = res.data;
+          // Lệnh đã lưu → cung đường đã hoàn chỉnh, chặng cuối luôn là "Chặng cuối"
+          // (đặc biệt khi chỉ có 1 chặng: chặng đó CHÍNH LÀ chặng cuối, không phải "Chặng đầu")
+          this.lastSegmentFinal = true;
           // Hydrate cung đường phát sinh: parse stationsJson/waypointsJson → mảng
           this.extraSegments = (this.entity.extraSegments || []).map(e => ({
             ...e,
@@ -1274,6 +1277,14 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
       if (!this.entity.isSubcontractors && this.entity.oilPrice < 1) {
         this.notificationService.printErrorMessage(
           MessageContstants.FUEL_REQUIED_ERROR
+        );
+        return;
+      }
+      // FCL mới: cung đường vận tải bắt buộc tối thiểu 2 chặng (chặng đầu + chặng cuối).
+      // Chỉ kiểm khi tạo mới (chưa có refNo) để không chặn việc sửa các lệnh cũ.
+      if (!this.entity.isSubcontractors && !this.entity.refNo && (this.entity.segments?.length ?? 0) < 2) {
+        this.notificationService.printErrorMessage(
+          'Cung đường vận tải phải có tối thiểu 2 chặng (chặng đầu và chặng cuối). Vui lòng thêm điểm để có ít nhất 2 chặng trước khi lập lệnh.'
         );
         return;
       }
