@@ -108,3 +108,64 @@
   font-size: 12px;
   margin-left: 6px;
 }
+
+/* ===== Master-detail: danh sách hóa đơn (file nén) ===== */
+.invoice-list {
+  border-right: 1px solid #e6e9f0;
+  padding-right: 8px;
+}
+
+.invoice-list-header {
+  font-weight: 700;
+  font-size: 13px;
+  color: #374151;
+  padding: 6px 4px;
+  border-bottom: 1px solid #e6e9f0;
+  margin-bottom: 6px;
+}
+
+.invoice-list-items {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.invoice-list-item {
+  padding: 7px 9px;
+  border: 1px solid #eef0f4;
+  border-radius: 6px;
+  margin-bottom: 5px;
+  cursor: pointer;
+  transition: background .12s, border-color .12s;
+}
+
+.invoice-list-item:hover {
+  background: #f3f7ff;
+}
+
+.invoice-list-item.active {
+  background: #e7f0ff;
+  border-color: #3a7afe;
+}
+
+.invoice-list-item.has-error {
+  background: #fff5f5;
+  border-color: #fde0e0;
+}
+
+.invoice-list-item .ili-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.invoice-list-item .ili-sub {
+  font-size: 11.5px;
+  color: #6b7280;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+}

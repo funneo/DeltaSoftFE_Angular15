@@ -33,6 +33,8 @@ export interface InvoiceExtractionResult {
   webCode: string;
   lineItems: InvoiceItem[];
   rawJson: string;
+  fileName?: string;   // tên file gốc (khi đọc từ ZIP/RAR)
+  error?: string;      // có giá trị nếu file đó lỗi
 }
 
 @Injectable({
@@ -48,6 +50,16 @@ export class GeminiAiService extends BaseService {
     formData.append('file', file);
     return this.http.post<InvoiceExtractionResult>(
       `${environment.apiUrl}/api/geminiAI/extract-invoice`,
+      formData
+    ).pipe(catchError(this.handleError));
+  }
+
+  // Nhận 1 file lẻ (ảnh/PDF) hoặc 1 file nén ZIP/RAR -> trả mảng kết quả
+  extractInvoices(file: File): Observable<InvoiceExtractionResult[]> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<InvoiceExtractionResult[]>(
+      `${environment.apiUrl}/api/geminiAI/extract-invoices`,
       formData
     ).pipe(catchError(this.handleError));
   }

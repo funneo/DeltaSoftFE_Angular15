@@ -15,12 +15,12 @@
       <div class="modal-body">
 
         <!-- Upload area (hiện khi chưa có kết quả) -->
-        <div *ngIf="!result && !loading" class="upload-area" (click)="fileInput.click()"
+        <div *ngIf="!hasResult && !loading" class="upload-area" (click)="fileInput.click()"
           (dragover)="onDragOver($event)" (drop)="onDrop($event)">
           <i class="fa fa-cloud-upload fa-3x text-muted"></i>
           <p class="upload-text">Kéo thả file vào đây hoặc <strong>nhấn để chọn</strong></p>
-          <p class="text-muted small">Hỗ trợ: JPG, PNG, PDF</p>
-          <input #fileInput type="file" style="display:none" accept="image/*,.pdf"
+          <p class="text-muted small">Hỗ trợ: JPG, PNG, PDF — hoặc file nén ZIP/RAR (nhiều hóa đơn)</p>
+          <input #fileInput type="file" style="display:none" accept="image/*,.pdf,.zip,.rar"
             (change)="onFileSelected($event)">
         </div>
 
@@ -28,165 +28,201 @@
         <div *ngIf="loading" class="upload-area loading-area">
           <i class="fa fa-spinner fa-spin fa-3x text-primary"></i>
           <p class="upload-text">Đang phân tích hóa đơn <strong>{{ fileName }}</strong>...</p>
-          <p class="text-muted small">Vui lòng chờ, AI đang xử lý</p>
+          <p class="text-muted small">Vui lòng chờ, AI đang xử lý (file nén có thể mất nhiều thời gian hơn)</p>
         </div>
 
         <!-- Kết quả -->
-        <div *ngIf="result">
+        <div *ngIf="hasResult">
           <div class="row">
-            <!-- Cột trái: ảnh preview (nếu có) -->
-            <div class="col-md-4" *ngIf="isImage && previewUrl">
-              <div class="preview-wrap">
-                <img [src]="previewUrl" alt="Hóa đơn" class="invoice-preview">
+
+            <!-- Cột trái: danh sách file (chỉ khi nhiều hóa đơn) -->
+            <div class="col-md-3 invoice-list" *ngIf="isMulti">
+              <div class="invoice-list-header">
+                <i class="fa fa-files-o"></i> {{ results.length }} hóa đơn
+                <span class="text-success" *ngIf="okCount">&nbsp;• {{ okCount }} OK</span>
+                <span class="text-danger" *ngIf="errorCount">&nbsp;• {{ errorCount }} lỗi</span>
+              </div>
+              <div class="invoice-list-items">
+                <div *ngFor="let r of results; let i = index" class="invoice-list-item"
+                  [class.active]="i === selectedIndex" [class.has-error]="!!r.error"
+                  (click)="selectInvoice(i)">
+                  <div class="ili-name">
+                    <i class="fa" [ngClass]="r.error ? 'fa-exclamation-triangle text-danger' : 'fa-file-text-o text-primary'"></i>
+                    {{ r.fileName || ('Hóa đơn ' + (i + 1)) }}
+                  </div>
+                  <div class="ili-sub" *ngIf="!r.error">
+                    {{ r.vendorName || '—' }}<span *ngIf="r.totalAmount"> • {{ r.totalAmount | currency:'VND':'' }}</span>
+                  </div>
+                  <div class="ili-sub text-danger" *ngIf="r.error">{{ r.error }}</div>
+                </div>
               </div>
             </div>
-            <div [ngClass]="isImage && previewUrl ? 'col-md-8' : 'col-md-12'">
 
-              <!-- Thông tin nhà cung cấp & khách hàng -->
-              <div class="row">
-                <div class="col-md-6">
-                  <div class="info-card vendor-card">
-                    <div class="info-card-header"><i class="fa fa-building-o"></i> Nhà cung cấp</div>
-                    <table class="table table-condensed info-table">
-                      <tr>
-                        <td class="label-col">Tên</td>
-                        <td><strong>{{ result.vendorName || '—' }}</strong></td>
-                      </tr>
-                      <tr>
-                        <td class="label-col">MST</td>
-                        <td>{{ result.vendorTaxId || '—' }}</td>
-                      </tr>
-                      <tr>
-                        <td class="label-col">Địa chỉ</td>
-                        <td>{{ result.vendorAddress || '—' }}</td>
-                      </tr>
-                      <tr>
-                        <td class="label-col">SĐT</td>
-                        <td>{{ result.vendorPhone || '—' }}</td>
-                      </tr>
-                    </table>
-                  </div>
-                </div>
-                <div class="col-md-6">
-                  <div class="info-card customer-card">
-                    <div class="info-card-header"><i class="fa fa-user-o"></i> Khách hàng</div>
-                    <table class="table table-condensed info-table">
-                      <tr>
-                        <td class="label-col">Tên</td>
-                        <td><strong>{{ result.customerName || '—' }}</strong></td>
-                      </tr>
-                      <tr>
-                        <td class="label-col">MST</td>
-                        <td>{{ result.customerTaxId || '—' }}</td>
-                      </tr>
-                      <tr>
-                        <td class="label-col">Địa chỉ</td>
-                        <td>{{ result.customerAddress || '—' }}</td>
-                      </tr>
-                    </table>
-                  </div>
-                </div>
+            <!-- Cột phải: chi tiết hóa đơn đang chọn -->
+            <div [ngClass]="isMulti ? 'col-md-9' : 'col-md-12'">
+
+              <!-- Báo lỗi cho file đang chọn -->
+              <div *ngIf="selected?.error" class="alert alert-danger" style="margin-bottom:10px;">
+                <i class="fa fa-exclamation-triangle"></i>
+                Không đọc được <strong>{{ selected.fileName }}</strong>: {{ selected.error }}
               </div>
 
-              <!-- Thông tin hóa đơn -->
-              <div class="info-card invoice-card" style="margin-top:10px;">
-                <div class="info-card-header"><i class="fa fa-file-text-o"></i> Thông tin hóa đơn</div>
-                <div class="row">
-                  <div class="col-md-6">
-                    <table class="table table-condensed info-table">
-                      <tr>
-                        <td class="label-col">Số hóa đơn</td>
-                        <td><strong>{{ result.invoiceId || '—' }}</strong></td>
-                      </tr>
-                      <tr>
-                        <td class="label-col">Ký hiệu</td>
-                        <td>{{ result.invoiceSymbol || '—' }}</td>
-                      </tr>
-                      <tr>
-                        <td class="label-col">Ngày</td>
-                        <td>{{ result.invoiceDate || '—' }}</td>
-                      </tr>
-                      <tr>
-                        <td class="label-col">Hình thức TT</td>
-                        <td>{{ result.paymentMethod || '—' }}</td>
-                      </tr>
-                    </table>
+              <div class="row" *ngIf="selected && !selected.error">
+                <!-- Ảnh preview (chỉ với 1 ảnh đơn) -->
+                <div class="col-md-4" *ngIf="!isMulti && isImage && previewUrl">
+                  <div class="preview-wrap">
+                    <img [src]="previewUrl" alt="Hóa đơn" class="invoice-preview">
                   </div>
-                  <div class="col-md-6">
-                    <table class="table table-condensed info-table">
-                      <tr>
-                        <td class="label-col">Tiền hàng</td>
-                        <td class="text-right so-tien">{{ result.netAmount | currency:'VND':'' }}</td>
+                </div>
+                <div [ngClass]="(!isMulti && isImage && previewUrl) ? 'col-md-8' : 'col-md-12'">
+
+                  <!-- Thông tin nhà cung cấp & khách hàng -->
+                  <div class="row">
+                    <div class="col-md-6">
+                      <div class="info-card vendor-card">
+                        <div class="info-card-header"><i class="fa fa-building-o"></i> Nhà cung cấp</div>
+                        <table class="table table-condensed info-table">
+                          <tr>
+                            <td class="label-col">Tên</td>
+                            <td><strong>{{ selected.vendorName || '—' }}</strong></td>
+                          </tr>
+                          <tr>
+                            <td class="label-col">MST</td>
+                            <td>{{ selected.vendorTaxId || '—' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="label-col">Địa chỉ</td>
+                            <td>{{ selected.vendorAddress || '—' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="label-col">SĐT</td>
+                            <td>{{ selected.vendorPhone || '—' }}</td>
+                          </tr>
+                        </table>
+                      </div>
+                    </div>
+                    <div class="col-md-6">
+                      <div class="info-card customer-card">
+                        <div class="info-card-header"><i class="fa fa-user-o"></i> Khách hàng</div>
+                        <table class="table table-condensed info-table">
+                          <tr>
+                            <td class="label-col">Tên</td>
+                            <td><strong>{{ selected.customerName || '—' }}</strong></td>
+                          </tr>
+                          <tr>
+                            <td class="label-col">MST</td>
+                            <td>{{ selected.customerTaxId || '—' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="label-col">Địa chỉ</td>
+                            <td>{{ selected.customerAddress || '—' }}</td>
+                          </tr>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Thông tin hóa đơn -->
+                  <div class="info-card invoice-card" style="margin-top:10px;">
+                    <div class="info-card-header"><i class="fa fa-file-text-o"></i> Thông tin hóa đơn</div>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <table class="table table-condensed info-table">
+                          <tr>
+                            <td class="label-col">Số hóa đơn</td>
+                            <td><strong>{{ selected.invoiceId || '—' }}</strong></td>
+                          </tr>
+                          <tr>
+                            <td class="label-col">Ký hiệu</td>
+                            <td>{{ selected.invoiceSymbol || '—' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="label-col">Ngày</td>
+                            <td>{{ selected.invoiceDate || '—' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="label-col">Hình thức TT</td>
+                            <td>{{ selected.paymentMethod || '—' }}</td>
+                          </tr>
+                        </table>
+                      </div>
+                      <div class="col-md-6">
+                        <table class="table table-condensed info-table">
+                          <tr>
+                            <td class="label-col">Tiền hàng</td>
+                            <td class="text-right so-tien">{{ selected.netAmount | currency:'VND':'' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="label-col">Thuế VAT</td>
+                            <td class="text-right so-tien">{{ selected.taxAmount | currency:'VND':'' }}</td>
+                          </tr>
+                          <tr>
+                            <td class="label-col">Tổng tiền</td>
+                            <td class="text-right so-tien total-amount">
+                              <strong>{{ selected.totalAmount | currency:'VND':'' }} {{ selected.currency }}</strong>
+                            </td>
+                          </tr>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Danh sách hàng hóa / dịch vụ -->
+                  <div class="info-card" style="margin-top:10px;" *ngIf="selected.lineItems?.length > 0">
+                    <div class="info-card-header"><i class="fa fa-list"></i> Hàng hóa / Dịch vụ</div>
+                    <div style="overflow-x:auto;">
+                      <table class="table table-bordered table-condensed table-striped">
+                        <thead>
+                          <tr>
+                            <th style="width:40px;">#</th>
+                            <th>Tên hàng hóa / Dịch vụ</th>
+                            <th style="width:80px;" class="text-right">SL</th>
+                            <th style="width:60px;">ĐVT</th>
+                            <th style="width:120px;" class="text-right">Đơn giá</th>
+                            <th style="width:130px;" class="text-right">Thành tiền</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let item of selected.lineItems; let i = index">
+                            <td>{{ i + 1 }}</td>
+                            <td>{{ item.description }}</td>
+                            <td class="text-right">{{ item.quantity | number }}</td>
+                            <td>{{ item.unit }}</td>
+                            <td class="text-right so-tien">{{ item.unitPrice | currency:'VND':'' }}</td>
+                            <td class="text-right so-tien">{{ item.amount | currency:'VND':'' }}</td>
+                          </tr>
+                          <tr class="total-row">
+                            <td colspan="5" class="text-right"><strong>Tổng cộng:</strong></td>
+                            <td class="text-right so-tien"><strong>{{ totalLineItems | currency:'VND':'' }}</strong></td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  <!-- Link tra cứu -->
+                  <div *ngIf="selected.webLink || selected.webCode" class="info-card weblink-card" style="margin-top:10px;">
+                    <div class="info-card-header"><i class="fa fa-search"></i> Tra cứu hóa đơn</div>
+                    <table class="table table-condensed info-table" style="margin:0;">
+                      <tr *ngIf="selected.webCode">
+                        <td class="label-col">Mã tra cứu</td>
+                        <td><span class="badge badge-code">{{ selected.webCode }}</span></td>
                       </tr>
-                      <tr>
-                        <td class="label-col">Thuế VAT</td>
-                        <td class="text-right so-tien">{{ result.taxAmount | currency:'VND':'' }}</td>
-                      </tr>
-                      <tr>
-                        <td class="label-col">Tổng tiền</td>
-                        <td class="text-right so-tien total-amount">
-                          <strong>{{ result.totalAmount | currency:'VND':'' }} {{ result.currency }}</strong>
+                      <tr *ngIf="selected.webLink">
+                        <td class="label-col">Đường link</td>
+                        <td>
+                          <a [href]="selected.webLink" target="_blank" class="weblink-url">{{ selected.webLink }}</a>
+                          &nbsp;
+                          <a [href]="selected.webLink" target="_blank" class="btn btn-xs btn-info">
+                            <i class="fa fa-external-link"></i> Mở
+                          </a>
                         </td>
                       </tr>
                     </table>
                   </div>
+
                 </div>
               </div>
-
-              <!-- Danh sách hàng hóa / dịch vụ -->
-              <div class="info-card" style="margin-top:10px;" *ngIf="result.lineItems?.length > 0">
-                <div class="info-card-header"><i class="fa fa-list"></i> Hàng hóa / Dịch vụ</div>
-                <div style="overflow-x:auto;">
-                  <table class="table table-bordered table-condensed table-striped">
-                    <thead>
-                      <tr>
-                        <th style="width:40px;">#</th>
-                        <th>Tên hàng hóa / Dịch vụ</th>
-                        <th style="width:80px;" class="text-right">SL</th>
-                        <th style="width:60px;">ĐVT</th>
-                        <th style="width:120px;" class="text-right">Đơn giá</th>
-                        <th style="width:130px;" class="text-right">Thành tiền</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr *ngFor="let item of result.lineItems; let i = index">
-                        <td>{{ i + 1 }}</td>
-                        <td>{{ item.description }}</td>
-                        <td class="text-right">{{ item.quantity | number }}</td>
-                        <td>{{ item.unit }}</td>
-                        <td class="text-right so-tien">{{ item.unitPrice | currency:'VND':'' }}</td>
-                        <td class="text-right so-tien">{{ item.amount | currency:'VND':'' }}</td>
-                      </tr>
-                      <tr class="total-row">
-                        <td colspan="5" class="text-right"><strong>Tổng cộng:</strong></td>
-                        <td class="text-right so-tien"><strong>{{ totalLineItems | currency:'VND':'' }}</strong></td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <!-- Link tra cứu -->
-              <div *ngIf="result.webLink || result.webCode" class="info-card weblink-card" style="margin-top:10px;">
-                <div class="info-card-header"><i class="fa fa-search"></i> Tra cứu hóa đơn</div>
-                <table class="table table-condensed info-table" style="margin:0;">
-                  <tr *ngIf="result.webCode">
-                    <td class="label-col">Mã tra cứu</td>
-                    <td><span class="badge badge-code">{{ result.webCode }}</span></td>
-                  </tr>
-                  <tr *ngIf="result.webLink">
-                    <td class="label-col">Đường link</td>
-                    <td>
-                      <a [href]="result.webLink" target="_blank" class="weblink-url">{{ result.webLink }}</a>
-                      &nbsp;
-                      <a [href]="result.webLink" target="_blank" class="btn btn-xs btn-info">
-                        <i class="fa fa-external-link"></i> Mở
-                      </a>
-                    </td>
-                  </tr>
-                </table>
-              </div>
-
             </div>
           </div>
         </div>
@@ -195,16 +231,24 @@
       <div class="modal-footer">
         <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
           <div>
-            <span *ngIf="result" class="text-success">
+            <span *ngIf="hasResult && !isMulti" class="text-success">
               <i class="fa fa-check-circle"></i> Đã phân tích xong: <strong>{{ fileName }}</strong>
+            </span>
+            <span *ngIf="isMulti" class="text-success">
+              <i class="fa fa-check-circle"></i> {{ results.length }} hóa đơn
+              <span *ngIf="errorCount" class="text-danger">({{ errorCount }} lỗi)</span>
             </span>
           </div>
           <div>
-            <button *ngIf="result || loading" type="button" class="btn btn-warning btn-sm"
+            <button *ngIf="isMulti" type="button" class="btn btn-success btn-sm" (click)="exportExcel()"
+              style="margin-right:5px;">
+              <i class="fa fa-file-excel-o"></i> Xuất Excel
+            </button>
+            <button *ngIf="hasResult || loading" type="button" class="btn btn-warning btn-sm"
               (click)="reset(); fileInput2.click()" style="margin-right:5px;">
               <i class="fa fa-refresh"></i> Đọc file khác
             </button>
-            <input #fileInput2 type="file" style="display:none" accept="image/*,.pdf"
+            <input #fileInput2 type="file" style="display:none" accept="image/*,.pdf,.zip,.rar"
               (change)="onFileSelected($event)">
             <button type="button" class="btn btn-default btn-sm" (click)="close()">
               <i class="fa fa-times"></i> Đóng

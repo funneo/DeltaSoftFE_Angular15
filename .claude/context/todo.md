@@ -1,5 +1,25 @@
 # Pending / In-Progress Work
 
+## Site nháp song song ERP (Draft Site) — Phase 0 XONG, đang Phase 1 (cập nhật 2026-05-24)
+Lộ trình chi tiết + kiến trúc đã chốt: [draft-site-roadmap.md](draft-site-roadmap.md). Tóm tắt: site nháp public cho AI/người nhập lô/cv/TT/debit nháp (JSON envelope, Draft API process riêng + login `draft_app` chỉ schema `draft` chung DB), người duyệt + promote trong ERP thật; ERP API thêm lớp chặn `aud=draft` (read-only allowlist). Đã chốt 11 quyết định + SP nháp (JSON envelope, đã đọc 4 SP CREATE thật). **Thứ tự (đảo 2026-05-24):** xây TRỌN site nháp trước (P0 DB → P1 ERP API token/đọc-only BE → P2 Draft API → P3 site nháp FE đủ 4 menu), CHƯA đụng FE ERP; view+approve ERP làm sau (P5).
+- **✅ Phase 0 XONG (2026-05-24):** schema `draft` + `draft.DraftEntries` + 6 SP `SP_DraftEntries_*` + login `draft_app` (GRANT draft/DENY dbo). Script: `NewAPI/Migration_DraftSite_Phase0_20260524.sql` + `..._Login_20260524.sql` (login chạy bằng `sa`). Lưu ý môi trường: **SQL Server 2014, không có ISJSON** → validate/trích cột phẳng ở Draft API C#; `delta.erp` là db_owner (không sysadmin).
+- **▶ Việc kế tiếp — Phase 1:** ERP API cấp token `aud=draft` (`/login-draft`, hạn 1h không refresh, lọc quyền còn `{VIEW,EXPORT}`+`*_DRAFT_CREATE`) + global filter default-deny allowlist cho `aud=draft` + export-limit. BE thuần, branch riêng, KHÔNG đụng FE ERP. **Trình kế hoạch/diff cho user duyệt trước khi code.**
+
+---
+
+## Đọc hóa đơn ZIP/RAR + xuất Excel — hoàn tất code 2026-05-23 (cần restart IIS + test)
+
+Đã code xong + build sạch (BE 0 error, FE ng build OK). Chi tiết: done.md section đầu. **Anh cần restart IIS Express (nạp DLL mới có SharpCompress) + `ng serve` rồi test:**
+1. **1 file ảnh/PDF**: hiển thị y như cũ (có preview nếu ảnh).
+2. **File nén ZIP/RAR nhiều hóa đơn**: kéo vào modal → master-detail (trái danh sách file + badge OK/lỗi, phải chi tiết). File lỗi không làm vỡ cả lô.
+3. **Nút "Xuất Excel"** (chỉ hiện khi nhiều file) → file 2 sheet `HoaDon` + `ChiTietHang`.
+4. Kiểm thử biên: archive có mật khẩu/hỏng → báo lỗi; archive >30 file lấy 30 file đầu; tổng giải nén >100MB → báo lỗi.
+
+### Mặc định có thể chỉnh nếu cần (đang hardcode trong [GeminiAIRepository.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Repositories/CustomerCommunicate/GoogleServices/GeminiAIRepository.cs))
+- `MaxFilesPerArchive=30`, `MaxTotalUncompressedBytes=100MB`, `MaxParallel=5`. Nếu muốn cấu hình qua appsettings thì cân nhắc đưa ra config sau.
+
+---
+
 ## Bảo mật / chống bot — 2026-05-21
 
 ### Đã làm (cần restart IIS Express + test)

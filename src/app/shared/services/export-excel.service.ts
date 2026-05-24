@@ -29,6 +29,18 @@ export class ExportService {
     FileSaver.saveAs(data, fileName + this.fileExtension);
   }
 
+  // Xuất file Excel nhiều sheet: mỗi phần tử = { name, data }
+  public exportMultiSheet(sheets: { name: string; data: any[] }[], fileName: string): void {
+    const wb: XLSX.WorkBook = { Sheets: {}, SheetNames: [] };
+    sheets.forEach((s) => {
+      const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(s.data ?? []);
+      wb.Sheets[s.name] = ws;
+      wb.SheetNames.push(s.name);
+    });
+    const excelBuffer: any = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    this.saveExcelFile(excelBuffer, fileName);
+  }
+
   //Không tính tổng
   async exportMisa(data: any[]): Promise<void> {
     try {

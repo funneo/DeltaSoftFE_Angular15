@@ -1,5 +1,28 @@
 # Completed Features
 
+## Draft Site — Phase 0: nền tảng DB nháp — 2026-05-24
+Schema `draft` cô lập khỏi `dbo`; bảng `draft.DraftEntries` (JSON envelope: `Payload` = DTO tạo-thật, `Status` Draft→Promoted, cột phẳng `CustomerName/TotalAmount/RefHint`, xóa mềm `IsDeleted`, 2 index). 6 SP generic `draft.SP_DraftEntries_*`: `Insert` (validate DraftType, không side-effect dbo), `Update`/`Delete`(mềm) chỉ khi còn Draft + đúng chủ, `GetPaging` (filter+paging OFFSET/FETCH, không trả Payload), `GetById`, `UpdateStatus` (promote idempotent). Login least-privilege `draft_app`: GRANT schema `draft` / DENY schema `dbo`. Scripts: `NewAPI/Migration_DraftSite_Phase0_20260524.sql` (db_owner) + `..._Login_20260524.sql` (sa). Môi trường: SQL Server 2014 (không ISJSON → validate JSON ở Draft API C#); `delta.erp` là db_owner không sysadmin. Roadmap: [draft-site-roadmap.md](draft-site-roadmap.md).
+
+## Đọc hóa đơn từ ZIP/RAR (nhiều file) + xuất Excel; sửa đường dẫn credential lên production — 2026-05-23
+
+### Sửa đường dẫn cứng để deploy production
+- [launchSettings.json](../../d:/Delta/DeltaSoft/NewAPI/API/Properties/launchSettings.json): đổi `GOOGLE_APPLICATION_CREDENTIALS` từ tuyệt đối `d:\Delta\...` → tương đối `Templates\delta-erp-vn-...json` (cả 2 profile). Code production vốn đã an toàn: [GeminiAIRepository.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Repositories/CustomerCommunicate/GoogleServices/GeminiAIRepository.cs) dùng `Path.Combine(AppContext.BaseDirectory, CredentialsPath tương đối)` + [API.csproj](../../d:/Delta/DeltaSoft/NewAPI/API/API.csproj) copy file json lên output. `launchSettings.json` chỉ dùng khi dev, `dotnet publish` không đóng gói nó.
+
+### Đọc hóa đơn nén ZIP/RAR (nhiều hóa đơn 1 lần)
+Mở rộng modal "Đọc hóa đơn tự động (AI)" để nhận thêm file nén; giải nén ở BE, gửi từng file cho Gemini, trả mảng kết quả. **Endpoint cũ `extract-invoice` giữ nguyên, không đụng DB.**
+- **BE**:
+  - [API.csproj](../../d:/Delta/DeltaSoft/NewAPI/API/API.csproj): thêm `SharpCompress 1.0.0` (đọc cả ZIP + RAR; chọn 1.0.0 vì 0.37.2 dính advisory GHSA-6c8g-7p36-r338).
+  - [DocumentAIModels.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Models/CustomerCommunicate/GoogleServices/DocumentAIModels.cs): `InvoiceExtractionResult` thêm `FileName` + `Error`.
+  - [GeminiAIRepository.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Repositories/CustomerCommunicate/GoogleServices/GeminiAIRepository.cs): tách lõi `ExtractCore(byte[], mime, fileName)` (dùng chung); `ExtractInvoicesFromUpload(IFormFile)` nhận diện archive qua **magic bytes** (`PK`=ZIP, `Rar!`=RAR) — không phải nén thì xử như 1 file. Giải nén lọc đuôi whitelist `.pdf/.jpg/.jpeg/.png/.webp`; gọi Gemini **song song tối đa 5 luồng** (`SemaphoreSlim`), mỗi file try/catch riêng (lỗi 1 file → set `Error`, không vỡ cả lô). Chặn zip-bomb: **30 file/archive**, tổng giải nén **≤ 100 MB**; archive có mật khẩu/hỏng → trả 1 phần tử `Error` (dò message `password/crypt/encrypt`).
+  - Interface [IGeminiAIRepository.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Interfaces/CustomerCommunicate/GoogleServices/IGeminiAIRepository.cs) + [GeminiAIController.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Controllers/CustomerCommunicate/GoogleServices/GeminiAIController.cs): thêm `POST /api/geminiAI/extract-invoices` trả `List<InvoiceExtractionResult>`.
+- **FE**:
+  - [export-excel.service.ts](../../src/app/shared/services/export-excel.service.ts): thêm `exportMultiSheet(sheets[{name,data}], fileName)` (nhiều sheet 1 file).
+  - [gemini-ai.service.ts](../../src/app/shared/services/gemini-ai.service.ts): interface thêm `fileName?/error?`; thêm `extractInvoices(file)` POST tới `extract-invoices`.
+  - [modal-doc-hoa-don](../../src/app/shared/components/advance-payment/modal-doc-hoa-don/) (.ts/.html/.css): `accept` thêm `.zip,.rar`; luôn gọi `extractInvoices`, trả mảng `results`. **1 file → giao diện cũ** (kèm preview nếu ảnh); **nhiều file → master-detail**: cột trái danh sách file (badge OK/lỗi, click chọn), cột phải chi tiết hóa đơn `selected`. Nút **Xuất Excel** (chỉ hiện khi nhiều file) → 2 sheet: `HoaDon` (1 dòng/HĐ), `ChiTietHang` (1 dòng/mặt hàng, có STT HĐ liên kết).
+- Build sạch cả BE (0 error) lẫn FE (ng build OK).
+
+---
+
 ## List lệnh FCL mới (giao diện hiện đại) thay trang TO — 2026-05-22
 
 Tạo **component MỚI HOÀN TOÀN** `dispatch-order-fcl-new` (KHÔNG sửa FCL list cũ, KHÔNG sửa trang TO — xem [[feedback_no_touch_fcl_legacy]]). Kế thừa toàn bộ logic FCL list, lọc **`isLegacy=0`** (lệnh mới), giao diện table hiện đại hơn.
