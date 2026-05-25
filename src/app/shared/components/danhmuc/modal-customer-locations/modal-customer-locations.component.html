@@ -50,21 +50,6 @@
                     class="form-control" placeholder="Nhập vị trí" focus [readonly]="flagXem" ></textarea>
                 </div>
               </div>
-            <div class="form-group" *ngIf="!flagXem">
-                <label class="col-sm-3 control-label">Google Maps URL</label>
-                <div class="col-sm-9">
-                  <div class="input-group input-group-sm">
-                    <input type="text" [(ngModel)]="googleMapUrl" name="googleMapUrl" class="form-control"
-                      placeholder="https://maps.app.goo.gl/..." />
-                    <span class="input-group-btn">
-                      <button class="btn btn-warning btn-flat" type="button" (click)="convertUrlToCoordinates()"
-                        [disabled]="flagExtracting">
-                        <i [ngClass]="{'fa-refresh fa-spin': flagExtracting, 'fa-exchange': !flagExtracting}"></i> Quy đổi
-                      </button>
-                    </span>
-                  </div>
-                </div>
-              </div>
               <div class="form-group">
                 <label for="inputEmail3" class="col-sm-3 control-label">Vĩ độ</label>
                 <div class="col-sm-9">
@@ -84,21 +69,9 @@
               <div class="form-group">
                 <label for="inputEmail3" class="col-sm-3 control-label">K/c đến WB</label>
                 <div class="col-sm-9">
-                  <div class="input-group">
-                    <input type="text" [(ngModel)]="entity.distanceToWB" [mask]="mask0"
-                      name="distanceToWB" class="form-control" placeholder="Nhập khoảng cách"
-                      [readonly]="flagXem" />
-                    <span class="input-group-btn" style="display:flex;">
-                      <button type="button" class="btn btn-info btn-flat btn-sm" (click)="viewRouteGoogle()"
-                        title="Xem đường đi trên Google Maps" style="margin-right:2px;">
-                        <i class="fa fa-map-marker"></i> Google
-                      </button>
-                      <button type="button" class="btn btn-success btn-flat btn-sm" (click)="viewRouteVietmap()"
-                        title="Xem đường đi trên Vietmap">
-                        <i class="fa fa-map"></i> Vietmap
-                      </button>
-                    </span>
-                  </div>
+                  <input type="text" [(ngModel)]="entity.distanceToWB" [mask]="mask0"
+                    name="distanceToWB" class="form-control" placeholder="Nhập khoảng cách"
+                    [readonly]="flagXem" />
                 </div>
             </div>
              <div class="form-group">

@@ -76,7 +76,8 @@ export class ModalPortsComponent implements OnInit {
             this._notificationService.printSuccessMessage(MessageContstants.CREATED_OK_MSG);
             this.SaveSuccess.emit(res.data);
           } else {
-            this._notificationService.printErrorMessage(MessageContstants.CREATED_ERR_MSG + res.code);
+            // Ưu tiên thông báo từ BE (vd "Địa chỉ Google Map không đúng") để người dùng nhập lại
+            this._notificationService.printErrorMessage(res.message ? res.message : MessageContstants.CREATED_ERR_MSG + res.code);
             this.flagSave = false;
           }
         }, () => { this.flagSave = false; });
@@ -88,7 +89,8 @@ export class ModalPortsComponent implements OnInit {
             this._notificationService.printSuccessMessage(MessageContstants.UPDATED_OK_MSG);
             this.SaveSuccess.emit(res.data);
           } else {
-            this._notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG + res.code);
+            // Ưu tiên thông báo từ BE (vd "Địa chỉ Google Map không đúng") để người dùng nhập lại
+            this._notificationService.printErrorMessage(res.message ? res.message : MessageContstants.UPDATED_ERR_MSG + res.code);
             this.flagSave = false;
           }
         }, () => { this.flagSave = false; });
