@@ -20,6 +20,10 @@ export interface ExtraSegmentOpenContext {
   transportOrderId: number;
   locations: UnifiedLocation[];
   vehicleBotTypeId?: number | null;
+  /** Định mức dầu theo tải trọng của XE trên lệnh (id=tải trọng, value/shortWayValue=định mức) */
+  listOilQuota?: any[];
+  /** Lệnh chạy cung đường ngắn → dùng shortWayValue thay value */
+  shortWay?: boolean;
 }
 
 /**
@@ -40,7 +44,9 @@ export class ModalAddExtraSegmentComponent {
 
   draft: TransportOrderExtraSegment | null = null;
   locations: UnifiedLocation[] = [];
+  listOilQuota: any[] = [];
   saving = false;
+  private _shortWay = false;
 
   // Picker state — list cảng/nhà máy chỉ xổ xuống khi bấm vào ô điểm đi/đến
   pickerMode: 'start' | 'end' = 'start';
@@ -65,6 +71,8 @@ export class ModalAddExtraSegmentComponent {
     }
     this.locations = ctx.locations || [];
     this._vehicleBotTypeId = ctx.vehicleBotTypeId ?? null;
+    this.listOilQuota = ctx.listOilQuota || [];
+    this._shortWay = !!ctx.shortWay;
     this.draft = {
       transportOrderId: ctx.transportOrderId,
       startLocationType: 1,
@@ -227,6 +235,23 @@ export class ModalAddExtraSegmentComponent {
     } else {
       target.listStations = [];
     }
+    this._recalcFuelAmount(); // km đổi → tính lại lượng dầu theo định mức tải trọng đã chọn
+  }
+
+  // ───────────── Tải trọng → định mức dầu ─────────────
+  // Chọn tải trọng (từ định mức dầu của xe trên lệnh) → suy ra định mức + lượng dầu,
+  // giống chặng chính: fuelNorm = shortWay ? shortWayValue : value; fuel = norm*km/100.
+  onPayloadChange(event: any) {
+    if (!this.draft) return;
+    this.draft.payloadWeight = event?.id ?? null;
+    this.draft.fuelNorm = event ? (this._shortWay ? event.shortWayValue : event.value) : null;
+    this._recalcFuelAmount();
+  }
+  private _recalcFuelAmount() {
+    if (!this.draft) return;
+    const norm = this.draft.fuelNorm || 0;
+    const km = this.draft.distanceKm || 0;
+    this.draft.fuelAmountCalculated = +(((norm * km) / 100)).toFixed(2);
   }
 
   // Áp giá trạm BOT theo loại xe của lệnh
@@ -246,6 +271,7 @@ export class ModalAddExtraSegmentComponent {
     return !!this.draft?.startLocationId
       && !!this.draft?.endLocationId
       && !!this.draft?.distanceKm
+      && !!this.draft?.payloadWeight          // bắt buộc chọn tải trọng (để tính dầu)
       && !!(this.draft?.note || '').trim()
       && !this.saving;
   }
@@ -266,6 +292,9 @@ export class ModalAddExtraSegmentComponent {
       endLat: d.endLat,
       endLng: d.endLng,
       distanceKm: d.distanceKm,
+      payloadWeight: d.payloadWeight,
+      fuelNorm: d.fuelNorm,
+      fuelAmountCalculated: d.fuelAmountCalculated,
       routePolyline: d.routePolyline,
       stationsJson: d.listStations?.length ? JSON.stringify(d.listStations) : null,
       waypointsJson: d.listWaypoints?.length ? JSON.stringify(d.listWaypoints) : null,

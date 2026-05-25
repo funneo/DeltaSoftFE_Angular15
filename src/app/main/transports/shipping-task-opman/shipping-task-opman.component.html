@@ -40,7 +40,7 @@
           appFunction="DISPATCHORDER" appAction="CREATE">
           <i class="fa fa-check"></i> Lập lệnh vận chuyển
         </button>
-        <button *ngIf="userLoged.isAdmin" class="btn btn-primary btn-sm" (click)="createTransportOrder()"
+        <button class="btn btn-primary btn-sm" (click)="createTransportOrder()"
           [disabled]="!flagDelete" appPermission appFunction="DISPATCHORDER" appAction="CREATE">
           <i class="fa fa-map-marker"></i> Lập lệnh (Location)
         </button>

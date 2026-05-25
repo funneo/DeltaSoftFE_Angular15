@@ -37,7 +37,7 @@
                   <div class="col-sm-4">
                     <label class="custom-checkbox">
                       <input type="checkbox" [(ngModel)]="entity.isSubcontractors" name="isLocal"
-                        (change)="changeLocal()" [disabled]="entity.status>0 || flagXem" />
+                        (change)="changeLocal()" [disabled]="routeConfirmed" />
                       <span class="helping-el"></span>
                       Xe thuê ngoài
                     </label>
@@ -45,7 +45,7 @@
                   <label class="col-sm-2 control-label" *ngIf="!entity.isSubcontractors">Loại Cont</label>
                   <div class="col-sm-4" *ngIf="!entity.isSubcontractors">
                     <ng-select name="contType" [items]="listcontType" bindLabel="categoryName" bindValue="categoryName"
-                      [disabled]=" flagXem" [(ngModel)]="entity.contType">
+                      [disabled]="routeConfirmed" [(ngModel)]="entity.contType">
                     </ng-select>
                   </div>
                 </div>
@@ -55,7 +55,7 @@
                   </label>
                   <div class="col-sm-10">
                     <ng-select name="shippingUnitId" [items]="listSupplier" bindLabel="supplierName" bindValue="id"
-                      [disabled]="flagXem" [(ngModel)]="entity.shippingUnitId" (change)="changeSupplier($event)"
+                      [disabled]="routeConfirmed" [(ngModel)]="entity.shippingUnitId" (change)="changeSupplier($event)"
                       [required]="entity.isSubcontractors">
                     </ng-select>
                   </div>
@@ -67,7 +67,7 @@
                   <div class="col-sm-4">
                     <ng-select name="vihicleType" [items]="listVihicleType" bindLabel="categoryName" bindValue="id"
                       (change)="vihicleTypeChanged($event)" [(ngModel)]="entity.vehicleType" required
-                      [disabled]="flagXem">
+                      [disabled]="routeConfirmed">
                     </ng-select>
                   </div>
 
@@ -86,7 +86,7 @@
                   <div class="col-sm-4">
                     <ng-select name="vihicleId" [items]="listVihicle" bindLabel="licensePlates" bindValue="id"
                       (change)="changeVihicle($event)" placeholder="Xe" [(ngModel)]="entity.vehicleId"
-                      [disabled]="flagXem || entity.status>2" [required]="!entity.isSubcontractors">
+                      [disabled]="routeConfirmed" [required]="!entity.isSubcontractors">
                     </ng-select>
                   </div>
                   <label class="col-sm-2 control-label">Mooc
@@ -94,7 +94,7 @@
                   </label>
                   <div class="col-sm-4">
                     <ng-select name="moocId" [items]="listMooc" bindLabel="licensePlates" bindValue="id"
-                      (change)="changeMooc($event)" [(ngModel)]="entity.moocId" placeholder="Mooc" [disabled]="flagXem"
+                      (change)="changeMooc($event)" [(ngModel)]="entity.moocId" placeholder="Mooc" [disabled]="routeConfirmed"
                       [required]="!entity.isSubcontractors">
                     </ng-select>
                   </div>
@@ -104,7 +104,7 @@
                   <div class="col-sm-4 position-relative">
                     <div class="input-group">
                       <input type="text" class="form-control" [(ngModel)]="entity.vehiclelLicensePlates"
-                        (change)="vehicleNameChange()" name="vehiclelLicensePlates" [readonly]="flagXem" />
+                        (change)="vehicleNameChange()" name="vehiclelLicensePlates" [readonly]="routeConfirmed" />
                       <span class="input-group-addon" style="height: 28px; color: rgb(121, 52, 212);"
                         (click)="toggleVehicleList()">
                         <i class="fa fa-eye" title="Biển số xe"></i>
@@ -114,7 +114,7 @@
                       <ng-select name="vehicleId" #vehicleSelect [items]="selectedSupplier.listSupplierVehicles"
                         bindLabel="licensePlates" bindValue="id"
                         (change)="changeSupplierVihicle($event); updateSelectedVehicleName()" placeholder="Xe"
-                        [(ngModel)]="entity.vehicleId" [disabled]="flagXem">
+                        [(ngModel)]="entity.vehicleId" [disabled]="routeConfirmed">
                       </ng-select>
                     </div>
                   </div>
@@ -122,7 +122,7 @@
                   <label class="col-sm-2 control-label">Biển Mooc</label>
                   <div class="col-sm-4">
                     <input class="form-control" [(ngModel)]="entity.moocLicensePlates" type="text"
-                      name="moocLicensePlates" [readonly]="flagXem" />
+                      name="moocLicensePlates" [readonly]="routeConfirmed" />
                   </div>
                 </div>
                 <div class="form-group">
@@ -130,14 +130,14 @@
                   </label>
                   <div class="col-sm-4" *ngIf="!entity.isSubcontractors">
                     <ng-select name="driverId" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
-                      [disabled]=" flagXem || entity.status>2" [(ngModel)]="entity.driverId"
+                      [disabled]="routeConfirmed" [(ngModel)]="entity.driverId"
                       [required]="!entity.isSubcontractors" (change)="driver1Change($event)">
                     </ng-select>
                   </div>
                   <div class="col-sm-4" *ngIf="entity.isSubcontractors">
                     <div class="input-group position-relative">
                       <input type="text" class="form-control" [(ngModel)]="entity.driverName" name="driverName"
-                        (change)="driverNameChange()" [readonly]="flagXem" />
+                        (change)="driverNameChange()" [readonly]="routeConfirmed" />
                       <span class="input-group-addon" style="height: 28px; color: rgb(121, 52, 212);"
                         (click)="toggleDriverList()">
                         <i class="fa fa-eye" title="Lái xe"></i>
@@ -145,7 +145,7 @@
                     </div>
                     <div *ngIf="showDriverList" class="dropdown-container">
                       <ng-select #driverSelect name="driverId" [items]="selectedSupplier.listSupplierDrivers"
-                        bindLabel="driverName" bindValue="id" [disabled]="entity.status>2 || flagXem"
+                        bindLabel="driverName" bindValue="id" [disabled]="routeConfirmed"
                         [(ngModel)]="entity.driverId"
                         (change)="driverSupplierChange($event); updateSelectedDriverName()">
                       </ng-select>
@@ -154,7 +154,7 @@
                   <label class="col-sm-2 control-label">SĐT</label>
                   <div class="col-sm-4">
                     <input class="form-control" [(ngModel)]="entity.driverTel" type="text" name="driverTel"
-                      [readonly]="flagXem" />
+                      [readonly]="routeConfirmed" />
                   </div>
                 </div>
                 <div class="form-group" *ngIf="!entity.isSubcontractors">
@@ -162,15 +162,15 @@
                   </label>
                   <div class="col-sm-4">
                     <ng-select name="fueldriverId" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
-                      [disabled]="entity.status>2 || flagXem" [(ngModel)]="entity.fuelDriverId"
+                      [disabled]="routeConfirmed" [(ngModel)]="entity.fuelDriverId"
                       [required]="!entity.isSubcontractors">
                     </ng-select>
                   </div>
                   <label class="col-sm-3 control-label">Loại định mức chạy hàng</label>
                   <div class="col-sm-3">
                     <ng-select name="array" [items]="array" bindLabel="text" bindValue="value"
-                      [disabled]="entity.status>2" (change)="orderTypeChange($event)" [(ngModel)]="orderType"
-                      [disabled]="flagXem">
+                      (change)="orderTypeChange($event)" [(ngModel)]="orderType"
+                      [disabled]="routeConfirmed">
                     </ng-select>
                   </div>
                 </div>
@@ -178,16 +178,16 @@
                   <label class="col-sm-2 control-label">Cung đường toàn tuyến <span class="error">*</span></label>
                   <div class="col-sm-10">
                     <textarea class="form-control" [(ngModel)]="entity.fullRoute" name="fullRoute" rows="1"
-                      [required]="entity.isSubcontractors" [readonly]="flagXem"></textarea>
+                      [required]="entity.isSubcontractors" [readonly]="routeConfirmed"></textarea>
                   </div>
                 </div>
                 <div class="form-group" *ngIf="entity.isSubcontractors">
                   <label class="col-sm-2 control-label">Mã cung đường tính phí</label>
                   <div class="col-sm-10">
                     <ng-select name="listTollRoute" [items]="listTollRoute" bindLabel="tollRouteName"
-                      bindValue="tollRouteCode" [disabled]="entity.status>0"
+                      bindValue="tollRouteCode"
                       [(ngModel)]="entity.subcontractorsQuoteRouteCode" (change)="changeTollRouteCode($event)"
-                      [disabled]="flagXem">
+                      [disabled]="routeConfirmed">
                     </ng-select>
                   </div>
                 </div>
@@ -232,7 +232,7 @@
                   <label class="col-sm-2 control-label">Giá dầu</label>
                   <div class="col-sm-1">
                     <input type="number" [(ngModel)]="entity.oilPrice" name="oilPrice" class="form-control" focus
-                      [disabled]="flagXem" />
+                      [disabled]="routeConfirmed" />
                   </div>
                 </div>
                 <div class="form-group" *ngIf="!entity.isSubcontractors">
@@ -286,7 +286,7 @@
                     <div class="form-group">
                       <div class="col-sm-2">
                         <button type="button" class="btn btn-sm btn-primary"
-                          [disabled]="(entity.status>=4 || job_locked || flagXem) && !admin_permission"
+                          [disabled]="(entity.status>=3 || job_locked || flagXem) && !admin_permission"
                           (click)="newShippingTask()">Thêm</button>
                       </div>
                     </div>
@@ -336,7 +336,7 @@
                                 <br><span>{{item.shippingTaskItem.sealNumber}}</span>
                               </td>
                               <td style="width:18%">
-                                <button *ngIf="(!flagXem && entity.status<4) || admin_permission" type="button"
+                                <button *ngIf="(!flagXem && entity.status<3) || admin_permission" type="button"
                                   class="btn btn-warning btn-sm" (click)="deleteWorkflow(item)">
                                   <i class="fa fa-trash"></i>
                                 </button>

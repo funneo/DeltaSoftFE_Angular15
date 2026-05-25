@@ -147,6 +147,20 @@
         </div>
 
         <div class="extra-form-row">
+          <label class="extra-form-label">Tải trọng <span class="text-danger">*</span></label>
+          <ng-select [items]="listOilQuota" bindLabel="oilQuotaName" bindValue="id"
+            [(ngModel)]="draft.payloadWeight"
+            (change)="onPayloadChange($event)"
+            [ngModelOptions]="{standalone: true}"
+            appendTo="body"
+            placeholder="Chọn tải trọng (để tính dầu)...">
+          </ng-select>
+          <small class="text-muted" *ngIf="draft.payloadWeight && draft.fuelAmountCalculated">
+            Định mức {{ draft.fuelNorm }} • Dầu ≈ <strong>{{ draft.fuelAmountCalculated | number:'1.0-2' }}</strong> lít
+          </small>
+        </div>
+
+        <div class="extra-form-row">
           <label class="extra-form-label">Ghi chú phát sinh <span class="text-danger">*</span></label>
           <textarea class="form-control form-control-sm"
             [(ngModel)]="draft.note"

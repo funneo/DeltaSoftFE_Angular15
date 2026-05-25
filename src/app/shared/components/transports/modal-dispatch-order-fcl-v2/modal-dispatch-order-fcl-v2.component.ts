@@ -2551,7 +2551,9 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
     this.modalAddExtra.open({
       transportOrderId: this.entity.toId,
       locations: this.listAllLocations,
-      vehicleBotTypeId: this._vehicleBotTypeId
+      vehicleBotTypeId: this._vehicleBotTypeId,
+      listOilQuota: this.listOilQuota,        // định mức dầu theo tải trọng của xe trên lệnh
+      shortWay: this.entity.shortWay          // cung đường ngắn → dùng shortWayValue
     });
   }
 
@@ -2604,7 +2606,14 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
       note: item.note
     };
     this._transportService.updateExtraSegment(payload).subscribe({
-      next: (res) => { if (res.code === '200') this._applyTotals(res.data); },
+      next: (res) => {
+        if (res.code === '200') {
+          this._applyTotals(res.data);
+          this.notificationService.printSuccessMessage('Đã cập nhật cung đường phát sinh.');
+        } else {
+          this.notificationService.printErrorMessage(res.message || 'Cập nhật thất bại.');
+        }
+      },
       error: () => this.notificationService.printErrorMessage('Cập nhật thất bại.')
     });
   }
