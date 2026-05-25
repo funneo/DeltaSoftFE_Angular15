@@ -1,5 +1,11 @@
 # Pending / In-Progress Work
 
+## ⏳ CHỜ TEST + COMMIT (working tree, chưa commit) — 2026-05-24
+Cụm thay đổi session 2026-05-24, build sạch, đang ở working tree (NewAPI master + web-app-update main). Chi tiết: done.md 2 section đầu. **Cần: tắt IIS Express → chạy lại BE + `ng serve` FE → test → bảo commit** (gợi ý tách 2 commit: gmap geocode danh mục / lệnh FCL mới).
+1. **Validate gmap CustomerLocations + Ports**: link sai → 400 "Địa chỉ Google Map không đúng" (không lưu); đổi link → geocode lại; FE hiện message. Bỏ nút test (Quy đổi/Google/Vietmap) ở modal customer-locations.
+2. **Lệnh FCL mới**: (a) modal phát sinh bắt buộc chọn **tải trọng** → tính dầu; (b) khóa lái xe + cung đường vận tải + header sau khi có **refNo** (FE readonly + BE `UpdateWithTOAsync` siết, chỉ nhận chi phí/bù dầu/lý do/tóm tắt/ghi chú + ListDetailed khi status<3); (c) shipping task sửa tới trước B1; (d) tải trọng inline ở list tự lưu + toast; (e) nút "Lập lệnh (Location)" gate theo `DISPATCHORDER_CREATE` (bỏ admin-only).
+   - **Lưu ý:** modal phát sinh hiện chỉ THÊM mới (chưa có chế độ sửa qua modal) — tải trọng/km sửa inline ở list (đã tự lưu). Nếu sau muốn "list readonly, sửa trong modal" thì làm chế độ edit cho `modal-add-extra-segment`.
+
 ## Site nháp song song ERP (Draft Site) — Phase 0 XONG, đang Phase 1 (cập nhật 2026-05-24)
 Lộ trình chi tiết + kiến trúc đã chốt: [draft-site-roadmap.md](draft-site-roadmap.md). Tóm tắt: site nháp public cho AI/người nhập lô/cv/TT/debit nháp (JSON envelope, Draft API process riêng + login `draft_app` chỉ schema `draft` chung DB), người duyệt + promote trong ERP thật; ERP API thêm lớp chặn `aud=draft` (read-only allowlist). Đã chốt 11 quyết định + SP nháp (JSON envelope, đã đọc 4 SP CREATE thật). **Thứ tự (đảo 2026-05-24):** xây TRỌN site nháp trước (P0 DB → P1 ERP API token/đọc-only BE → P2 Draft API → P3 site nháp FE đủ 4 menu), CHƯA đụng FE ERP; view+approve ERP làm sau (P5).
 - **✅ Phase 0 XONG (2026-05-24):** schema `draft` + `draft.DraftEntries` + 6 SP `SP_DraftEntries_*` + login `draft_app` (GRANT draft/DENY dbo). Script: `NewAPI/Migration_DraftSite_Phase0_20260524.sql` + `..._Login_20260524.sql` (login chạy bằng `sa`). Lưu ý môi trường: **SQL Server 2014, không có ISJSON** → validate/trích cột phẳng ở Draft API C#; `delta.erp` là db_owner (không sysadmin).
@@ -12,13 +18,19 @@ Lộ trình chi tiết + kiến trúc đã chốt: [draft-site-roadmap.md](draft
 
 ---
 
-## Đọc hóa đơn ZIP/RAR + xuất Excel — hoàn tất code 2026-05-23 (cần restart IIS + test)
+## Đọc hóa đơn — AI Studio + ZIP/RAR + flash-lite + LOW + đa hóa đơn/1 PDF — CHẠY ĐƯỢC, CHƯA commit (cập nhật 2026-05-25)
 
-Đã code xong + build sạch (BE 0 error, FE ng build OK). Chi tiết: done.md section đầu. **Anh cần restart IIS Express (nạp DLL mới có SharpCompress) + `ng serve` rồi test:**
-1. **1 file ảnh/PDF**: hiển thị y như cũ (có preview nếu ảnh).
-2. **File nén ZIP/RAR nhiều hóa đơn**: kéo vào modal → master-detail (trái danh sách file + badge OK/lỗi, phải chi tiết). File lỗi không làm vỡ cả lô.
-3. **Nút "Xuất Excel"** (chỉ hiện khi nhiều file) → file 2 sheet `HoaDon` + `ChiTietHang`.
-4. Kiểm thử biên: archive có mật khẩu/hỏng → báo lỗi; archive >30 file lấy 30 file đầu; tổng giải nén >100MB → báo lỗi.
+Đã migrate Vertex→**AI Studio REST** + retry + tắt thinking + ZIP/RAR; session 2026-05-25 thêm: **flash-lite** (config), **mediaResolution=LOW** (−74% token ảnh), **đa hóa đơn trong 1 PDF** (AI trả mảng), nút đọc hóa đơn **chỉ admin** ở list thanh toán. Chi tiết: done.md 2 section đầu. **Bản cũ đã test chạy; bản 2026-05-25 chờ anh restart BE test.**
+- **Cần anh test (Stop Shift+F5 → F5 trong VS để chạy bản mới):**
+  1. Ảnh chụp điện thoại 1 hóa đơn dày chữ ở `LOW` còn đọc đúng không → nếu sai nhiều, đổi `MEDIA_RESOLUTION_LOW`→`MEDIUM` (1 dòng) hoặc điều kiện PDF=LOW/ảnh=MEDIUM.
+  2. PDF gộp nhiều hóa đơn (có hóa đơn nhiều trang) → tách đúng, không gộp/cắt nhầm.
+- **Còn lại (chờ user):**
+  1. Theo dõi **chi phí** Cloud Billing vài ngày (số tiền trễ ~24h; request count gần realtime ở APIs & Services → Generative Language API → Metrics). Ước tính ~$0.001–0.002/hóa đơn (giờ thấp hơn nhờ flash-lite+LOW).
+  2. Khi commit: **dời API key** `GoogleServices:Gemini:ApiKey` khỏi `appsettings.json` → `appsettings.Development.json`/env (đừng commit key lên git).
+  3. Nếu gặp lại **malformed JSON** với hóa đơn phức tạp → cân nhắc thêm lại `responseSchema` (đã từng thêm rồi bỏ theo yêu cầu user).
+  4. Tùy chọn tối ưu thêm: tăng `MaxParallel` cho ZIP lớn.
+- **Nghiên cứu 2026-05-25 (DeepSeek & AI free khác):** DeepSeek API hosted **text-only** (không vision) → loại; DeepSeek-OCR/OCR-2 phải tự host GPU → đắt+phức tạp hơn. Gemini flash-lite ($0.10/M) đang rẻ nhất có vision sẵn. Ứng viên free duy nhất đáng thử sau: **Qwen3-VL/Qwen-OCR** (Alibaba, free tier, ~94.8% acc). Chưa đụng code.
+- **⚠️ Lưu ý chạy đúng bản mới:** IIS Express khóa `bin\API.dll` → build CLI không ghi đè được, dễ test trúng DLL cũ (Vertex → treo). Luôn **Stop (Shift+F5) trong VS rồi F5 lại** để VS tự rebuild+chạy bản mới.
 
 ### Mặc định có thể chỉnh nếu cần (đang hardcode trong [GeminiAIRepository.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Repositories/CustomerCommunicate/GoogleServices/GeminiAIRepository.cs))
 - `MaxFilesPerArchive=30`, `MaxTotalUncompressedBytes=100MB`, `MaxParallel=5`. Nếu muốn cấu hình qua appsettings thì cân nhắc đưa ra config sau.
