@@ -37,7 +37,7 @@
         <button class="btn btn-success btn-sm" (click)="export()" appFunction="PAYMENT" appAction="EXPORT">
           <i class="fa fa-file-excel-o" style=" padding-right: 3px;"></i>Export
         </button>
-        <button class="btn btn-info btn-sm" (click)="showDocHoaDon()" title="Đọc hóa đơn tự động bằng AI">
+        <button *ngIf="_isAdmin" class="btn btn-info btn-sm" (click)="showDocHoaDon()" title="Đọc hóa đơn tự động bằng AI">
           <i class="fa fa-magic"></i> Đọc hóa đơn
         </button>
       </div>
