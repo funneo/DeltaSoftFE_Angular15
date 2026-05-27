@@ -132,7 +132,7 @@
               <i class="fa fa-exclamation-triangle"></i> Từ chối</button>
             <button *ngIf="!flagXem && entity.status<=0 && !flagNew" type="button" class="btn btn-duyet btn-sm" (click)="changedStatus()">
               <i class="fa fa-random"></i>Chuyển duyệt</button>
-            <button *ngIf="!flagXem && entity.status<=0 || adminPermission || acceptPermission" type="submit" class="btn btn-primary btn-sm"
+            <button *ngIf="(!flagXem && entity.status<=0 || adminPermission || acceptPermission) && entity.isApproved==false" type="submit" class="btn btn-primary btn-sm"
               [disabled]="(!addEditForm.form.valid || flagSave) && !adminPermission && !acceptPermission">
               <i class="fa fa-save"></i> Lưu</button>
             <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
