@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, NgZone, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, NgZone, OnDestroy, Output, ViewChild } from '@angular/core';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { NotificationService } from '@app/shared/services';
 import { HttpClient } from '@angular/common/http';
@@ -49,7 +49,7 @@ export interface RouteOption {
   templateUrl: './modal-vietmap-routes.component.html',
   styleUrls: ['./modal-vietmap-routes.component.css']
 })
-export class ModalVietmapRoutesComponent {
+export class ModalVietmapRoutesComponent implements OnDestroy {
   @ViewChild('modalRoutes', { static: false }) modalRoutes: ModalDirective;
   @ViewChild('mapContainer', { static: false }) mapContainer: ElementRef;
   @Output() RouteSelected = new EventEmitter<{
@@ -516,5 +516,32 @@ export class ModalVietmapRoutesComponent {
         ], { padding: 40 });
       }
     }
+  }
+
+  /**
+   * Destroy WebGL Map instance + dọn backdrop. Vietmap GL giữ GPU context +
+   * RAF loop + window event listeners — không gọi `map.remove()` thì sau vài
+   * lần mở/đóng modal sẽ leak WebGL context (browser ngắt → CPU 100%).
+   */
+  ngOnDestroy(): void {
+    try { this.modalRoutes?.hide?.(); } catch { /* swallow */ }
+    try {
+      if (this.fetchTimer) { clearTimeout(this.fetchTimer); this.fetchTimer = null; }
+      if (this.markers?.length) {
+        this.markers.forEach(m => { try { m?.remove?.(); } catch { /* */ } });
+        this.markers = [];
+      }
+      if (this.map) {
+        this.map.remove();
+        this.map = null;
+      }
+    } catch { /* swallow */ }
+    setTimeout(() => {
+      if (typeof document !== 'undefined'
+          && document.querySelectorAll('.modal.in, .modal.show').length === 0) {
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+      }
+    }, 250);
   }
 }

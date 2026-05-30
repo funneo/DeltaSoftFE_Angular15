@@ -1,0 +1,186 @@
+/* ===== modal-execute-fcl — readonly-first execution screen for new FCL ===== */
+
+.exec-dialog {
+  width: 95vw;
+  max-width: 1400px;
+
+  .modal-content {
+    border-radius: 10px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    max-height: 95vh;
+  }
+}
+
+.exec-header {
+  background: linear-gradient(135deg, #1a3552 0%, #2e5a87 100%);
+  color: #fff;
+  border-bottom: 2px solid #ffc107;
+  padding: 10px 16px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  flex-shrink: 0;
+
+  .modal-title { color: #fff; font-size: 16px; font-weight: 600; }
+  .exec-ref { background: #ffc107; color: #1a3552; padding: 1px 8px; border-radius: 4px; margin-left: 6px; font-weight: 700; }
+  .exec-meta { font-size: 12.5px; color: #cfd9e6; font-weight: 400; margin-left: 8px; }
+  .close { color: #fff; opacity: .9; }
+  .close:hover { opacity: 1; transform: rotate(90deg); transition: transform .2s; }
+}
+
+.exec-body {
+  background: #f6f8fa;
+  padding: 12px 16px;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.exec-toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  padding: 6px 8px;
+  background: #fff;
+  border: 1px solid #e1e7ec;
+  border-radius: 6px;
+}
+
+/* POD + Ảnh hiện trường — 2 fieldset cạnh nhau */
+.exec-2col {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+
+  .exec-col {
+    flex: 1 1 50%;
+    margin-bottom: 0;
+    min-width: 0;
+  }
+
+  /* nút tải nằm bên phải tiêu đề trong legend */
+  legend {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    .btn {
+      flex-shrink: 0;
+    }
+  }
+}
+
+.exec-fs {
+  border: 1px solid #e1e7ec;
+  border-radius: 6px;
+  background: #fff;
+  padding: 6px 14px 10px;
+  margin-bottom: 10px;
+
+  legend {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1a3552;
+    background: #fff;
+    padding: 2px 8px;
+    border-bottom: none;
+    width: auto;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+  }
+
+  .form-group { margin-bottom: 6px; }
+
+  .control-label { padding-top: 5px; font-weight: 500; font-size: 12.5px; }
+
+  .form-control {
+    height: 28px;
+    padding: 2px 8px;
+    font-size: 12.5px;
+    box-shadow: none;
+  }
+
+  .auto-height {
+    height: auto;
+    min-height: 28px;
+    white-space: pre-wrap;
+  }
+
+  .readonly-cell {
+    background: #f4f7fa;
+    color: #2a3848;
+    border-color: #d8dee5;
+  }
+
+  .exec-hint {
+    font-size: 11px;
+    color: #888;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+
+  .exec-driver-hint {
+    font-size: 10.5px;
+    color: #2e7d32;
+    font-weight: 400;
+    margin-left: 2px;
+  }
+}
+
+.exec-table {
+  margin-bottom: 0;
+  font-size: 12.5px;
+
+  thead th {
+    background: #eaf3fb;
+    color: #1a3552;
+    font-weight: 600;
+    border-color: #cfdde9;
+    padding: 6px 8px;
+    white-space: nowrap;
+  }
+
+  tbody td {
+    padding: 4px 8px;
+    vertical-align: middle;
+  }
+
+  .form-control { height: 28px; padding: 2px 6px; }
+
+  ng-select { font-size: 12.5px; }
+}
+
+.exec-row-passed {
+  background: #fffaf0 !important;
+
+  td { color: #b8860b; }
+}
+
+.exec-toggle-cell {
+  cursor: pointer;
+  user-select: none;
+
+  &:hover { background: #fffae0; }
+
+  input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #2e7d32;
+  }
+}
+
+.exec-footer {
+  background: #f6f8fa;
+  border-top: 1px solid #e1e7ec;
+  padding: 10px 16px;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  flex-shrink: 0;
+
+  .btn { margin-left: 6px; }
+}

@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, NgZone, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, NgZone, OnDestroy, Output, ViewChild } from '@angular/core';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { HttpClient } from '@angular/common/http';
 import { NotificationService } from '@app/shared/services';
@@ -29,7 +29,7 @@ interface RouteStats {
   templateUrl: './modal-route-compare.component.html',
   styleUrls: ['./modal-route-compare.component.css']
 })
-export class ModalRouteCompareComponent {
+export class ModalRouteCompareComponent implements OnDestroy {
   @ViewChild('modalCompare', { static: false }) modalCompare: ModalDirective;
   @ViewChild('vietmapContainer', { static: false }) vietmapContainer: ElementRef;
   @ViewChild('googleContainer', { static: false }) googleContainer: ElementRef;
@@ -377,5 +377,34 @@ export class ModalRouteCompareComponent {
       steps,
       polyline
     };
+  }
+
+  /**
+   * Destroy 2 map instances (Vietmap GL + Google Maps renderer) + scrub
+   * backdrop. Cùng lý do với modal-vietmap-routes — không cleanup map sẽ leak
+   * WebGL/DOM listeners qua nhiều lần mở-đóng.
+   */
+  ngOnDestroy(): void {
+    try { this.modalCompare?.hide?.(); } catch { /* swallow */ }
+    try {
+      if (this.vietmapFetchTimer) { clearTimeout(this.vietmapFetchTimer); this.vietmapFetchTimer = null; }
+      if (this.vietmapMarkers?.length) {
+        this.vietmapMarkers.forEach(m => { try { m?.remove?.(); } catch { /* */ } });
+        this.vietmapMarkers = [];
+      }
+      if (this.vietmapMap) { this.vietmapMap.remove(); this.vietmapMap = null; }
+      if (this.googleRenderer) {
+        try { this.googleRenderer.setMap(null); } catch { /* */ }
+        this.googleRenderer = null;
+      }
+      this.googleMap = null;
+    } catch { /* swallow */ }
+    setTimeout(() => {
+      if (typeof document !== 'undefined'
+          && document.querySelectorAll('.modal.in, .modal.show').length === 0) {
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+      }
+    }, 250);
   }
 }

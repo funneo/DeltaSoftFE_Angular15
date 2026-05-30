@@ -4,6 +4,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { ModalDispatchorderComponent } from '@app/shared/components/transports/modal-dispatchorder/modal-dispatchorder.component';
 import { ModalPerformDispatchOrderComponent } from '@app/shared/components/transports/modal-perform-dispatch-order/modal-perform-dispatch-order.component';
 import { ModalPerformFclComponent } from '@app/shared/components/transports/modal-perform-fcl/modal-perform-fcl.component';
+import { ModalExecuteFclComponent } from '@app/shared/components/transports/modal-execute-fcl/modal-execute-fcl.component';
 import { MessageContstants } from '@app/shared/constants';
 import { Pagination, Profile, ResponseValue } from '@app/shared/models';
 import { DispatchOrderFcl } from '@app/shared/models/fcl/dispatch-order-fcl';
@@ -14,6 +15,7 @@ import { DispatchordersService } from '@app/shared/services/transports/dispatcho
 import * as moment from 'moment';
 import { PageChangedEvent } from 'ngx-bootstrap/pagination';
 import { Subscription } from 'rxjs';
+import { NgxSpinnerService } from 'ngx-spinner';
 
 @Component({
   selector: 'app-perform-dispatch-order',
@@ -35,6 +37,8 @@ export class PerformDispatchOrderComponent implements OnInit {
   busy: Subscription;
   viewModal = false;
   viewModalFcl = false;
+  viewModalFclNew = false;
+  listFilterFclNew: DispatchOrderFcl[] = [];
   branchId?:number;
   driverId?:number;
 
@@ -63,18 +67,21 @@ export class PerformDispatchOrderComponent implements OnInit {
 
   @ViewChild(ModalPerformDispatchOrderComponent, { static: false }) modalAddEdit: ModalPerformDispatchOrderComponent
   @ViewChild(ModalPerformFclComponent, { static: false }) modalAddEditFcl: ModalPerformFclComponent
+  @ViewChild(ModalExecuteFclComponent, { static: false }) modalExecuteFclNew: ModalExecuteFclComponent
   constructor(private dispatchOrderService: DispatchordersService, private fclService:DispatchOrderFclService,
     private notificationService: NotificationService, private _utilityService: UtilityService
     ,private _authService:AuthService, public datepipe: DatePipe
+    ,private spinner: NgxSpinnerService
     ) { }
 
 
   ngOnInit(): void {
     this.userLoged=this._authService.getLoggedInUser();
-    this.ngayBatDau = new Date(moment().hours(0).minutes(0).seconds(0).startOf('month').toString());
-    this.ngayKetThuc = new Date(moment().hours(23).minutes(59).seconds(59).endOf('month').toString());
-    this.ngayBatDauFcl = new Date(moment().hours(0).minutes(0).seconds(0).startOf('month').toString());
-    this.ngayKetThucFcl = new Date(moment().hours(23).minutes(59).seconds(59).endOf('month').toString());
+    // Mặc định 7 ngày gần nhất (hôm nay + 6 ngày trước)
+    this.ngayBatDau = new Date(moment().subtract(6, 'days').startOf('day').toString());
+    this.ngayKetThuc = new Date(moment().endOf('day').toString());
+    this.ngayBatDauFcl = new Date(moment().subtract(6, 'days').startOf('day').toString());
+    this.ngayKetThucFcl = new Date(moment().endOf('day').toString());
     this.dateOptions = this._utilityService.dateOptionMultis(this.ngayBatDau, this.ngayKetThuc);
     //this.loadCustomer();
     this.loadData();
@@ -106,7 +113,9 @@ export class PerformDispatchOrderComponent implements OnInit {
       .set('type',"1")
       .set('driverid',this.userLoged.employeeId)
      // .set('usergroupid')
+      this.spinner.show('toSpinner');
       this.busy = this.dispatchOrderService.getPaging(params).subscribe((res: ResponseValue<Pagination<Dispatchorder>>) => {
+        this.spinner.hide('toSpinner');
         if (res.code == '200' || res.code == '201') {
           this.listDispatchorder = res.data?.items;
           this.totalRows = res.data?.totalRows;
@@ -119,7 +128,7 @@ export class PerformDispatchOrderComponent implements OnInit {
             this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
           }
         }
-      });
+      }, () => this.spinner.hide('toSpinner'));
   }
 
  get visibleData(): any[] {
@@ -137,7 +146,11 @@ export class PerformDispatchOrderComponent implements OnInit {
       .set('toDate', denNgay)
       .set('keyword',this.keyword)
      // .set('usergroupid')
+      this.spinner.show('fclSpinner');
+      this.spinner.show('fclNewSpinner');
       this.busy = this.fclService.getPerformance(params).subscribe((res: ResponseValue<DispatchOrderFcl[]>) => {
+        this.spinner.hide('fclSpinner');
+        this.spinner.hide('fclNewSpinner');
         if (res.code == '200' || res.code == '201') {
           this.listDispatchOrderFcl = res.data;
           this.listDispatchOrderFcl = this.listDispatchOrderFcl.map(it => ({
@@ -155,7 +168,7 @@ export class PerformDispatchOrderComponent implements OnInit {
             this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
           }
         }
-      });
+      }, () => { this.spinner.hide('fclSpinner'); this.spinner.hide('fclNewSpinner'); });
   }
   filter(){
     this.listFilterFcl = Object.assign([], this.listDispatchOrderFcl);
@@ -208,8 +221,22 @@ export class PerformDispatchOrderComponent implements OnInit {
     this.listFilterFcl=this.listFilterFcl.filter((data)=>{
       return data.shippingTaskItem.containerNumber?.toLowerCase().includes(this.contsealSearch.trim().toLocaleLowerCase());
     });
+    // Tách lệnh FCL mới (isLegacy=0) sang tab riêng; tab FCL cũ giữ phần còn lại.
+    this.listFilterFclNew = this.listFilterFcl.filter(x => (x as any).isLegacy === false || (x as any).isLegacy === 0);
+    this.listFilterFcl = this.listFilterFcl.filter(x => !((x as any).isLegacy === false || (x as any).isLegacy === 0));
     this.totalRows=this.listFilterFcl.length;
   }
+  get visibleDataNew(): any[] {
+    const startIndex = (this.pageIndex - 1) * 50;
+    const endIndex = startIndex + 50;
+    return this.listFilterFclNew?.slice(startIndex, endIndex);
+  }
+  viewDetailedFclNew(item: DispatchOrderFcl) {
+    this.viewModalFclNew = true;
+    setTimeout(() => this.modalExecuteFclNew.edit(item.refNo, false), 50);
+  }
+  saveSuccessFclNew(): void { this.loadDataFcl(); }
+  closeModalFclNew(): void { this.viewModalFclNew = false; }
   viewDetailed(item:Dispatchorder){
     this.viewModal = true;
     setTimeout(() => {

@@ -532,6 +532,20 @@ export class ModalDispatchorderComponent implements OnInit {
 
   vihicleTypeChanged(event: OtherCategories) {
     this.vihicleTypeId = event?.id;
+    // Đổi loại xe → xe/mooc/lái xe/định mức cũ KHÔNG còn hợp lệ (thuộc loại khác) → reset
+    this.entity.vihicleId = null;
+    this.entity.moocId = null;
+    this.entity.vihiclelLicensePlates = '';
+    this.entity.moocLicensePlates = '';
+    this.entity.oilQuota = 0;
+    this.entity.driverId = null;
+    this.entity.driverName = '';
+    this.entity.driverTel = '';
+    this.entity.secondDriverId = null;
+    this.entity.secondDriverName = '';
+    this.entity.secondDriverTel = '';
+    this.entity.fuelDriverId = null;
+    this.changedKmQuota();
     if (!this.entity.isSubcontractors) this.loadVihicle(this.vihicleTypeId);
     if (this.entity.isSubcontractors) this.loadQuotationDetailed();
   }
@@ -668,7 +682,54 @@ export class ModalDispatchorderComponent implements OnInit {
     });
   }
 
+  // ───────────── Báo lỗi cụ thể khi click Lưu (thay vì silently disable) ─────────────
+  /** Map control name → label tiếng Việt (cho các field master có dấu * đỏ). */
+  private _fieldLabels: { [k: string]: string } = {
+    shippingUnitId: 'Nhà cung cấp',
+    vihicleType: 'Loại xe',
+    vihicleId: 'Xe',
+    driverId: 'Lái xe 1',
+    driverName: 'Lái xe 1',
+    fueldriverId: 'Lái xe ghi nhận dầu',
+    fullRoute: 'Cung đường toàn tuyến',
+  };
+
+  /** Duyệt form.controls invalid → tách field master (có label) vs field dòng bảng (gộp). */
+  private _collectMissingFields(form: NgForm): { fields: string[]; hasRowInvalid: boolean } {
+    const fields: string[] = [];
+    let hasRowInvalid = false;
+    const controls = (form?.controls || {}) as any;
+    Object.keys(controls).forEach(name => {
+      const ctrl = controls[name];
+      if (!ctrl?.invalid) return;
+      const label = this._fieldLabels[name];
+      if (label) { if (fields.indexOf(label) === -1) fields.push(label); }
+      else hasRowInvalid = true;
+    });
+    return { fields, hasRowInvalid };
+  }
+
+  /** Trả error message nếu chưa lưu được; null = OK tiếp tục lưu. */
+  private _validateBeforeSave(form: NgForm): string | null {
+    if (!form.valid) {
+      const { fields, hasRowInvalid } = this._collectMissingFields(form);
+      const parts: string[] = [];
+      if (fields.length) parts.push('các trường: ' + fields.join(', '));
+      if (hasRowInvalid) parts.push('có dòng phí/trạm/phụ phí chưa hoàn thiện');
+      return 'Vui lòng kiểm tra ' + (parts.join('; ') || 'các trường có dấu * đỏ');
+    }
+    if (!this.flagOk) {
+      const reasons: string[] = [];
+      if ((this.entity.listDispatchOrderDetailed?.length ?? 0) < 1) reasons.push('Chi tiết công việc');
+      if ((this.entity.listDispatchOrderRoutes?.length ?? 0) < 1 && !this.entity.isSubcontractors) reasons.push('Cung đường');
+      return reasons.length ? ('Chưa có: ' + reasons.join(', ')) : 'Thiếu thông tin tối thiểu để lưu lệnh.';
+    }
+    return null;
+  }
+
   saveAndNew(form: NgForm) {
+    const err = this._validateBeforeSave(form);
+    if (err) { this.notificationService.printErrorMessage(err); return; }
     if (form.valid) {
       if (this.endTime < this.startTime) {
         this.notificationService.printErrorMessage(MessageContstants.ENDTIME_NOT_LARGER_THAN_STARTTIME);
@@ -783,6 +844,8 @@ export class ModalDispatchorderComponent implements OnInit {
   }
 
   saveChange(form: NgForm) {
+    const err = this._validateBeforeSave(form);
+    if (err) { this.notificationService.printErrorMessage(err); return; }
     if (form.valid) {
       if (this.endTime < this.startTime) {
         this.notificationService.printErrorMessage(MessageContstants.ENDTIME_NOT_LARGER_THAN_STARTTIME);

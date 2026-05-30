@@ -27,6 +27,15 @@ Restructuring relationship between Transport Order (TO) and FCL Dispatch Order:
   - `Migration_TO_FCL_Phase1C_20260514.sql` — DROP ~59 cột TO + 2 bảng phụ (run AFTER BE/FE refactor + 1-2 tuần thử nghiệm)
 - **Full design + checklist**: `.claude/context/todo.md` section đầu
 
+## Draft Site — site nháp song song ERP (2026-05-27, Phase 3 IN PROGRESS)
+
+Site nháp public cho AI/người nhập (lô hàng / công việc / thanh toán / debit nháp); người duyệt + **promote** trong ERP thật. 3 process tách biệt:
+- **Site nháp FE**: app Angular **21** mới `D:\Delta\DeltaSoft\draft-web` (Bootstrap 5 + ag-grid + ngx-daterangepicker-material). KHÔNG đụng ERP `web-app-update`. `ng serve` cổng 4300.
+- **Draft API**: process .NET 9 riêng `D:\Delta\DeltaSoft\DraftAPI` (cổng 44360), login `draft_app` chỉ chạm schema `draft`. Endpoint POST `/api/draft/create|update|delete|getPaging|getById` → `draft.SP_DraftEntries_*` (JSON envelope `Payload` = DTO tạo-thật).
+- **ERP API**: cấp token `aud=draft` qua `POST /api/account/login-draft` (hạn 1h); `DraftAudienceGuardFilter` default-deny — token nháp chỉ đọc (VIEW/EXPORT + `Draft:ReadAllowlist`). Promote diễn ra trong ERP.
+- **Quy ước:** xóa nháp KHÔNG cần quyền ERP nhưng chỉ **chủ tạo** xóa được; quyền tạo/sửa suy từ quyền ERP. Mọi SP nháp mới phải trình user duyệt trước khi tạo.
+- Trạng thái: Phase 0–2 xong + test; Phase 3 (FE) đang ở vertical slice "Lô hàng". Chi tiết: `.claude/context/done.md` + `todo.md` (section Draft Site) + `draft-site-roadmap.md`.
+
 ## Commands
 
 ### Frontend (Angular 15)

@@ -1,5 +1,88 @@
 # Completed Features
 
+## Draft Site Phase 3 — Debit + Payment + Workflow nháp (4/4 menu xong) — 2026-05-29 (đã commit + push `45f69e6`)
+Nhân bản pattern từ "Lô hàng" sang 3 menu còn lại (port 1:1 từ ERP, css compact, modal **fullscreen**). Push lên `funneo/DeltaSoftDraftFE`. Tất cả qua Draft API (`POST /api/draft/create|update|delete|getPaging|getById` với `draftType` tương ứng).
+- **Push lần đầu app `draft-web` vào git**: repo private `funneo/DeltaSoftDraftFE.git`.
+- **Allowlist mới (ERP `appsettings.json`)**: shipment/getfordebitnotes, shipment/getbyid, supplier/getall, employee/getbybranchid, jobgroup/getall, jobgroupoption/getbyjobgroup, handlinggroup/getall. Endpoint có `[ClaimRequirement(VIEW)]` thì pass-through tự nhiên qua `DraftAudienceGuardFilter`; endpoint không có CR phải thêm allowlist tay.
+- **Auth bổ sung claim `employeeId`** (KHÁC userId): `DraftClaims` + `auth.employeeId` getter. Dùng cho field "Người làm thanh toán" default = chính user đăng nhập (readonly).
+- **Debit nháp** (`debit/`):
+  - `modal-shipment-search.ts` — port `modal-shipment-view-search` ERP (chọn JobId / Lô hàng). **Reuse cho cả Payment + Workflow.**
+  - `debit-form.ts/html/scss` — copy 1:1 `modal-debit-notes` ERP, modal **fullscreen** (BS5 `modal-fullscreen`), nút Lưu/Hủy ở header (bỏ nút In). Giữ NGUYÊN các nút sub-modal (showJob/showFiles/showDispatchOrder…) — tạm toast placeholder, port sau. **Bỏ checkbox "Chuyển duyệt"** (nháp không có workflow accept).
+  - `debit-list.ts/html` — ag-grid wrapper.
+  - Quyết định: debit nháp KHÔNG khóa shipment (vì chỉ là nháp).
+- **Payment nháp** (`payment/`):
+  - `modal-list-advance.ts/html/scss` — port `modal-list-advance` ERP, date range mặc định 60 ngày, 4 filter rows.
+  - `payment-form.ts/html/scss` — port `modal-payment-detail` + page `payment-detail` ERP, fullscreen. Có **Hình thức** (Cá nhân/NCC), **Loại thanh toán** (Có tạm ứng/Trực tiếp), số tạm ứng + nút mắt mở modal-list-advance (lọc `isTransfer` + `supplierId` đúng theo loại). **Người làm TT default = `auth.employeeId`, readonly** (trước đó để rỗng — anh feedback "phải mặc định chính là tài khoản đăng nhập"). **Bổ sung nút chọn Lô hàng** (input-group reuse `modal-shipment-search` từ debit) vì TT nháp cần biết Lô hàng (khác ERP). **Bỏ "Chuyển duyệt".**
+  - `payment-list.ts/html`.
+- **Workflow nháp** (`workflow/`) — port 1:1 `modal-workflow` ERP, fullscreen, single col layout:
+  - KH (Mã + dropdown) → load shipments cùng KH cho ô JobId search.
+  - **JobId** span đỏ + nút search → reuse `modal-shipment-search`.
+  - **Nhóm thực hiện** multi-select (tạo mới) / single (sửa) + **Mức độ phức tạp** (toughness `OtherCategories.TOUGH`).
+  - Thời gian dự kiến / Hoàn thành trước (datetime).
+  - **Nhóm công việc** → on-change load checkbox list "Tên công việc" (click row toggle).
+  - Nội dung / Mã tham chiếu (required) / Thời gian + Địa điểm đóng/trả hàng.
+  - Card **Chi tiết Lô hàng** hiện khi đã chọn shipment.
+  - `workflow-list` ag-grid 10 cột.
+- **Models / Lookup mới**: ShipmentLookup, PaymentDetailLookup, DebitDraftPayload, DebitNoteDetailDraft, SupplierLookup, EmployeeLookup, AdvanceLookup, PaymentDraftPayload, PaymentDetailDraft, JobGroupLookup, JobGroupOptionLookup, HandlingGroupLookup, WorkflowJobOptionDraft, WorkflowDraftPayload. Methods: shipmentsForDebitNotes, shipmentDetail, paymentByJob, suppliers, employees, advances, jobGroups, jobGroupOptions, handlingGroups.
+- **Layout/Routing**: 4 menu enable theo thứ tự ERP (Lô hàng → Công việc → Thanh toán → Debit), routes `/workflow`, `/payment`, `/debit`.
+- **Lưu ý đã giải quyết**: endpoint draft không có `[ClaimRequirement(VIEW)]` → phải thêm Draft:ReadAllowlist tay; restart ERP API mỗi lần thêm allowlist. DraftAudienceGuardFilter pattern default-deny.
+
+## Fix "UI đơ phải F5" — modal-backdrop leak xuyên route + WebGL Vietmap leak — 2026-05-28 (code xong, CHƯA commit, cần test thực tế)
+Audit toàn FE phát hiện root cause hiện tượng "đơ phải F5" XẢY RA TRÊN CẢ APP (xuất hiện từ lúc làm FCL refactor 3 tháng trước).
+- **Root cause #1 (chính):** [modal-dispatch-order-fcl-v2.component.html:1151-1156](../../src/app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component.html#L1151-L1156) + [modal-add-extra-segment.component.html:187-188](../../src/app/shared/components/transports/modal-add-extra-segment/modal-add-extra-segment.component.html#L187-L188) embed cứng 4 sub-modal (Vietmap/MapRoutes/Compare/AddExtra) KHÔNG `*ngIf`. Host list FCL mới destroy modal cha bằng `*ngIf="viewModalV2"`. Khi user mở v2 → AddExtra → Vietmap (3 backdrop) rồi bấm X/Lưu trên cha mà chưa đóng con → host destroy cả cây → ngx-bootstrap không kịp gỡ `.modal-backdrop` + `body.modal-open` → backdrop kẹt ở `<body>` Angular root sống xuyên route → trang khác bị overlay vô hình chặn click. Khớp đúng "từ lúc làm FCL".
+- **Root cause #2:** [modal-vietmap-routes.component.ts](../../src/app/shared/components/danhmuc/modal-vietmap-routes/modal-vietmap-routes.component.ts) + [modal-route-compare.component.ts](../../src/app/shared/components/danhmuc/modal-route-compare/modal-route-compare.component.ts) không có `ngOnDestroy` → WebGL Map instance giữ GPU context + RAF loop + listeners. Sau 5-10 lần mở-đóng đột ngột, browser ngắt WebGL → CPU 100% + lag toàn app.
+- **Fix (combo defensive cleanup):**
+  - `ngOnDestroy` ở 4 modal lớn: [modal-dispatch-order-fcl-v2](../../src/app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component.ts), [modal-add-extra-segment](../../src/app/shared/components/transports/modal-add-extra-segment/modal-add-extra-segment.component.ts), [modal-vietmap-routes](../../src/app/shared/components/danhmuc/modal-vietmap-routes/modal-vietmap-routes.component.ts) (destroy map WebGL + clear markers/timer), [modal-route-compare](../../src/app/shared/components/danhmuc/modal-route-compare/modal-route-compare.component.ts) (destroy 2 maps + googleRenderer.setMap(null)). Mỗi ngOnDestroy: `modal?.hide?.()` chủ động + `setTimeout(250ms)` scrub stuck DOM (CHỈ scrub khi không còn `.modal.in/.show` thật → tránh phá modal khác).
+  - Thêm `@Output() CloseModal` cho `modal-add-extra-segment` (đang thiếu, host không biết user đóng).
+  - **Safety net global** [app.component.ts](../../src/app/app.component.ts): listen `NavigationEnd` → sau 50ms, nếu DOM còn `.modal-backdrop` / `body.modal-open` mà KHÔNG có modal shown → scrub. Lớp này catch mọi case modal nào đó leak quên trong tương lai.
+- **Cách verify (DevTools console):**
+  ```js
+  setInterval(() => {
+    const bd = document.querySelectorAll('.modal-backdrop').length;
+    const open = document.body.classList.contains('modal-open');
+    const visible = document.querySelectorAll('.modal.in, .modal.show').length;
+    console.log(`[modal-watch] backdrop=${bd} modal-open=${open} visible=${visible}`);
+  }, 1000);
+  ```
+  Sequence: FCL → AddExtra → Vietmap → bấm X modal v2 → navigate sang `/home`. Trước: `backdrop≥1 modal-open=true visible=0`. Sau fix: `backdrop=0 modal-open=false`.
+- **Pattern khác đã loại trừ** (audit ban đầu nghi nhưng KHÔNG phải nguyên nhân chính): ngx-spinner không hide khi error, AuthInterceptor không catch 401, SignalR token cũ. Đây là nguyên nhân PHỤ (tạo "đơ trong tab FCL"), không gây "đơ toàn app". Để dành cho session sau.
+
+## modal-dispatchorder (lệnh vận chuyển thường) — polish UX validation + đổi loại xe reset + modal-dispatchorder-route phân trang — 2026-05-28 (code xong, CHƯA commit, cần test)
+3 fix cải thiện UX cho modal lập lệnh vận chuyển thường (TO/Dispatchorder legacy).
+- **Bug "phân trang mất tiêu" ở `modal-dispatchorder-route`**: commit `19c6d54` (2026-05-18) đổi `.modal-body { overflow: hidden }` + `tbody { height: calc(90vh - 280px); max-height: 580px }` → tbody chiếm gần hết → pagination dưới tbody bị **cắt khỏi viewport** dù DOM vẫn render. Fix [modal-dispatchorder-route.component.css](../../src/app/shared/components/transports/modal-dispatchorder-route/modal-dispatchorder-route.component.css): (a) `overflow: hidden` → `overflow: auto` (cuộn dự phòng); (b) bỏ `height` cố định cả `.modal-content` (`height: 800px`) + `tbody` (`height: calc(...)`); (c) `tbody { max-height: calc(90vh - 360px) }` (giảm 580→500-ish, chừa chỗ pagination). Kết quả: modal co theo content, pagination sát footer "Lưu/Hủy", không khoảng trống xám.
+- **Bug Lái xe 1 (xe thuê ngoài) thiếu `required`**: [modal-dispatchorder.component.html:122](../../src/app/shared/components/transports/modal-dispatchorder/modal-dispatchorder.component.html#L122) — label "Lái xe 1 *" hiện dấu * đỏ nhưng nhánh `*ngIf="isSubcontractors"` chỉ có `<input name="driverName">` KHÔNG required. Sửa thêm `[required]="entity.isSubcontractors"`.
+- **UX "bắt lỗi sai sau khi ấn lưu và nhập tiếp"**: nguyên nhân nút Lưu `[disabled]="!flagOk || !form.valid"` → user không biết field nào còn thiếu, cứ "mò". Fix:
+  - 2 nút Lưu bỏ `!flagOk || !addEditForm.form.valid` khỏi disabled → user CLICK được kể cả form invalid.
+  - 3 helper mới ở [modal-dispatchorder.component.ts:671-718](../../src/app/shared/components/transports/modal-dispatchorder/modal-dispatchorder.component.ts#L671-L718): `_fieldLabels` (map name → tên Việt: Nhà cung cấp/Loại xe/Xe/Lái xe 1/Lái xe ghi nhận dầu/Cung đường toàn tuyến), `_collectMissingFields()` duyệt form.controls invalid → tách field master vs dòng bảng (gộp `hasRowInvalid`), `_validateBeforeSave()` trả error message tiếng Việt hoặc null.
+  - `saveChange()` và `saveAndNew()` đều gọi `_validateBeforeSave()` đầu → toast `"Vui lòng kiểm tra các trường: Loại xe, Cung đường toàn tuyến"` hoặc `"Chưa có: Chi tiết công việc, Cung đường"` thay vì silent disable.
+- **Bug đổi loại xe không reset xe cũ**: [modal-dispatchorder.component.ts vihicleTypeChanged()](../../src/app/shared/components/transports/modal-dispatchorder/modal-dispatchorder.component.ts) cũ chỉ `loadVihicle(...)` mà KHÔNG xóa `vihicleId/moocId/license plates/oilQuota/driverId/driverName/driverTel/secondDriver*/fuelDriverId` → xe cũ còn nguyên dù không thuộc loại mới. Fix: reset 12 field (xe, mooc, license plates, định mức, lái xe 1+2+ghi dầu) + gọi `changedKmQuota()` recompute fee dầu, rồi mới `loadVihicle()`.
+
+## Draft Site Phase 3 — modal-execute-fcl: màn THỰC HIỆN lệnh FCL mới + loading list + 7 ngày mặc định — 2026-05-28 (code xong, CHƯA commit, cần test)
+Component MỚI hoàn toàn ở `shared/components/transports/modal-execute-fcl/` (4 file ~640 dòng tổng). Tách song song khỏi `modal-perform-fcl` cũ — KHÔNG đụng cũ.
+- **Component cấu trúc:** [modal-execute-fcl.component.ts](../../src/app/shared/components/transports/modal-execute-fcl/modal-execute-fcl.component.ts) (~280 dòng) mở qua `getDetailWithTo(refNo)` (load FCL mới + segments + extras + listEtc + listFee + listDetailed). [.html](../../src/app/shared/components/transports/modal-execute-fcl/modal-execute-fcl.component.html) (~290 dòng). [.scss](../../src/app/shared/components/transports/modal-execute-fcl/modal-execute-fcl.component.scss). [.module.ts](../../src/app/shared/components/transports/modal-execute-fcl/modal-execute-fcl.module.ts).
+- **Mọi field readonly NGOẠI TRỪ 4 phần (theo spec anh):**
+  1. **POD** — section riêng (fieldset 50/50 với "Ảnh hiện trường"): nút "Tải POD" + bảng list file + nút xóa. Dùng `DispatchordersService.getAttachFile/addAttachFile/deleteAttachFile` với cờ `isPod=true`.
+  2. **Ảnh hiện trường** — tương tự, `isPod=false`.
+  3. **Bảng "Chi phí" (listFee)** — editable: dropdown loại phí (CP01/02/03), nội dung, số tiền, VAT, tổng tiền auto, nút Thêm dòng / Xóa.
+  4. **Cột "Trốn vé" trong bảng "Xe tránh trạm" (listEtc)** — list TẤT CẢ trạm phí FLAT, chỉ checkbox `isPassed` là editable (cột khác readonly). Section ẩn nếu `listEtc` rỗng. Quyết định cuối: KHÔNG group theo chặng (yêu cầu thêm SegmentId vào schema, quá đụng) — flat đơn giản.
+- **3 field LÁI XE NHẬP** (sau nhận lệnh, trước duyệt B1 — `status≤2`): Km đầu (`startVehicleOdor`), Km cuối (`finishVehicleOdor`), Tài xế ghi chú (`noteFinished`). `status≥3` → readonly. Validation Km đầu < Km cuối khi save (port từ modal-perform-fcl cũ).
+- **Footer buttons workflow** giống perform-fcl cũ: `status=1` Nhận lệnh/Từ chối, `status=2` Lưu thông tin/Kết thúc (gọi `driverUpdate`), `status=4` Chốt dữ liệu/Từ chối chốt.
+- **Tab thứ 3 ở [perform-dispatch-order](../../src/app/main/transports/dispatchorders/perform-dispatch-order/)** "Thực hiện lệnh FCL mới": clone layout list từ tab FCL cũ; click RefNo → mở `<modal-execute-fcl>`. Filter `isLegacy === false` ở FE (không cần đụng SP `GetPerformance`).
+- **Loading 3 tab**: thêm `ngx-spinner` (name: `toSpinner` / `fclSpinner` / `fclNewSpinner`) — show khi gọi BE, hide trong cả nhánh next + error. NgxSpinnerModule thêm vào module.
+- **Khoảng ngày mặc định**: đổi từ `startOf('month')` → 7 ngày gần nhất (`subtract(6, 'days')` đến hôm nay). Áp dụng cả 3 tab.
+
+## Draft Site — Phase 3: FE site nháp (Angular 21 app mới) — vertical slice "Lô hàng" — 2026-05-27 (code xong, chờ test e2e)
+App Angular **21** hoàn toàn mới `D:\Delta\DeltaSoft\draft-web` (KHÔNG đụng ERP `web-app-update`). Stack: standalone components + signals + control flow `@if/@for`, **Bootstrap 5.3**, Font Awesome 6 (+v4-shims cho `fa fa-*`), `@ng-select/ng-select` 21, `ngx-mask` 21, **`ngx-daterangepicker-material`** (thay datepicker cũ), `dayjs`, **ag-grid** 35 (Community). Build sạch, `ng serve` cổng **4300**.
+- **Auth** (`core/auth.service.ts` + interceptor + guard functional): login → ERP `POST /api/account/login-draft` (token `aud=draft`, hạn 1h), lưu `DRAFT_TOKEN` localStorage, decode JWT (atob) lấy claims/branchId/permissions, `isLoggedIn` check `exp`. Interceptor gắn Bearer + 401→logout. Remember-me (base64 pwd in `DRAFT_LOGIN_REMEMBER`).
+- **Login** (`login/`): rewrite sạch Bootstrap 5 (form-floating) — panel brand gradient + carousel quote xoay 6s, username/password (toggle hiện/ẩn), `<select>` chi nhánh nạp từ `/assets/data/branch.json`, remember-me, lỗi inline. (CSS ERP copy nguyên 514 dòng bị vỡ trên BS5 → viết lại mới.)
+- **Layout** (`layout/`): sidebar 4 menu (Lô hàng active; Công việc/Thanh toán/Debit disabled), topbar tên user + logout.
+- **Lô hàng — form MODAL** (`shipment/shipment-form.*`): port **nguyên xi** form lô hàng ERP (4 tab: Thông tin chung / Chi tiết / Thông tin khác / Số hóa báo giá), modal-xl BS5, `@Input open/editId` `@Output closed/saved`. Giữ toàn bộ logic: đổi KH→load hợp đồng/báo giá (`_typePrice`), shipmentType→shippingType (FCL/LCL khi 1174/1175), số hóa báo giá (quotationDetail + checkbox clickRow), auto-thêm dòng cont/package, ngày lưu `YYYYMMDD`/`YYYYMMDD HH:mm:ss` (parity DTO ERP để promote).
+- **Lô hàng — LIST** (`shipment/shipment-list.*`): bọc **ag-grid** qua wrapper `<app-data-table>` port từ SBIERP (`shared/components/data-table/`). **Cột KHỚP list Lô hàng ERP** (`shipment-normal`): STT/Thao tác pin trái, Mã KH, Khách hàng, JobId (link→mở sửa, nháp hiện `#id`), Loại hình, Tờ khai, Invoice, H/Bill, M/Bill, Booking No, Lượng hàng (number), Cont No, Ghi chú, Người lập/Ngày lập, CN làm hàng, Trạng thái (badge). List parse **Payload JSON** mỗi dòng + map qua lookup nạp 1 lần (customers→Mã KH, OtherCategories `SHIPMENT_T02`→Loại hình, branches→CN). Action Sửa/Xóa chỉ hiện `status==='Draft'`. Cần: SP `getPaging` trả thêm `Payload` (`Migration_DraftSite_GetPaging_AddPayload_20260527.sql`) + restart Draft API.
+- **Lookup read-only ERP** (`core/lookup.service.ts`): customers/fees/branches/otherCategories/contracts/quotations/quotationDetail gọi ERP qua token nháp (đọc-only, allowlist Phase 1). ERP `Draft:ReadAllowlist` đã bổ sung customer/fee/branch/contractcustomer/quotationcustomer/othercategories/feecode.
+- **Draft API calls** (`core/draft.service.ts`): create/update/delete/getPaging/getById → Draft API `:44360`.
+- **⚠️ Bài học**: `ng serve` KHÔNG reload thay đổi `angular.json` (styles/assets) → phải **restart** `ng serve` sau khi sửa angular.json (đã dính lỗi ng-select/fontawesome mất style do quên restart).
+- **Chưa làm**: draft-web chưa đưa vào git; 3 menu còn lại (Công việc/Thanh toán/Debit).
+
 ## Đọc hóa đơn: tối ưu chi phí flash-lite + mediaResolution=LOW + đa hóa đơn/1 PDF + nút admin-only — 2026-05-25 (code xong, CHƯA commit, chờ test)
 Tiếp nối section dưới (migrate AI Studio). Cụm thay đổi giảm chi phí + xử lý KH gộp nhiều hóa đơn 1 file. Working tree NewAPI master + web-app-update main, build sạch.
 - **Đổi model → `gemini-2.5-flash-lite`** (chỉ config `GoogleServices:Gemini:ModelId` trong appsettings.json — rẻ/nhanh hơn flash, vẫn honor thinkingBudget=0). Đổi model sau này = sửa 1 dòng config.

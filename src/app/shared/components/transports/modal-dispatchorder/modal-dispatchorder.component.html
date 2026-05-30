@@ -119,7 +119,7 @@
                   </div>
                   <div class="col-sm-5" *ngIf="entity.isSubcontractors">
                     <input class="form-control" [(ngModel)]="entity.driverName" type="text" name="driverName"
-                      [readonly]="flagXem" />
+                      [readonly]="flagXem" [required]="entity.isSubcontractors" />
                   </div>
                   <label class="col-sm-1 control-label">SĐT</label>
                   <div class="col-sm-4">
@@ -1025,12 +1025,14 @@
             <button *ngIf="closing_permission && entity.status==5" type="button" class="btn btn-success btn-sm"
               (click)="huychotlenh()">
               <i class="fa backward"></i>Từ chối</button>
+            <!-- Cho phép click Lưu để nhận thông báo lỗi rõ ràng từ saveChange()
+                 thay vì disable im lặng. flagOk / form.valid sẽ được check trong handler. -->
             <button *ngIf="!flagXem &&  entity.status<4 && !entity.locked" type="button"
               (click)="saveAndNew(addEditForm)" class="btn btn-primary btn-sm"
-              [disabled]="!flagOk|| !addEditForm.form.valid || flagSave || job_locked ">
+              [disabled]="flagSave || job_locked">
               <i class="fa fa-save"></i> Lưu & Thêm mới</button>
             <button *ngIf="!flagXem &&  entity.status<4 && !entity.locked" type="submit" class="btn btn-primary btn-sm"
-              [disabled]="!flagOk|| !addEditForm.form.valid || flagSave || (job_locked && !userLoged.isAdmin)">
+              [disabled]="flagSave || (job_locked && !userLoged.isAdmin)">
               <i class="fa fa-save"></i> Lưu</button>
             <button type="button" (click)="modalDispatchOrderAddEdit.hide()" class="btn btn-danger btn-sm">
               <i class="fa fa-close"></i> Hủy</button>

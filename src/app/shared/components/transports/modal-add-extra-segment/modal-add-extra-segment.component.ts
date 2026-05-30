@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, ViewChild } from '@angular/core';
+import { Component, EventEmitter, OnDestroy, Output, ViewChild } from '@angular/core';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { NotificationService } from '@app/shared/services';
 import { TransportOrderService } from '@app/shared/services/transports/transport-order.service';
@@ -36,11 +36,12 @@ export interface ExtraSegmentOpenContext {
   templateUrl: './modal-add-extra-segment.component.html',
   styleUrls: ['./modal-add-extra-segment.component.scss']
 })
-export class ModalAddExtraSegmentComponent {
+export class ModalAddExtraSegmentComponent implements OnDestroy {
   @ViewChild('modalAddExtra', { static: false }) modalAddExtra: ModalDirective;
   @ViewChild(ModalVietmapRoutesComponent, { static: false }) modalVietmap: ModalVietmapRoutesComponent;
   @ViewChild(ModalRouteCompareComponent, { static: false }) modalCompare: ModalRouteCompareComponent;
   @Output() SaveSuccess = new EventEmitter<ExtraSegmentSavedResult>();
+  @Output() CloseModal = new EventEmitter<void>();
 
   draft: TransportOrderExtraSegment | null = null;
   locations: UnifiedLocation[] = [];
@@ -93,6 +94,26 @@ export class ModalAddExtraSegmentComponent {
   onHidden() {
     this.draft = null;
     this.pickerOpen = false;
+    this.CloseModal.emit();
+  }
+
+  /**
+   * Defensive cleanup khi modal bị host (modal v2) destroy đột ngột giữa lúc
+   * modal con Vietmap/Compare vẫn đang shown → ngx-bootstrap không kịp gỡ
+   * backdrop → leak xuyên route. Xem chú thích chi tiết ở
+   * ModalDispatchOrderFclV2Component.ngOnDestroy().
+   */
+  ngOnDestroy(): void {
+    try { this.modalAddExtra?.hide?.(); } catch { /* swallow */ }
+    setTimeout(() => {
+      if (typeof document !== 'undefined'
+          && document.querySelectorAll('.modal.in, .modal.show').length === 0) {
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('padding-right');
+        document.body.style.removeProperty('overflow');
+      }
+    }, 250);
   }
 
   // ───────────── Picker ─────────────

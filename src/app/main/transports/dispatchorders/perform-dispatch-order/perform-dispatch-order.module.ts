@@ -14,6 +14,8 @@ import { Daterangepicker } from 'ng2-daterangepicker';
 import { ModalPerformDispatchOrderModule } from '@app/shared/components/transports/modal-perform-dispatch-order/modal-perform-dispatch-order.module';
 import { TabsModule } from 'ngx-bootstrap/tabs';
 import { ModalPerformFclModule } from '@app/shared/components/transports/modal-perform-fcl/modal-perform-fcl.module';
+import { ModalExecuteFclModule } from '@app/shared/components/transports/modal-execute-fcl/modal-execute-fcl.module';
+import { NgxSpinnerModule } from 'ngx-spinner';
 
 
 @NgModule({
@@ -31,7 +33,9 @@ import { ModalPerformFclModule } from '@app/shared/components/transports/modal-p
     Daterangepicker,
     PerformDispatchOrderRoutingModule,
     ModalPerformDispatchOrderModule,
-    ModalPerformFclModule
+    ModalPerformFclModule,
+    ModalExecuteFclModule,
+    NgxSpinnerModule,
   ],
     providers:[
       DatePipe,

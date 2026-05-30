@@ -3,6 +3,7 @@ import {
   Component,
   EventEmitter,
   Input,
+  OnDestroy,
   OnInit,
   Output,
   ViewChild,
@@ -120,7 +121,7 @@ export interface LocationItem {
   templateUrl: "./modal-dispatch-order-fcl-v2.component.html",
   styleUrls: ["./modal-dispatch-order-fcl-v2.component.scss"],
 })
-export class ModalDispatchOrderFclV2Component implements OnInit {
+export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   public entity: DispatchOrderFcl = {};
   public flagNew?: boolean = false;
   public flagXem: boolean = false;
@@ -2004,6 +2005,26 @@ export class ModalDispatchOrderFclV2Component implements OnInit {
 
   OnHidden() {
     this.CloseModal.emit();
+  }
+
+  /**
+   * Defensive cleanup khi modal cha bị host destroy đột ngột (vd *ngIf về false
+   * khi modal con Vietmap/Compare/AddExtra vẫn đang shown). ngx-bootstrap KHÔNG
+   * kịp gỡ .modal-backdrop + body.modal-open → kẹt xuyên route → cả app bị
+   * overlay vô hình chặn click ("đơ phải F5"). Đây là root cause #1 đã xác định.
+   */
+  ngOnDestroy(): void {
+    try { this.modalDispatchOrderFcl?.hide?.(); } catch { /* swallow */ }
+    setTimeout(() => {
+      // Chỉ scrub khi KHÔNG còn modal nào đang shown thật → tránh phá modal khác
+      if (typeof document !== 'undefined'
+          && document.querySelectorAll('.modal.in, .modal.show').length === 0) {
+        document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('padding-right');
+        document.body.style.removeProperty('overflow');
+      }
+    }, 250);
   }
   closeModal() {
     this.viewModal = false;

@@ -27,7 +27,10 @@
           </div>
         </div>
         <!-- /.box-header -->
-        <div class="box-body table-responsive no-padding">
+        <div class="box-body table-responsive no-padding" style="position: relative;">
+          <ngx-spinner name="toSpinner" [fullScreen]="false" bdOpacity="0.6" bdColor="#f4f4f9" size="medium" color="#1010ee" type="ball-clip-rotate">
+            <p class="loading">Đang tải dữ liệu...</p>
+          </ngx-spinner>
           <table class="table table-bordered table-striped table-hover">
             <thead>
               <tr>
@@ -119,7 +122,10 @@
           </div>
         </div>
         <!-- /.box-header -->
-        <div class="box-body table-responsive no-padding table-wrapper-scroll-y" id="div#style-scroll-1">
+        <div class="box-body table-responsive no-padding table-wrapper-scroll-y" id="div#style-scroll-1" style="position: relative;">
+          <ngx-spinner name="fclSpinner" [fullScreen]="false" bdOpacity="0.6" bdColor="#f4f4f9" size="medium" color="#1010ee" type="ball-clip-rotate">
+            <p class="loading">Đang tải dữ liệu...</p>
+          </ngx-spinner>
           <table class="table table-bordered table-hover ">
             <thead>
               <tr>
@@ -244,6 +250,108 @@
         <!-- /.box -->
       </div>
     </tab>
+    <tab heading="Thực hiện lệnh FCL mới">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-2">
+              <h3 class="box-title">Lệnh FCL (mới)</h3>
+            </div>
+            <div class="col-md-2">
+              <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDateFcl($event)" class="form-control">
+            </div>
+            <div class="col-md-2"></div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" class="form-control" name="filter" (keyup.enter)="timKiemFcl()" [(ngModel)]="keyword" placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiemFcl()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="box-body table-responsive no-padding table-wrapper-scroll-y" id="div#style-scroll-1" style="position: relative;">
+          <ngx-spinner name="fclNewSpinner" [fullScreen]="false" bdOpacity="0.6" bdColor="#f4f4f9" size="medium" color="#1010ee" type="ball-clip-rotate">
+            <p class="loading">Đang tải dữ liệu...</p>
+          </ngx-spinner>
+          <table class="table table-bordered table-hover">
+            <thead>
+              <tr>
+                <th>Tình trạng</th>
+                <th class="column-ten-sm">RefNo</th>
+                <th class="column-ten-sm">Ngày</th>
+                <th class="column-ten-sm">Người lập</th>
+                <th>Tên đơn vị vận chuyển</th>
+                <th class="column-ten-sm">Tên lái xe</th>
+                <th class="column-ten-sm">Biển số xe</th>
+                <th>Mooc</th>
+                <th class="column-ten-sm">Số Cont</th>
+                <th class="column-ten-lg">Điểm giao nhận hàng</th>
+                <th>Tổng Km</th>
+                <th>Tổng dầu</th>
+                <th>Ghi chú</th>
+                <th style="min-width: 80px;">Tác vụ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of visibleDataNew" [style.background-color]="item.isSubcontractors ? '#DFF6FF' : 'white'">
+                <td>
+                  <span [ngClass]="item.isDeny? 'label label-danger': item.status == 6? ' label label-info': item.status==1 ? 'label label-success': item.status==2? 'label label-primary': item.status==3? 'label label-duyetB1':  (item.status===4)?'label label-duyetB2' :item.status==5 ? 'label label-warning': 'label label-khoitao'">
+                    {{item.rStatus}}
+                  </span>
+                </td>
+                <td><a [routerLink]="[]" (click)="viewDetailedFclNew(item)">{{item.refNo}}</a></td>
+                <td>{{item.createdDate | date:'dd/MM/yyyy'}}</td>
+                <td class="column-ten-sm">{{item.createdByName}}</td>
+                <td class="column-ten-lg"><b>{{item.shippingUnitName}}</b></td>
+                <td><b>{{item.driverName}}</b></td>
+                <td class="column-ten-sm">{{item.vehiclelLicensePlates}}</td>
+                <td>{{item.moocLicensePlates}}</td>
+                <td class="column-ten-sm">
+                  <div *ngIf="item.containerList?.length > 0">
+                    <div *ngFor="let container of item.containerList">{{ '- '+ container }}</div>
+                  </div>
+                </td>
+                <td class="column-ten-lg">
+                  <div *ngIf="item.locationList?.length > 0">
+                    <div *ngFor="let location of item.locationList">{{'- '+ location }}</div>
+                  </div>
+                </td>
+                <td>{{item.tongKm}}</td>
+                <td>{{item.tongdau}}</td>
+                <td>{{item.note}}</td>
+                <td>{{item.rStatus}}</td>
+              </tr>
+              <tr *ngIf="listFilterFclNew?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="box-footer no-padding">
+          <div *ngIf="listFilterFclNew?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ listFilterFclNew?.length }}</span>
+                </div>
+              </div>
+              <div class="col-md-7 text-right">
+                <div class="page">
+                  <pagination [totalItems]="listFilterFclNew?.length" [(ngModel)]="pageIndex" [maxSize]="5"
+                    (pageChanged)="pageChanged($event)" [itemsPerPage]="50" previousText="&lsaquo;" nextText="&rsaquo;"
+                    firstText="&laquo;" lastText="&raquo;">
+                  </pagination>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </tab>
   </tabset>
 </div>
 
@@ -251,3 +359,5 @@
 </modal-perform-dispatch-order>
 <modal-perform-fcl *ngIf="viewModalFcl" (SaveSuccess)="saveSuccessFcl()" (CloseModal)="closeModalFcl()">
 </modal-perform-fcl>
+<modal-execute-fcl *ngIf="viewModalFclNew" (SaveSuccess)="saveSuccessFclNew()" (CloseModal)="closeModalFclNew()">
+</modal-execute-fcl>

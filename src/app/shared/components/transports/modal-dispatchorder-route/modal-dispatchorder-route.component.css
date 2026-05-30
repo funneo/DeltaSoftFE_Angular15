@@ -1,7 +1,7 @@
 .modal-dialog,
 .modal-content {
-    /* 80% of window height */
-    height: 800px;
+    /* Bỏ height cố định 800px — để modal co theo content, pagination sát đáy
+       cạnh nút Lưu/Hủy. Giữ max-height tránh tràn màn hình. */
     max-height: 90vh;
 }
 
@@ -18,7 +18,9 @@
 .modal-body {
     flex: 1 1 auto;
     min-height: 0;
-    overflow: hidden;
+    /* Đổi từ hidden → auto để PHẦN PAGINATION DƯỚI TBODY luôn truy cập được
+       (cuộn dự phòng khi màn thấp). Trước hidden → pagination bị cắt khỏi viewport. */
+    overflow: auto;
 }
 
 .box-footer {
@@ -45,8 +47,9 @@ table thead {
 table tbody {
     display: block;
     overflow-y: auto;
-    height: calc(90vh - 280px);
-    max-height: 580px;
+    /* Bỏ height cố định — chỉ giữ max-height. Khi data ít tbody tự co,
+       pagination + footer áp sát nhau. */
+    max-height: calc(90vh - 360px);
 }
 
 thead tr {

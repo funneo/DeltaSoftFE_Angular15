@@ -1,0 +1,390 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalExecuteFcl="bs-modal"
+  [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-xl exec-dialog">
+    <div class="modal-content">
+      <div #myHandle class="modal-header exec-header">
+        <h4 class="modal-title pull-left">
+          <i class="fa fa-truck"></i>
+          Thực hiện lệnh FCL
+          <span class="exec-ref">{{ entity?.refNo }}</span>
+          <span class="exec-meta" *ngIf="entity?.createdByName">— {{ entity?.createdByName }}</span>
+          <span class="exec-meta" *ngIf="entity?.createdDate">({{ entity?.createdDate | date:'dd/MM/yyyy' }})</span>
+        </h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalExecuteFcl.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body exec-body">
+        <form class="form-horizontal" novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)" *ngIf="entity">
+
+          <!-- ============ Thông tin lệnh (readonly) ============ -->
+          <fieldset class="exec-fs">
+            <legend>Thông tin lệnh</legend>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Biển số xe</label>
+              <div class="col-sm-4">
+                <span class="form-control readonly-cell">{{ entity.vehiclelLicensePlates }}</span>
+              </div>
+              <label class="col-sm-2 control-label">Biển Mooc</label>
+              <div class="col-sm-4">
+                <span class="form-control readonly-cell">{{ entity.moocLicensePlates }}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Lái xe</label>
+              <div class="col-sm-4">
+                <span class="form-control readonly-cell">{{ entity.driverName }}</span>
+              </div>
+              <label class="col-sm-2 control-label">Đơn vị vận chuyển</label>
+              <div class="col-sm-4">
+                <span class="form-control readonly-cell">{{ entity.shippingUnitName }}</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Tổng số Km</label>
+              <div class="col-sm-2">
+                <span class="form-control readonly-cell text-right">{{ entity.tongKm }}</span>
+              </div>
+              <label class="col-sm-2 control-label">Tổng dầu ĐM</label>
+              <div class="col-sm-2">
+                <span class="form-control readonly-cell text-right">{{ entity.tongdau }}</span>
+              </div>
+              <label class="col-sm-2 control-label">Chi phí dầu</label>
+              <div class="col-sm-2">
+                <span class="form-control readonly-cell text-right">{{ entity.chiphidau }}</span>
+              </div>
+            </div>
+            <!-- Km đầu/Km cuối + Tài xế ghi chú: lái xe NHẬP khi đã nhận lệnh (status≤2),
+                 từ duyệt B1 (status>=3) trở đi readonly. -->
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Km đầu <span class="exec-driver-hint">(lái xe)</span></label>
+              <div class="col-sm-2">
+                <input class="form-control text-right" type="text" name="startVehicleOdor"
+                  [(ngModel)]="entity.startVehicleOdor" [mask]="maskNumber"
+                  [readonly]="flagXem || (entity.status ?? 0) > 2"
+                  [class.readonly-cell]="flagXem || (entity.status ?? 0) > 2" />
+              </div>
+              <label class="col-sm-2 control-label">Km cuối <span class="exec-driver-hint">(lái xe)</span></label>
+              <div class="col-sm-2">
+                <input class="form-control text-right" type="text" name="finishVehicleOdor"
+                  [(ngModel)]="entity.finishVehicleOdor" [mask]="maskNumber"
+                  [readonly]="flagXem || (entity.status ?? 0) > 2"
+                  [class.readonly-cell]="flagXem || (entity.status ?? 0) > 2" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-2 control-label">Tài xế ghi chú</label>
+              <div class="col-sm-10">
+                <textarea class="form-control" name="noteFinished" rows="2"
+                  [(ngModel)]="entity.noteFinished"
+                  [readonly]="flagXem || (entity.status ?? 0) > 2"
+                  [class.readonly-cell]="flagXem || (entity.status ?? 0) > 2"></textarea>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="entity.dispatchSummarize">
+              <label class="col-sm-2 control-label">Tóm tắt lệnh</label>
+              <div class="col-sm-10">
+                <span class="form-control readonly-cell auto-height" style="white-space:pre-wrap">{{ entity.dispatchSummarize }}</span>
+              </div>
+            </div>
+          </fieldset>
+
+          <!-- ============ Chi tiết công việc (readonly) ============ -->
+          <fieldset class="exec-fs" *ngIf="entity.listDetailed?.length">
+            <legend>Chi tiết công việc</legend>
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped table-hover exec-table">
+                <thead>
+                  <tr>
+                    <th>Id công việc</th>
+                    <th>Nơi nhận hàng</th>
+                    <th>Nơi giao hàng</th>
+                    <th>T/g KH yêu cầu</th>
+                    <th>T/g pick-up cont</th>
+                    <th>Số Cont / Seal</th>
+                    <th style="width: 60px">Đính kèm</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of entity.listDetailed">
+                    <td>
+                      <a style="color:#1565c0; font-weight:600" (click)="viewCongviec(item.shippingTaskItem.id)">
+                        {{ item.shippingTaskId }}
+                      </a>
+                    </td>
+                    <td><span class="text-primary">{{ item.shippingTaskItem?.pickupLocation }}</span></td>
+                    <td><span class="text-danger">{{ item.shippingTaskItem?.deliveryLocation }}</span></td>
+                    <td>{{ item.shippingTaskItem?.pickupTime | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>{{ item.shippingTaskItem?.demurageTime | date:'dd/MM/yyyy HH:mm' }}</td>
+                    <td>
+                      <div>{{ item.shippingTaskItem?.containerNumber }}</div>
+                      <div class="text-muted">{{ item.shippingTaskItem?.sealNumber }}</div>
+                    </td>
+                    <td>
+                      <button type="button" class="btn btn-primary btn-sm" (click)="attackTask(item.shippingTaskItem.id)">
+                        <i class="fa fa-upload"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </fieldset>
+
+          <!-- ============ POD (riêng) + Ảnh hiện trường (riêng) ============ -->
+          <div class="exec-2col">
+            <fieldset class="exec-fs exec-col">
+              <legend>
+                POD
+                <input style="display:none" type="file" #filePod (change)="onPodChanged($event)" accept=".jpg,.jpeg,.png,.gif,.pdf" />
+                <button type="button" class="btn btn-primary btn-xs pull-right" (click)="filePod.click()" [disabled]="flagXem || !entity.refNo">
+                  <i class="fa fa-upload"></i> Tải POD
+                </button>
+              </legend>
+              <div class="table-responsive">
+                <table class="table table-bordered table-striped exec-table">
+                  <thead>
+                    <tr>
+                      <th>Tên file</th>
+                      <th style="width:110px" class="text-right">Kích thước</th>
+                      <th style="width:60px"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of listPod">
+                      <td><a (click)="clickLink(item)" style="cursor:pointer; color:#1565c0">{{ item.fileName }}</a></td>
+                      <td class="text-right">{{ item.size | number }}</td>
+                      <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-xs" (click)="deletePod(item)" [disabled]="flagXem">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="!listPod?.length">
+                      <td colspan="3" class="text-center text-muted">Chưa có POD.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </fieldset>
+
+            <fieldset class="exec-fs exec-col">
+              <legend>
+                Ảnh hiện trường
+                <input style="display:none" type="file" #fileField (change)="onAttachFileChanged($event)" accept=".jpg,.jpeg,.png,.gif,.pdf" />
+                <button type="button" class="btn btn-info btn-xs pull-right" (click)="fileField.click()" [disabled]="flagXem || !entity.refNo">
+                  <i class="fa fa-camera"></i> Tải ảnh
+                </button>
+              </legend>
+              <div class="table-responsive">
+                <table class="table table-bordered table-striped exec-table">
+                  <thead>
+                    <tr>
+                      <th>Tên file</th>
+                      <th style="width:110px" class="text-right">Kích thước</th>
+                      <th style="width:60px"></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let item of listAttachFile">
+                      <td><a (click)="clickLink(item)" style="cursor:pointer; color:#1565c0">{{ item.fileName }}</a></td>
+                      <td class="text-right">{{ item.size | number }}</td>
+                      <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-xs" (click)="deleteAttach(item)" [disabled]="flagXem">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr *ngIf="!listAttachFile?.length">
+                      <td colspan="3" class="text-center text-muted">Chưa có ảnh hiện trường.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </fieldset>
+          </div>
+
+          <!-- ============ Cung đường vận tải (readonly) ============ -->
+          <fieldset class="exec-fs" *ngIf="entity.segments?.length">
+            <legend>Cung đường vận tải</legend>
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped exec-table">
+                <thead>
+                  <tr>
+                    <th style="width: 60px">Chặng</th>
+                    <th>Điểm đi</th>
+                    <th>Điểm đến</th>
+                    <th style="width: 110px">Tải trọng</th>
+                    <th style="width: 90px">Km</th>
+                    <th style="width: 110px">Dầu ĐM</th>
+                    <th style="width: 110px">Phí ETC</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let seg of entity.segments; let i = index">
+                    <td class="text-center">{{ seg.orderIndex ?? (i + 1) }}</td>
+                    <td>{{ seg.startLocationName }}</td>
+                    <td>{{ seg.endLocationName }}</td>
+                    <td class="text-right">{{ seg.payloadWeight }}</td>
+                    <td class="text-right">{{ seg.distanceKm }}</td>
+                    <td class="text-right">{{ seg.fuelAmountCalculated }}</td>
+                    <td class="text-right">{{ seg.etcCost }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </fieldset>
+
+          <!-- ============ Cung đường phát sinh (readonly) ============ -->
+          <fieldset class="exec-fs" *ngIf="entity.extraSegments?.length">
+            <legend>Cung đường phát sinh</legend>
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped exec-table">
+                <thead>
+                  <tr>
+                    <th style="width: 60px">#</th>
+                    <th>Điểm đi</th>
+                    <th>Điểm đến</th>
+                    <th style="width: 110px">Tải trọng</th>
+                    <th style="width: 90px">Km</th>
+                    <th style="width: 110px">Dầu ĐM</th>
+                    <th>Ghi chú</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let ex of entity.extraSegments">
+                    <td class="text-center">{{ ex.seqNo }}</td>
+                    <td>{{ ex.startLocationName }}</td>
+                    <td>{{ ex.endLocationName }}</td>
+                    <td class="text-right">{{ ex.payloadWeight }}</td>
+                    <td class="text-right">{{ ex.distanceKm }}</td>
+                    <td class="text-right">{{ ex.fuelAmountCalculated }}</td>
+                    <td>{{ ex.note }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </fieldset>
+
+          <!-- ============ Xe tránh trạm (trốn vé EDITABLE) ============ -->
+          <fieldset class="exec-fs" *ngIf="entity.listEtc?.length">
+            <legend>Xe tránh trạm <span class="exec-hint">— tick những trạm xe đã tránh / không qua</span></legend>
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped exec-table">
+                <thead>
+                  <tr>
+                    <th>Tên trạm</th>
+                    <th style="width: 110px" class="text-right">Số tiền</th>
+                    <th style="width: 90px" class="text-right">VAT</th>
+                    <th style="width: 120px" class="text-right">Tổng tiền</th>
+                    <th style="width: 90px" class="text-center">Trốn vé</th>
+                    <th>Ghi chú</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let etc of entity.listEtc; let i = index" [class.exec-row-passed]="etc.isPassed">
+                    <td>{{ etc.tollStationName }}</td>
+                    <td class="text-right">{{ etc.cost | number }}</td>
+                    <td class="text-right">{{ etc.vat | number }}</td>
+                    <td class="text-right">{{ etc.totalCost | number }}</td>
+                    <td class="text-center exec-toggle-cell" (click)="toggleEtcPassed(etc)" [title]="flagXem ? '' : 'Click để toggle'">
+                      <input type="checkbox" [checked]="etc.isPassed" [disabled]="flagXem" (click)="$event.stopPropagation()" (change)="toggleEtcPassed(etc)" />
+                    </td>
+                    <td>{{ etc.note }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </fieldset>
+
+          <!-- ============ Chi phí (EDITABLE) ============ -->
+          <fieldset class="exec-fs">
+            <legend>
+              Chi phí
+              <button type="button" class="btn btn-success btn-xs pull-right" (click)="addFee()" [disabled]="flagXem">
+                <i class="fa fa-plus"></i> Thêm dòng
+              </button>
+            </legend>
+            <div class="table-responsive">
+              <table class="table table-bordered table-striped exec-table">
+                <thead>
+                  <tr>
+                    <th style="width: 220px">Loại phí</th>
+                    <th>Nội dung</th>
+                    <th style="width: 130px" class="text-right">Số tiền</th>
+                    <th style="width: 110px" class="text-right">VAT</th>
+                    <th style="width: 130px" class="text-right">Tổng tiền</th>
+                    <th style="width: 50px"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of entity.listFee; let i = index">
+                    <td>
+                      <ng-select [items]="listFee" bindLabel="feeName" bindValue="id" [(ngModel)]="item.feeId"
+                        [name]="'feeId' + i" [readonly]="flagXem" (change)="feeCodeChanged(item, $event)"
+                        placeholder="Chọn phí...">
+                      </ng-select>
+                    </td>
+                    <td>
+                      <input class="form-control" [(ngModel)]="item.contents" type="text" [name]="'contents' + i" [readonly]="flagXem" />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control text-right" [name]="'cost' + i" [(ngModel)]="item.cost"
+                        (ngModelChange)="changeCost(item)" [mask]="maskNumber" [readonly]="flagXem" />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control text-right" [name]="'vat' + i" [(ngModel)]="item.vat"
+                        (ngModelChange)="changeCost(item)" [mask]="maskNumber" [readonly]="flagXem" />
+                    </td>
+                    <td>
+                      <input type="text" class="form-control text-right" [name]="'totalCost' + i" [(ngModel)]="item.totalCost"
+                        [mask]="maskNumber" readonly />
+                    </td>
+                    <td class="text-center">
+                      <button type="button" class="btn btn-danger btn-xs" (click)="deleteFee(item)" [disabled]="flagXem">
+                        <i class="fa fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                  <tr *ngIf="!entity.listFee?.length">
+                    <td colspan="6" class="text-center text-muted">Chưa có chi phí. Bấm "Thêm dòng" để thêm.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </fieldset>
+        </form>
+      </div>
+
+      <!-- ============ Footer (button workflow theo status) ============ -->
+      <div class="box-footer text-right exec-footer">
+        <button *ngIf="entity?.status === 1" type="button" class="btn btn-success btn-sm" (click)="nhanlenh()">
+          <i class="fa fa-share-square-o"></i> Nhận lệnh
+        </button>
+        <button *ngIf="entity?.status === 1" type="button" class="btn btn-warning btn-sm" (click)="tuchoinhanlenh()">
+          <i class="fa fa-ban"></i> Từ chối nhận lệnh
+        </button>
+        <button *ngIf="entity?.status === 2" type="button" class="btn btn-primary btn-sm" (click)="update(false)" [disabled]="flagXem">
+          <i class="fa fa-save"></i> Lưu thông tin
+        </button>
+        <button *ngIf="entity?.status === 2" type="button" class="btn btn-danger btn-sm" (click)="update(true)" [disabled]="flagXem">
+          <i class="fa fa-flag-checkered"></i> Kết thúc
+        </button>
+        <button *ngIf="entity?.status === 4" type="button" class="btn btn-success btn-sm" (click)="chotdulieu()">
+          <i class="fa fa-check"></i> Chốt dữ liệu
+        </button>
+        <button *ngIf="entity?.status === 4" type="button" class="btn btn-warning btn-sm" (click)="tuchoichotdulieu()">
+          <i class="fa fa-ban"></i> Từ chối chốt
+        </button>
+        <button type="button" (click)="modalExecuteFcl.hide()" class="btn btn-default btn-sm">
+          <i class="fa fa-close"></i> Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<modal-attachfile *ngIf="viewAttachFiles" (CloseModal)="closeModalAttachFiles()"></modal-attachfile>
+<modal-confirm-deny-closing-fcl *ngIf="viewConfirm" (CloseModal)="closeModalConfirm()" (SaveSuccess)="saveSuccess($event)"></modal-confirm-deny-closing-fcl>
+<modal-view-shipping-task *ngIf="viewModalShippingTask" (CloseModal)="closeModalShippingTask()"></modal-view-shipping-task>
