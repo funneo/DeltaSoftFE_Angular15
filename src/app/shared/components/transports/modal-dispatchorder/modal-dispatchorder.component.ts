@@ -275,9 +275,9 @@ export class ModalDispatchorderComponent implements OnInit {
   }
 
   driver1Change(event: Employee) {
-    if (this.userLoged.branchId != '5') {
-      this.entity.fuelDriverId = event?.id;
-    }
+    // Field "Lái xe ghi nhận dầu" đã ẩn khỏi UI — luôn đồng bộ theo Lái xe 1.
+    this.entity.fuelDriverId = event?.id;
+    this.entity.fuelDriverNae = event?.employeeFullName;
     this.entity.driverName = event?.employeeFullName;
     this.entity.driverTel = event?.telephone;
   }
@@ -532,22 +532,26 @@ export class ModalDispatchorderComponent implements OnInit {
 
   vihicleTypeChanged(event: OtherCategories) {
     this.vihicleTypeId = event?.id;
-    // Đổi loại xe → xe/mooc/lái xe/định mức cũ KHÔNG còn hợp lệ (thuộc loại khác) → reset
-    this.entity.vihicleId = null;
-    this.entity.moocId = null;
-    this.entity.vihiclelLicensePlates = '';
-    this.entity.moocLicensePlates = '';
-    this.entity.oilQuota = 0;
-    this.entity.driverId = null;
-    this.entity.driverName = '';
-    this.entity.driverTel = '';
-    this.entity.secondDriverId = null;
-    this.entity.secondDriverName = '';
-    this.entity.secondDriverTel = '';
-    this.entity.fuelDriverId = null;
-    this.changedKmQuota();
-    if (!this.entity.isSubcontractors) this.loadVihicle(this.vihicleTypeId);
-    if (this.entity.isSubcontractors) this.loadQuotationDetailed();
+    if (!this.entity.isSubcontractors) {
+      // Xe nội bộ: xe/mooc/lái xe gắn với loại xe trong DB → đổi loại xe phải reset để chọn lại.
+      this.entity.vihicleId = null;
+      this.entity.moocId = null;
+      this.entity.vihiclelLicensePlates = '';
+      this.entity.moocLicensePlates = '';
+      this.entity.oilQuota = 0;
+      this.entity.driverId = null;
+      this.entity.driverName = '';
+      this.entity.driverTel = '';
+      this.entity.secondDriverId = null;
+      this.entity.secondDriverName = '';
+      this.entity.secondDriverTel = '';
+      this.entity.fuelDriverId = null;
+      this.changedKmQuota();
+      this.loadVihicle(this.vihicleTypeId);
+    } else {
+      // Xe thuê ngoài: biển số + lái xe tự nhập text, không link loại xe → giữ nguyên, chỉ tải lại báo giá.
+      this.loadQuotationDetailed();
+    }
   }
   vihicleTypeChargeChanged(event: OtherCategories) {
     this.entity.vehicleTypeCharge = event?.id;
@@ -559,6 +563,8 @@ export class ModalDispatchorderComponent implements OnInit {
     this.entity.driverId = event?.employeeId;
     let item = this.listDriver.find(it => it.id == event?.employeeId);
     this.entity.driverName = item?.employeeFullName;
+    this.entity.fuelDriverId = event?.employeeId;
+    this.entity.fuelDriverNae = item?.employeeFullName;
     this.changedKmQuota();
     // let index=this.listHandover?.findIndex(it=>{
     //   Number.parseInt(it.vehicle_id_delta_erp)==event.id;

@@ -147,12 +147,11 @@
                   </div>
                 </div>
                 <div class="form-group" *ngIf="!entity.isSubcontractors">
-                  <label class="col-sm-2 control-label">Lái xe ghi nhận dầu <span class="error">*</span>
-                  </label>
+                  <label class="col-sm-2 control-label">Lái xe ghi nhận dầu</label>
                   <div class="col-sm-5">
                     <ng-select name="fueldriverId" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
                       [disabled]="entity.status>3 || flagXem" [(ngModel)]="entity.fuelDriverId"
-                      [required]="!entity.isSubcontractors" (change)="driver3Change($event)">
+                      (change)="driver3Change($event)">
                     </ng-select>
                   </div>
                   <label class="col-sm-1 control-label">Loại Cont</label>

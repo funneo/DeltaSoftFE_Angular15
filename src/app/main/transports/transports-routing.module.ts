@@ -9,6 +9,7 @@ const routes: Routes = [
   { path: 'quotationsubcontractors', loadChildren: () => import('./quotationsubcontractors/quotationsubcontractors.module').then(m => m.QuotationsubcontractorsModule), data: { functionCode: 'QUOTATIONSUB' }, canActivate: [AuthGuard] },
   { path: 'importgas', loadChildren: () => import('./import-gas/import-gas.module').then(m => m.ImportGasModule), data: { functionCode: 'IMPORTGAS' }, canActivate: [AuthGuard] },
   { path: 'driverfuelapproval', loadChildren: () => import('./driver-fuel-approval/driver-fuel-approval.module').then(m => m.DriverFuelApprovalModule), data: { functionCode: 'DRIVERFUELAPPROVAL' }, canActivate: [AuthGuard] },
+  { path: 'vehiclefuelclosing', loadChildren: () => import('./vehicle-fuel-closing/vehicle-fuel-closing.module').then(m => m.VehicleFuelClosingModule), data: { functionCode: 'F039' }, canActivate: [AuthGuard] },
   { path: 'commonfuelapproval', loadChildren: () => import('./common-fuel-approval/common-fuel-approval.module').then(m => m.CommonFuelApprovalModule), data: { functionCode: 'COMMONFUELAPPROVAL' }, canActivate: [AuthGuard] },
   { path: 'sitefuelclosing', loadChildren: () => import('./site-fuel-closing/site-fuel-closing.module').then(m => m.SiteFuelClosingModule), data: { functionCode: 'SITEFUELCLOSING' }, canActivate: [AuthGuard] },
   { path: 'driverfueldebitcredit', loadChildren: () => import('./driver-fuel-debit-credit/driver-fuel-debit-credit.module').then(m => m.DriverFuelDebitCreditModule), data: { functionCode: 'DRIVERFUELDEBITCREDIT' }, canActivate: [AuthGuard] },

@@ -1,5 +1,278 @@
 # Completed Features
 
+## Session 2026-06-07 — chốt dầu UX + bugfix + skill utility + draft fix + DraftAPI port + Swagger prod + token 24h
+Cụm việc 1 session, build sạch hết, đang chuẩn bị commit:
+
+### Modal vehicle-fuel-closing — UX rebuild + bugfix
+- **Source=1 detail**: thay 2 cột "Igas + Chênh" bằng 3 cột **Số lượng cấp / SL thực đổ / Chênh** (cấp = quantity + quantityIgas client-side, vì `quantity` stored là chênh). Source 2/3/4 giữ 1 cột "Lít".
+- **Bỏ cột "Lệnh gốc"** (`mergeJobId`) — số phiếu cha đã thấy ở cột "Số phiếu" với Source 2/3.
+- **List action**: bỏ toolbar trên (Sửa/Xem/Duyệt/Xóa). Thêm cột "Thao tác" đầu mỗi dòng:
+  - `canEdit(h) = isOwner && status===0` → nút **Sửa** (info); ngược lại → **Xem** (default).
+  - `canDelete(h)` same condition → nút **Xóa** (danger).
+  - `isOwner`: so `h.createdBy` (Guid) với `userLoged.id` (case-insensitive).
+- **Bỏ nút "Duyệt phiếu" riêng** ở footer modal — chỉ còn Đóng / Lưu nháp / Lưu & Duyệt (single-shot duyệt thẳng).
+- **Bằng chữ**: hàng riêng sau bảng tổng, dùng `_utilityService.docso() + capitalizeFirstLetter() + ' đồng'`. Màu **đỏ** (`netLiters > 0` → lái xe trả tiền) / **xanh** (`< 0` → lái xe nhận tiền) + badge cùng màu hiển thị "lái xe trả tiền / lái xe nhận tiền".
+- **Ghi chú**: input 1 dòng → `<textarea rows="3" min-height:70px resize:vertical>` full-width.
+- **Layout reorder**: Hàng 3 = `Tải dữ liệu chưa tổng kết` (col-sm-6 trái) + Đơn giá dầu (col-sm-2 + col-sm-2, label `text-right`, input narrow dịch phải). Hàng 4 = Ghi chú full-width ngay dưới nút Tải.
+
+### Bugfix modal vehicle-fuel-closing
+- **`#f="ngForm"` scope issue**: form khai báo trong `<div *ngIf="entity">`, footer ở NGOÀI `*ngIf` → template ref `f` undefined → click Lưu = `Cannot read properties of undefined (reading 'valid')`. Fix: `@ViewChild('f') ngFormRef: NgForm` + fallback `const f = form || this.ngFormRef`. Template: `saveChange(null)` thay `saveChange(f)`.
+- **Daterangepicker crash** `Cannot read 'customClasses' of undefined`: `entity = {}` truthy → form render NGAY khi mount → `ngAfterViewInit` của picker đọc `this.options.locale.customClasses` khi `dateOptions` còn null. Fix: init `ngayBatDau/ngayKetThuc/dateOptions` trong `ngOnInit` (giống list component).
+- **`confirm()` JS xấu**: đổi sang `_notificationService.printConfirmationDialog(message, okCallback)` (alertify modal, locale VN "Đồng ý/Hủy").
+
+### Backend single-Id Delete (đổi cả 4 layer)
+- **SQL**: `STRING_SPLIT` không có ở DB compat <130. Thay vì XML split, đổi luôn signature SP sang `@Id INT` (user feedback "chỉ xóa 1 phiếu nên dùng id thôi"). Anh chạy ALTER PROC.
+- **Interface**: `Delete(int id, Guid userId)`.
+- **Repository**: param `@Id` thay `@ListId`.
+- **Controller**: lấy `obj.Item?.Id`, return 400 nếu ≤ 0.
+- **FE Service**: `delete(id: number)` → `p.item = { id }`.
+- **FE list**: `service.delete(item.id)` (không còn `+ ''`).
+
+### Skill `.claude/skills/deltasoft-utility/SKILL.md` — catalog UtilityService
+Tránh đọc lại 1132 dòng `utility.service.ts` mỗi session. 12 section: số→chữ (docso/ReadNumber/capitalizeFirstLetter/convertToWords/convertToRoman + idiom "Bằng chữ") / tiền-mask (VND/USD/UnMaskTienTe + static mask0/maskNumber/mask3Number/maskConfig) / datepicker configs (dateTimeOptionDays/dateOptionMultis/calendarOptionMultis) / date helpers (toDate/convertDateStringToYMD/checkWorkingDaysExceeded/validateDebitNoteDate) / number-string helpers / 14 static dropdown lists / localStorage params / print template renderers (PrintPhieuThu/printDebitNote/GetVongLap) / FormatContstants + MessageContstants / BaseService pattern / anti-duplication cheatsheet. Pointer memory `reference_deltasoft_utility_skill.md` + entry MEMORY.md.
+
+### Draft API — debug + deploy fix
+- **Vấn đề employee không thấy job draft AI tạo**: SP `draft.SP_DraftEntries_GetPaging` đang chạy là bản CŨ (không có `@CurrentEmployeeId`). Dapper truyền `currentEmployeeId` bị bỏ qua → filter còn `CreatedBy = @CreatedBy` → 0 dòng. Migration `Migration_DraftSite_GetPaging_ExtendByEmployee_20260602.sql` đã sẵn từ 06-02 nhưng chưa chạy.
+- **JSON_VALUE không tồn tại**: DB compat <130. Rewrite migration dùng **LIKE pattern matching** thay JSON_VALUE:
+  - `"targetEmployeeId":<id>[^0-9]%` — tránh false-positive khi `12` khớp `123`.
+  - `[,{]"employeeId":<id>[^0-9]%` — yêu cầu trước `employeeId` phải là `,` hoặc `{` để không match nhầm `targetEmployeeId`.
+  - Newtonsoft default không có space sau `:` nên không cần handle whitespace.
+- **DraftAPI compile error** `JToken.Value<T>(object)`: `obj["targetEmployeeId"]?.Value<int?>()` chỉ là extension trên `JEnumerable`. Fix `(int?)obj["..."]` — cast operator chuẩn Newtonsoft, null-safe.
+
+### DraftAPI deployment
+- **Port 44360 bị Windows reserved** (Hyper-V/WSL2 dynamic range nuốt). PID 4 (System) listen sẵn → bind fail "An attempt was made to access a socket in a way forbidden". Đổi port `44360 → 44362` (verify free + không trong excluded range). 2 file đổi: `launchSettings.json` + `draft-web/environment.ts`.
+- **Mở Swagger ở production**: bỏ `if (app.Environment.IsDevelopment())` quanh `UseSwagger/UseSwaggerUI` ở `Program.cs`. Tất cả endpoint vẫn cần `[Authorize]` + JWT `aud=draft` → không bypass auth. **Lưu ý**: nếu DraftAPI prod expose Internet, nên thêm Basic Auth gate trước Swagger.
+- **Token Draft 1h → 24h**: `appsettings.json` `Draft:TokenHours: 1 → 24`. Code login-draft đã đọc động qua `_configuration.GetValue<int?>("Draft:TokenHours")` — chỉ cần restart ERP API, không rebuild.
+
+### Modal-fuel-summary — đổi cột JobId → Người nhận dầu
+- Cột "JobId" (`mergeJobId`) thay bằng "Người nhận dầu" (`fuelDriverName`) — anh thấy ai nhận dầu rõ hơn.
+- Model `DriverFuelApprovalDetailed` thêm field `fuelDriverName?: string`.
+- Component `_fetchDetailsByVihicle` map thêm `fuelDriverName: item.fuelDriverName`.
+- **SQL anh chạy**: ALTER `SP_DispatchOrder_GetForSummary` LEFT JOIN `Employee e ON e.Id = s.FuelDriverId` ở cả 3 nhánh UNION ALL (DispatchOrder, AdditionalFee, FCL), thêm cột `e.EmployeeFullName AS FuelDriverName`.
+
+## Skill `.claude/skills/deltasoft-stack/SKILL.md` — cheatsheet stack — 2026-06-04
+Tóm tắt convention/template trong project để session sau KHÔNG phải đọc lại 10 file mẫu (DriverFuelApproval Controller/Repo, FromBodyBase, ClaimRequirementFilter, FunctionCode, ActionCode, auth.guard, SP_sys_Permission_GetByUserId, DispatchOrder schema quirks).
+- 13 mục: checklist add module (BE+FE+DB) / auth-permission flow (claim format `{FunctionId}_{ActionId}` 3 chỗ phải đồng bộ) / Controller template / Repository template (TVP + QueryMultipleAsync) / Service / List / Modal skeletons / compact UI density / DB conventions + schema quirks (DispatchOrder dùng `VihicleId/VihiclelLicensePlates`, FCL dùng `VehicleId/VehiclelLicensePlates/Tongdau`, fuel `FeeId 666/667`, additional fee `FeeId=666`) / PowerShell SELECT-only / hard rules / module map / file paths.
+- Pointer memory `reference_deltasoft_stack_skill.md` + entry trong MEMORY.md để session sau biết invoke skill.
+- Lý do: trong cùng session em đã đọc đi đọc lại các file mẫu nhiều lần → khoảng 10-15 tool calls có thể skip nếu invoke skill trước khi clone module.
+
+## Chốt dầu lái xe (DriverFuelClosing) — SQL Part 7 redesign + BE + FE đầy đủ — 2026-06-03/04 (code xong, anh chạy ActionInFunctions/Permissions SQL + test E2E)
+Module mới hoàn chỉnh: chốt dầu theo XE (không theo lái), công thức `NetLiters = (4)TopUp − (3)AdditionalFee − (2)DispatchOrder − (1)ApprovalDiff` với `NetAmount = ABS(NetLiters) × OilPrice` luôn trừ lương (không trả dầu khi âm).
+
+### SQL — quá trình thử-sai 7 part (kết thúc Part 7 OK)
+File [Migration_DriverFuelClosing_Part7_FullRedesign_20260603.sql](D:/Delta/DeltaSoft/NewAPI/Migration_DriverFuelClosing_Part7_FullRedesign_20260603.sql) — DROP+CREATE lại sạch (bảng trống nên không mất data). Đã chạy OK trên SSMS.
+- Part 1-2 (rev 1) anh đã chạy nhưng `DriverId UNIQUEIDENTIFIER` (sai). Part 3-5 cố ALTER → fail vì index/default/object ngầm bám DriverId. Part 6 chuyển sang DROP COLUMN + ADD COLUMN INT — chạy được. Part 7 redesign hoàn chỉnh.
+- **Bảng `Tbl_DriverFuelClosing`** (header — key `(BranchId, VihicleId, FromDate, ToDate)`):
+  - `VihicleId INT NOT NULL` + `VihicleLicensePlate NVARCHAR(30)` snapshot
+  - `DriverId INT NULL` + `DriverName NVARCHAR(150)` snapshot (tài đổi giữa kỳ vẫn ghi nhận xe)
+  - `CloseReason INT NULL` (1=Cuối tháng, 2=Tài nghỉ giữa kỳ, 3=Đổi xe, 9=Khác)
+  - 4 tổng auto-lưu: `ApprovalDiffQty` (1) / `DispatchOrderQty` (2) / `AdditionalFeeQty` (3) / `TopUpLiters` (4 — user nhập)
+  - `NetLiters` + `NetAmount` (luôn dương = ABS×giá)
+  - `Status` (0=Draft / 1=Approved) + audit fields
+- **Bảng `Tbl_DriverFuelClosingDetail`**: `Source` (1=Approval, 2=DispatchOrder, 3=FCL, 4=AdditionalFee) + `RefNo`/`MergeJobId`/snapshot fields + `Quantity` (lít contribute) + `QuantityIgas` (Source=1 snapshot để hiển thị). CASCADE từ header.
+- **TVP `TypeDriverFuelClosingDetail`** mirror Detail (minus Id/FK).
+- **7 SP**:
+  - `SP_DriverFuelClosing_GetCandidates(@BranchId,@VihicleId,@FromDate,@ToDate)` UNION ALL 4 nguồn, khớp TVP. Filter xe nhà (`IsSubcontractors=0`), lệnh chốt B2 (`Status=6`), chưa tổng kết (`IsSummarized=0|NULL`), QuantityIgas>0 (Source=1), loại RefNo đã có trong **bất kỳ** `Tbl_DriverFuelClosingDetail` (kể cả phiếu chưa duyệt — chống double-pick).
+  - `SP_Create`: chặn nếu xe đang có phiếu chốt Status=0 + overlap kỳ; tính 3 tổng từ TVP; gen RefNo `DFC-YYYYMM-NNN`.
+  - `SP_Update`: chỉ Status=0; recompute; DELETE+INSERT detail.
+  - `SP_GetPaging` + `SP_GetById` (multi-result-set header + detail).
+  - `SP_Approve`: SET Status=1 + UPDATE `IsFuelClosing=1` cho DriverFuelApproval / `IsSummarized=1` cho 3 bảng còn lại qua RefNo (chỉ khi duyệt — không động lúc Draft).
+  - `SP_Delete`: chỉ Status=0; Detail CASCADE.
+
+### BE — 6 file + enum
+- `Filters/FunctionCode.cs`: dùng enum `F039` có sẵn (line 114) thay vì thêm `DRIVERFUELCLOSING` mới.
+- `Models/Transports/DriverFuelClosing.cs` + `DriverFuelClosingDetail.cs`.
+- `ViewModels/Transports/DriverFuelClosingViewModel.cs` (+ `DriverFuelClosingDetailViewModel`).
+- `Interfaces/Transports/IDriverFuelClosing.cs` (7 method).
+- `Repositories/Transports/DriverFuelClosingRepository.cs` — TVP `AsTableValuedParameter("TypeDriverFuelClosingDetail")` + `_conn.QueryMultipleAsync` cho GetById.
+- `Controllers/Transports/DriverFuelClosingController.cs` — 7 endpoint với `[ClaimRequirement(FunctionCode.F039, ActionCode.X)]`.
+- Build BE 0 error.
+
+### FE — 6 file mới + 1 route
+- `shared/models/transports/driver-fuel-closing.model.ts` (+ Detail, có `checked` cho list selection).
+- `shared/services/transports/driver-fuel-closing.service.ts` (extends BaseService, 7 method POST).
+- `shared/components/transports/modal-vehicle-fuel-closing/*` (TS+HTML+CSS+module). **Đặt tên `vehicle-fuel-closing`** thay vì `driver-fuel-closing` vì folder cũ tên đó đã tồn tại nhưng là FuelClosing (chốt nhà cấp gas) — không sửa cái cũ.
+  - Modal flow: chọn xe + kỳ + giá dầu + lý do → "Tải dữ liệu chưa tổng kết" gọi GetCandidates → bảng 4 nhóm theo Source + checkbox + nút xóa row → nhập (4) TopUp → recalc auto.
+  - Footer: Đóng / Lưu nháp / Lưu & Duyệt (single-shot) / Duyệt phiếu (khi edit).
+- `main/transports/vehicle-fuel-closing/*` (list page TS+HTML+CSS+module+routing). Filter chi nhánh/xe/kỳ/trạng thái/keyword. Buttons Thêm/Sửa/Xem/Duyệt/Xóa.
+- `transports-routing.module.ts`: `{ path: 'vehiclefuelclosing', ..., data: { functionCode: 'F039' } }`.
+- Build FE 0 error.
+
+### Đặc thù 3 layer F039 phải đồng bộ (ghi vào skill)
+- DB: `Functions.Id='F039'` (anh đã insert) + `ActionInFunctions.FunctionId='F039'` × {VIEW, CREATE, UPDATE, ACCEPT, DELETE} (anh chạy SQL đề xuất).
+- BE: enum `FunctionCode.F039` (có sẵn) + Controller dùng `FunctionCode.F039`.
+- FE: route data `functionCode: 'F039'`.
+- Claim JWT sinh từ `SP_sys_Permission_GetByUserId`: `UPPER(FunctionId+'_'+ActionId)` → `F039_VIEW/CREATE/...`.
+
+### Quy trình test (anh)
+1. Chạy SQL grant: `INSERT INTO ActionInFunctions/Permissions` cho F039 (em đã đề xuất).
+2. Login lại → claim mới có F039_*.
+3. Truy cập `/main/transports/vehiclefuelclosing` → test golden path: chọn xe + kỳ + Tải dữ liệu → nhập TopUp → quan sát Net/NetAmount → Lưu nháp → Tải lại (verify candidates đã pick biến mất) → Duyệt → check `IsFuelClosing`/`IsSummarized` ở 4 bảng nguồn.
+4. Edge: tạo phiếu thứ 2 cùng xe → phải bị chặn "Xe đang có phiếu chưa duyệt".
+
+## Phase 5a — View Draft ở ERP (SQL + BE) — 2026-06-02 (code xong, anh build BE + test trước Stage 3 FE)
+Tab "Nháp" trong list ERP đọc TRỰC TIẾP `draft.DraftEntries` cùng DB (không proxy DraftAPI). Chỉ READ — promote/cleanup vẫn ở DraftAPI.
+
+### Stage 1 SQL — `dbo.SP_DraftEntries_GetForErp_GetPaging` (anh đã chạy)
+File [Migration_DraftSite_GetForErp_20260602.sql](D:/Delta/DeltaSoft/NewAPI/Migration_DraftSite_GetForErp_20260602.sql). Đặt schema `dbo` để login `delta.erp` (db_owner) sẵn quyền EXEC + SELECT cross-schema sang `draft.DraftEntries` — KHÔNG cần GRANT thêm.
+- Param: `@DraftType, @ShipmentType, @Keyword, @FromDate, @ToDate, @UserId, @EmployeeId, @PageIndex, @PageSize`
+- Filter `Status='Draft'` only (Promoted/Reviewed đã có ở tab chính thức).
+- Quyền view: admin (`@UserId IS NULL`) tất cả; user thường = người tạo HOẶC `JSON_VALUE($.targetEmployeeId|$.employeeId) = @EmployeeId`.
+- Canon vs Shipment thường qua `@ShipmentType`: `=1176` chỉ Canon, `!=1176` loại trừ Canon, NULL không lọc.
+- Payload full trả ra trong list → FE click row bind trực tiếp vào modal view (KHÔNG cần SP GetById).
+
+### Stage 2 BE ERP — 4 file mới
+- [ViewModels/DraftEntryViewModel.cs](D:/Delta/DeltaSoft/NewAPI/API/ViewModels/DraftEntryViewModel.cs): DTO `DraftEntryViewModel` (list item) + `DraftFilterRequest` (POST body, có TokenKey theo pattern ERP).
+- [Interfaces/IDraft.cs](D:/Delta/DeltaSoft/NewAPI/API/Interfaces/IDraft.cs): 1 method `GetPagingForErp(...)` (auto-scan qua Scrutor).
+- [Repositories/DraftRepository.cs](D:/Delta/DeltaSoft/NewAPI/API/Repositories/DraftRepository.cs): Dapper gọi SP trực tiếp.
+- [Controllers/DraftController.cs](D:/Delta/DeltaSoft/NewAPI/API/Controllers/DraftController.cs): `POST /api/draft/getPagingForErp`. Admin (`User.IsInRole("Admin")`) → truyền null cho userId/employeeId → SP trả tất cả; user thường → truyền từ JWT claims.
+
+### Pending (chưa code)
+- **Stage 3** — FE shared: `draft.service.ts`, `<draft-list-tab>` reusable (input `draftType` + `shipmentType?`, filter riêng date/keyword), 5 modal view detail read-only (modal-draft-shipment-view, -canon-view, -payment-view, -workflow-view, -debit-view).
+- **Stage 4** — tích hợp 2 tab vào 5 list ERP (Lô hàng / Canon / Thanh toán / Phân công CV / Debit Note).
+
+## Draft API — view mở rộng: ngoài người tạo, nhân viên được CHỌN trên payload cũng view được — 2026-06-02 (SQL + BE 4 file xong, anh chạy SQL + build DraftAPI)
+Yêu cầu user: khi user A lập nháp với `targetEmployeeId = empB` → user B cũng phải thấy nháp đó (list + detail).
+
+### SQL — `SP_DraftEntries_GetPaging` thêm `@CurrentEmployeeId` (DROP + CREATE)
+File [Migration_DraftSite_GetPaging_ExtendByEmployee_20260602.sql](D:/Delta/DeltaSoft/NewAPI/Migration_DraftSite_GetPaging_ExtendByEmployee_20260602.sql). Filter mở rộng:
+```
+@CreatedBy IS NULL  -- admin
+OR CreatedBy = @CreatedBy  -- người tạo
+OR (@EmpStr IS NOT NULL AND (JSON_VALUE($.targetEmployeeId)=@EmpStr OR JSON_VALUE($.employeeId)=@EmpStr))
+```
+Cover cả 4 DraftType: Shipment + Debit có `targetEmployeeId`; Workflow + Payment có cả `targetEmployeeId` + `employeeId`.
+
+### BE DraftAPI — 4 file
+- [DraftIdentity.cs](D:/Delta/DeltaSoft/DraftAPI/Auth/DraftIdentity.cs): + `GetEmployeeId()` extension đọc claim `"employeeId"`.
+- [DraftRepository.cs](D:/Delta/DeltaSoft/DraftAPI/Data/DraftRepository.cs): `GetPagingAsync` thêm `int? currentEmployeeId` → truyền xuống SP `@CurrentEmployeeId`.
+- [DraftController.cs - GetPaging](D:/Delta/DeltaSoft/DraftAPI/Controllers/DraftController.cs): truyền `User.GetEmployeeId()` (null nếu admin).
+- [DraftController.cs - GetById](D:/Delta/DeltaSoft/DraftAPI/Controllers/DraftController.cs): extend check — cho phép view nếu admin / chủ tạo / `PayloadHasEmployee(payload, employeeId)`. Helper parse JSON kiểm 2 field `targetEmployeeId`/`employeeId`.
+
+### DraftAPI — bỏ check quyền Create/Update (2026-06-02)
+Theo yêu cầu user: tất cả tài khoản ERP đăng nhập draft đều được tạo/sửa nháp Shipment/Payment/Debit (token aud=draft vẫn bắt buộc qua `[Authorize]`). Comment 2 block `User.CanDraft(...)` ở [DraftController.cs](D:/Delta/DeltaSoft/DraftAPI/Controllers/DraftController.cs) Create + Update. Vẫn giữ ràng buộc chủ sở hữu (SP filter `updatedBy/deletedBy`), admin bypass. Function `CanDraft()` + map `Draft:Permissions` GIỮ NGUYÊN — nếu cần khôi phục chỉ uncomment 2 dòng.
+
+## Chốt dầu lái xe (DriverFuelClosing) — SQL design + 2 bảng + TVP + 6 SP — 2026-06-02 (trình anh duyệt, CHƯA chạy)
+Bối cảnh: cuối tháng tổng kết dầu cho từng lái xe — gộp phiếu DriverFuelApproval + lệnh DispatchOrder chưa tổng kết → so igas đổ thực tế → ra dầu DƯƠNG (đổ không hết, tự tính) hoặc ÂM (làm đầy bình, kế toán nhập tay). Kế toán dựa `NetLiters × OilPrice` thu/xuất tiền lái xe.
+
+### Decisions (chốt với anh 2026-06-02)
+- **Scope**: 1 phiếu = 1 lái xe / 1 khoảng FromDate-ToDate / 1 chi nhánh (KHÔNG dùng Month/Year cứng — hỗ trợ lái xe nghỉ giữa tháng / mới vào cuối tháng).
+- **CloseReason**: 1=cuối tháng, 2=nghỉ việc, 9=khác (case "đổi xe" tạm bỏ scope, làm khi phát sinh).
+- **Schema**: bảng mới hoàn toàn (`DriverFuelClosing` + `DriverFuelClosingDetail`), không động `DriverFuelApproval`. Linking: chỉ REFERENCE nullable, không khóa nguồn.
+- **DriverId = INT** (khớp `DispatchOrder.DriverId` + `DriverFuelApproval.DriverId`, không phải Guid).
+
+### File: [Migration_DriverFuelClosing_All_20260602.sql](D:/Delta/DeltaSoft/NewAPI/Migration_DriverFuelClosing_All_20260602.sql)
+- `DriverFuelClosing` header: FromDate/ToDate + CloseReason + Total/Positive/Negative/Net Liters + NetAmount + Status (0=nháp/1=chốt) + Approval audit
+- `DriverFuelClosingDetail`: Source (1=DriverFuelApproval, 2=DispatchOrder, 3=FCL, 4=AdditionFee) + snapshot fields + nullable FK
+- `TypeDriverFuelClosingDetail` TVP (Dapper truyền `DataTable.AsTableValuedParameter()` đúng pattern `SP_DriverFuelApproval_Create2` hiện có)
+- 6 SP: GetPaging, GetById, Create (overlap validate + gen RefNo `DFC-YYYYMM-NNN`), Update (chỉ Status=0), Approve, Delete
+- **Overlap check**: `FromDate <= @ToDate AND ToDate >= @FromDate` cho cùng (BranchId, DriverId, Status>=0) — chống tạo 2 phiếu chồng khoảng cùng lái
+
+### Anh tự viết (em không động)
+- `SP_DriverFuelClosing_GetCandidates(@BranchId, @DriverId, @FromDate, @ToDate)` — lấy phiếu DriverFuelApproval + lệnh DispatchOrder/FCL/AdditionFee chưa tổng kết (filter `IsSummarized=0` — cột flag trong DispatchOrder). Khi anh xong báo signature, em hook vào BE.
+
+## Modal-fuel-summary — nút Reload + Xóa từng dòng (chỉ khi tạo mới) — 2026-06-02 (code xong, anh test)
+[modal-fuel-summary.component.html/ts](d:/Delta/DeltaSoft/web-app-update/src/app/shared/components/transports/modal-fuel-summary/). Khi user tạo phiếu tổng kết dầu:
+- Cột "X" đầu mỗi dòng chi tiết → nút Xóa (`removeDetail(i)` splice + tính lại `entity.quantity`).
+- Nút "Tải lại danh sách" cạnh dropdown Biển kiểm soát → confirm dialog rồi fetch lại toàn bộ lệnh chưa tổng kết.
+- Tách helper `_fetchDetailsByVihicle(vihicleId)` từ `vihicleChanged` để reuse.
+- Cả 2 button chỉ hiện khi `flagNew && !flagXem && entity.vihicleId`.
+
+## Modal-dispatchorder — fix vihicleTypeChanged không reset lái xe khi xe thuê ngoài — 2026-06-02 (code xong, anh test)
+Bug: sửa phiếu xe thuê ngoài, đổi loại xe → ấn Lưu im lặng (không notify, không ghi).
+- Root: `vihicleTypeChanged` ([modal-dispatchorder.component.ts:533](d:/Delta/DeltaSoft/web-app-update/src/app/shared/components/transports/modal-dispatchorder/modal-dispatchorder.component.ts#L533)) reset `driverName = ''` (input text `[required]` khi `isSubcontractors`) → form invalid → `saveChange()` line 851 `if (form.valid)` không có else → im lặng thoát.
+- Fix: tách logic — xe nội bộ giữ logic reset cũ (xe gắn loại trong DB); xe thuê ngoài chỉ `loadQuotationDetailed()`, KHÔNG reset biển số/lái xe/SĐT (đều là input text tự nhập, không link loại xe).
+- Lưu ý: `saveChange` không có nhánh else khi form invalid → defensive notify chưa thêm; nếu sau gặp case tương tự sẽ vẫn im lặng.
+
+## Vietmap routing — fixed cứng theo hợp đồng, BỎ tham số custom — 2026-06-02
+Confirm với Vietmap: endpoint public `maps.vietmap.vn/api/route` chỉ accept `vehicle=car` + `points_encoded` + `apikey`. `avoid=motorway` / `weighting=shortest` / `vehicle=truck` đều bị bỏ qua, cần liên hệ Vietmap theo hợp đồng. Revert [VietmapApiController.cs:61](D:/Delta/DeltaSoft/NewAPI/API/Controllers/Commons/VietmapApiController.cs#L61) về URL cơ bản. Memory: `reference_vietmap_api_params_locked.md`.
+
+## Google routing — tránh cao tốc + ưu tiên đường ngắn nhất (đồng bộ "ưu tiên QL") — 2026-06-02
+ERP `modal-route-compare` gọi **trực tiếp Google Maps JS SDK client-side** (`google.maps.DirectionsService`), KHÔNG qua BE → fix tại đúng nơi:
+- **FE** [modal-route-compare.component.ts:304](d:/Delta/DeltaSoft/web-app-update/src/app/shared/components/danhmuc/modal-route-compare/modal-route-compare.component.ts#L304): thêm `avoidHighways: true` + đổi `provideRouteAlternatives: false → true` + sort `result.routes` theo tổng `legs.distance.value` asc trước khi `_applyGoogleRenderer` (routeIndex=0 = ngắn nhất). Confirm với anh: Google đã ưu tiên QL.
+- **BE** [GoogleMapController.cs](D:/Delta/DeltaSoft/NewAPI/API/Controllers/CustomerCommunicate/GoogleServices/GoogleMapController.cs) `/api/GoogleMap/get-routes` (endpoint `getRoutesWB` chưa có FE caller nào sử dụng): thêm `routeModifiers.avoidHighways=true` + sort `googleData["routes"]` theo `distanceMeters` asc trước khi build object. Giữ cho luồng tương lai.
+
+## ERP API DraftAudienceGuardFilter — tạm gỡ khỏi pipeline để debug app pool stop — 2026-06-02 (code xong, anh deploy + theo dõi)
+App pool ERP IIS bị stop kèm pattern "20 phút không dùng → STOP, phải vào IIS Manager Start". Phân tích stdout log 7244 dòng `stdout_20260602035749_13852.log`:
+- KHÔNG có exception/shutdown — file cắt giữa dòng → process bị kill ngoài managed code.
+- KHÔNG có request `/api/draft/*` hay token aud=draft → KHÔNG liên quan code Draft.
+- Hot path nghi vấn: `POST /api/ExportInvoice/GetExport` response **22.5 MB JSON** (line 3826) + `/api/ExportInvoice/getpaging` lặp 4 lần liên tục.
+- Diagnosis: Idle Time-out 20' shutdown w3wp + DataProtection in-memory keys mất (LoadUserProfile=False) → cookie decryption fail khi cold start → crash → Rapid-Fail Protection stop pool.
+
+### Cách 1 (đang áp dụng) — gỡ filter draft khỏi pipeline
+Comment `options.Filters.Add<DraftAudienceGuardFilter>()` ở [Program.cs:83](D:/Delta/DeltaSoft/NewAPI/API/Program.cs#L83). Giữ ValidAudiences + endpoint `/login-draft` → draft-web vẫn hoạt động. Mất lớp default-deny aud=draft (rủi ro thấp vì token chỉ 1h + `FilterDraftPermissions` đã hẹp scope).
+
+### Đề xuất config IIS (anh tự áp khi rảnh)
+- App Pool Advanced Settings: `Idle Time-out = 0`, `Load User Profile = True`, `Start Mode = AlwaysRunning`, `Rapid-Fail Maximum Failures = 100` (rộng)
+- Site Advanced Settings: `Preload Enabled = True`
+
+### Cách 3 (tách bạch ERP/Draft hoàn toàn) — HOÃN
+SQL design + BE/FE refactor lớn. SQL grants em đã soạn ở [Grant_DraftApp_ErpAccess_20260602.sql](D:/Delta/DeltaSoft/DraftAPI/Grant_DraftApp_ErpAccess_20260602.sql) — chưa chạy. Khi anh muốn pick up sẽ làm.
+
+## Draft Site Phase 3 — Canon Job nháp (menu Hàng Canon) + cleanup ngày tạo/Kích hoạt/Chuyển duyệt — 2026-06-01 (code xong, CHƯA commit, cần restart ERP API + test)
+Port modal-job-canon ERP qua draft-web (Canon Job nháp) + tách menu submenu "Hàng Canon" + dọn UI noise.
+
+### Canon Job nháp — port 1:1 modal-job-canon
+- **Reuse `DraftType='Shipment'` + Payload có `shipmentType=1176` (CANON_TRUCKING)** → KHÔNG đụng BE/SQL/SP. List 2 menu (Lô hàng thường vs Canon Job) filter trên FE theo flag này.
+- **Folder mới** `D:\Delta\DeltaSoft\draft-web\src\app\canon\`:
+  - `canon-job-form.ts/html/scss` — port nguyên xi layout modal-job-canon ERP (2 cột 8/4), modal **85vw** (custom SCSS class `.canon-job-dialog { max-width: 85vw }`). Default `shipmentType=1176` cố định. Field bind đặc biệt theo ERP convention: `entity.mawB_MBL=Cung đường code`, `entity.cdsNumber=Xe vận chuyển`, `entity.hawB_HBL=LOT`, `entity.cdsDate=Ngày VC`. Header "Nhân viên" như 4 form đã có.
+  - `canon-job-list.ts/html` — ag-grid filter `Payload.shipmentType===1176`. Cột rút gọn: Mã KH/Khách hàng/Cung đường/Xe VC/LOT/Ngày VC/Pallets/Lượng kg/Ghi chú/Người lập/Trạng thái. Map cung đường code→name bằng cách load `canonRoads(customerId)` cho từng KH có record trong list.
+- **Models** [core/models.ts](D:/Delta/DeltaSoft/draft-web/src/app/core/models.ts) thêm `CanonRoadLookup { id, code, name, customerId }`.
+- **Lookup** [core/lookup.service.ts](D:/Delta/DeltaSoft/draft-web/src/app/core/lookup.service.ts) thêm `canonRoads(customerId) → POST /api/canonroad/getall { tokenKey, customerId, item: {} }`.
+- **ERP allowlist** [appsettings.json](d:/Delta/DeltaSoft/NewAPI/API/appsettings.json) thêm `/api/canonroad/getall` (action có `[ClaimRequirement]` không thấy, phải allowlist tay). **Cần restart ERP API**.
+- **Shipment-list filter** EXCLUDE Canon: `p.shipmentType !== 1176` trong load() → list "Lô hàng" thường không lẫn record Canon.
+- **Routing** [app.routes.ts](D:/Delta/DeltaSoft/draft-web/src/app/app.routes.ts) thêm `/canon-job → CanonJobList`.
+- **Layout** [layout.html/scss](D:/Delta/DeltaSoft/draft-web/src/app/layout/) thêm submenu "Hàng Canon" (title + sub-item Job; sub-item Debit để slot trống chờ làm sau). CSS `.menu-group + .menu-group-title + .menu-sub` indent 30px, font-size 11px uppercase letter-spacing.
+
+### Bỏ UI "Ngày tạo/Ngày lập" — dùng SQL `CreatedAt` envelope
+Anh chốt: ngày tạo nháp lấy server-side từ `draft.DraftEntries.CreatedAt`, user không nhập/sửa. Debit giữ "Ngày doanh thu" + "Ngày vận hành" (vì là ngày kế toán riêng).
+- **Shipment**: bỏ `<input ngayjob>` ở right col-md-4 (Tab 1).
+- **Payment**: bỏ `<input refdate>` ở right col-md-4.
+- **Debit**: bỏ "Ngày lập" (refDate). Giữ NGUYÊN "Ngày doanh thu" (debitDate) + "Ngày vận hành" (accountingDate).
+- **Canon Job**: bỏ "Ngày tạo" ở right col-md-4.
+- **Workflow**: skip (không có field "Ngày tạo", chỉ có thời gian dự kiến/hoàn thành/đóng-trả hàng — không phải ngày tạo).
+- TS `add()` vẫn set `jobDate/refDate = today` (Payload có giá trị, không null) → Phase 4 Promote sau này sẽ override = `createdAt` envelope khi insert `Tbl_*.JobDate/RefDate`.
+
+### Bỏ "Kích hoạt" + "Chuyển duyệt"
+- **Shipment + Canon Job**: bỏ checkbox "Kích hoạt" (`entity.status` checkbox HTML). `empty()` default `status=true` giữ nguyên — không ảnh hưởng vì nháp KHÔNG có khái niệm "active/inactive".
+- **Payment + Debit**: clean field `_isChuyeduyet` (TS) + reference `[readonly]="flagXem || _isChuyeduyet"` → `[readonly]="flagXem"`. `save()` hardcode `entity.status = false` (nháp luôn false, không có workflow accept). Vì checkbox "Chuyển duyệt" đã bỏ từ session trước, biến `_isChuyeduyet` luôn = false → dead code, clean luôn.
+
+### Build sạch
+- `ng build --configuration=development` → 6.6s lần đầu, 7.2s sau cleanup. 0 error.
+- **Service nào cần restart**: chỉ **ERP API** (load allowlist canonroad). Draft API + SQL KHÔNG đụng.
+
+## Draft Site Phase 3 — header "Nhân viên" bắt buộc cho 4 form (lập hộ NV X) — 2026-05-31 (code xong, CHƯA commit, cần test)
+Bối cảnh: 1 tài khoản admin được phân quyền duy nhất dùng để lập hộ TẤT CẢ nháp → mỗi phiếu phải ghi nhận `targetEmployeeId` để Phase 4 Promote gán đúng người vào ERP. Bỏ giả định "user = chủ phiếu".
+- **Models** (`core/models.ts`): thêm `targetEmployeeId?: number | null` + `targetEmployeeName?: string` vào **4 Payload**: `ShipmentDraftPayload`, `WorkflowDraftPayload`, `DebitDraftPayload`, `PaymentDraftPayload`. Field nằm trong JSON envelope, KHÔNG đụng DB (`Payload NVARCHAR(MAX)` opaque).
+- **4 form đều có cùng banner header** (alert-light border):
+  ```
+  👤 Nhân viên *  [Chọn NV (phiếu lập hộ)... ▼]
+  ```
+  Đặt trước nội dung form: shipment trước nav-tabs, workflow sau row Lưu/Hủy buttons, debit ngay đầu form, payment sau form-tag.
+- **Lookup** dùng lại `lookup.employees()` đã có (allowlist `/api/employee/getbybranchid` đã add từ session trước — không cần đụng BE).
+- **Validation**: `save()` block ngay đầu nếu `!entity.targetEmployeeId` → toast `"Vui lòng chọn Nhân viên (phiếu này lập hộ cho ai)."` Áp dụng cho cả 4 form.
+- **Payment đặc thù** (đã chốt với anh: "tách 2 field, auto-fill khi tạo, vẫn cho đổi"):
+  - `changedTargetEmployee()` nếu `!editId` → tự set `entity.employeeId = targetEmployeeId` ("Người làm TT" auto theo Nhân viên header)
+  - "Người làm TT" trước đây `[readonly]="true"` → giờ `[readonly]="flagXem"` → cho admin đổi tay (lập hộ NV X nhưng TT cho NV Y)
+  - **Modal chọn tạm ứng**: `modal-list-advance` thêm `@Input() employeeId`, payment-form truyền `[employeeId]="entity.targetEmployeeId"` → lọc tạm ứng của NV target chứ KHÔNG phải user đăng nhập admin.
+- **lookup.advances()**: thêm param `employeeId?: number | null`, fallback `auth.employeeId` nếu null. Logic SP_Advances_GetPaging `@Step=3` filter `WHERE ad.EmployeeId = @EmployeeId` cho tạm ứng cá nhân — giờ truyền đúng NV target.
+- **Range NV** (chốt với anh: "theo chi nhánh được phân quyền CS"): tạm dùng `lookup.employees()` không param → BE tự lấy theo branchId trong token. Nếu sau cần multi-branch thì mở rộng.
+- **Edit lock** (chốt: "cho đổi NV"): KHÔNG khóa khi edit — nháp Draft cho đổi hết. Phase 4 Promote sẽ chốt.
+- **Build**: 10.7s, 0 error. **BE/SQL KHÔNG đụng** (Payload opaque). Khi Phase 4 Promote → controller promote phải parse `targetEmployeeId` từ Payload và gán vào `Tbl_*.EmployeeId` thật.
+
+## Draft Site Phase 3 — Production environment + fix advances employeeId — 2026-05-30 (đã commit + push `038cf3a`/`54d20b0`)
+2 commit nhỏ, push lên `funneo/DeltaSoftDraftFE`.
+- **`54d20b0`** — fix advances `employeeId: null` (NCC + cá nhân đều rỗng) → `this.auth.employeeId` từ JWT claim. SP `SP_Advances_GetPaging` nhánh `@Step=3` filter `WHERE ad.EmployeeId = @EmployeeId` cho cả tạm ứng cá nhân và NCC, NULL → 0 row.
+- **`038cf3a`** — `environment.prod.ts` (production: true, URL HTTPS prod) + angular.json `fileReplacements` swap khi build prod. `defaultConfiguration: production` nên `ng build` không kèm flag = build prod luôn.
+
+## modal-dispatchorder — bỏ field "Lái xe ghi nhận dầu" + auto-sync theo Lái xe 1 — 2026-05-31 (code xong, CHƯA commit, cần test)
+Ẩn field "Lái xe ghi nhận dầu" khỏi UI, luôn = Lái xe 1 (tránh user phải nhập 2 lần cùng giá trị).
+- **HTML** [modal-dispatchorder.component.html:149-157](../../src/app/shared/components/transports/modal-dispatchorder/modal-dispatchorder.component.html#L149): xóa label + ng-select "Lái xe ghi nhận dầu" (vốn `*ngIf="!isSubcontractors"` + required). Giữ "Loại Cont" lên đầu form-group (col-sm-2 label + col-sm-4 ng-select).
+- **TS `driver1Change()`** ([modal-dispatchorder.component.ts:277](../../src/app/shared/components/transports/modal-dispatchorder/modal-dispatchorder.component.ts#L277)): **bỏ điều kiện** `if (branchId != '5')` → **luôn** set `fuelDriverId = event?.id` + `fuelDriverNae = event?.employeeFullName`. Trước đây branch 5 mới skip để admin chọn riêng — giờ thống nhất tất cả branch.
+- **TS `changeVihicle()`** ([modal-dispatchorder.component.ts:556](../../src/app/shared/components/transports/modal-dispatchorder/modal-dispatchorder.component.ts#L556)): khi chọn Xe → auto-set Lái xe 1 theo employeeId của xe → sync luôn `fuelDriverId` + `fuelDriverNae` cho nhất quán (không thì user chọn Xe trước, Lái xe 1 auto nhưng fuelDriverId rỗng → fee dầu không tính được).
+- **Dead code KHÔNG đụng** (theo quy ước minimum diff): `driver3Change` handler + `_fieldLabels.fueldriverId` entry trong `_collectMissingFields()`. Không gây hại vì field không còn require nữa.
+- **Xe thuê ngoài** (`isSubcontractors=true`): Lái xe 1 là `<input text>` nhập tay → không có employeeId → fuelDriverId vẫn null. Section "Lái xe ghi nhận dầu" trước đây cũng đã `*ngIf="!isSubcontractors"` → consistent với behavior cũ.
+
 ## Draft Site Phase 3 — Debit + Payment + Workflow nháp (4/4 menu xong) — 2026-05-29 (đã commit + push `45f69e6`)
 Nhân bản pattern từ "Lô hàng" sang 3 menu còn lại (port 1:1 từ ERP, css compact, modal **fullscreen**). Push lên `funneo/DeltaSoftDraftFE`. Tất cả qua Draft API (`POST /api/draft/create|update|delete|getPaging|getById` với `draftType` tương ứng).
 - **Push lần đầu app `draft-web` vào git**: repo private `funneo/DeltaSoftDraftFE.git`.

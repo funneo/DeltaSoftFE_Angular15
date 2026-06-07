@@ -305,7 +305,9 @@ export class ModalRouteCompareComponent implements OnDestroy {
       origin: new g.maps.LatLng(o.lat, o.lng),
       destination: new g.maps.LatLng(d.lat, d.lng),
       travelMode: g.maps.TravelMode.DRIVING,
-      provideRouteAlternatives: false,
+      // Tránh cao tốc + lấy nhiều tuyến để chọn tuyến ngắn nhất — đồng bộ với Vietmap (weighting=shortest)
+      avoidHighways: true,
+      provideRouteAlternatives: true,
       region: 'VN',
       language: 'vi'
     }, (result: any, status: any) => {
@@ -314,6 +316,14 @@ export class ModalRouteCompareComponent implements OnDestroy {
         if (status !== g.maps.DirectionsStatus.OK) {
           this.googleError = `Directions API: ${status}`;
           return;
+        }
+        // Sort routes theo tổng km tăng dần — index 0 là tuyến ngắn nhất.
+        if (Array.isArray(result.routes) && result.routes.length > 1) {
+          result.routes.sort((a: any, b: any) => {
+            const da = (a.legs || []).reduce((s: number, l: any) => s + (l.distance?.value || 0), 0);
+            const db = (b.legs || []).reduce((s: number, l: any) => s + (l.distance?.value || 0), 0);
+            return da - db;
+          });
         }
         this.googleLastDir = result;
         this._applyGoogleRenderer(result);

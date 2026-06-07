@@ -1,10 +1,138 @@
 # Pending / In-Progress Work
 
-## ⏳ CHỜ TEST + COMMIT (working tree 2026-05-28) — modal-execute-fcl + fix "UI đơ F5" + polish dispatchorder
-Cụm thay đổi session 2026-05-28, build sạch (`ng build` 0 error), đang ở working tree web-app-update main. Chi tiết: done.md 3 section đầu. **Cần: `ng serve` → test E2E → bảo commit** (gợi ý tách 3 commit: `modal-execute-fcl + tab perform`, `fix backdrop leak xuyên route`, `polish dispatchorder + route`).
-1. **modal-execute-fcl**: màn THỰC HIỆN lệnh FCL mới (component mới song song, KHÔNG đụng `modal-perform-fcl` cũ). Mở qua tab thứ 3 ở `perform-dispatch-order`. Readonly toàn bộ trừ 4 phần: POD (upload riêng, isPod=true), Ảnh hiện trường (upload riêng, isPod=false), Chi phí (listFee CRUD), Trốn vé (checkbox isPassed). Thêm 3 field lái xe nhập (Km đầu/cuối/ghi chú) khi `status≤2`. Khoảng ngày list = 7 ngày gần nhất. ngx-spinner loading 3 tab.
-2. **Fix "UI đơ phải F5"** (root cause GLOBAL từ FCL refactor, ảnh hưởng toàn app): `ngOnDestroy` defensive ở 4 modal lớn (FCL v2/AddExtra/Vietmap/Compare) + cleanup WebGL map + scrub stuck `.modal-backdrop`/`body.modal-open`. Safety net global ở `app.component.ts` listen `NavigationEnd`. Cách verify: DevTools console watch backdrop count (xem done.md).
-3. **modal-dispatchorder polish**: (a) bug phân trang `modal-dispatchorder-route` mất tiêu — fix CSS overflow + bỏ height cố định, pagination sát footer; (b) bug Lái xe 1 (xe thuê ngoài) thiếu `required` — sửa input thêm `[required]="isSubcontractors"`; (c) UX báo lỗi cụ thể khi click Lưu (bỏ disable im lặng, toast tiếng Việt liệt kê field thiếu); (d) đổi loại xe → reset 12 field xe/mooc/lái xe/định mức cũ.
+## ▶ Session 2026-06-07 — SQL còn chờ anh chạy (FE+BE build sạch)
+- **`SP_DriverFuelClosing_Delete`**: ALTER PROC sang `@Id INT` (bỏ STRING_SPLIT vì DB compat <130). SQL đã propose trong chat.
+- **`SP_DraftEntries_GetPaging`**: DROP + CREATE bản LIKE pattern (bỏ JSON_VALUE). File `Migration_DraftSite_GetPaging_ExtendByEmployee_20260602.sql` đã cập nhật nội dung — anh chạy file đó.
+- **`SP_DispatchOrder_GetForSummary`**: ALTER thêm `FuelDriverName` (LEFT JOIN Employee theo FuelDriverId) cho cả 3 nhánh UNION. SQL trong chat.
+- **`SP_DriverFuelApproval_CancelExpired`**: tạo mới (Hủy IGAS hết hạn). SQL từ session trước, chưa chạy.
+- **F039 grant**: ActionInFunctions + Permissions cho F039 (VIEW/CREATE/UPDATE/ACCEPT/DELETE).
+
+**Sau khi chạy SQL**: restart ERP API (token Draft 24h + SP changes) + restart DraftAPI (port 44362, code mới `(int?)` cast + LIKE pattern).
+
+## ⏸ Phase 5a — View Draft ở ERP — **TẠM DỪNG (2026-06-02), anh báo sau**
+Anh chỉ thị dừng mọi việc liên quan ERP đọc dữ liệu Draft. Code/SQL đã làm GIỮ NGUYÊN — không revert. Khi anh báo lại sẽ tiếp Stage 3/4.
+
+**ĐỔI PLAN (2026-06-02)**: bỏ tab Draft riêng → gộp 2 nguồn (ERP thật + Draft) vào CÙNG 1 list, dòng nháp highlight màu khác. Stage 1 SQL + Stage 2 BE đã làm vẫn dùng được (endpoint `/api/draft/getPagingForErp` không đổi).
+
+### Đã làm (giữ nguyên)
+- **✅ Stage 1 SQL** (anh đã chạy): `dbo.SP_DraftEntries_GetForErp_GetPaging`. File `Migration_DraftSite_GetForErp_20260602.sql`. Đọc trực tiếp `draft.DraftEntries` cùng DB.
+- **✅ Stage 2 BE ERP** (code xong, anh build + test): 4 file `DraftEntryViewModel.cs` + `IDraft.cs` + `DraftRepository.cs` + `DraftController.cs`. Endpoint `POST /api/draft/getPagingForErp`.
+
+### Quyết định UX (chốt với anh 2026-06-02)
+- **Gộp 2 nguồn vào 1 list**, KHÔNG có tab riêng → UX nhất quán, không switch.
+- **Sắp xếp**: trộn lẫn ERP + Draft theo `createdDate/createdAt desc` (sort chung).
+- **Highlight dòng draft**: background **#FFF8E1** (vàng nhạt).
+- **Click dòng draft**: mở **modal mới read-only riêng** cho từng DraftType (KHÔNG reuse modal ERP gốc — tránh động legacy).
+- **Action**: dòng draft chỉ có nút "Xem" (read-only); dòng ERP nguyên các action cũ.
+
+### ▶ Stage 3 — FE shared (chưa code)
+- **`draft.service.ts`**: gọi BE `POST /api/draft/getPagingForErp`.
+- **Helper `draft-row-mapper.ts`** (function thuần, không Component): `mapDraftToRow(draftType, draft, lookups)` → trả object có shape giống ERP row + flag `_isDraft=true` + `_draftId` + `_draftPayload`. Map fields theo từng DraftType:
+  - Shipment/Canon: Payload.refNo→refNo, Payload.customerId→customer fields, Payload.shipmentType→type label, ...
+  - Payment: Payload.refNo→refNo, Payload.targetEmployeeId→người làm, Payload.amount→total, ...
+  - Workflow: Payload.jobId→jobid, Payload.handlingGroupId→nhóm, ...
+  - Debit: Payload.customerId, Payload.totalAmount, Payload.debitDate, ...
+- **5 modal view detail riêng** (không đụng modal ERP):
+  - `modal-draft-shipment-view`
+  - `modal-draft-canon-view`
+  - `modal-draft-payment-view`
+  - `modal-draft-workflow-view`
+  - `modal-draft-debit-view`
+  - Layout: hiển thị fields parse từ Payload, badge "NHÁP" trên header, không có save button. Mở qua `@Input() payload + draftType` hoặc `@Input() draftId` (fetch từ BE).
+
+### ▶ Stage 4 — Tích hợp 5 list ERP (chưa code)
+Mỗi list (shipment / canon / payment / workflow / debit-notes) cần:
+1. Inject `DraftService` + 1 modal view tương ứng.
+2. Sửa `load()`:
+   ```ts
+   forkJoin([
+     erpService.getPaging(params),                                    // pageSize bình thường
+     draftService.getPagingForErp({ draftType, shipmentType, pageSize: 999, ...sameFilters })
+   ]).subscribe(([erpRes, draftRes]) => {
+     const erpRows   = erpRes.data.map(r => ({ ...r, _isDraft: false }));
+     const draftRows = draftRes.data.map(d => mapDraftToRow(draftType, d, this.lookups));
+     this.list = [...draftRows, ...erpRows]
+       .sort((a, b) => +new Date(b._sortDate ?? b.createdDate) - +new Date(a._sortDate ?? a.createdDate));
+   });
+   ```
+3. **ag-grid styling**: `getRowStyle = params => params.data._isDraft ? { backgroundColor: '#FFF8E1' } : null`.
+4. **Action column**: cell renderer check `_isDraft` → render Sửa/Xóa/Duyệt (ERP) HOẶC nút "👁 Xem" duy nhất (draft).
+5. **Click row / open action**:
+   - `_isDraft=true` → mở modal-draft-*-view tương ứng (đưa payload + draftId)
+   - `_isDraft=false` → mở modal ERP cũ như bình thường
+
+### Tablechart 5 list
+| List | Component | DraftType | ShipmentType | Modal view |
+|---|---|---|---|---|
+| Lô hàng | shipments-list | Shipment | != 1176 | modal-draft-shipment-view |
+| Lô hàng Canon | jobs-list (canon) | Shipment | = 1176 | modal-draft-canon-view |
+| Thanh toán | payments-list | Payment | — | modal-draft-payment-view |
+| Phân công CV | workflow-list | Workflow | — | modal-draft-workflow-view |
+| Debit Note | debit-notes-list | Debit | — | modal-draft-debit-view |
+
+### Phụ tùy phải xử lý khi code
+- Filter input của list ERP: truyền y nguyên cho cả 2 API (cùng customer/date/keyword) → kết quả tự nhất quán.
+- Pagination: list ERP vẫn server-side bình thường; Draft load full pageSize=999 ở mỗi page → mỗi page hiển thị FULL draft + ERP page → trang sau lặp lại draft. ⚠️ Cần chốt: hoặc (a) chỉ load draft khi pageIndex=1, sang trang 2+ không gọi draft API; (b) flag "Đã xem hết nháp" badge.
+- Cột sort: nếu user click sort cột nào, áp dụng cho cả 2 nguồn sau khi merge (client-side sort sau forkJoin).
+- Lookups cho map: cần load customers/branches/employees TRƯỚC khi merge để mapDraftToRow có dữ liệu hiển thị tên/mã KH thay vì chỉ ID.
+
+## ▶ Chốt dầu lái xe (DriverFuelClosing) — 2026-06-04 (SQL+BE+FE XONG, chờ anh grant permission + test E2E)
+SQL Part 7 redesign (chốt theo XE, 2 bảng `Tbl_DriverFuelClosing` + Detail + TVP + 7 SP) đã chạy OK. BE 6 file (FunctionCode F039 enum sẵn có line 114, Model/ViewModel/Interface/Repo/Controller) build 0 error. FE 6 file mới (model + service + `modal-vehicle-fuel-closing` + list `vehicle-fuel-closing` + route `/transports/vehiclefuelclosing` data.functionCode='F039') build 0 error. Chi tiết: done.md.
+
+**▶ Anh chạy SQL grant** (đã đề xuất trong chat):
+```sql
+INSERT INTO dbo.ActionInFunctions (FunctionId, ActionId)
+SELECT 'F039', x.a FROM (VALUES ('VIEW'),('CREATE'),('UPDATE'),('ACCEPT'),('DELETE')) x(a)
+WHERE NOT EXISTS (SELECT 1 FROM dbo.ActionInFunctions y WHERE y.FunctionId='F039' AND y.ActionId=x.a);
+
+DECLARE @AdminRoleId NVARCHAR(450) = (SELECT TOP 1 Id FROM dbo.Roles WHERE Name='Admin');
+INSERT INTO dbo.Permissions (RoleId, FunctionId, ActionId)
+SELECT @AdminRoleId, 'F039', x.a FROM (VALUES ('VIEW'),('CREATE'),('UPDATE'),('ACCEPT'),('DELETE')) x(a)
+WHERE @AdminRoleId IS NOT NULL AND NOT EXISTS (SELECT 1 FROM dbo.Permissions p WHERE p.RoleId=@AdminRoleId AND p.FunctionId='F039' AND p.ActionId=x.a);
+```
+**▶ Test E2E**: relogin (claim mới có F039_*) → `/main/transports/vehiclefuelclosing` → chọn xe + kỳ + Tải dữ liệu → nhập (4) TopUp → quan sát Net/NetAmount → Lưu nháp → Tải lại (candidates đã pick phải biến mất) → Duyệt → check 4 bảng nguồn (`DriverFuelApproval.IsFuelClosing`, `DispatchOrder/FCL/AdditionalFee.IsSummarized`).
+**▶ Edge**: tạo phiếu thứ 2 cùng xe → phải chặn "Xe đang có phiếu chưa duyệt"; Net âm phải vẫn ra NetAmount dương (ABS×giá).
+
+## ▶ Draft API view mở rộng (2026-06-02, code xong, anh deploy)
+- **▶ SQL** chưa chạy: `Migration_DraftSite_GetPaging_ExtendByEmployee_20260602.sql` (DROP + CREATE `SP_DraftEntries_GetPaging` thêm `@CurrentEmployeeId`).
+- **▶ BE DraftAPI** code xong: GetEmployeeId() + Repository signature + Controller GetPaging/GetById (PayloadHasEmployee helper). Anh build + restart DraftAPI.
+- **▶ Bỏ check quyền Create/Update DraftAPI**: comment 2 block `User.CanDraft(...)` — cần build + restart cùng cụm trên.
+
+## ▶ ERP App Pool stop — debug (2026-06-02, code xong, anh theo dõi)
+- **▶ Filter draft comment tạm** ở [Program.cs:83](D:/Delta/DeltaSoft/NewAPI/API/Program.cs#L83). Anh build + deploy + theo dõi vài ngày.
+- **▶ IIS App Pool config** (anh tự áp khi rảnh): Idle Time-out=0, Load User Profile=True, Start Mode=AlwaysRunning, Rapid-Fail Maximum Failures=100, Preload Enabled=True (Site).
+- **Pattern**: stop sau ~20 phút idle + phải vào IIS Manager Start. Diagnosis: Idle shutdown w3wp + ephemeral DataProtection keys → cookie decrypt fail cold start → Rapid-Fail stop pool. Hot path nghi vấn ExportInvoice/GetExport 22.5MB JSON.
+- **Cách 3 (tách bạch hoàn toàn)** HOÃN — SQL grants `Grant_DraftApp_ErpAccess_20260602.sql` chưa chạy.
+
+## ⏳ CHỜ TEST + COMMIT (2026-06-02) — modal-dispatchorder + modal-fuel-summary
+- **modal-dispatchorder** ([modal-dispatchorder.component.ts:533](d:/Delta/DeltaSoft/web-app-update/src/app/shared/components/transports/modal-dispatchorder/modal-dispatchorder.component.ts#L533)): fix `vihicleTypeChanged` không reset `driverName/driverTel/biển số` khi `isSubcontractors` (trước reset → empty + required → form invalid → Lưu im lặng). Tách logic xe nội bộ vs xe thuê ngoài. Chi tiết: done.md.
+- **modal-fuel-summary** thêm nút Xóa từng dòng (X đầu row) + nút "Tải lại danh sách" cạnh dropdown Biển kiểm soát (chỉ khi `flagNew && !flagXem`). Chi tiết: done.md.
+- **Google routing** [modal-route-compare.component.ts:304](d:/Delta/DeltaSoft/web-app-update/src/app/shared/components/danhmuc/modal-route-compare/modal-route-compare.component.ts#L304): `avoidHighways: true` + `provideRouteAlternatives: true` + sort routes theo distance. BE GoogleMap controller cũng update (chưa có FE caller). Anh confirm Google đã ưu tiên QL.
+
+## ⏳ CHỜ TEST + COMMIT (working tree 2026-06-01) — Canon Job + header NV + dispatchorder polish
+
+### draft-web (working tree main, repo `funneo/DeltaSoftDraftFE`)
+- **Canon Job nháp + menu Hàng Canon (2026-06-01)**: port modal-job-canon ERP, modal 85vw, reuse `DraftType='Shipment'` + flag `shipmentType=1176`. ERP allowlist `/api/canonroad/getall` mới — **cần restart ERP API**. Chi tiết: done.md section đầu.
+- **Bỏ "Ngày tạo/Ngày lập" UI (2026-06-01)**: 4 form bỏ input, ngày tạo lấy từ `draft.DraftEntries.CreatedAt` SQL. Debit giữ Ngày doanh thu + Ngày vận hành.
+- **Bỏ "Kích hoạt" + clean `_isChuyeduyet` (2026-06-01)**: checkbox HTML xóa khỏi Shipment/Canon Job. Payment/Debit clean field dead, `entity.status=false` hardcode.
+- **Header "Nhân viên" cho 4 form (2026-05-31)**: banner alert-light TOP form, bắt buộc chọn TRƯỚC khi save. Payment: chọn target → "Người làm TT" auto fill (đổi tay được), modal-list-advance lọc tạm ứng theo NV target.
+
+**Anh test sau khi restart ERP API:**
+1. Sidebar có submenu **Hàng Canon → Job**. Click → "Tạo nháp" modal 85vw.
+2. Chọn NV header → KH → load Cung đường → fill Xe + LOT + Ngày + Pallets → Lưu.
+3. Menu "Lô hàng" thường: KHÔNG thấy record Canon.
+4. 4 form không còn input "Ngày tạo/Ngày lập" + không còn "Kích hoạt"/"Chuyển duyệt".
+5. Payment NV X → Người làm TT auto = X → modal list-advance thấy tạm ứng của X.
+
+### web-app-update (working tree main)
+- **modal-dispatchorder (2026-05-31)**: field "Lái xe ghi nhận dầu" hiển thị lại nhưng KHÔNG required, auto-sync với Lái xe 1 ở `driver1Change()`/`changeVihicle()`. User vẫn override được. Chi tiết: done.md.
+- **Cụm cũ 2026-05-28** (chưa commit): modal-execute-fcl + fix "UI đơ F5" + polish dispatchorder. Test xong báo em commit.
+
+**Gợi ý tách commit khi anh OK:**
+- draft-web: `feat: Canon Job nhap (menu Hang Canon) + bo ngay tao/kich hoat/chuyen duyet`
+- draft-web: `feat: them header Nhan vien (lap ho NV X) o 4 form draft + fix advances employeeId` (gộp 2 cụm)
+- web-app-update: `fix: dispatchorder hien Lai xe ghi nhan dau (khong required, auto-sync)`
+- web-app-update: 3 commit cũ 2026-05-28 (modal-execute-fcl / fix-backdrop / polish-dispatchorder)
 
 ## ✅ ĐÃ COMMIT (2026-05-27) — cụm gmap / FCL mới / hóa đơn / báo giá thầu phụ
 Các cụm 2026-05-24/25 đã commit (git log: `3f3682e` gmap, `00333d6` FCL mới, `5fc580e`+hóa đơn flash-lite, `fac87e5` lock báo giá). **API key Gemini đã dời khỏi git** → `appsettings.Development.json` (đã `git rm --cached`). Còn theo dõi chi phí Cloud Billing vài ngày (xem section hóa đơn dưới).
@@ -19,9 +147,15 @@ Lộ trình chi tiết + kiến trúc đã chốt: [draft-site-roadmap.md](draft
 - **✅ Phase 2 TEST ĐẠT e2e (2026-05-27):** project `D:\Delta\DeltaSoft\DraftAPI` (.NET 9). Xóa nháp KHÔNG cần quyền ERP nhưng chỉ chủ tạo. `createdByName` fallback GetUserName khi GetFullName rỗng.
 - **✅ Phase 3 XONG 4/4 menu (2026-05-29) — commit `45f69e6` push `funneo/DeltaSoftDraftFE`:**
   - Lô hàng (2026-05-27): port 4 tab form ERP, list ag-grid với cột khớp ERP.
-  - **Debit + Payment + Workflow (2026-05-29):** copy 1:1 từ ERP, modal **fullscreen**, css compact, nút Lưu/Hủy header (bỏ In), bỏ "Chuyển duyệt", reuse `modal-shipment-search` chéo 3 module. Payment có thêm nút chọn Lô hàng (khác ERP). Token JWT mang `employeeId` claim → "Người làm TT" default = chính user. Chi tiết: done.md section đầu.
-- **▶ Cần test E2E sau khi restart ERP API** (load allowlist mới: jobgroup/jobgroupoption/handlinggroup, shipment/getfordebitnotes, supplier, employee, …) + restart Draft API.
-- **Việc kế (chờ feedback):** (a) port sub-modal showJob/showFiles/showDispatchOrder trong debit-form (đang toast placeholder); (b) Phase 4 — Promote: ERP cần màn "Duyệt nháp" để bê record `draft.DraftEntries.Payload` → `Tbl_*` thật; (c) Phase 5 — view/approve ERP (UI duyệt + audit log).
+  - **Debit + Payment + Workflow (2026-05-29):** copy 1:1 từ ERP, modal **fullscreen**, css compact, nút Lưu/Hủy header (bỏ In), bỏ "Chuyển duyệt", reuse `modal-shipment-search` chéo 3 module. Payment có thêm nút chọn Lô hàng (khác ERP). Token JWT mang `employeeId` claim → "Người làm TT" default = chính user. Chi tiết: done.md.
+- **✅ Phase 3 ENHANCE (2026-05-30):** fix advances `employeeId` + production env config (commit `54d20b0` + `038cf3a`).
+- **▶ Phase 3 ENHANCE WORKING TREE (2026-05-31 → 2026-06-01):** header "Nhân viên" + Canon Job + cleanup (ngày tạo/Kích hoạt/Chuyển duyệt). Chi tiết: done.md 2 section đầu. Anh test rồi báo commit.
+- **▶ Public production**: anh đang setup HTTPS site IIS riêng cho draft-web + Draft API. Sau xong → đổi URL trong `environment.prod.ts` từ HTTP sang HTTPS.
+- **Việc kế (chờ feedback):**
+  - (a) **Canon Debit nháp** + menu Debit Canon (port modal-debit-note-canon ERP, slot trong submenu Hàng Canon đã sẵn).
+  - (b) port sub-modal `showJob/showFiles/showDispatchOrder/showQuotationDetail` trong debit-form (đang toast placeholder).
+  - (c) **Phase 4 — Promote**: ERP cần màn "Duyệt nháp" để bê record `draft.DraftEntries.Payload` → `Tbl_*` thật. Controller promote phải parse `targetEmployeeId` từ Payload và gán vào `Tbl_*.EmployeeId`, **`jobDate/refDate` lấy từ `createdAt` envelope** (override Payload).
+  - (d) **Phase 5** — view/approve ERP (UI duyệt + audit log).
 
 ---
 

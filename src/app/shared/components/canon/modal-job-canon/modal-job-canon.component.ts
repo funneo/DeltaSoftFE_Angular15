@@ -117,6 +117,8 @@ export class ModalJobCanonComponent implements OnInit {
     if (i != -1) {
       this._shipmentType = list[i].value;
     }
+    console.log(list);
+    console.log(this._shipmentType);
     this.loadChiNhanh();
     this.loadCustomer();
     this.loadOtherCategory();

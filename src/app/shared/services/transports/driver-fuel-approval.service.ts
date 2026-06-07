@@ -72,6 +72,20 @@ export class DriverFuelApprovalService  extends BaseService{
     }), catchError(this.handleError));
    }
 
+   /** Hủy phiếu đã xuất IGAS nhưng quá hạn không đổ. Status sau: -2.
+    *  Lý do hủy truyền qua field `note` (BE append vào Note hiện có). */
+   cancelExpired(id: number, reason: string){
+    let p: FromBodyBase<DriverFuelApproval> = {};
+    p.item = { id, note: reason };
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DriverFuelApproval/CancelExpired`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authService.logout();
+      else return response;
+    }), catchError(this.handleError));
+   }
+
    approved(entity:DriverFuelApproval){
     let p: FromBodyBase<DriverFuelApproval> = {};
     p.item =entity;

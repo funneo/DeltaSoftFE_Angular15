@@ -74,6 +74,10 @@ export class ModalVietmapRoutesComponent implements OnDestroy {
   private currentPolyline: string = null; // JSON [[lng,lat],...] raw geometry
   private fetchTimer: any;
   private _lastTollRaw: any[] = [];
+
+  // Undo stack: lưu snapshot waypoints mỗi lần modify (click/dragend/reset)
+  private waypointHistory: Array<{ lat: number; lng: number }[]> = [];
+  private readonly HISTORY_LIMIT = 20;
   isSavedMode = false; // true = đang xem lộ trình đã lưu, không gọi lại API
 
   private originLat: number;
@@ -108,6 +112,7 @@ export class ModalVietmapRoutesComponent implements OnDestroy {
     this.lstRoutes = [];
     this.flagMapInitializing = true;
     this.expandedRouteIndex = 0;
+    this.waypointHistory = [];   // mở modal mới → reset stack undo
     this.modalRoutes.show();
   }
 
@@ -281,10 +286,49 @@ export class ModalVietmapRoutesComponent implements OnDestroy {
     // Nhấn chuột lên bản đồ để thêm điểm Waypoint (kéo thả)
     this.map.on('click', (e: any) => {
       const p = e.lngLat;
+      // Lưu snapshot trước khi modify để có thể Undo
+      this._pushHistory();
       // Khong click cho 2 diem dau/cuoi
       this.waypoints.splice(this.waypoints.length - 1, 0, { lat: p.lat, lng: p.lng });
       this._fetchRoutesAndTolls(); // Re-fetch immediately
     });
+  }
+
+  // ===== Undo stack =====
+  /** Clone deep waypoints + push vào stack; cắt nếu vượt LIMIT. */
+  private _pushHistory(): void {
+    this.waypointHistory.push(this.waypoints.map(w => ({ lat: w.lat, lng: w.lng })));
+    if (this.waypointHistory.length > this.HISTORY_LIMIT) {
+      this.waypointHistory.shift();
+    }
+  }
+
+  /** Số bước có thể undo (template binding). */
+  public canUndo(): boolean { return this.waypointHistory.length > 0; }
+
+  /** Số điểm trung gian user đã thêm (template binding badge). */
+  public extraPointsCount(): number {
+    return Math.max(0, this.waypoints.length - 2);
+  }
+
+  /** Quay lại snapshot gần nhất. */
+  public undo(): void {
+    if (!this.canUndo()) return;
+    const prev = this.waypointHistory.pop();
+    if (!prev || prev.length < 2) return;
+    this.waypoints = prev;
+    this._fetchRoutesAndTolls();
+  }
+
+  /** Xóa tất cả điểm trung gian — về cung đường gốc (start → end). */
+  public resetRoute(): void {
+    if (this.extraPointsCount() === 0) return;
+    this._pushHistory(); // lưu để vẫn có thể undo lại sau khi reset
+    this.waypoints = [
+      { lat: this.originLat, lng: this.originLng },
+      { lat: this.destLat, lng: this.destLng }
+    ];
+    this._fetchRoutesAndTolls();
   }
 
   private _drawMarkers() {
@@ -300,6 +344,9 @@ export class ModalVietmapRoutesComponent implements OnDestroy {
       const marker = new w.vietmapgl.Marker({ draggable: true, color: color })
         .setLngLat([wp.lng, wp.lat])
         .addTo(this.map);
+
+      // Lưu snapshot ngay khi BẮT ĐẦU kéo (dragstart) để Undo trả về vị trí cũ
+      marker.on('dragstart', () => { this._pushHistory(); });
 
       marker.on('dragend', () => {
         const newPos = marker.getLngLat();

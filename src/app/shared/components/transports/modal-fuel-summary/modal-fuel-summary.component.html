@@ -72,6 +72,12 @@
                   [disabled]="flagXem">
                 </ng-select>
               </div>
+              <div class="col-sm-3" *ngIf="flagNew && !flagXem && entity.vihicleId">
+                <button type="button" class="btn btn-info btn-sm" (click)="reloadDetails()"
+                  title="Tải lại danh sách lệnh chưa tổng kết">
+                  <i class="fa fa-refresh"></i> Tải lại danh sách
+                </button>
+              </div>
             </div>
             <div class="form-group">
                 <label class="col-sm-2 control-label">Lái xe
@@ -134,8 +140,9 @@
                   <table class="table table-bordered table-striped table-hover" id="style-scroll-1">
                     <thead>
                       <tr>
+                        <th *ngIf="flagNew && !flagXem" style="width:32px"></th>
                         <th>Số phiếu</th>
-                        <th>JobId</th>
+                        <th>Người nhận dầu</th>
                         <th>Lái xe</th>
                         <th>Biển số xe</th>
                         <th>Ngày lập</th>
@@ -143,12 +150,18 @@
                         <th>Km cuối</th>
                         <th>SL dầu</th>
                       </tr>
-  
+
                     </thead>
                     <tbody>
-                      <tr *ngFor="let item of entity.detaileds ">
+                      <tr *ngFor="let item of entity.detaileds; let i = index">
+                        <td *ngIf="flagNew && !flagXem" style="text-align: center;">
+                          <button type="button" class="btn btn-danger btn-xs" (click)="removeDetail(i)"
+                            title="Bỏ lệnh này khỏi phiếu tổng kết">
+                            <i class="fa fa-times"></i>
+                          </button>
+                        </td>
                         <td>{{item.refNo}}</td>
-                        <td>{{item.mergeJobId}}</td>
+                        <td>{{item.fuelDriverName}}</td>
                         <td>{{item.driverName}}</td>
                         <td>{{item.vehicleLicensePlates }}</td>
                         <td>{{item.createdDate | date:'dd/MM/yyyy'}}</td>
@@ -175,9 +188,13 @@
             <button *ngIf="!flagNew && entity.status==0 && !entity.isLocal" type="button" class="btn btn-success btn-sm"
                 (click)="xuatPhieu()">
               <i class="fa fa-success"></i> Xuất phiếu</button>
-            <button *ngIf="entity.status==1 && entity.isLocal" type="button" class="btn btn-warning btn-sm"
+            <button *ngIf="entity.status==1 && entity.isLocal && !entity.igasCode" type="button" class="btn btn-warning btn-sm"
               (click)="huyPhieu()">
             <i class="fa fa-success"></i> Hủy phiếu</button>
+            <button *ngIf="apprved_permission && !flagXem && entity.status==1 && entity.igasCode && !entity.quantityIgas"
+              type="button" class="btn btn-warning btn-sm" (click)="huyPhieuQuaHan()"
+              title="Phiếu đã xuất IGAS nhưng quá hạn không đổ được">
+            <i class="fa fa-ban"></i> Hủy IGAS hết hạn</button>
             <!-- <button *ngIf="entity.status>0 && !entity.isLocal" class="btn btn-primary btn-sm" type="button" (click)="inPhieu()">
               <i class="fa fa-info"></i> In phiếu</button> -->
               <button *ngIf="entity.status>0 && !entity.isLocal" class="btn btn-primary btn-sm" type="button" (click)="print(entity)">

@@ -328,21 +328,26 @@ export class ModalFuelSummaryComponent implements OnInit {
   vihicleChanged(event: Vihicle) {
     this.entity.licensePlate = event!.licensePlates;
     this.entity.driverId=event!.employeeId;
-    //Lấy thông tin toàn bộ các lệnh vận chuyển chưa được tổng kết dầu
-    this.dispatchOrderService.getForSummary(event!.id).subscribe(
+    this._fetchDetailsByVihicle(event!.id);
+  }
+
+  // Tải danh sách lệnh chưa được tổng kết dầu theo xe — dùng cho cả vihicleChanged và reloadDetails
+  private _fetchDetailsByVihicle(vihicleId: number) {
+    this.dispatchOrderService.getForSummary(vihicleId).subscribe(
       (res: ResponseValue<any>) => {
         if (res.code == '200' || res.code == '201') {
           let listData=res.data;
           this.entity.detaileds=listData.map(item=>({
             driverFuelApprovalId: 0,
             refNo: item.refNo,
-            vehicleLicensePlates: item.vihicleLicensePlates, // Optional field
-            driverName: item.driverName, // Optional field
-            startVehicleOdor: item.startVehicleOdor, // Optional field
-            finishVehicleOdor: item.finishVehicleOdor, // Optional field
-            mergeJobId: item.mergeJobId, // Optional field
-            createdDate: item.createdDate,// Optional field
-            quantity: item.quantity // Optional field
+            vehicleLicensePlates: item.vihicleLicensePlates,
+            driverName: item.driverName,
+            startVehicleOdor: item.startVehicleOdor,
+            finishVehicleOdor: item.finishVehicleOdor,
+            mergeJobId: item.mergeJobId,
+            fuelDriverName: item.fuelDriverName,
+            createdDate: item.createdDate,
+            quantity: item.quantity
           }))
           this.entity.quantity= this.entity.detaileds.reduce((accumulator, item) => accumulator + item.quantity, 0);
         } else {
@@ -354,6 +359,24 @@ export class ModalFuelSummaryComponent implements OnInit {
       },
       () => {
         this.flagSave = false;
+      }
+    );
+  }
+
+  // Bỏ 1 lệnh khỏi phiếu tổng kết (không xóa khỏi DB) — chỉ khi đang tạo mới
+  removeDetail(index: number) {
+    if (!this.entity?.detaileds || index < 0 || index >= this.entity.detaileds.length) return;
+    this.entity.detaileds.splice(index, 1);
+    this.entity.quantity = this.entity.detaileds.reduce((acc, item) => acc + item.quantity, 0);
+  }
+
+  // Tải lại toàn bộ danh sách lệnh chưa tổng kết cho xe hiện tại — sẽ MẤT các dòng user đã xóa khỏi list
+  reloadDetails() {
+    if (!this.entity?.vihicleId) return;
+    this._notificationService.printConfirmationDialog(
+      'Tải lại sẽ ghi đè danh sách hiện tại (các dòng đã xóa sẽ quay lại). Tiếp tục?',
+      () => {
+        this._fetchDetailsByVihicle(this.entity.vihicleId);
       }
     );
   }
@@ -432,6 +455,36 @@ export class ModalFuelSummaryComponent implements OnInit {
         }
       );
     });
+  }
+
+  /**
+   * Hủy phiếu đã xuất IGAS nhưng quá hạn không đổ được.
+   * Điều kiện: status=1 + có igasCode + chưa có quantityIgas.
+   * Quyền: ACCEPT. Sau khi hủy: status=-2, lý do append vào Note.
+   */
+  huyPhieuQuaHan() {
+    const reason = (window.prompt('Lý do hủy phiếu IGAS hết hạn (bắt buộc):') || '').trim();
+    if (!reason) {
+      this._notificationService.printErrorMessage('Lý do hủy không được để trống.');
+      return;
+    }
+    this._notificationService.printConfirmationDialog(
+      `Hủy phiếu ${this.entity.refNo} với lý do:\n"${reason}" ?`,
+      () => {
+        this.driverFuelApprovalService.cancelExpired(this.entity.id, reason).subscribe(
+          (res: ResponseValue<any>) => {
+            if (res.code == '200' || res.code == '201') {
+              this.entity.status = -2;
+              this._notificationService.printSuccessMessage('Đã hủy phiếu IGAS hết hạn.');
+              this.modalAddEdit.hide();
+              this.SaveSuccess.emit(true);
+            } else {
+              this._notificationService.printErrorMessage(res.message || (MessageContstants.UPDATED_ERR_MSG + res.code));
+            }
+          }
+        );
+      }
+    );
   }
   updateIgas() {
     this.driverFuelApprovalService.updateRefuelingIgas(this.entity).subscribe(

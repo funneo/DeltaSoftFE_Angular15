@@ -1,0 +1,121 @@
+<section class="content-header">
+  <h1>Chốt dầu lái xe <small>(theo xe)</small></h1>
+</section>
+
+<section class="content">
+  <div class="box box-info">
+    <div class="box-header with-border">
+      <div class="row">
+        <div class="col-md-2">
+          <ng-select name="branchId" [items]="listBranch" bindValue="id"
+            [(ngModel)]="branchId" (change)="changedBranch($event)" placeholder="Chi nhánh"
+            [disabled]="!adminPermission">
+            <ng-template ng-label-tmp ng-option-tmp let-item="item">
+              {{item.branchCode}}{{item.branchCode && item.branchName ? ' - ' : ''}}{{item.branchName}}
+            </ng-template>
+          </ng-select>
+        </div>
+        <div class="col-md-2">
+          <ng-select name="vihicleId" [items]="listVihicle" bindLabel="licensePlates" bindValue="id"
+            [(ngModel)]="vihicleId" (change)="changedVihicle($event)" placeholder="Lọc theo xe">
+          </ng-select>
+        </div>
+        <div class="col-md-3">
+          <input type="text" class="form-control" daterangepicker [options]="dateOptions"
+            (selected)="selectedDate($event)" name="dateRange"
+            [ngModel]="(ngayBatDau | date:'dd/MM/yyyy') + ' - ' + (ngayKetThuc | date:'dd/MM/yyyy')" />
+        </div>
+        <div class="col-md-2">
+          <ng-select name="status" [items]="statuses" bindLabel="text" bindValue="value"
+            [(ngModel)]="status" (change)="changedStatus()">
+          </ng-select>
+        </div>
+        <div class="col-md-3">
+          <div class="input-group">
+            <input type="text" class="form-control" placeholder="Số phiếu / biển số / lái xe"
+              [(ngModel)]="keyword" (keyup.enter)="timKiem()" name="keyword" />
+            <span class="input-group-btn">
+              <button class="btn btn-info" (click)="timKiem()"><i class="fa fa-search"></i></button>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="box-body">
+      <div style="margin-bottom: 6px;">
+        <button class="btn btn-primary btn-sm" (click)="add()">
+          <i class="fa fa-plus"></i> Thêm
+        </button>
+      </div>
+      <table class="table table-bordered table-hover table-sm">
+        <thead style="background: #f5f5f5;">
+          <tr>
+            <th style="width:80px;">Thao tác</th>
+            <th>Số phiếu</th>
+            <th>Biển số</th>
+            <th>Lái xe</th>
+            <th>Từ ngày</th>
+            <th>Đến ngày</th>
+            <th>Lý do chốt</th>
+            <th class="text-right">(1)</th>
+            <th class="text-right">(2)</th>
+            <th class="text-right">(3)</th>
+            <th class="text-right">(4) Đổ</th>
+            <th class="text-right">Net (lít)</th>
+            <th class="text-right">Net Amount</th>
+            <th>Trạng thái</th>
+            <th>Ngày tạo</th>
+            <th>Người tạo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let h of list">
+            <td class="text-nowrap">
+              <button *ngIf="canEdit(h)" class="btn btn-xs btn-info" title="Sửa"
+                (click)="openEdit(h, false)">
+                <i class="fa fa-edit"></i>
+              </button>
+              <button *ngIf="!canEdit(h)" class="btn btn-xs btn-default" title="Xem"
+                (click)="openEdit(h, true)">
+                <i class="fa fa-eye"></i>
+              </button>
+              <button *ngIf="canDelete(h)" class="btn btn-xs btn-danger" title="Xóa"
+                style="margin-left:4px;" (click)="deleteOne(h)">
+                <i class="fa fa-trash"></i>
+              </button>
+            </td>
+            <td>{{h.refNo}}</td>
+            <td>{{h.vihicleLicensePlate}}</td>
+            <td>{{h.driverName}}</td>
+            <td>{{h.fromDate | date:'dd/MM/yyyy'}}</td>
+            <td>{{h.toDate | date:'dd/MM/yyyy'}}</td>
+            <td>{{h.closeReasonName}}</td>
+            <td class="text-right">{{h.approvalDiffQty | number:'1.0-3'}}</td>
+            <td class="text-right">{{h.dispatchOrderQty | number:'1.0-3'}}</td>
+            <td class="text-right">{{h.additionalFeeQty | number:'1.0-3'}}</td>
+            <td class="text-right">{{h.topUpLiters | number:'1.0-3'}}</td>
+            <td class="text-right" [class.text-danger]="h.netLiters > 0"
+              [class.text-success]="h.netLiters < 0">
+              <strong>{{h.netLiters | number:'1.0-3'}}</strong>
+            </td>
+            <td class="text-right">{{h.netAmount | number:'1.0-0'}}</td>
+            <td>
+              <span *ngIf="h.status === 0" class="badge badge-warning">Nháp</span>
+              <span *ngIf="h.status === 1" class="badge badge-success">Đã duyệt</span>
+            </td>
+            <td>{{h.createdDate | date:'dd/MM/yyyy'}}</td>
+            <td>{{h.createdByName}}</td>
+          </tr>
+          <tr *ngIf="list.length === 0">
+            <td colspan="16" class="text-center text-muted">Không có dữ liệu.</td>
+          </tr>
+        </tbody>
+      </table>
+      <pagination *ngIf="totalRows > pageSize" [totalItems]="totalRows" [itemsPerPage]="pageSize"
+        [boundaryLinks]="true" [maxSize]="5" (pageChanged)="pageChanged($event)" [(ngModel)]="pageIndex"></pagination>
+    </div>
+  </div>
+</section>
+
+<modal-vehicle-fuel-closing *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+</modal-vehicle-fuel-closing>

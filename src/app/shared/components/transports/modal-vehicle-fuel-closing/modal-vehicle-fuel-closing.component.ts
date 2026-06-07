@@ -1,0 +1,319 @@
+import { HttpParams } from '@angular/common/http';
+import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
+import { NgForm } from '@angular/forms';
+import { ModalDirective } from 'ngx-bootstrap/modal';
+import { Subscription } from 'rxjs';
+import * as moment from 'moment';
+import { Profile, ResponseValue } from '@app/shared/models';
+import { Vihicle } from '@app/shared/models/vihicle';
+import { Employee } from '@app/shared/models/employee.model';
+import { AuthService } from '@app/shared/services/auth.service';
+import { NotificationService } from '@app/shared/services/notification.service';
+import { UtilityService } from '@app/shared/services/utility.service';
+import { VihicleService } from '@app/shared/services/vihicle.service';
+import { EmployeeService } from '@app/shared/services/employee.service';
+import { DriverFuelClosingService } from '@app/shared/services/transports/driver-fuel-closing.service';
+import { DriverFuelClosing, DriverFuelClosingDetail } from '@app/shared/models/transports/driver-fuel-closing.model';
+import { MessageContstants } from '@app/shared/constants';
+
+/**
+ * Modal Chốt dầu lái xe — chốt theo XE.
+ * Công thức: NetLiters = TopUpLiters - Q3 - Q2 - Q1
+ * NetAmount = ABS(NetLiters) * OilPrice (luôn trừ lương).
+ */
+@Component({
+  selector: 'modal-vehicle-fuel-closing',
+  templateUrl: './modal-vehicle-fuel-closing.component.html',
+  styleUrls: ['./modal-vehicle-fuel-closing.component.css']
+})
+export class ModalVehicleFuelClosingComponent implements OnInit {
+  public entity: DriverFuelClosing = {};
+  public flagXem: boolean = false;
+  public flagNew: boolean = true;
+  public flagSave: boolean = false;
+  public title: string = '';
+  public viewModal?: boolean = false;
+  public busy: Subscription;
+
+  listVihicle: Vihicle[] = [];
+  listDriver: Employee[] = [];
+
+  closeReasons = [
+    { value: 1, text: 'Cuối tháng' },
+    { value: 2, text: 'Tài nghỉ giữa kỳ' },
+    { value: 3, text: 'Đổi xe' },
+    { value: 9, text: 'Khác' }
+  ];
+
+  ngayBatDau: Date;
+  ngayKetThuc: Date;
+  dateOptions: any;
+
+  public userLoged: Profile;
+  maskNumber = UtilityService.maskNumber;
+  mask0 = UtilityService.mask0;
+
+  @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
+  @Output() CloseModal: EventEmitter<any> = new EventEmitter();
+  @ViewChild('modalAddEdit', { static: false }) modalAddEdit: ModalDirective;
+  @ViewChild('f', { static: false }) ngFormRef: NgForm;
+
+  constructor(
+    private _authService: AuthService,
+    private _notificationService: NotificationService,
+    private _utilityService: UtilityService,
+    private vihicleService: VihicleService,
+    private employeeService: EmployeeService,
+    private driverFuelClosingService: DriverFuelClosingService
+  ) {}
+
+  ngOnInit(): void {
+    this.userLoged = this._authService.getLoggedInUser();
+    this.ngayBatDau = moment().startOf('month').toDate();
+    this.ngayKetThuc = moment().endOf('month').toDate();
+    this.dateOptions = this._utilityService.dateOptionMultis(this.ngayBatDau, this.ngayKetThuc);
+    this.loadVihicle();
+    this.loadDriver();
+  }
+
+  loadVihicle() {
+    const params = new HttpParams()
+      .set('branchid', this.userLoged.branchId.toString())
+      .set('vihicletype', '0');
+    this.busy = this.vihicleService.getAll(params).subscribe((res: ResponseValue<Vihicle[]>) => {
+      if (res.code == '200' || res.code == '201') this.listVihicle = res.data ?? [];
+    });
+  }
+
+  loadDriver() {
+    const params = new HttpParams().set('branchId', this.userLoged.branchId.toString());
+    this.busy = this.employeeService.getByBranch(params).subscribe((res: ResponseValue<Employee[]>) => {
+      if (res.code == '200' || res.code == '201') this.listDriver = res.data ?? [];
+    });
+  }
+
+  // ====== Open modal ======
+  add(): void {
+    this.flagNew = true;
+    this.flagXem = false;
+    this.flagSave = false;
+    this.title = 'Thêm phiếu chốt dầu';
+    const fromD = moment().startOf('month').toDate();
+    const toD = moment().endOf('month').toDate();
+    this.entity = {
+      branchId: Number.parseInt(this.userLoged.branchId),
+      fromDate: moment(fromD).format('YYYY-MM-DD'),
+      toDate: moment(toD).format('YYYY-MM-DD'),
+      closeReason: 1,
+      oilPrice: 0,
+      topUpLiters: 0,
+      approvalDiffQty: 0,
+      dispatchOrderQty: 0,
+      additionalFeeQty: 0,
+      netLiters: 0,
+      netAmount: 0,
+      status: 0,
+      detaileds: []
+    };
+    this.ngayBatDau = fromD;
+    this.ngayKetThuc = toD;
+    this.dateOptions = this._utilityService.dateOptionMultis(this.ngayBatDau, this.ngayKetThuc);
+    this.modalAddEdit?.show();
+  }
+
+  edit(id: number, flagXem: boolean): void {
+    this.flagNew = false;
+    this.flagXem = flagXem;
+    this.flagSave = false;
+    this.title = flagXem ? 'Xem phiếu chốt dầu' : 'Sửa phiếu chốt dầu';
+    this.busy = this.driverFuelClosingService.getById(id).subscribe((res: ResponseValue<DriverFuelClosing>) => {
+      if (res.code == '200' || res.code == '201') {
+        this.entity = res.data ?? {};
+        this.entity.detaileds = (this.entity.detaileds ?? []).map(d => ({ ...d, checked: true }));
+        this.ngayBatDau = this.entity.fromDate ? new Date(this.entity.fromDate) : moment().startOf('month').toDate();
+        this.ngayKetThuc = this.entity.toDate ? new Date(this.entity.toDate) : moment().endOf('month').toDate();
+        this.dateOptions = this._utilityService.dateOptionMultis(this.ngayBatDau, this.ngayKetThuc);
+        this.recalcSummary();
+        this.modalAddEdit?.show();
+      } else {
+        this._notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG);
+      }
+    });
+  }
+
+  selectedDate(event) {
+    this.ngayBatDau = new Date(event.start);
+    this.ngayKetThuc = new Date(event.end);
+    this.entity.fromDate = moment(this.ngayBatDau).format('YYYY-MM-DD');
+    this.entity.toDate = moment(this.ngayKetThuc).format('YYYY-MM-DD');
+  }
+
+  vihicleChanged(v: Vihicle) {
+    this.entity.vihicleId = v?.id;
+    this.entity.vihicleLicensePlate = v?.licensePlates;
+    if (this.flagNew) {
+      this.entity.detaileds = [];
+      this.recalcSummary();
+    }
+  }
+
+  driverChanged(d: Employee) {
+    this.entity.driverId = d?.id;
+    this.entity.driverName = d?.employeeFullName;
+  }
+
+  // ====== Tải dữ liệu ứng viên ======
+  loadCandidates() {
+    if (!this.entity.vihicleId) {
+      this._notificationService.printErrorMessage('Vui lòng chọn xe.');
+      return;
+    }
+    if (!this.entity.fromDate || !this.entity.toDate) {
+      this._notificationService.printErrorMessage('Vui lòng chọn kỳ chốt.');
+      return;
+    }
+    this.busy = this.driverFuelClosingService
+      .getCandidates(
+        this.entity.branchId,
+        this.entity.vihicleId,
+        moment(this.ngayBatDau).format('YYYYMMDD'),
+        moment(this.ngayKetThuc).format('YYYYMMDD')
+      )
+      .subscribe((res: ResponseValue<DriverFuelClosingDetail[]>) => {
+        if (res.code == '200' || res.code == '201') {
+          const rows = (res.data ?? []).map(x => ({ ...x, checked: true }));
+          this.entity.detaileds = rows;
+          this.recalcSummary();
+          if (rows.length === 0) {
+            this._notificationService.printSuccessMessage('Không có dữ liệu trong kỳ.');
+          }
+        } else {
+          this._notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG);
+        }
+      });
+  }
+
+  // ====== Compute summary ======
+  recalcSummary() {
+    const list = (this.entity.detaileds ?? []).filter(x => x.checked !== false);
+    const q1 = this.sumBy(list, d => d.source === 1);
+    const q2 = this.sumBy(list, d => d.source === 2 || d.source === 3);
+    const q3 = this.sumBy(list, d => d.source === 4);
+    this.entity.approvalDiffQty = q1;
+    this.entity.dispatchOrderQty = q2;
+    this.entity.additionalFeeQty = q3;
+    const top = +(this.entity.topUpLiters ?? 0);
+    const net = top - q3 - q2 - q1;
+    this.entity.netLiters = +net.toFixed(3);
+    const price = +(this.entity.oilPrice ?? 0);
+    this.entity.netAmount = +(Math.abs(net) * price).toFixed(2);
+  }
+
+  private sumBy(list: DriverFuelClosingDetail[], pred: (x: DriverFuelClosingDetail) => boolean): number {
+    return +list.filter(pred).reduce((s, x) => s + (+x.quantity || 0), 0).toFixed(3);
+  }
+
+  removeRow(d: DriverFuelClosingDetail) {
+    this.entity.detaileds = (this.entity.detaileds ?? []).filter(x => x !== d);
+    this.recalcSummary();
+  }
+
+  filterBySource(src: number): DriverFuelClosingDetail[] {
+    return (this.entity.detaileds ?? []).filter(x => x.source === src);
+  }
+
+  amountInWords(): string {
+    const amount = Math.round(Math.abs(+(this.entity.netAmount ?? 0)));
+    if (!amount) return '';
+    const words = this._utilityService.docso(amount);
+    return this._utilityService.capitalizeFirstLetter((words || '').trim()) + ' đồng';
+  }
+
+  directionLabel(): string {
+    const n = +(this.entity.netLiters ?? 0);
+    if (n > 0) return 'lái xe trả tiền';
+    if (n < 0) return 'lái xe nhận tiền';
+    return '';
+  }
+
+  sourceLabel(s: number): string {
+    switch (s) {
+      case 1: return '(1) Chênh duyệt - rút Igas';
+      case 2: return '(2) Lệnh DispatchOrder';
+      case 3: return '(2) Lệnh FCL';
+      case 4: return '(3) Phát sinh AdditionalFee';
+      default: return '?';
+    }
+  }
+
+  // ====== Save ======
+  saveChange(form: NgForm, andApprove: boolean = false) {
+    if (this.flagSave) return;
+    const f = form || this.ngFormRef;
+    if (!f || !f.valid) {
+      this._notificationService.printErrorMessage('Vui lòng nhập đủ thông tin bắt buộc.');
+      return;
+    }
+    if (!this.entity.detaileds || this.entity.detaileds.length === 0) {
+      this._notificationService.printErrorMessage('Chưa có chi tiết — vui lòng tải dữ liệu trước.');
+      return;
+    }
+    this.entity.fromDate = moment(this.ngayBatDau).format('YYYY-MM-DD');
+    this.entity.toDate = moment(this.ngayKetThuc).format('YYYY-MM-DD');
+    const payload: DriverFuelClosing = {
+      ...this.entity,
+      detaileds: (this.entity.detaileds ?? []).filter(x => x.checked !== false)
+    };
+    this.flagSave = true;
+    const obs = this.flagNew
+      ? this.driverFuelClosingService.add(payload)
+      : this.driverFuelClosingService.update(payload);
+    this.busy = obs.subscribe((res: ResponseValue<any>) => {
+      this.flagSave = false;
+      if (res.code == '200' || res.code == '201') {
+        if (andApprove) {
+          const id = this.flagNew ? (res.data?.Id ?? res.data?.id) : this.entity.id;
+          if (id) this.approve(id, true);
+          else this.finishSave();
+        } else {
+          this.finishSave();
+        }
+      } else {
+        this._notificationService.printErrorMessage(res.message ?? MessageContstants.CREATED_ERR_MSG);
+      }
+    }, () => {
+      this.flagSave = false;
+      this._notificationService.printErrorMessage(MessageContstants.CREATED_ERR_MSG);
+    });
+  }
+
+  approve(id?: number, isFromSave: boolean = false) {
+    const targetId = id ?? this.entity?.id;
+    if (!targetId) return;
+    this.busy = this.driverFuelClosingService.approve(targetId).subscribe((res: ResponseValue<any>) => {
+      if (res.code == '200' || res.code == '201') {
+        if (isFromSave) this.finishSave();
+        else {
+          this._notificationService.printSuccessMessage('Đã duyệt phiếu.');
+          this.close();
+          this.SaveSuccess.emit(true);
+        }
+      } else {
+        this._notificationService.printErrorMessage(res.message ?? 'Duyệt thất bại.');
+      }
+    });
+  }
+
+  private finishSave() {
+    this._notificationService.printSuccessMessage(MessageContstants.CREATED_OK_MSG);
+    this.modalAddEdit?.hide();
+    this.viewModal = false;
+    this.SaveSuccess.emit(true);
+  }
+
+  close() {
+    this.modalAddEdit?.hide();
+    this.viewModal = false;
+    this.CloseModal.emit(true);
+  }
+}
