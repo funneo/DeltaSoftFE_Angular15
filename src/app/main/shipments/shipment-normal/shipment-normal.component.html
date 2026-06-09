@@ -124,7 +124,8 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of visibleData " (click)="clickRow(item)">
+        <tr *ngFor="let item of visibleData " (click)="!item._isDraft && clickRow(item)"
+            [class.row-draft]="item._isDraft" [title]="item._isDraft ? 'Phiếu nháp — chưa được duyệt' : null">
           <td class="table-checkbox">
             <label class="custom-checkbox">
               <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
@@ -134,7 +135,8 @@
           <td>{{item.customerCode}}</td>
           <td class="col-enter">{{item.customerName}}</td>
           <td>
-            <a [routerLink]="[]" (click)="showModal(item)">{{item.jobId}}</a>
+            <span *ngIf="item._isDraft" class="badge-draft" title="Nháp"><i class="fa fa-edit"></i> {{item.jobId}}</span>
+            <a *ngIf="!item._isDraft" [routerLink]="[]" (click)="showModal(item)">{{item.jobId}}</a>
           </td>
           <td>{{item.shipmentType?.toString()|List:listShipmentType}}</td>
           <td class="col-enter">{{item.cdsNumber}}</td>
@@ -167,32 +169,34 @@
               '' }}</span>
           </td>
           <td>
-            <button *ngIf="item.isFinish && !item.isDebApproved" type="button"
-              class="btn btn-warning btn-sm action-open-job" title="Đề nghị mở Job" (click)="showOpenJob(item)"
-              appPermission appFunction="SHIPMENT" appAction="OPEN">
-              <i class="fa fa-folder-open-o" aria-hidden="true"></i> Mở Job
-            </button>
-            <button *ngIf="!item.isFinish && item.accept" type="button" class="btn btn-warning btn-sm action-file"
-              title="Khóa lô hàng" (click)="closeJob(item, true)" appPermission appFunction="SHIPMENT"
-              appAction="CLOSING">
-              <i class="fa fa-lock" aria-hidden="true"></i> Khóa Job
-            </button>
-            <button type="button" class="btn btn-info btn-sm action-file" title="Chứng từ đính kèm"
-              (click)="showFiles(item)">
-              <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Chứng từ...
-            </button>
-            <button type="button" class="btn btn-primary btn-sm action-file" title="Copy lô hàng"
-              (click)="copyJobConfirm(item)" appPermission appFunction="SHIPMENT" appAction="COPY">
-              <i class="fa fa-copy" aria-hidden="true"></i> Copy...
-            </button>
-            <button *ngIf="!item.isFinish" class="btn btn-info btn-sm action-file" title="TT Cá nhân"
-              (click)="showPayment(item.id,2)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
-              <i class="fa fa-money" aria-hidden="true"></i> TT Cá nhân
-            </button>
-            <button *ngIf="!item.isFinish" class="btn btn-warning btn-sm action-file" title="TT Nhà CC"
-              (click)="showPayment(item.id,3)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
-              <i class="fa fa-money" aria-hidden="true"></i> TT Nhà CC
-            </button>
+            <ng-container *ngIf="!item._isDraft">
+              <button *ngIf="item.isFinish && !item.isDebApproved" type="button"
+                class="btn btn-warning btn-sm action-open-job" title="Đề nghị mở Job" (click)="showOpenJob(item)"
+                appPermission appFunction="SHIPMENT" appAction="OPEN">
+                <i class="fa fa-folder-open-o" aria-hidden="true"></i> Mở Job
+              </button>
+              <button *ngIf="!item.isFinish && item.accept" type="button" class="btn btn-warning btn-sm action-file"
+                title="Khóa lô hàng" (click)="closeJob(item, true)" appPermission appFunction="SHIPMENT"
+                appAction="CLOSING">
+                <i class="fa fa-lock" aria-hidden="true"></i> Khóa Job
+              </button>
+              <button type="button" class="btn btn-info btn-sm action-file" title="Chứng từ đính kèm"
+                (click)="showFiles(item)">
+                <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Chứng từ...
+              </button>
+              <button type="button" class="btn btn-primary btn-sm action-file" title="Copy lô hàng"
+                (click)="copyJobConfirm(item)" appPermission appFunction="SHIPMENT" appAction="COPY">
+                <i class="fa fa-copy" aria-hidden="true"></i> Copy...
+              </button>
+              <button *ngIf="!item.isFinish" class="btn btn-info btn-sm action-file" title="TT Cá nhân"
+                (click)="showPayment(item.id,2)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
+                <i class="fa fa-money" aria-hidden="true"></i> TT Cá nhân
+              </button>
+              <button *ngIf="!item.isFinish" class="btn btn-warning btn-sm action-file" title="TT Nhà CC"
+                (click)="showPayment(item.id,3)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
+                <i class="fa fa-money" aria-hidden="true"></i> TT Nhà CC
+              </button>
+            </ng-container>
           </td>
         </tr>
         <tr *ngIf="listFilter?.length == 0">

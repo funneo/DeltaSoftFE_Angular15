@@ -3,8 +3,10 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { MessageContstants } from '@app/shared/constants';
 import { Shipment, Pagination, Customer, ResponseValue, OpenShipment, Branch, PermissionCS } from '@app/shared/models';
 import { AuthService, BranchService, CustomerService, NotificationService, OpenShipmentService, PermissionCSService, ShipmentService, UtilityService } from '@app/shared/services';
+import { DraftService, DraftEntryView } from '@app/shared/services/draft.service';
 import { PageChangedEvent } from 'ngx-bootstrap/pagination';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import * as moment from 'moment';
 import { ModalOpenShipmentComponent } from '@app/shared/components/shipments/modal-open-shipment/modal-open-shipment.component';
 import { Attachfiles } from '@app/shared/models/attachfiles.models';
@@ -25,9 +27,19 @@ export class JobCanonComponent implements OnInit {
   flagEdit = false;
   flagDelete = false;
   keyword = '';
-  listShipment: Shipment[];
+  listShipment: Shipment[];        // toàn bộ data đã load
+  listFilter: Shipment[];          // sau khi áp dụng filter cột
   listCustomer:Customer[];
   customerId?: number;
+
+  // Filter theo cột (nhập vào dòng dưới header)
+  tenkhSearch?: string;
+  jobidSearch?: string;
+  xeSearch?: string;
+  lotSearch?: string;
+  cungduongSearch?: string;
+  palletsSearch?: string;
+  ghichuSearch?: string;
   busy: Subscription;
   viewModal = false;
   viewOpenJob=false;
@@ -43,7 +55,8 @@ export class JobCanonComponent implements OnInit {
   @ViewChild(ModalOpenShipmentComponent, { static: false }) modalOpenJob: ModalOpenShipmentComponent;
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent;
   constructor(private shipmentService: ShipmentService, private notificationService: NotificationService, private _utilityService: UtilityService, private customerService:CustomerService,
-   private openJobService: OpenShipmentService,permissionCSService: PermissionCSService,private router:Router,private branchService:BranchService, private authService: AuthService) {
+   private openJobService: OpenShipmentService,permissionCSService: PermissionCSService,private router:Router,private branchService:BranchService, private authService: AuthService,
+   private draftService: DraftService) {
     let user = this.authService.getLoggedInUser();
     this._branchId = Number.parseInt(user.branchId);
     this._auth = Number.parseInt(user.authorisationLevel);
@@ -99,30 +112,110 @@ export class JobCanonComponent implements OnInit {
   loadData(): void {
     let tuNgay = moment(this.ngayBatDau).format('YYYYMMDD');
     let denNgay = moment(this.ngayKetThuc).format('YYYYMMDD');
+    // BE SP_Shipment_GetPaging hiện trả ALL rows (OFFSET/FETCH bị comment) → FE phải paging client-side.
     const params = new HttpParams()
-      .set('pageIndex', this.pageIndex.toString())
-      .set('pageSize', this.pageSize.toString())
+      .set('pageIndex', '1')
+      .set('pageSize', '99999')
       .set('keyword', this.keyword)
       .set('fromDate', tuNgay)
       .set('toDate', denNgay)
-      .set('customerId',this.customerId?.toString())
-      .set('shipmentType','0')
-      .set('branchId',this._branchId?.toString());
-      this.busy = this.shipmentService.getPaging(params).subscribe((res: ResponseValue<Pagination<Shipment>>) => {
-        if (res.code == '200' || res.code == '201') {
-          this.listShipment = res.data?.items;
-          this.totalRows = res.data?.totalRows;
-          this.listShipment.forEach(x=>{
-            if(this.listPermissionCS.findIndex(z=>z.customerId==x.customerId && z.isOpenJob)!=-1){
-              x.accept=true;
-            }
-           });
-           this.listShipment=[...this.listShipment];
-        }
-        else {
-          this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
-        }
-      });
+      .set('customerId', this.customerId?.toString())
+      .set('shipmentType', '0')
+      .set('branchId', this._branchId?.toString());
+
+    const draftFilter = {
+      draftType: 'Shipment',
+      shipmentType: 1176, // CHỈ Canon
+      keyword: this.keyword,
+      fromDate: moment(this.ngayBatDau).format('YYYY-MM-DD'),
+      toDate: moment(this.ngayKetThuc).format('YYYY-MM-DD'),
+      pageIndex: 1,
+      pageSize: 99999,
+    };
+
+    this.busy = forkJoin({
+      erp: this.shipmentService.getPaging(params),
+      draft: this.draftService.getPagingForErp(draftFilter).pipe(catchError(() => of({ code: '200', data: [] } as any))),
+    }).subscribe((res: any) => {
+      if (res.erp?.code == '200' || res.erp?.code == '201') {
+        const erpItems: Shipment[] = res.erp.data?.items ?? [];
+        erpItems.forEach(x => {
+          if (this.listPermissionCS.findIndex(z => z.customerId == x.customerId && z.isOpenJob) != -1) {
+            x.accept = true;
+          }
+        });
+
+        const draftOk = res.draft?.code == '200' || res.draft?.code == '201';
+        const draftItems: DraftEntryView[] = (draftOk && Array.isArray(res.draft?.data)) ? res.draft.data : [];
+        const draftRows: Shipment[] = draftItems
+          .filter(d => d.draftType === 'Shipment')
+          .map(d => this.mapDraftToShipmentRow(d))
+          .filter(r => (r as any).shipmentType === 1176);
+
+        this.listShipment = [...draftRows, ...erpItems];
+        this.pageIndex = 1; // reset về page đầu sau khi tải
+        this.filter();
+      } else {
+        this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.erp?.code);
+      }
+    });
+  }
+
+  filter(): void {
+    this.listFilter = Object.assign([], this.listShipment);
+    const norm = (s: any) => (s ?? '').toString().toLowerCase();
+    if (this.tenkhSearch?.length > 0)
+      this.listFilter = this.listFilter.filter(d => norm(d.customerName).includes(this.tenkhSearch.trim().toLowerCase()));
+    if (this.jobidSearch?.length > 0)
+      this.listFilter = this.listFilter.filter(d => norm(d.jobId).includes(this.jobidSearch.trim().toLowerCase()));
+    if (this.xeSearch?.length > 0)
+      this.listFilter = this.listFilter.filter(d => norm(d.cdsNumber).includes(this.xeSearch.trim().toLowerCase()));
+    if (this.lotSearch?.length > 0)
+      this.listFilter = this.listFilter.filter(d => norm(d.hawB_HBL).includes(this.lotSearch.trim().toLowerCase()));
+    if (this.cungduongSearch?.length > 0)
+      this.listFilter = this.listFilter.filter(d => norm(d.mawB_MBL).includes(this.cungduongSearch.trim().toLowerCase()));
+    if (this.palletsSearch?.length > 0)
+      this.listFilter = this.listFilter.filter(d => norm(d.pallets).includes(this.palletsSearch.trim().toLowerCase()));
+    if (this.ghichuSearch?.length > 0)
+      this.listFilter = this.listFilter.filter(d => norm(d.notes).includes(this.ghichuSearch.trim().toLowerCase()));
+    this.totalRows = this.listFilter.length;
+    this.pageIndex = 1; // reset page khi đổi filter
+  }
+
+  get visibleData(): Shipment[] {
+    if (!this.listFilter) return [];
+    const start = (this.pageIndex - 1) * this.pageSize;
+    return this.listFilter.slice(start, start + this.pageSize);
+  }
+
+  /**
+   * Parse draft.Payload JSON → row shape Shipment Canon (LOT, Cung đường, Pallets...).
+   * Flag _isDraft=true để CSS bôi vàng + chặn action.
+   */
+  private mapDraftToShipmentRow(d: DraftEntryView): Shipment {
+    let p: any = {};
+    try { p = JSON.parse(d.payload ?? '{}'); } catch {}
+    const row: any = {
+      id: undefined,
+      jobId: 'NHÁP #' + d.id,
+      customerId: p.customerId,
+      customerName: d.customerName ?? p.customerName,
+      shipmentType: p.shipmentType,
+      cdsNumber: p.cdsNumber,         // Xe vận chuyển
+      cdsDate: p.cdsDate,             // Ngày
+      hawB_HBL: p.hawB_HBL,           // LOT
+      mawB_MBL: p.mawB_MBL,           // Cung đường
+      pallets: p.pallets,
+      notes: p.notes,
+      createdByName: d.createdByName,
+      createdDate: d.createdAt,
+      branchId: d.branchId,
+      checked: false,
+      _isDraft: true,
+      _draftId: d.id,
+      _draftPayload: d.payload,
+    };
+    return row as Shipment;
   }
 
   clickRow(item: Shipment): void {
@@ -137,7 +230,7 @@ export class JobCanonComponent implements OnInit {
 
   pageChanged(event: PageChangedEvent): void {
     this.pageIndex = event.page;
-    this.loadData();
+    // Client-side paging: chỉ đổi pageIndex, không reload từ BE.
   }
 
   add(): void {

@@ -59,7 +59,7 @@
     <table class="table table-bordered table-striped table-hover">
       <thead>
         <tr>
-          <th class="table-checkbox">
+          <th class="table-checkbox" rowspan="2">
             <label class="custom-checkbox">
               <input type="checkbox" name="all" [checked]="isAllChecked()" (change)="checkAll($event)" />
               <span class="helping-el"></span>
@@ -68,17 +68,27 @@
           <th>Khách hàng</th>
           <th>JobId</th>
           <th>Xe vận chuyển</th>
-          <th>Ngày</th>
+          <th rowspan="2">Ngày</th>
           <th>LOT</th>
           <th>Cung đường</th>
           <th>#Pallets</th>
           <th>Ghi chú</th>
-          <th>Trạng thái</th>
-          <th style="width: 80px;">Tác vụ</th>
+          <th rowspan="2">Trạng thái</th>
+          <th rowspan="2" style="width: 80px;">Tác vụ</th>
+        </tr>
+        <tr>
+          <th><input class="form-control" [(ngModel)]="tenkhSearch" (input)="filter()" type="text" name="tenkhSearch" /></th>
+          <th><input class="form-control" [(ngModel)]="jobidSearch" (input)="filter()" type="text" name="jobidSearch" /></th>
+          <th><input class="form-control" [(ngModel)]="xeSearch" (input)="filter()" type="text" name="xeSearch" /></th>
+          <th><input class="form-control" [(ngModel)]="lotSearch" (input)="filter()" type="text" name="lotSearch" /></th>
+          <th><input class="form-control" [(ngModel)]="cungduongSearch" (input)="filter()" type="text" name="cungduongSearch" /></th>
+          <th><input class="form-control" [(ngModel)]="palletsSearch" (input)="filter()" type="text" name="palletsSearch" /></th>
+          <th><input class="form-control" [(ngModel)]="ghichuSearch" (input)="filter()" type="text" name="ghichuSearch" /></th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of listShipment" (click)="clickRow(item)">
+        <tr *ngFor="let item of visibleData" (click)="!item._isDraft && clickRow(item)"
+            [class.row-draft]="item._isDraft" [title]="item._isDraft ? 'Phiếu nháp — chưa được duyệt' : null">
           <td class="table-checkbox">
             <label class="custom-checkbox">
               <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
@@ -87,7 +97,8 @@
           </td>
           <td>{{item.customerName}}</td>
           <td>
-            <a [routerLink]="[]" (click)="showModal(item)">{{item.jobId}}</a>
+            <span *ngIf="item._isDraft" class="badge-draft" title="Nháp"><i class="fa fa-edit"></i> {{item.jobId}}</span>
+            <a *ngIf="!item._isDraft" [routerLink]="[]" (click)="showModal(item)">{{item.jobId}}</a>
           </td>
           <td>{{item.cdsNumber}}</td>
           <td>{{item.cdsDate|date :'dd-MMM-yy'}}</td>
@@ -106,34 +117,36 @@
               ">{{ item.isDeb?'Đã Debit':'' }}</span>
           </td>
           <td>
-            <button *ngIf="item.isFinish" type="button" class="btn btn-warning btn-sm action-open-job"
-              title="Đề nghị mở Job" (click)="showOpenJob(item)" appPermission appFunction="SHIPMENT" appAction="OPEN">
-              <i class="fa fa-folder-open-o" aria-hidden="true"></i> Mở Job
-            </button>
-            <button *ngIf="!item.isFinish && item.accept" type="button" class="btn btn-warning btn-sm action-file"
-              title="Khóa lô hàng" (click)="closeJob(item,true)" appPermission appFunction="SHIPMENT"
-              appAction="CLOSING">
-              <i class="fa fa-lock" aria-hidden="true"></i> Khóa Job
-            </button>
-            <button type="button" class="btn btn-info btn-sm action-file" title="Chứng từ đính kèm"
-              (click)="showFiles(item)">
-              <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Chứng từ...
-            </button>
-            <button type="button" class="btn btn-primary btn-sm action-file" title="Copy lô hàng"
-              (click)="copyJobConfirm(item)" appPermission appFunction="SHIPMENT" appAction="COPY">
-              <i class="fa fa-copy" aria-hidden="true"></i> Copy...
-            </button>
-            <button *ngIf="!item.isFinish" class="btn btn-info btn-sm action-file" title="TT Cá nhân"
-              (click)="showPayment(item.id,2)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
-              <i class="fa fa-money" aria-hidden="true"></i> TT Cá nhân
-            </button>
-            <button *ngIf="!item.isFinish" class="btn btn-warning btn-sm action-file" title="TT Nhà CC"
-              (click)="showPayment(item.id,3)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
-              <i class="fa fa-money" aria-hidden="true"></i> TT Nhà CC
-            </button>
+            <ng-container *ngIf="!item._isDraft">
+              <button *ngIf="item.isFinish" type="button" class="btn btn-warning btn-sm action-open-job"
+                title="Đề nghị mở Job" (click)="showOpenJob(item)" appPermission appFunction="SHIPMENT" appAction="OPEN">
+                <i class="fa fa-folder-open-o" aria-hidden="true"></i> Mở Job
+              </button>
+              <button *ngIf="!item.isFinish && item.accept" type="button" class="btn btn-warning btn-sm action-file"
+                title="Khóa lô hàng" (click)="closeJob(item,true)" appPermission appFunction="SHIPMENT"
+                appAction="CLOSING">
+                <i class="fa fa-lock" aria-hidden="true"></i> Khóa Job
+              </button>
+              <button type="button" class="btn btn-info btn-sm action-file" title="Chứng từ đính kèm"
+                (click)="showFiles(item)">
+                <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Chứng từ...
+              </button>
+              <button type="button" class="btn btn-primary btn-sm action-file" title="Copy lô hàng"
+                (click)="copyJobConfirm(item)" appPermission appFunction="SHIPMENT" appAction="COPY">
+                <i class="fa fa-copy" aria-hidden="true"></i> Copy...
+              </button>
+              <button *ngIf="!item.isFinish" class="btn btn-info btn-sm action-file" title="TT Cá nhân"
+                (click)="showPayment(item.id,2)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
+                <i class="fa fa-money" aria-hidden="true"></i> TT Cá nhân
+              </button>
+              <button *ngIf="!item.isFinish" class="btn btn-warning btn-sm action-file" title="TT Nhà CC"
+                (click)="showPayment(item.id,3)" appPermission appFunction="SHIPMENT" appAction="PAYMENT">
+                <i class="fa fa-money" aria-hidden="true"></i> TT Nhà CC
+              </button>
+            </ng-container>
           </td>
         </tr>
-        <tr *ngIf="listShipment?.length == 0">
+        <tr *ngIf="listFilter?.length == 0">
           <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
         </tr>
       </tbody>
@@ -141,7 +154,7 @@
   </div>
   <!-- /.box-body -->
   <div class="box-footer no-padding">
-    <div *ngIf="listShipment?.length > 0" class="col-md-12 footer-phantrang">
+    <div *ngIf="listFilter?.length > 0" class="col-md-12 footer-phantrang">
       <div class="row">
         <div class="col-md-5">
           <div class="dataTables_info">
@@ -150,7 +163,7 @@
         </div>
         <div class="col-md-7 text-right">
           <div class="page">
-            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+            <pagination [totalItems]="listFilter?.length" [(ngModel)]="pageIndex" [maxSize]="9"
               (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
               firstText="&laquo;" lastText="&raquo;">
             </pagination>

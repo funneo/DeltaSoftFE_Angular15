@@ -35,3 +35,12 @@ td.col-enter {
 }
 thead tr:nth-child(1) th{background: #dcefe5f6; position: sticky;top: 0px;z-index: 10;}
 thead tr:nth-child(2) th{background: #dcefe5f6; position: sticky;top: 22px;z-index: 10;}
+
+/* Phân biệt dòng nháp với dòng ERP thật */
+tr.row-draft > td { background-color: #FFF8E1 !important; color: #6b5d20; }
+tr.row-draft:hover > td { background-color: #FFEFB0 !important; }
+.badge-draft {
+  display: inline-block; padding: 1px 8px; border-radius: 10px;
+  background: #FFC107; color: #4a3a00; font-weight: 600; font-size: 11px;
+}
+.badge-draft .fa { margin-right: 3px; }
