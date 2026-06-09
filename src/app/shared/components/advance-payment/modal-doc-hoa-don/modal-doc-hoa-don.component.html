@@ -41,19 +41,46 @@
                 <i class="fa fa-files-o"></i> {{ results.length }} hóa đơn
                 <span class="text-success" *ngIf="okCount">&nbsp;• {{ okCount }} OK</span>
                 <span class="text-danger" *ngIf="errorCount">&nbsp;• {{ errorCount }} lỗi</span>
+                <span class="text-warning" *ngIf="duplicateCount">&nbsp;• {{ duplicateCount }} trùng</span>
+              </div>
+              <!-- Helper chọn nhanh -->
+              <div class="invoice-list-helper">
+                <span class="text-muted small">Đã chọn: <strong>{{ checkedCount }}/{{ results.length }}</strong></span>
+                <div>
+                  <a (click)="selectAll()" class="link-action">Tất cả</a>
+                  &nbsp;·&nbsp;<a (click)="clearAll()" class="link-action">Bỏ chọn</a>
+                  &nbsp;·&nbsp;<a (click)="selectErrorsOnly()" class="link-action">Chỉ lỗi</a>
+                </div>
               </div>
               <div class="invoice-list-items">
                 <div *ngFor="let r of results; let i = index" class="invoice-list-item"
                   [class.active]="i === selectedIndex" [class.has-error]="!!r.error"
+                  [class.is-duplicate]="r.isDuplicate"
                   (click)="selectInvoice(i)">
-                  <div class="ili-name">
-                    <i class="fa" [ngClass]="r.error ? 'fa-exclamation-triangle text-danger' : 'fa-file-text-o text-primary'"></i>
-                    {{ r.fileName || ('Hóa đơn ' + (i + 1)) }}
+                  <div class="ili-row">
+                    <input type="checkbox" [checked]="isChecked(i)" (click)="toggleCheck(i, $event)" class="ili-check" />
+                    <div class="ili-body">
+                      <div class="ili-name">
+                        <i class="fa" [ngClass]="r.error ? 'fa-exclamation-triangle text-danger' : 'fa-file-text-o text-primary'"></i>
+                        {{ r.fileName || ('Hóa đơn ' + (i + 1)) }}
+                        <span *ngIf="r.isDuplicate" class="badge-dup"
+                          [title]="'Trùng với: ' + (r.duplicates | json)">
+                          <i class="fa fa-exclamation-circle"></i> TRÙNG
+                        </span>
+                      </div>
+                      <div class="ili-sub" *ngIf="!r.error">
+                        {{ r.vendorName || '—' }}<span *ngIf="r.totalAmount"> • {{ r.totalAmount | currency:'VND':'' }}</span>
+                      </div>
+                      <div class="ili-sub text-danger" *ngIf="r.error">{{ r.error }}</div>
+                      <div class="ili-sub text-warning" *ngIf="r.isDuplicate && r.duplicates?.length">
+                        <i class="fa fa-link"></i>
+                        Trùng:
+                        <span *ngFor="let d of r.duplicates; let last = last">
+                          {{ d.paymentRefNo }}<span *ngIf="!last">, </span>
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div class="ili-sub" *ngIf="!r.error">
-                    {{ r.vendorName || '—' }}<span *ngIf="r.totalAmount"> • {{ r.totalAmount | currency:'VND':'' }}</span>
-                  </div>
-                  <div class="ili-sub text-danger" *ngIf="r.error">{{ r.error }}</div>
                 </div>
               </div>
             </div>
@@ -238,8 +265,26 @@
               <i class="fa fa-check-circle"></i> {{ results.length }} hóa đơn
               <span *ngIf="errorCount" class="text-danger">({{ errorCount }} lỗi)</span>
             </span>
+            <span *ngIf="hasTokenUsage" class="text-muted" style="margin-left:10px; font-size:12px;"
+                  title="Tổng token Gemini đã dùng (in + out). Dùng để theo dõi chi phí.">
+              <i class="fa fa-bolt"></i>
+              {{ totalPromptTokens | number }} in / {{ totalCompletionTokens | number }} out
+              = <strong>{{ totalTokens | number }}</strong> tokens
+            </span>
           </div>
           <div>
+            <button *ngIf="hasResult && uploadId" type="button"
+              class="btn btn-danger btn-sm" (click)="retrySelected()" [disabled]="!canRetrySelected"
+              style="margin-right:5px;" title="Đọc lại Gemini cho các dòng đã chọn (kể cả OK), không upload lại">
+              <i class="fa" [ngClass]="retrying ? 'fa-spinner fa-spin' : 'fa-undo'"></i>
+              {{ retrying ? 'Đang đọc lại...' : 'Đọc lại đã chọn (' + checkedCount + ')' }}
+            </button>
+            <button *ngIf="hasResult && uploadId" type="button"
+              class="btn btn-primary btn-sm" (click)="saveSelected()" [disabled]="!canSave"
+              style="margin-right:5px;" title="Lưu các hóa đơn đã chọn vào danh sách chờ TT">
+              <i class="fa" [ngClass]="saving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+              {{ saving ? 'Đang lưu...' : 'Lưu hóa đơn chờ TT (' + checkedCount + ')' }}
+            </button>
             <button *ngIf="isMulti" type="button" class="btn btn-success btn-sm" (click)="exportExcel()"
               style="margin-right:5px;">
               <i class="fa fa-file-excel-o"></i> Xuất Excel

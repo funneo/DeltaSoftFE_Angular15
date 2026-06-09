@@ -21,6 +21,7 @@ const routes: Routes = [
   { path: 'report-payment', loadChildren: () => import('./report-payment-detail/report-payment-detail.module').then(m => m.ReportPaymentDetailModule), data: { functionCode: 'REPORTPAYMENT' }, canActivate: [AuthGuard] },
   { path: 'empoyee-debit-closing', loadChildren: () => import('./employee-debit-closing/employee-debit-closing.module').then(m => m.EmployeeDebitClosingModule), data: { functionCode: 'ADVANCE' }, canActivate: [AuthGuard] },
   { path: 'additional-invoice-information', loadChildren: () => import('./additional-invoice-information/additional-invoice-information.module').then(m => m.AdditionalInvoiceInformationModule), data: { functionCode: 'F002' }, canActivate: [AuthGuard] },
+  { path: 'pending-invoice', loadChildren: () => import('./pending-invoice/pending-invoice.module').then(m => m.PendingInvoiceModule), data: { functionCode: 'F043' }, canActivate: [AuthGuard] },
 ];
 
 @NgModule({

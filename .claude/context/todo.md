@@ -1,80 +1,59 @@
 # Pending / In-Progress Work
 
-## ▶ Session 2026-06-07 — SQL còn chờ anh chạy (FE+BE build sạch)
-- **`SP_DriverFuelClosing_Delete`**: ALTER PROC sang `@Id INT` (bỏ STRING_SPLIT vì DB compat <130). SQL đã propose trong chat.
-- **`SP_DraftEntries_GetPaging`**: DROP + CREATE bản LIKE pattern (bỏ JSON_VALUE). File `Migration_DraftSite_GetPaging_ExtendByEmployee_20260602.sql` đã cập nhật nội dung — anh chạy file đó.
-- **`SP_DispatchOrder_GetForSummary`**: ALTER thêm `FuelDriverName` (LEFT JOIN Employee theo FuelDriverId) cho cả 3 nhánh UNION. SQL trong chat.
-- **`SP_DriverFuelApproval_CancelExpired`**: tạo mới (Hủy IGAS hết hạn). SQL từ session trước, chưa chạy.
-- **F039 grant**: ActionInFunctions + Permissions cho F039 (VIEW/CREATE/UPDATE/ACCEPT/DELETE).
+## ▶ Session 2026-06-07 — chờ anh test E2E (SQL đã chạy xong 2026-06-08)
+5 SQL trên đã chạy: SP_DriverFuelClosing_Delete (@Id), SP_DraftEntries_GetPaging (LIKE pattern), SP_DispatchOrder_GetForSummary (+FuelDriverName), SP_DriverFuelApproval_CancelExpired, F039 grant.
 
-**Sau khi chạy SQL**: restart ERP API (token Draft 24h + SP changes) + restart DraftAPI (port 44362, code mới `(int?)` cast + LIKE pattern).
+**Anh cần**:
+1. Restart ERP API (load token Draft 24h + SP changes + appsettings allowlist).
+2. Restart DraftAPI port 44362 (code `(int?)` cast + LIKE pattern hoạt động khi SP mới đã chạy).
+3. **Test E2E F039**: relogin → `/main/transports/vehiclefuelclosing` → chọn xe + kỳ + Tải dữ liệu → nhập TopUp → Lưu nháp → Tải lại verify candidates pick biến mất → Duyệt → check `IsFuelClosing/IsSummarized`. Edge: tạo phiếu thứ 2 cùng xe → chặn "Xe đang có phiếu chưa duyệt".
+4. **Test Hủy IGAS hết hạn**: phiếu fuel-summary đã xuất IGAS mà chưa đổ → nút "Hủy IGAS hết hạn" → nhập lý do → status chuyển -2.
+5. **Test Người nhận dầu**: modal-fuel-summary cột mới hiển thị đúng tên NV (từ `Employee.EmployeeFullName` JOIN qua `FuelDriverId`).
+6. **Test draft AI**: employee login draft → list job thấy nháp có `Payload.targetEmployeeId` = mình.
 
-## ⏸ Phase 5a — View Draft ở ERP — **TẠM DỪNG (2026-06-02), anh báo sau**
-Anh chỉ thị dừng mọi việc liên quan ERP đọc dữ liệu Draft. Code/SQL đã làm GIỮ NGUYÊN — không revert. Khi anh báo lại sẽ tiếp Stage 3/4.
+## ▶ Phase 5a — View Draft ở ERP — **2/5 list XONG (2026-06-08), 3 list + 5 modal chi tiết còn lại**
 
-**ĐỔI PLAN (2026-06-02)**: bỏ tab Draft riêng → gộp 2 nguồn (ERP thật + Draft) vào CÙNG 1 list, dòng nháp highlight màu khác. Stage 1 SQL + Stage 2 BE đã làm vẫn dùng được (endpoint `/api/draft/getPagingForErp` không đổi).
+**Tiến độ**:
+- ✅ **Stage 1 SQL** — `Migration_DraftSite_GetForErp_20260602.sql` (LIKE pattern, bỏ JSON_VALUE). Anh đã chạy 2026-06-08, SP `dbo.SP_DraftEntries_GetForErp_GetPaging` đã tồn tại + 2 list Lô hàng/Canon đã thấy dòng vàng nháp.
+- ✅ **Stage 2 BE ERP** — endpoint `POST /api/draft/getPagingForErp` build clean, chạy OK.
+- ✅ **Stage 3 FE shared** — `shared/services/draft.service.ts` xong (interface `DraftFilterRequest`/`DraftEntryView`, gọi BE, catch 500 → empty).
+- ✅ **Stage 4 — 2/5 list**: Lô hàng thường + Lô hàng Canon merged draft, verified runtime OK. Chi tiết: done.md section đầu.
+- 🟡 **Stage 4 — 3/5 list còn lại**: Thanh toán, Phân công CV, Debit Note.
+- 🟡 **Stage 3 — modal-draft-*-view (5 modal)**: chưa code. Hiện click vào badge nháp KHÔNG mở gì — anh muốn xem chi tiết payload thì chưa có.
 
-### Đã làm (giữ nguyên)
-- **✅ Stage 1 SQL** (anh đã chạy): `dbo.SP_DraftEntries_GetForErp_GetPaging`. File `Migration_DraftSite_GetForErp_20260602.sql`. Đọc trực tiếp `draft.DraftEntries` cùng DB.
-- **✅ Stage 2 BE ERP** (code xong, anh build + test): 4 file `DraftEntryViewModel.cs` + `IDraft.cs` + `DraftRepository.cs` + `DraftController.cs`. Endpoint `POST /api/draft/getPagingForErp`.
+### ▶ Stage 4 — 3 list còn lại (clone pattern shipment-normal)
+| List | Component | DraftType | ShipmentType param |
+|---|---|---|---|
+| Thanh toán | payments-list | Payment | — (omit) |
+| Phân công CV | workflow-list | Workflow | — (omit) |
+| Debit Note | debit-notes-list | Debit | — (omit) |
 
-### Quyết định UX (chốt với anh 2026-06-02)
-- **Gộp 2 nguồn vào 1 list**, KHÔNG có tab riêng → UX nhất quán, không switch.
-- **Sắp xếp**: trộn lẫn ERP + Draft theo `createdDate/createdAt desc` (sort chung).
-- **Highlight dòng draft**: background **#FFF8E1** (vàng nhạt).
-- **Click dòng draft**: mở **modal mới read-only riêng** cho từng DraftType (KHÔNG reuse modal ERP gốc — tránh động legacy).
-- **Action**: dòng draft chỉ có nút "Xem" (read-only); dòng ERP nguyên các action cũ.
+Mỗi list cần:
+1. Inject `DraftService` + `forkJoin` ERP + draft.
+2. `mapDraftToRow*` parse `d.payload` → row shape của list. Field mapping:
+   - **Payment**: `Payload.refNo→refNo`, `Payload.targetEmployeeId→người làm`, `Payload.amount→total`, `Payload.shipmentId→lô hàng`.
+   - **Workflow**: `Payload.jobId→jobid`, `Payload.handlingGroupId→nhóm`, `Payload.targetEmployeeId→người thực hiện`.
+   - **Debit**: `Payload.customerId→KH`, `Payload.totalAmount→tổng`, `Payload.debitDate→ngày`.
+3. HTML: `[class.row-draft]` + badge JobId/RefNo + `<ng-container *ngIf="!item._isDraft">` quanh cột Tác vụ. CSS copy 4 dòng `row-draft`/`badge-draft`.
+4. Defensive guard 3 lớp: `code=200/201` + `Array.isArray` + client-side filter loại Canon (chỉ áp cho Shipment).
 
-### ▶ Stage 3 — FE shared (chưa code)
-- **`draft.service.ts`**: gọi BE `POST /api/draft/getPagingForErp`.
-- **Helper `draft-row-mapper.ts`** (function thuần, không Component): `mapDraftToRow(draftType, draft, lookups)` → trả object có shape giống ERP row + flag `_isDraft=true` + `_draftId` + `_draftPayload`. Map fields theo từng DraftType:
-  - Shipment/Canon: Payload.refNo→refNo, Payload.customerId→customer fields, Payload.shipmentType→type label, ...
-  - Payment: Payload.refNo→refNo, Payload.targetEmployeeId→người làm, Payload.amount→total, ...
-  - Workflow: Payload.jobId→jobid, Payload.handlingGroupId→nhóm, ...
-  - Debit: Payload.customerId, Payload.totalAmount, Payload.debitDate, ...
-- **5 modal view detail riêng** (không đụng modal ERP):
-  - `modal-draft-shipment-view`
-  - `modal-draft-canon-view`
-  - `modal-draft-payment-view`
-  - `modal-draft-workflow-view`
-  - `modal-draft-debit-view`
-  - Layout: hiển thị fields parse từ Payload, badge "NHÁP" trên header, không có save button. Mở qua `@Input() payload + draftType` hoặc `@Input() draftId` (fetch từ BE).
+### ▶ Stage 3 — 5 modal-draft-*-view (read-only)
+- `modal-draft-shipment-view`, `modal-draft-canon-view`, `modal-draft-payment-view`, `modal-draft-workflow-view`, `modal-draft-debit-view`.
+- Layout: hiển thị fields parse từ Payload, badge "NHÁP" trên header, KHÔNG có save button.
+- Open qua `@Input() payload + draftType` (hiện đã có `_draftPayload` trên row).
+- Trigger từ click badge JobId của dòng nháp (hiện badge chưa có click handler).
 
-### ▶ Stage 4 — Tích hợp 5 list ERP (chưa code)
-Mỗi list (shipment / canon / payment / workflow / debit-notes) cần:
-1. Inject `DraftService` + 1 modal view tương ứng.
-2. Sửa `load()`:
-   ```ts
-   forkJoin([
-     erpService.getPaging(params),                                    // pageSize bình thường
-     draftService.getPagingForErp({ draftType, shipmentType, pageSize: 999, ...sameFilters })
-   ]).subscribe(([erpRes, draftRes]) => {
-     const erpRows   = erpRes.data.map(r => ({ ...r, _isDraft: false }));
-     const draftRows = draftRes.data.map(d => mapDraftToRow(draftType, d, this.lookups));
-     this.list = [...draftRows, ...erpRows]
-       .sort((a, b) => +new Date(b._sortDate ?? b.createdDate) - +new Date(a._sortDate ?? a.createdDate));
-   });
-   ```
-3. **ag-grid styling**: `getRowStyle = params => params.data._isDraft ? { backgroundColor: '#FFF8E1' } : null`.
-4. **Action column**: cell renderer check `_isDraft` → render Sửa/Xóa/Duyệt (ERP) HOẶC nút "👁 Xem" duy nhất (draft).
-5. **Click row / open action**:
-   - `_isDraft=true` → mở modal-draft-*-view tương ứng (đưa payload + draftId)
-   - `_isDraft=false` → mở modal ERP cũ như bình thường
+### Phase 4 — Promote (sau khi view xong)
+ERP cần màn "Duyệt nháp" để bê record `draft.DraftEntries.Payload` → `Tbl_*` thật. Controller promote phải:
+- Parse `targetEmployeeId` từ Payload → gán `Tbl_*.EmployeeId`.
+- `jobDate/refDate` lấy từ `createdAt` envelope (override Payload).
+- Audit log + đóng draft (set `Status='Promoted'`, `PromotedRefNo`, `PromotedAt`).
 
-### Tablechart 5 list
-| List | Component | DraftType | ShipmentType | Modal view |
-|---|---|---|---|---|
-| Lô hàng | shipments-list | Shipment | != 1176 | modal-draft-shipment-view |
-| Lô hàng Canon | jobs-list (canon) | Shipment | = 1176 | modal-draft-canon-view |
-| Thanh toán | payments-list | Payment | — | modal-draft-payment-view |
-| Phân công CV | workflow-list | Workflow | — | modal-draft-workflow-view |
-| Debit Note | debit-notes-list | Debit | — | modal-draft-debit-view |
-
-### Phụ tùy phải xử lý khi code
-- Filter input của list ERP: truyền y nguyên cho cả 2 API (cùng customer/date/keyword) → kết quả tự nhất quán.
-- Pagination: list ERP vẫn server-side bình thường; Draft load full pageSize=999 ở mỗi page → mỗi page hiển thị FULL draft + ERP page → trang sau lặp lại draft. ⚠️ Cần chốt: hoặc (a) chỉ load draft khi pageIndex=1, sang trang 2+ không gọi draft API; (b) flag "Đã xem hết nháp" badge.
-- Cột sort: nếu user click sort cột nào, áp dụng cho cả 2 nguồn sau khi merge (client-side sort sau forkJoin).
-- Lookups cho map: cần load customers/branches/employees TRƯỚC khi merge để mapDraftToRow có dữ liệu hiển thị tên/mã KH thay vì chỉ ID.
+### Quyết định UX đã chốt (2026-06-02, giữ nguyên)
+- Gộp 2 nguồn vào 1 list (không tab riêng).
+- Highlight nền vàng `#FFF8E1`, badge `#FFC107`.
+- Dòng nháp KHÔNG có action button nào ngoài "Xem" qua badge JobId.
+- Sort theo `createdDate desc` chung.
 
 ## ▶ Chốt dầu lái xe (DriverFuelClosing) — 2026-06-04 (SQL+BE+FE XONG, chờ anh grant permission + test E2E)
 SQL Part 7 redesign (chốt theo XE, 2 bảng `Tbl_DriverFuelClosing` + Detail + TVP + 7 SP) đã chạy OK. BE 6 file (FunctionCode F039 enum sẵn có line 114, Model/ViewModel/Interface/Repo/Controller) build 0 error. FE 6 file mới (model + service + `modal-vehicle-fuel-closing` + list `vehicle-fuel-closing` + route `/transports/vehiclefuelclosing` data.functionCode='F039') build 0 error. Chi tiết: done.md.
@@ -159,22 +138,38 @@ Lộ trình chi tiết + kiến trúc đã chốt: [draft-site-roadmap.md](draft
 
 ---
 
-## Đọc hóa đơn — AI Studio + ZIP/RAR + flash-lite + LOW + đa hóa đơn/1 PDF — CHẠY ĐƯỢC, CHƯA commit (cập nhật 2026-05-25)
+## ▶ Đọc hóa đơn AI / PendingInvoice (F043) — SQL+BE+FE XONG (2026-06-09, chờ test E2E + theo dõi chi phí)
+Module hoàn chỉnh. Chi tiết: done.md section đầu. **3 SQL đã chạy + Functions.F043 anh tạo tay**:
+- `Migration_PendingInvoice_20260609.sql` (bảng + TVP + 7 SP).
+- `Migration_PendingInvoice_AddDuplicateRef_20260609.sql` (+2 cột `IsDuplicate/DuplicatesJson` + DROP+CREATE Create/Update).
+- `Migration_F043_PendingInvoice_Grant_20260609.sql` (ActionInFunctions × 5 + Permissions Admin).
 
-Đã migrate Vertex→**AI Studio REST** + retry + tắt thinking + ZIP/RAR; session 2026-05-25 thêm: **flash-lite** (config), **mediaResolution=LOW** (−74% token ảnh), **đa hóa đơn trong 1 PDF** (AI trả mảng), nút đọc hóa đơn **chỉ admin** ở list thanh toán. Chi tiết: done.md 2 section đầu. **Bản cũ đã test chạy; bản 2026-05-25 chờ anh restart BE test.**
-- **Cần anh test (Stop Shift+F5 → F5 trong VS để chạy bản mới):**
-  1. Ảnh chụp điện thoại 1 hóa đơn dày chữ ở `LOW` còn đọc đúng không → nếu sai nhiều, đổi `MEDIA_RESOLUTION_LOW`→`MEDIUM` (1 dòng) hoặc điều kiện PDF=LOW/ảnh=MEDIUM.
-  2. PDF gộp nhiều hóa đơn (có hóa đơn nhiều trang) → tách đúng, không gộp/cắt nhầm.
-- **Còn lại (chờ user):**
-  1. Theo dõi **chi phí** Cloud Billing vài ngày (số tiền trễ ~24h; request count gần realtime ở APIs & Services → Generative Language API → Metrics). Ước tính ~$0.001–0.002/hóa đơn (giờ thấp hơn nhờ flash-lite+LOW).
-  2. Khi commit: **dời API key** `GoogleServices:Gemini:ApiKey` khỏi `appsettings.json` → `appsettings.Development.json`/env (đừng commit key lên git).
-  3. Nếu gặp lại **malformed JSON** với hóa đơn phức tạp → cân nhắc thêm lại `responseSchema` (đã từng thêm rồi bỏ theo yêu cầu user).
-  4. Tùy chọn tối ưu thêm: tăng `MaxParallel` cho ZIP lớn.
-- **Nghiên cứu 2026-05-25 (DeepSeek & AI free khác):** DeepSeek API hosted **text-only** (không vision) → loại; DeepSeek-OCR/OCR-2 phải tự host GPU → đắt+phức tạp hơn. Gemini flash-lite ($0.10/M) đang rẻ nhất có vision sẵn. Ứng viên free duy nhất đáng thử sau: **Qwen3-VL/Qwen-OCR** (Alibaba, free tier, ~94.8% acc). Chưa đụng code.
-- **⚠️ Lưu ý chạy đúng bản mới:** IIS Express khóa `bin\API.dll` → build CLI không ghi đè được, dễ test trúng DLL cũ (Vertex → treo). Luôn **Stop (Shift+F5) trong VS rồi F5 lại** để VS tự rebuild+chạy bản mới.
+### ▶ Anh cần test E2E
+1. **Restart ERP API** (Stop Shift+F5 → F5 trong VS) — load BE mới + DLL được copy. Relogin → claim JWT có `F043_*`.
+2. `/main/advance-payment/pending-invoice` → bấm "Đọc hóa đơn AI".
+3. Upload ZIP 5-10 file (có 1-2 file trùng Payment đã có) → modal hiện list: row trùng vàng + badge "TRÙNG" + tooltip RefNo.
+4. Test **checkbox**: uncheck dòng test → bấm "Lưu hóa đơn chờ TT (N)" → toast "Đã lưu N hóa đơn" → list reload → row trùng vẫn vàng + badge.
+5. Test **Đọc lại đã chọn** (modal): check 1 dòng OK + bấm → BE đọc lại không upload lại. Restart ERP API → retry → phải hiện "Phiên upload hết hạn".
+6. Test **Đọc lại 1 dòng** (list): bấm nút Đọc lại 1 row → BE đọc từ `PathFileLocal` → reload → snapshot dup mới.
+7. Test **Discard**: đóng modal không lưu → folder `UploadFiles/InvoiceTemp/<uploadId>/` xóa ngay.
+8. Test **Cron cleanup**: tạo folder bỏ rơi >24h → sau 6h `InvoiceTempCleanupService` tự dọn (xem log API).
 
-### Mặc định có thể chỉnh nếu cần (đang hardcode trong [GeminiAIRepository.cs](../../d:/Delta/DeltaSoft/NewAPI/API/Repositories/CustomerCommunicate/GoogleServices/GeminiAIRepository.cs))
-- `MaxFilesPerArchive=30`, `MaxTotalUncompressedBytes=100MB`, `MaxParallel=5`. Nếu muốn cấu hình qua appsettings thì cân nhắc đưa ra config sau.
+### ▶ Theo dõi chi phí
+- Token usage hiển thị trực tiếp ở footer modal: `{in} / {out} = {total}`.
+- Cuối tháng anh check Cloud Billing → APIs & Services → Generative Language API → Metrics. Ước tính ~$0.001-0.002/hóa đơn với `gemini-2.5-flash-lite` + LOW + thinking off.
+- Nếu ảnh chụp điện thoại dày chữ đọc sai → đổi `mediaResolution=MEDIA_RESOLUTION_LOW` → `MEDIUM` ([GeminiAIRepository.cs:421](D:/Delta/DeltaSoft/NewAPI/API/Repositories/CustomerCommunicate/GoogleServices/GeminiAIRepository.cs#L421)).
+
+### Tích hợp Payment (PLANNED — chưa code)
+- Trong modal Payment, thêm dropdown "Chọn hóa đơn từ PendingInvoice" lọc theo user + Status=0.
+- Khi save Payment có chọn → call `SP_PendingInvoice_MarkUsedByPayment(@Id)` → Status=1.
+- Hóa đơn `IsDuplicate=true` vẫn cho chọn nhưng UI cảnh báo "Hóa đơn này đã trùng với PMT-XXX, vẫn tiếp tục?".
+
+### Mặc định có thể chỉnh nếu cần (hardcode trong [GeminiAIRepository.cs](D:/Delta/DeltaSoft/NewAPI/API/Repositories/CustomerCommunicate/GoogleServices/GeminiAIRepository.cs))
+- `MaxFilesPerArchive=30`, `MaxTotalUncompressedBytes=100MB`, `MaxParallel=5`.
+
+### Cleanup đã làm
+- ✅ Dời API key Gemini → `appsettings.Development.json` (đã gitignore, verified no git leak).
+- ✅ Bỏ Vertex AI cũ: `appsettings.json` chỉ còn `Gemini.ModelId`, `API.csproj` xóa `Google.Cloud.AIPlatform.V1`. GIỮ `delta-erp-vn-...json` credential + `GOOGLE_APPLICATION_CREDENTIALS` env var vì DocumentAI vẫn dùng.
 
 ---
 

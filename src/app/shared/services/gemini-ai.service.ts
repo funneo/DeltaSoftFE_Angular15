@@ -33,8 +33,26 @@ export interface InvoiceExtractionResult {
   webCode: string;
   lineItems: InvoiceItem[];
   rawJson: string;
-  fileName?: string;   // tên file gốc (khi đọc từ ZIP/RAR)
-  error?: string;      // có giá trị nếu file đó lỗi
+  fileName?: string;        // tên file gốc (khi đọc từ ZIP/RAR)
+  error?: string;           // có giá trị nếu file đó lỗi
+  tempFileName?: string;    // tên file lưu local trong folder uploadId — dùng để retry
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+  isDuplicate?: boolean;
+  duplicates?: InvoiceDuplicateRef[];
+}
+
+export interface InvoiceDuplicateRef {
+  paymentId: number;
+  paymentRefNo: string;
+  paymentRefDate?: string;
+  paymentStatus?: number;
+}
+
+export interface ExtractInvoicesResponse {
+  uploadId: string;
+  results: InvoiceExtractionResult[];
 }
 
 @Injectable({
@@ -54,13 +72,31 @@ export class GeminiAiService extends BaseService {
     ).pipe(catchError(this.handleError));
   }
 
-  // Nhận 1 file lẻ (ảnh/PDF) hoặc 1 file nén ZIP/RAR -> trả mảng kết quả
-  extractInvoices(file: File): Observable<InvoiceExtractionResult[]> {
+  // Nhận 1 file lẻ (ảnh/PDF) hoặc 1 file nén ZIP/RAR.
+  // BE lưu mỗi entry vào UploadFiles/InvoiceTemp/<uploadId>/ + trả { uploadId, results }.
+  // FE giữ uploadId để retry chỉ file lỗi sau này (không upload lại).
+  extractInvoices(file: File): Observable<ExtractInvoicesResponse> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<InvoiceExtractionResult[]>(
+    return this.http.post<ExtractInvoicesResponse>(
       `${environment.apiUrl}/api/geminiAI/extract-invoices`,
       formData
+    ).pipe(catchError(this.handleError));
+  }
+
+  // Đọc lại Gemini chỉ những TempFileName chỉ định. 410 = phiên hết hạn -> upload lại.
+  retryInvoices(uploadId: string, tempFileNames: string[]): Observable<InvoiceExtractionResult[]> {
+    return this.http.post<InvoiceExtractionResult[]>(
+      `${environment.apiUrl}/api/geminiAI/extract-invoices-retry`,
+      { uploadId, tempFileNames }
+    ).pipe(catchError(this.handleError));
+  }
+
+  // Xóa folder temp (gọi khi đóng modal mà không lưu).
+  discardUpload(uploadId: string): Observable<any> {
+    return this.http.post(
+      `${environment.apiUrl}/api/geminiAI/extract-invoices-discard`,
+      { uploadId }
     ).pipe(catchError(this.handleError));
   }
 }

@@ -1,7 +1,128 @@
 # Completed Features
 
+## Đọc hóa đơn AI — F043 PendingInvoice + lưu DB + check trùng snapshot + retry chọn lọc + token tracking — 2026-06-09
+Module mới hoàn chỉnh (anh đã chạy SQL + tạo Functions.F043; chờ test E2E):
+
+### SQL (đã chạy)
+- **`Migration_PendingInvoice_20260609.sql`**: `Tbl_PendingInvoice` (33 cột, gồm Customer info + LineItemsJson + AI tokens), TVP `Type_InvoiceKey`, 7 SP (Create/Update/GetPaging/GetById/Delete/MarkUsedByPayment/CheckDuplicateBatch). Tên cột match `PaymentDetail` (InvoiceNo/TaxNumber/InvoicePattern/InvoiceDate NVARCHAR/Web/Code) để JOIN check trùng đơn giản. KHÔNG có UNIQUE — trùng vẫn ghi, chỉ cảnh báo. Status: 0=Chờ TT, 1=Đã dùng cho 1 Payment, -1=Xóa.
+- **`Migration_PendingInvoice_AddDuplicateRef_20260609.sql`**: ALTER TABLE + 2 cột `IsDuplicate BIT` + `DuplicatesJson NVARCHAR(MAX)` (snapshot kết quả check trùng tại thời điểm AI đọc), DROP+CREATE lại `SP_Create` + `SP_Update` để nhận 2 param mới.
+- **`Migration_F043_PendingInvoice_Grant_20260609.sql`**: ActionInFunctions × 5 (VIEW/CREATE/UPDATE/DELETE/EXPORT) + Permissions Admin. Anh tự INSERT row Functions.F043.
+
+### Check trùng — 4 tiêu chí, CHỈ vs PaymentDetail
+SP `SP_PendingInvoice_CheckDuplicateBatch` UNION map theo `RowKey` (FE/BE truyền index để map ngược): TaxNumber + InvoiceNo + InvoicePattern + InvoiceDate (so chuỗi vì PaymentDetail.InvoiceDate lưu chuỗi). KHÔNG check trong `Tbl_PendingInvoice` vì đó chỉ là staging — anh chốt chỉ chống TT 2 lần.
+
+### BE — 8 file mới + 4 sửa
+- **Mới**: `Models/CustomerCommunicate/GoogleServices/PendingInvoice.cs` (domain + `InvoiceKey` TVP row) — `ViewModels/.../PendingInvoiceViewModel.cs` (Filter/CreateBatchRequest/InvoiceDuplicate/ReExtractRequest) — `Interfaces/.../IPendingInvoice.cs` (7 method) — `Repositories/.../PendingInvoiceRepository.cs` (TVP `AsTableValuedParameter("Type_InvoiceKey")`, dynamic cast `Convert.ToInt32` cho SCOPE_IDENTITY) — `Controllers/.../PendingInvoiceController.cs` (5 endpoint, gate `FunctionCode.F043`) — `Services/InvoiceTempCleanupService.cs` (`BackgroundService` quét `UploadFiles/InvoiceTemp/*` mỗi 6h, xóa folder LastWriteTime >24h).
+- **Sửa**: `Filters/FunctionCode.cs` (F043 + comment), `Program.cs` (`AddHostedService<InvoiceTempCleanupService>`), `IGeminiAIRepository.cs` (+ `ExtractInvoiceFromBytes` cho re-extract), `GeminiAIRepository.cs` (+ token usage parse từ `usageMetadata.promptTokenCount/candidatesTokenCount/totalTokenCount`, public `ExtractInvoiceFromBytes`), `Controllers/.../GeminiAIController.cs` (đổi `[AllowAnonymous]` → `[Authorize]`, inject `IPendingInvoice`, `AnnotateDuplicatesAsync` auto check dup sau extract/retry, gán `IsDuplicate + Duplicates[]` vào result).
+- **`Models/.../DocumentAIModels.cs`**: + `TempFileName`/`PromptTokens`/`CompletionTokens`/`TotalTokens`/`IsDuplicate`/`Duplicates[]`/`InvoiceDuplicateRef` wrapper class.
+
+### CreateBatch flow — BE tự check trùng (single source of truth)
+1. Verify folder `UploadFiles/InvoiceTemp/<uploadId>/` tồn tại (410 nếu hết hạn).
+2. Build TVP keys từ tất cả Items → 1 call `CheckDuplicateBatch` cho cả batch.
+3. Group kết quả theo `RowKey` → mỗi item gán `IsDuplicate=true` + `DuplicatesJson = JsonConvert.SerializeObject([{paymentId, paymentRefNo, paymentRefDate, paymentStatus}])`.
+4. Loop từng item: move file `InvoiceTemp/<uploadId>/<tempFile>` → `UploadFiles/Invoice/yyyy/MM/<random30>.<ext>` + upload S3 song song (bucket `files-manager-delta-erp`, key `Invoices/yyyy/MM/<permName>`). S3 fail KHÔNG chặn (vẫn lưu DB, `pathFileS3=null`, push vào `errors[]`).
+5. INSERT row → xóa folder temp.
+
+### ReExtract flow (luồng "Đọc lại" 1 dòng list)
+1. GetById → verify Status=0 + PathFileLocal tồn tại (410 nếu file mất).
+2. Đọc bytes → `_gemini.ExtractInvoiceFromBytes`.
+3. Check trùng bằng key MỚI → overwrite `IsDuplicate/DuplicatesJson` (không cộng dồn — key đổi → tập trùng đổi).
+4. SP_Update: token CỘNG DỒN (đọc lại tốn thêm thực sự); IsDuplicate/DuplicatesJson OVERWRITE.
+
+### FE — 4 file mới + 4 sửa
+- **Mới**: `shared/services/pending-invoice.service.ts` (5 endpoint + static helper `fromExtractionResult` map InvoiceExtractionResult → CreateItem), `main/advance-payment/pending-invoice/{routing,module,component.ts/.html/.css}` (list với daterange + status filter + cột Token + cột Tác vụ Đọc lại/Xóa, row vàng `row-duplicate` + badge "TRÙNG" cạnh số HĐ + tooltip `parseDuplicates` liệt kê RefNo Payment trùng).
+- **Sửa**: `shared/services/gemini-ai.service.ts` (+ `isDuplicate/duplicates[]/promptTokens/completionTokens/totalTokens`), `shared/components/advance-payment/modal-doc-hoa-don/{.ts,.html,.css}`:
+  - **Checkbox per row** + helper bar ("Tất cả/Bỏ chọn/Chỉ lỗi") + counter "Đã chọn N/M".
+  - **Badge "TRÙNG"** đỏ + tooltip JSON dups + ili-sub liệt kê RefNo Payment dưới mỗi dòng.
+  - **CSS `.is-duplicate`**: row background `#FFF3CD` + border-left vàng.
+  - **2 nút footer** thay 1: "Đọc lại đã chọn (N)" + "Lưu hóa đơn chờ TT (N)" — flex theo checkedCount.
+  - **Token tracking footer**: hiển thị `{in} / {out} = {total} tokens` (cộng tổng theo lần call Gemini — BE chỉ gán usage vào phần tử ĐẦU mỗi call nên không nhân đôi).
+  - **Discard flow**: close/reset/upload-lần-mới → POST `extract-invoices-discard` → BE xóa folder temp.
+  - `SaveSuccess` emit → parent list reload + close modal.
+- `main/advance-payment/advance-payment-routing.module.ts`: route `pending-invoice` data `functionCode:'F043'`.
+
+### Retry chọn lọc — không upload lại file nén
+Endpoint `extract-invoices-retry` nhận `{uploadId, tempFileNames[]}` → BE đọc file local + Gemini song song + AnnotateDuplicates. FE checkbox + "Đọc lại đã chọn" cho phép retry ARBITRARY dòng (kể cả OK), không chỉ file lỗi. Replace results theo `tempFileName`. 410 nếu folder mất.
+
+### Cron cleanup folder rác
+`IHostedService InvoiceTempCleanupService`: chờ 1 phút sau start (đợi DI init xong) → loop mỗi 6h: quét `UploadFiles/InvoiceTemp/*`, xóa folder có `LastWriteTime < now - 24h`. Cover user đóng tab/crash → folder không có discard call → cron tự dọn.
+
+### Lưu ý cleanup phụ
+- Bỏ Vertex AI cũ (em đã làm trước):
+  - `appsettings.json` `GoogleServices.Gemini` còn 1 dòng `ModelId: gemini-2.5-flash-lite` (xóa `ProjectId`/`Location`/`CredentialsPath`).
+  - `API.csproj` xóa `<PackageReference Include="Google.Cloud.AIPlatform.V1" />` (orphaned sau migrate sang AI Studio REST). Code không còn `using` nào dùng.
+  - **GIỮ**: `delta-erp-vn-2550393a36c2.json` credential + `GOOGLE_APPLICATION_CREDENTIALS` env var trong launchSettings — DocumentAI vẫn dùng.
+- **Token usage**: model `gemini-2.5-flash-lite` ($0.10 in / $0.40 out per 1M token), bật `thinkingBudget=0` + `mediaResolution=MEDIA_RESOLUTION_LOW` → ~$0.001-0.002/hóa đơn (anh đang theo dõi Cloud Billing).
+- **Key Gemini**: đã ở `appsettings.Development.json` (gitignore) — verify `git log -S` không thấy leak.
+
+### Anh cần test E2E
+1. Relogin (claim JWT mới có `F043_*`) → `/main/advance-payment/pending-invoice`.
+2. Upload ZIP 5-10 file (gồm 1-2 file trùng với Payment đã có) → modal hiện list: row trùng vàng + badge "TRÙNG" + tooltip RefNo.
+3. Uncheck 1-2 dòng test → bấm "Lưu hóa đơn chờ TT (N)" → toast "Đã lưu N hóa đơn" + list reload + row trùng vẫn vàng + badge.
+4. Bấm "Đọc lại đã chọn" trên modal (kể cả dòng OK) → BE đọc lại, không upload lại file. Restart ERP API rồi mới retry → phải hiện "Phiên upload hết hạn".
+5. Bấm "Đọc lại" 1 dòng trong list → BE đọc lại từ `PathFileLocal` → snapshot dup mới → reload.
+6. Đóng modal không lưu → folder `InvoiceTemp/<uploadId>/` xóa ngay. Folder bỏ rơi >24h → cron tự dọn.
+
+## Phase 5a — View Draft ở ERP — Lô hàng + Canon (2026-06-08, RESUME)
+Sau quyết định 2026-06-02 (gộp draft vào CÙNG list ERP, highlight vàng), em đã tiếp tục và xong **2/5 list**:
+
+### Stage 3 — FE shared
+- **`shared/services/draft.service.ts`** (mới): `DraftService` + interface `DraftFilterRequest`/`DraftEntryView`. Gọi `POST /api/draft/getPagingForErp` (token JWT ERP `aud=Issuer`, KHÔNG phải aud=draft). `tokenKey` auto inject từ `JwtService`. Phòng 401 → logout. Catch 500 → return `{code:200, data:[]}` để không vỡ ERP list.
+
+### Stage 4 — 2/5 list đã tích hợp
+
+**Lô hàng thường** ([shipment-normal.component.ts](src/app/main/shipments/shipment-normal/shipment-normal.component.ts)) — đã có client-side paging sẵn, chỉ cần forkJoin:
+- `loadData()`: forkJoin `{erp: shipmentService.getPagingNormal, draft: draftService.getPagingForErp({shipmentType:0})}`. shipmentType=0 → SP loại trừ Canon.
+- `mapDraftToShipmentRow(d)`: parse `d.payload` JSON → row shape Shipment (jobId='NHÁP #id', customerName, cdsNumber, hawB_HBL, mawB_MBL, invoiceNo, bookingNo, weight, conts, notes, createdByName, createdDate, branchId) + flag `_isDraft=true`, `_draftId`, `_draftPayload`.
+- **Defensive guard 3 lớp**: (1) `code=200/201`, (2) `Array.isArray(res.draft.data)`, (3) client-side `filter(r => shipmentType !== 1176)` — phòng SP filter sai.
+- Merge: `[...draftRows, ...erpItems]` sort theo `createdDate desc`.
+
+**Lô hàng Canon** ([job-canon.component.ts](src/app/main/canon/job-canon/job-canon.component.ts)) — kiểu khác, BE `SP_Shipment_GetPaging` có `OFFSET/FETCH` bị comment → trả ALL rows. FE list cũ render hết qua `*ngFor="let item of listShipment"` → chậm khi dữ liệu lớn.
+- **Fix paging**: chuyển sang client-side. `loadData` gửi `pageSize=99999`, set `listShipment` = all + `listFilter` = filtered subset. Thêm getter `visibleData` slice theo `pageIndex × pageSize`. `pageChanged` chỉ set `pageIndex` (KHÔNG reload BE).
+- **Filter theo cột**: thêm dòng input dưới header cho 7 cột (Khách hàng / JobId / Xe vận chuyển / LOT / Cung đường / #Pallets / Ghi chú). Cột Ngày/Trạng thái/Tác vụ rowspan=2. CSS sticky 2-row đã có sẵn (`thead tr:nth-child(2) th { top:22px }`).
+- forkJoin draft với `shipmentType:1176` (chỉ Canon) + client-side filter `=== 1176`.
+- `mapDraftToShipmentRow`: map field Canon (cdsNumber=Xe, cdsDate=Ngày, hawB_HBL=LOT, mawB_MBL=Cung đường, pallets).
+
+### CSS dòng nháp (cả 2 list)
+```css
+tr.row-draft > td { background-color: #FFF8E1 !important; color: #6b5d20; }
+tr.row-draft:hover > td { background-color: #FFEFB0 !important; }
+.badge-draft { padding:1px 8px; border-radius:10px; background:#FFC107; color:#4a3a00; font-weight:600; font-size:11px; }
+```
+
+### HTML cho dòng nháp
+- `[class.row-draft]="item._isDraft"` + `(click)="!item._isDraft && clickRow(item)"` + `[title]="...nháp chưa duyệt"`.
+- JobId: `*ngIf="_isDraft"` → `<span class="badge-draft">NHÁP #id</span>`; ngược lại `<a [routerLink]>` mở modal ERP cũ.
+- **Cột Tác vụ**: bọc toàn bộ button trong `<ng-container *ngIf="!item._isDraft">` — dòng nháp không hiển thị nút nào.
+
+### SP đã chạy (rewrite bỏ JSON_VALUE)
+**`Migration_DraftSite_GetForErp_20260602.sql`** — anh đã chạy 2026-06-08, runtime verify dòng vàng đã hiện ở list Lô hàng + Canon. Rewrite dùng LIKE pattern (DB compat <130 không hỗ trợ JSON_VALUE):
+```sql
+DECLARE @PatTgt   NVARCHAR(100) = N'%"targetEmployeeId":' + @EmpStr + N'[^0-9]%';
+DECLARE @PatEmp   NVARCHAR(100) = N'%[,{]"employeeId":'   + @EmpStr + N'[^0-9]%';
+DECLARE @PatCanon NVARCHAR(50)  = N'%"shipmentType":1176[^0-9]%';
+```
+Filter Canon: `@ShipmentType=1176 → [Payload] LIKE @PatCanon`; `@ShipmentType<>1176 → [Payload] NOT LIKE @PatCanon`.
+
+### Bug đã fix
+- **`draftItems.map is not a function`** runtime: SP chưa tồn tại → BE trả `code=500, data=exception`. FE crash khi `.map()` trên object. Fix bằng 3 lớp guard ở trên.
+
+### Còn lại — Phase 5a
+- 3 list chưa làm: Thanh toán, Phân công CV, Debit Note (tablechart [todo.md](.claude/context/todo.md)).
+- 5 modal-draft-*-view chưa code (Stage 3) — hiện click vào draft chỉ thấy badge, chưa mở modal xem chi tiết.
+
+## SQL session 2026-06-07 — anh đã chạy hết 2026-06-08
+5 SQL:
+- ALTER `SP_DriverFuelClosing_Delete` sang `@Id INT` (bỏ STRING_SPLIT).
+- DROP+CREATE `SP_DraftEntries_GetPaging` với LIKE pattern (bỏ JSON_VALUE, +@CurrentEmployeeId).
+- ALTER `SP_DispatchOrder_GetForSummary` LEFT JOIN Employee theo FuelDriverId → `FuelDriverName` cho 3 nhánh UNION.
+- CREATE `SP_DriverFuelApproval_CancelExpired` (Hủy IGAS hết hạn, status -2 + ghi reason vào Note).
+- F039 grant: INSERT `ActionInFunctions` × {VIEW,CREATE,UPDATE,ACCEPT,DELETE} + INSERT `Permissions` cho RoleId=Admin.
+
+Còn chờ anh test E2E (xem todo.md section đầu).
+
 ## Session 2026-06-07 — chốt dầu UX + bugfix + skill utility + draft fix + DraftAPI port + Swagger prod + token 24h
-Cụm việc 1 session, build sạch hết, đang chuẩn bị commit:
+Cụm việc 1 session, build sạch hết, đã commit:
 
 ### Modal vehicle-fuel-closing — UX rebuild + bugfix
 - **Source=1 detail**: thay 2 cột "Igas + Chênh" bằng 3 cột **Số lượng cấp / SL thực đổ / Chênh** (cấp = quantity + quantityIgas client-side, vì `quantity` stored là chênh). Source 2/3/4 giữ 1 cột "Lít".

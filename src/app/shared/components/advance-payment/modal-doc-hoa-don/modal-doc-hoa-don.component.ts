@@ -1,7 +1,8 @@
 import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/core';
-import { NotificationService } from '@app/shared/services';
+import { AuthService, NotificationService } from '@app/shared/services';
 import { ExportService } from '@app/shared/services/export-excel.service';
 import { GeminiAiService, InvoiceExtractionResult } from '@app/shared/services/gemini-ai.service';
+import { PendingInvoiceService, PendingInvoiceCreateItem } from '@app/shared/services/pending-invoice.service';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 
 @Component({
@@ -12,11 +13,16 @@ import { ModalDirective } from 'ngx-bootstrap/modal';
 export class ModalDocHoaDonComponent implements OnInit {
   @ViewChild('modalDocHoaDon', { static: false }) modal: ModalDirective;
   @Output() CloseModal = new EventEmitter<any>();
+  @Output() SaveSuccess = new EventEmitter<any>();
 
   loading = false;
+  retrying = false;
+  saving = false;
   results: InvoiceExtractionResult[] = [];
+  checkedSet: Set<number> = new Set();      // index các row được tích
   selectedIndex = 0;
   fileName = '';
+  uploadId: string = null;
   previewUrl: string = null;
   isImage = false;
 
@@ -24,8 +30,10 @@ export class ModalDocHoaDonComponent implements OnInit {
 
   constructor(
     private geminiService: GeminiAiService,
+    private pendingInvoiceService: PendingInvoiceService,
     private notificationService: NotificationService,
-    private exportService: ExportService
+    private exportService: ExportService,
+    private authService: AuthService
   ) { }
 
   ngOnInit(): void { }
@@ -36,15 +44,25 @@ export class ModalDocHoaDonComponent implements OnInit {
   }
 
   close() {
+    if (this.uploadId) {
+      this.geminiService.discardUpload(this.uploadId).subscribe({ next: () => {}, error: () => {} });
+    }
     this.modal.hide();
     this.CloseModal.emit();
   }
 
   reset() {
+    if (this.uploadId) {
+      this.geminiService.discardUpload(this.uploadId).subscribe({ next: () => {}, error: () => {} });
+    }
     this.results = [];
+    this.checkedSet = new Set();
     this.selectedIndex = 0;
     this.loading = false;
+    this.retrying = false;
+    this.saving = false;
     this.fileName = '';
+    this.uploadId = null;
     this.previewUrl = null;
     this.isImage = false;
   }
@@ -55,8 +73,34 @@ export class ModalDocHoaDonComponent implements OnInit {
   get selected(): InvoiceExtractionResult { return this.results[this.selectedIndex] ?? null; }
   get okCount(): number { return this.results.filter(r => !r.error).length; }
   get errorCount(): number { return this.results.filter(r => !!r.error).length; }
+  get duplicateCount(): number { return this.results.filter(r => r.isDuplicate).length; }
+  get checkedCount(): number { return this.checkedSet.size; }
+  get canSave(): boolean { return this.checkedCount > 0 && !this.saving && !this.retrying; }
+  get canRetrySelected(): boolean { return this.checkedCount > 0 && !!this.uploadId && !this.retrying && !this.saving; }
+
+  get totalPromptTokens(): number { return this.results.reduce((s, r) => s + (r.promptTokens ?? 0), 0); }
+  get totalCompletionTokens(): number { return this.results.reduce((s, r) => s + (r.completionTokens ?? 0), 0); }
+  get totalTokens(): number { return this.results.reduce((s, r) => s + (r.totalTokens ?? 0), 0); }
+  get hasTokenUsage(): boolean { return this.totalTokens > 0; }
 
   selectInvoice(i: number) { this.selectedIndex = i; }
+  isChecked(i: number): boolean { return this.checkedSet.has(i); }
+  toggleCheck(i: number, ev?: Event) {
+    if (ev) { ev.stopPropagation(); }
+    if (this.checkedSet.has(i)) this.checkedSet.delete(i);
+    else this.checkedSet.add(i);
+  }
+
+  selectAll() {
+    this.checkedSet = new Set(this.results.map((_, i) => i));
+  }
+  clearAll() { this.checkedSet = new Set(); }
+  selectErrorsOnly() {
+    this.checkedSet = new Set(this.results.map((r, i) => r.error ? i : -1).filter(i => i >= 0));
+  }
+  selectNonErrorOnly() {
+    this.checkedSet = new Set(this.results.map((r, i) => !r.error ? i : -1).filter(i => i >= 0));
+  }
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -89,10 +133,10 @@ export class ModalDocHoaDonComponent implements OnInit {
     }
     this.fileName = file.name;
     this.results = [];
+    this.checkedSet = new Set();
     this.selectedIndex = 0;
     this.loading = true;
 
-    // Preview chỉ áp dụng cho 1 ảnh đơn (không phải file nén)
     this.isImage = !isArchive && file.type.startsWith('image/');
     if (this.isImage) {
       const reader = new FileReader();
@@ -103,14 +147,103 @@ export class ModalDocHoaDonComponent implements OnInit {
     }
 
     this.geminiService.extractInvoices(file).subscribe(
-      (res: InvoiceExtractionResult[]) => {
-        this.results = res || [];
+      (res) => {
+        this.uploadId = res?.uploadId ?? null;
+        this.results = res?.results ?? [];
         this.selectedIndex = 0;
+        // Default check: OK rows checked, error unchecked.
+        this.selectNonErrorOnly();
         this.loading = false;
       },
       (err) => {
         this.loading = false;
         this.notificationService.printErrorMessage('Lỗi khi phân tích hóa đơn: ' + (err?.message ?? err));
+      }
+    );
+  }
+
+  /** Đọc lại Gemini cho TempFileName của các row đang checked. */
+  retrySelected() {
+    if (!this.uploadId) {
+      this.notificationService.printErrorMessage('Phiên upload đã đóng — vui lòng chọn lại file.');
+      return;
+    }
+    const tempNames = Array.from(this.checkedSet)
+      .map(i => this.results[i]?.tempFileName)
+      .filter(x => !!x);
+    const uniq = Array.from(new Set(tempNames));
+    if (uniq.length === 0) {
+      this.notificationService.printErrorMessage('Chưa chọn dòng nào để đọc lại.');
+      return;
+    }
+
+    this.retrying = true;
+    this.geminiService.retryInvoices(this.uploadId, uniq).subscribe(
+      (newResults) => {
+        this.retrying = false;
+        const keepIdx = this.results
+          .map((r, i) => uniq.includes(r.tempFileName) ? -1 : i)
+          .filter(i => i >= 0);
+        const kept = keepIdx.map(i => this.results[i]);
+        this.results = [...kept, ...(newResults || [])];
+        // Re-check: dòng cũ giữ check theo cũ + dòng mới mặc định check nếu không lỗi.
+        const newChecked = new Set<number>();
+        keepIdx.forEach((origIdx, newIdx) => { if (this.checkedSet.has(origIdx)) newChecked.add(newIdx); });
+        (newResults || []).forEach((r, j) => { if (!r.error) newChecked.add(kept.length + j); });
+        this.checkedSet = newChecked;
+        if (this.selectedIndex >= this.results.length) this.selectedIndex = 0;
+      },
+      (err) => {
+        this.retrying = false;
+        const status = err?.status ?? err?.error?.status;
+        if (status === 410) {
+          this.uploadId = null;
+          this.notificationService.printErrorMessage('Phiên upload hết hạn — vui lòng chọn lại file.');
+        } else {
+          this.notificationService.printErrorMessage('Lỗi khi đọc lại hóa đơn: ' + (err?.message ?? err));
+        }
+      }
+    );
+  }
+
+  /** Lưu N hóa đơn checked vào Tbl_PendingInvoice + move file sang vùng chính. */
+  saveSelected() {
+    if (!this.uploadId) {
+      this.notificationService.printErrorMessage('Phiên upload đã đóng — vui lòng chọn lại file.');
+      return;
+    }
+    const items: PendingInvoiceCreateItem[] = Array.from(this.checkedSet)
+      .map(i => this.results[i])
+      .filter(r => r && !r.error && r.tempFileName)
+      .map(r => PendingInvoiceService.fromExtractionResult(r));
+    if (items.length === 0) {
+      this.notificationService.printErrorMessage('Không có dòng hợp lệ để lưu.');
+      return;
+    }
+    const branchId = Number.parseInt(this.authService.getLoggedInUser()?.branchId);
+
+    this.saving = true;
+    this.pendingInvoiceService.createBatch({ uploadId: this.uploadId, items }, branchId).subscribe(
+      (res: any) => {
+        this.saving = false;
+        if (res?.code == '200' || res?.code == '201') {
+          const saved = res.data?.savedCount ?? items.length;
+          const errs = res.data?.errors ?? [];
+          this.notificationService.printSuccessMessage(`Đã lưu ${saved} hóa đơn vào danh sách chờ TT.`);
+          this.uploadId = null;  // BE đã xóa folder temp sau khi lưu
+          this.SaveSuccess.emit(res.data);
+          if (errs.length === 0) this.close();
+          else this.notificationService.printErrorMessage(`Lưu xong ${saved}/${items.length}. ${errs.length} dòng lỗi — xem console.`);
+        } else if (res?.code == '410') {
+          this.uploadId = null;
+          this.notificationService.printErrorMessage(res.message ?? 'Phiên upload hết hạn.');
+        } else {
+          this.notificationService.printErrorMessage('Lưu hóa đơn thất bại: ' + (res?.message ?? ''));
+        }
+      },
+      (err) => {
+        this.saving = false;
+        this.notificationService.printErrorMessage('Lưu hóa đơn lỗi: ' + (err?.message ?? err));
       }
     );
   }
@@ -125,7 +258,6 @@ export class ModalDocHoaDonComponent implements OnInit {
     }
   }
 
-  // ===== Xuất Excel danh sách hóa đơn (2 sheet: HoaDon + ChiTietHang) =====
   exportExcel() {
     if (!this.hasResult) {
       this.notificationService.printErrorMessage('Không có dữ liệu để xuất!');
@@ -147,6 +279,7 @@ export class ModalDocHoaDonComponent implements OnInit {
       'Tiền tệ': r.currency || '',
       'Web tra cứu': r.webLink || '',
       'Mã tra cứu': r.webCode || '',
+      'Trùng': r.isDuplicate ? (r.duplicates?.map(d => d.paymentRefNo).join(', ') ?? 'Có') : '',
       'Trạng thái': r.error ? r.error : 'OK'
     }));
 

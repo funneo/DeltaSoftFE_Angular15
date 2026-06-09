@@ -1,0 +1,22 @@
+.box-chieu-cao > .box-body { height: calc(100vh - 200px); }
+table { border-collapse: collapse; border: 1px solid rgba(109, 107, 107, 0.445); }
+table th { border: 1px solid rgba(99, 97, 97, 0.589); padding: 4px; background: #dcefe5f6; }
+table td { padding: 4px 6px; vertical-align: middle; }
+
+tr.row-paid > td { background-color: #eafaf1 !important; color: #2d6a4f; }
+tr.row-duplicate > td { background-color: #FFF3CD !important; }
+tr.row-duplicate:hover > td { background-color: #FFE69C !important; }
+
+.badge-dup {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: #DC3545;
+  color: #fff;
+  font-weight: 600;
+  font-size: 10px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.btn-xs { padding: 2px 5px; font-size: 11px; }

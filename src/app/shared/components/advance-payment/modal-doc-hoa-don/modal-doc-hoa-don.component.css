@@ -169,3 +169,48 @@
   text-overflow: ellipsis;
   margin-top: 2px;
 }
+
+/* ===== Checkbox + helper bar + dòng trùng ===== */
+.invoice-list-helper {
+  padding: 4px 8px;
+  border-bottom: 1px solid #eee;
+  background: #fafafa;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+.invoice-list-helper .link-action {
+  color: #337ab7;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.invoice-list-item .ili-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.invoice-list-item .ili-check {
+  margin-top: 4px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.invoice-list-item .ili-body { flex: 1; min-width: 0; }
+.invoice-list-item.is-duplicate {
+  background-color: #FFF3CD;
+  border-left: 3px solid #FFC107;
+}
+.invoice-list-item.is-duplicate.active {
+  background-color: #FFE69C;
+}
+.badge-dup {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: #DC3545;
+  color: #fff;
+  font-weight: 600;
+  font-size: 10px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
