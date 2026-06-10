@@ -159,10 +159,12 @@ Module hoàn chỉnh. Chi tiết: done.md section đầu. **3 SQL đã chạy + 
 - Cuối tháng anh check Cloud Billing → APIs & Services → Generative Language API → Metrics. Ước tính ~$0.001-0.002/hóa đơn với `gemini-2.5-flash-lite` + LOW + thinking off.
 - Nếu ảnh chụp điện thoại dày chữ đọc sai → đổi `mediaResolution=MEDIA_RESOLUTION_LOW` → `MEDIUM` ([GeminiAIRepository.cs:421](D:/Delta/DeltaSoft/NewAPI/API/Repositories/CustomerCommunicate/GoogleServices/GeminiAIRepository.cs#L421)).
 
-### Tích hợp Payment (PLANNED — chưa code)
-- Trong modal Payment, thêm dropdown "Chọn hóa đơn từ PendingInvoice" lọc theo user + Status=0.
-- Khi save Payment có chọn → call `SP_PendingInvoice_MarkUsedByPayment(@Id)` → Status=1.
-- Hóa đơn `IsDuplicate=true` vẫn cho chọn nhưng UI cảnh báo "Hóa đơn này đã trùng với PMT-XXX, vẫn tiếp tục?".
+### ✅ Tích hợp Payment — XONG (2026-06-10, commit web 9c10562 / API bb88319; chi tiết done.md section đầu)
+- ✅ Modal `modal-pending-invoice-picker` (Status=0 + UsedByPaymentId IS NULL, scope user/admin) → fill dòng PaymentDetail kèm `pendingInvoiceId`.
+- ✅ Save/Update/Delete Payment → Mark/Release `UsedByPaymentId` (đã nối trong PaymentsRepository).
+- ✅ Hóa đơn trùng vẫn cho chọn, UI row vàng + badge "TRÙNG" + tooltip RefNo.
+- ✅ **Đính kèm file** (move file `Invoice/`→`UploadFiles/` + AttachFiles `hoa-don<sốHĐ>`), SP mới `SP_PendingInvoice_UpdatePathFileLocal`.
+- ▶ **Còn lại**: restart/build API rồi test E2E pick→Lưu phiếu→mở nút file thấy `hoa-don<sốHĐ>` + file đã move sang `~/UploadFiles/`.
 
 ### Mặc định có thể chỉnh nếu cần (hardcode trong [GeminiAIRepository.cs](D:/Delta/DeltaSoft/NewAPI/API/Repositories/CustomerCommunicate/GoogleServices/GeminiAIRepository.cs))
 - `MaxFilesPerArchive=30`, `MaxTotalUncompressedBytes=100MB`, `MaxParallel=5`.

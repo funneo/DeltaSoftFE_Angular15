@@ -1,5 +1,21 @@
 # Completed Features
 
+## PendingInvoice → Payment: modal picker chọn hóa đơn AI + đính kèm file vào phiếu (move, không copy) — 2026-06-10 (code+SQL xong, chờ test E2E)
+Tích hợp F043 vào lập phiếu thanh toán. **2 commit**: web-app-update `main` 9c10562, NewAPI `master` bb88319. **SQL đã chạy**: chỉ `Migration_PendingInvoice_AttachOnPayment_20260610.sql` (SP `SP_PendingInvoice_UpdatePathFileLocal`); picker migration `Migration_PendingInvoice_PickerForPayment_20260610.sql` (GetForPicker/MarkUsedByPaymentBatch/ReleaseByPayment + cột `UsedByPaymentId` + TVP `Type_PendingInvoiceIds`) đã chạy từ trước. **Cần restart/build API** (API.dll bị IIS Express/VS khóa lúc build).
+
+### Modal picker (FE)
+- **Mới** `src/app/shared/components/advance-payment/modal-pending-invoice-picker/` (.ts/.html/.css/.module): list hóa đơn `Status=0 + UsedByPaymentId IS NULL` (scope user/admin trong SP), filter cột (NCC/MST/Số HĐ/Ngày) + daterange + keyword, row trùng vàng + badge "TRÙNG" tooltip RefNo, link mở file (`buildFileUrl` `~/`→`/`). `@Output SaveSuccess` trả mảng item đã check. Fix 2 bug click "lúc được lúc không": `ngDraggable [handle]="myHandle"` trên `.modal` + `#myHandle` header; checkbox display-only `pointer-events:none` để `onRowClick` trên `<tr>` là single source.
+- **`payment-detail.component`**: nút mở picker (chỉ khi tạo mới/chưa chuyển duyệt), `onInvoicesPicked` fill mỗi hóa đơn thành 1 dòng `PaymentDetail` (amount/vat/total/currency/invoiceNo/date/pattern/tax/web/code) kèm **`pendingInvoiceId`** (BE dùng key này). User tự chọn mã phí + nhập mã tham chiếu.
+- `payments.model.ts`: `PaymentDetail.pendingInvoiceId?`. `pending-invoice.service.ts`: `getForPicker` + interface `PendingInvoicePickerFilter/Item`.
+
+### Đính kèm file qua BE (move, không copy — chốt với anh: không gấp đôi bộ nhớ + đúng cấu trúc đường dẫn AttachFiles)
+- **`PaymentsController.Add/Update`** (inject `IPendingInvoice` + `IAttachFiles`) → helper `MoveInvoiceFilesToAttachments(paymentId, details, branchId, userId)`: lấy `pendingInvoiceId` distinct; mỗi hóa đơn nếu `PathFileLocal` **còn ở `/Invoice/`** → **MOVE** file vật lý `~/UploadFiles/Invoice/yyyy/MM/<name>` → `~/UploadFiles/<name>` (đích tồn tại thì xóa nguồn → luôn 1 bản) → `UpdatePathFileLocal` trỏ hóa đơn về vị trí mới → tạo `AttachFiles` (`FrmName/FunctionName="PAYMENT"`, `RefNo=paymentId`, `FileName="hoa-don"+sốHĐ`+đuôi). **Idempotent** (bỏ qua file đã move → lưu lại không nhân đôi attachment), **best-effort** (lỗi 1 hóa đơn không chặn lưu phiếu). File đã sẵn trên S3 (`Invoices/...`) → không upload lại.
+- **Mới** SP `SP_PendingInvoice_UpdatePathFileLocal` (chỉ UPDATE `PathFileLocal`, không đụng legacy) — `IPendingInvoice.UpdatePathFileLocal` + repo. Mark/Release đã nối sẵn trong `PaymentsRepository.Create/Update/Delete` theo `ExtractPendingInvoiceIds`.
+- **Quyết định để ngỏ**: S3 giữ prefix `Invoices/` (AttachFiles không lưu path S3, tải đọc từ local nên OK); xóa phiếu chỉ release cờ `UsedByPaymentId`, KHÔNG gỡ AttachFiles/đưa file về (tránh đụng luồng xóa legacy).
+
+### Skill mới
+- `.claude/skills/deltasoft-modals/SKILL.md`: convention 163 modal (ngDraggable+[handle], [config], ViewChild+SaveSuccess/CloseModal, lazy-mount *ngIf, 2 bug click). Memory pointer `reference_deltasoft_modals_skill`.
+
 ## Đọc hóa đơn AI — F043 PendingInvoice + lưu DB + check trùng snapshot + retry chọn lọc + token tracking — 2026-06-09
 Module mới hoàn chỉnh (anh đã chạy SQL + tạo Functions.F043; chờ test E2E):
 
