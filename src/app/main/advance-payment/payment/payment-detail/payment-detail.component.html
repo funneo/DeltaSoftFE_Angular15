@@ -6,6 +6,10 @@
           <h3 class="box-title">Chi tiết thanh toán</h3>
         </div>
         <div class="col-md-8 text-right">
+          <button type="button" class="btn btn-warning btn-sm" title="Chọn từ hóa đơn đã đọc bằng AI"
+            [disabled]="_isChuyeduyet || flagXem" (click)="showInvoicePicker()">
+            <i class="fa fa-file-text-o" aria-hidden="true"></i> Chọn từ hóa đơn đã đọc
+          </button>
           <button type="button" class="btn btn-success btn-sm" title="Import Excel" [disabled]="_isChuyeduyet"
             (click)="showImport()">
             <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Import Excel
@@ -382,3 +386,5 @@
 </modal-payment-detailed>
 <modal-import-excel *ngIf="viewImportExcel" (SaveSuccess)="saveSuccessImport($event)" (CloseModal)="closeImport()">
 </modal-import-excel>
+<modal-pending-invoice-picker *ngIf="viewInvoicePicker" (SaveSuccess)="onInvoicesPicked($event)" (CloseModal)="closeInvoicePicker()">
+</modal-pending-invoice-picker>

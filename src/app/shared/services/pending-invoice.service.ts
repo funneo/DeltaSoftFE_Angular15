@@ -49,13 +49,44 @@ export interface PendingInvoice {
 
 export interface PendingInvoiceFilter {
   branchId?: number;
-  employeeId?: number;
   status?: number;
   fromDate?: string;
   toDate?: string;
   keyword?: string;
   pageIndex?: number;
   pageSize?: number;
+}
+
+/** Filter cho modal "Chọn từ hóa đơn đã đọc" trong PaymentDetail. */
+export interface PendingInvoicePickerFilter {
+  branchId?: number;
+  keyword?: string;
+  fromDate?: string;
+  toDate?: string;
+}
+
+/** 1 dòng trả về cho picker — đủ field để fill PaymentDetail. */
+export interface PendingInvoicePickerItem {
+  id: number;
+  branchId?: number;
+  vendorName?: string;
+  taxNumber?: string;
+  invoiceNo?: string;
+  invoicePattern?: string;
+  invoiceDate?: string;
+  totalAmount?: number;
+  netAmount?: number;
+  taxAmount?: number;
+  currency?: string;
+  web?: string;
+  code?: string;
+  fileName?: string;
+  pathFileLocal?: string;
+  isDuplicate?: boolean;
+  duplicatesJson?: string;
+  createdDate?: string;
+  // UI state — không gửi BE
+  checked?: boolean;
 }
 
 /** Item gửi lên BE từ modal sau khi user check + có thể đã sửa. */
@@ -94,6 +125,13 @@ export class PendingInvoiceService extends BaseService {
 
   createBatch(req: CreateBatchRequest, branchId?: number) {
     return this.http.post(`${environment.apiUrl}/api/pendingInvoice/createBatch`, this.wrap(req, branchId)).pipe(
+      map((r: any) => { if (r.code == '401') this.authService.logout(); else return r; }),
+      catchError(this.handleError));
+  }
+
+  /** List hóa đơn chưa dùng cho modal picker (mở từ PaymentDetail). */
+  getForPicker(filter: PendingInvoicePickerFilter, branchId?: number) {
+    return this.http.post(`${environment.apiUrl}/api/pendingInvoice/getForPicker`, this.wrap(filter, branchId)).pipe(
       map((r: any) => { if (r.code == '401') this.authService.logout(); else return r; }),
       catchError(this.handleError));
   }

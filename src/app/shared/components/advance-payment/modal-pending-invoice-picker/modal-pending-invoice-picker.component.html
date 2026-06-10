@@ -1,0 +1,127 @@
+<div ngDraggable [handle]="myHandle" bsModal #modalPicker="bs-modal" class="modal fade modal-vertical" tabindex="-1" role="dialog"
+     [config]="{ backdrop: 'static', ignoreBackdropClick: true, keyboard: false }"
+     aria-labelledby="dialog" aria-hidden="true" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content" [ngBusy]="busy">
+      <div #myHandle class="modal-header bg-info">
+        <h4 class="modal-title pull-left">
+          <i class="fa fa-file-text-o"></i> Chọn hóa đơn từ kho đã đọc (AI)
+        </h4>
+        <button type="button" class="close pull-right" (click)="modalPicker.hide()" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Toolbar -->
+        <div class="row" style="margin-bottom: 8px;">
+          <div class="col-md-3">
+            <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+                   class="form-control input-sm" />
+          </div>
+          <div class="col-md-5">
+            <div class="input-group input-group-sm">
+              <input type="text" class="form-control" [(ngModel)]="keyword" (keyup.enter)="timKiem()"
+                     placeholder="Tìm NCC / MST / Số HĐ..." />
+              <span class="input-group-btn">
+                <button type="button" class="btn btn-info" (click)="timKiem()"><i class="fa fa-search"></i></button>
+              </span>
+            </div>
+          </div>
+          <div class="col-md-4 text-right">
+            <button type="button" class="btn btn-default btn-sm" (click)="toggleAll(true)">
+              <i class="fa fa-check-square-o"></i> Tất cả
+            </button>
+            <button type="button" class="btn btn-default btn-sm" (click)="toggleAll(false)">
+              <i class="fa fa-square-o"></i> Bỏ chọn
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table class="table table-bordered table-striped table-hover table-condensed">
+            <thead>
+              <tr>
+                <th style="width: 32px;"></th>
+                <th>File</th>
+                <th>Nhà cung cấp</th>
+                <th>MST</th>
+                <th>Số HĐ</th>
+                <th>Mẫu</th>
+                <th>Ngày HĐ</th>
+                <th class="text-right">Tổng tiền</th>
+                <th>Web tra cứu</th>
+                <th>Mã tra cứu</th>
+                <th>Ngày upload</th>
+              </tr>
+              <tr class="filter-row">
+                <th></th>
+                <th></th>
+                <th><input type="text" class="form-control input-xs" [(ngModel)]="fVendor"      (input)="applyColumnFilter()"></th>
+                <th><input type="text" class="form-control input-xs" [(ngModel)]="fTax"         (input)="applyColumnFilter()"></th>
+                <th><input type="text" class="form-control input-xs" [(ngModel)]="fInvoiceNo"   (input)="applyColumnFilter()"></th>
+                <th></th>
+                <th><input type="text" class="form-control input-xs" [(ngModel)]="fInvoiceDate" (input)="applyColumnFilter()"></th>
+                <th></th><th></th><th></th><th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of filtered"
+                  class="row-pointer"
+                  [class.row-duplicate]="item.isDuplicate"
+                  [class.row-checked]="item.checked"
+                  (click)="onRowClick($event, item)">
+                <td class="text-center table-checkbox">
+                  <label class="custom-checkbox">
+                    <input type="checkbox" [checked]="item.checked" disabled />
+                    <span class="helping-el"></span>
+                  </label>
+                </td>
+                <td class="col-file">
+                  <a *ngIf="item.pathFileLocal" [href]="buildFileUrl(item.pathFileLocal)" target="_blank"
+                     [title]="item.fileName">
+                    <i class="fa fa-file-pdf-o"></i> {{ item.fileName | slice:0:25 }}
+                  </a>
+                  <span *ngIf="!item.pathFileLocal" class="text-muted">—</span>
+                </td>
+                <td>{{ item.vendorName }}</td>
+                <td>{{ item.taxNumber }}</td>
+                <td>
+                  {{ item.invoiceNo }}
+                  <span *ngIf="item.isDuplicate" class="badge-dup" [title]="dupTooltip(item)">
+                    <i class="fa fa-exclamation-circle"></i> TRÙNG
+                  </span>
+                </td>
+                <td>{{ item.invoicePattern }}</td>
+                <td>{{ item.invoiceDate }}</td>
+                <td class="text-right">{{ item.totalAmount | number }}</td>
+                <td>
+                  <a *ngIf="item.web" [href]="item.web" target="_blank" (click)="$event.stopPropagation()" [title]="item.web">
+                    {{ item.web | slice:0:20 }}
+                  </a>
+                </td>
+                <td>{{ item.code }}</td>
+                <td>{{ item.createdDate | date:'dd/MM/yyyy HH:mm' }}</td>
+              </tr>
+              <tr *ngIf="filtered?.length === 0">
+                <td colspan="100%" class="text-center text-muted">Không có hóa đơn nào.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="pull-left text-muted footer-info">
+          Tổng: {{ filtered?.length }} hóa đơn • Đã chọn: <strong>{{ selectedCount }}</strong>
+        </div>
+        <button type="button" class="btn btn-success btn-sm" (click)="accept()" [disabled]="selectedCount === 0">
+          <i class="fa fa-check"></i> Chấp nhận ({{ selectedCount }})
+        </button>
+        <button type="button" class="btn btn-default btn-sm" (click)="cancel()">
+          <i class="fa fa-close"></i> Hủy
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

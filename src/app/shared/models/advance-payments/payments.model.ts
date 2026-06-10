@@ -94,4 +94,5 @@ export interface PaymentDetail {
   creditAccount?:string;
   isDirectPayment?:number;//Thanh toán trực tiếp hoặc có tạm ứng, cái này sẽ link từ thằng cha nó vào
   supplierName?:string;
+  pendingInvoiceId?: number;// link tới PendingInvoice nếu dòng này pick từ modal "Chọn từ hóa đơn đã đọc"
 }

@@ -1,0 +1,30 @@
+.modal-xl { width: 95%; max-width: 1280px; }
+.modal-body { padding: 8px 12px; }
+.table-wrap { max-height: calc(100vh - 280px); overflow: auto; }
+.table { font-size: 12.5px; margin-bottom: 0; }
+.table th { background: #dcefe5f6; padding: 4px 6px; position: sticky; top: 0; z-index: 1; }
+.table td { padding: 4px 6px; vertical-align: middle; }
+tr.row-pointer { cursor: pointer; }
+tr.row-pointer td.col-file { cursor: default; }
+tr.row-pointer td.col-file a { cursor: pointer; }
+/* Checkbox chỉ hiển thị trạng thái — click xuyên qua xuống row để onRowClick xử lý duy nhất */
+.table-checkbox .custom-checkbox { pointer-events: none; }
+/* Header là handle kéo modal */
+#myHandle, .modal-header { cursor: move; }
+.filter-row th { background: #f7f7f7 !important; padding: 2px 4px; position: sticky; top: 28px; z-index: 1; }
+.filter-row .input-xs { height: 24px; padding: 2px 6px; font-size: 11px; }
+tr.row-duplicate > td { background-color: #FFF3CD !important; }
+tr.row-duplicate.row-checked > td { background-color: #FFE69C !important; }
+tr.row-checked > td { background-color: #d4edda !important; }
+.badge-dup {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: #DC3545;
+  color: #fff;
+  font-weight: 600;
+  font-size: 10px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+.footer-info { padding-top: 6px; }

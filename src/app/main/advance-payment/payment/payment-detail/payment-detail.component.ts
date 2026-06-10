@@ -25,6 +25,8 @@ import { ModalListPaymentAcceptComponent } from '@app/shared/components/advance-
 import { ModalPaymentDetailComponent } from '@app/shared/components/advance-payment/modal-payment-detail/modal-payment-detail.component';
 import { ModalPaymentDetailedComponent } from '@app/shared/components/advance-payment/modal-payment-detailed/modal-payment-detailed.component';
 import { ModalImportExcelComponent } from '@app/shared/components/systems/modal-import-excel/modal-import-excel.component';
+import { ModalPendingInvoicePickerComponent } from '@app/shared/components/advance-payment/modal-pending-invoice-picker/modal-pending-invoice-picker.component';
+import { PendingInvoicePickerItem } from '@app/shared/services/pending-invoice.service';
 @Component({
   selector: 'app-payment-detail',
   templateUrl: './payment-detail.component.html',
@@ -712,6 +714,9 @@ export class PaymentDetailComponent implements OnInit {
   viewImportExcel: boolean;
   @ViewChild(ModalImportExcelComponent, { static: false }) modalImport: ModalImportExcelComponent;
 
+  viewInvoicePicker: boolean;
+  @ViewChild(ModalPendingInvoicePickerComponent, { static: false }) modalInvoicePicker: ModalPendingInvoicePickerComponent;
+
   showImport(): void {
     this.viewImportExcel = true;
     setTimeout(() => {
@@ -731,5 +736,67 @@ export class PaymentDetailComponent implements OnInit {
 
   closeImport() {
     this.viewImportExcel = false;
+  }
+
+  // ====== Pick từ PendingInvoice (Hóa đơn đã đọc) ======
+  showInvoicePicker(): void {
+    if (this.flagXem || this._isChuyeduyet) return;
+    this.viewInvoicePicker = true;
+    setTimeout(() => this.modalInvoicePicker?.show(), 50);
+  }
+
+  closeInvoicePicker(): void {
+    this.viewInvoicePicker = false;
+  }
+
+  /** User chọn N hóa đơn → fill thành N dòng PaymentDetail. */
+  onInvoicesPicked(items: PendingInvoicePickerItem[]): void {
+    if (!items?.length) return;
+
+    // Bỏ những dòng rỗng (chưa chọn FeeId) ở cuối list trước khi thêm
+    this.listDetail = (this.listDetail ?? []).filter(x => x.feeId);
+
+    // Tính tempId max hiện tại
+    let nextTempId = this.listDetail.length === 0
+      ? 1
+      : Math.max(...this.listDetail.map(x => x.tempId ?? 0)) + 1;
+
+    items.forEach(inv => {
+      const netAmount  = inv.netAmount  ?? ((inv.totalAmount ?? 0) - (inv.taxAmount ?? 0));
+      const vat        = inv.taxAmount  ?? 0;
+      const total      = inv.totalAmount ?? (netAmount + vat);
+
+      const row: PaymentDetail = {
+        tempId: nextTempId++,
+        feeId: null,                          // user tự chọn mã phí
+        contents: '',                         // user tự nhập diễn giải
+        referCode: '',                        // user tự nhập mã tham chiếu
+        amount: netAmount,
+        vat: vat,
+        amountAfterVAT: total,
+        currency: inv.currency ?? 'VND',
+        exchangeRate: 0,
+        hasInvoice: 1,
+        invoiceNo: inv.invoiceNo,
+        invoiceDate: inv.invoiceDate,
+        invoicePattern: inv.invoicePattern,
+        taxNumber: inv.taxNumber,
+        web: inv.web,
+        code: inv.code,
+        branchId: this._debitBranchId,
+        notes: '',
+        step: 0,
+        pendingInvoiceId: inv.id              // ⭐ key để BE Mark sau khi save Payment
+      };
+      this.listDetail.push(row);
+    });
+
+    // Thêm 1 dòng trống ở cuối nếu cần
+    this.inputTen();
+    this.sumTien();
+    this.listDetail = [...this.listDetail];
+
+    this.viewInvoicePicker = false;
+    this._notificationService.printSuccessMessage(`Đã thêm ${items.length} hóa đơn vào danh sách. Hãy chọn mã phí + nhập mã tham chiếu cho từng dòng.`);
   }
 }

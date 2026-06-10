@@ -21,6 +21,7 @@ import { NgxSpinnerModule } from 'ngx-spinner';
 import { ModalPaymentDetailedModule } from '@app/shared/components/advance-payment/modal-payment-detailed/modal-payment-detailed.module';
 import { ModalImportExcelModule } from '@app/shared/components/systems/modal-import-excel/modal-import-excel.module';
 import { ModalDocHoaDonModule } from '@app/shared/components/advance-payment/modal-doc-hoa-don/modal-doc-hoa-don.module';
+import { ModalPendingInvoicePickerModule } from '@app/shared/components/advance-payment/modal-pending-invoice-picker/modal-pending-invoice-picker.module';
 
 @NgModule({
   declarations: [PaymentComponent, PaymentDetailComponent],
@@ -39,7 +40,8 @@ import { ModalDocHoaDonModule } from '@app/shared/components/advance-payment/mod
     ModalShipmentModule,
     ModalListApprovedLogModule,ModalPaymentDetailedModule,
     ModalListAdvanceModule,NgxSpinnerModule,ModalListPaymentAcceptModule,
-    ModalImportExcelModule,ModalDocHoaDonModule
+    ModalImportExcelModule,ModalDocHoaDonModule,
+    ModalPendingInvoicePickerModule
   ],
   providers:[
     DatePipe,
