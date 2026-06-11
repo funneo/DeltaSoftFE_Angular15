@@ -1,5 +1,22 @@
 # Pending / In-Progress Work
 
+## ▶ Draft Site — "Công việc vận chuyển" + tài liệu giao nhận do BOT đính kèm (2026-06-11, KẾ HOẠCH — chờ anh duyệt SQL)
+
+**Mục tiêu**: thêm 1 list bên site nháp hiển thị **công việc vận chuyển** (mirror `shipping-task-opman`). Một **BOT** lấy ảnh **biên bản giao hàng + chứng từ giao nhận hàng hóa**, gắn vào từng chuyến. Tài liệu nằm ở draft; **ERP shipping-task-opman vẫn link tới xem được** (giống view draft lô hàng).
+
+**2 quyết định đã chốt (2026-06-11):**
+- **Nguồn list = mirror chuyến ERP read-only** (KHÔNG nhân bản chuyến). Draft chỉ chứa *tài liệu*, link bằng `ShippingTaskId`. Draft site đọc chuyến qua ERP API (cần thêm `ShippingTask/getAllByOpMan` vào `Draft:ReadAllowlist`).
+- **Ảnh lưu S3 + bảng draft riêng `draft.DraftTaskDocs`** (không nhúng Payload). **Draft API tự nhận multipart → đẩy S3 → insert** (bot chỉ POST ảnh).
+
+**Thứ tự (A→D, đã chốt):**
+- 🟡 **Phase A — SQL** (đang chờ anh duyệt/chạy): [Migration_DraftSite_TaskDocs_20260611.sql](D:/Delta/DeltaSoft/NewAPI/Migration_DraftSite_TaskDocs_20260611.sql) — bảng `draft.DraftTaskDocs` + 5 SP draft (`Insert/GetByTask/GetPaging/Delete/UpdateStatus`) + 1 SP `dbo.SP_DraftTaskDocs_GetForErp_GetByDateRange`. `draft_app` đã có `GRANT EXECUTE ON SCHEMA::[draft]` → không cần grant thêm. **CHƯA chạy** (memory: no auto DB writes). Câu hỏi mở: DocType đủ 3 loại chưa (`DeliveryNote/HandoverDoc/Other`)? Cần thêm cột đối soát (ContainerNumber/SealNumber/BotBatchId)?
+- ⬜ **Phase A.2 — ERP** thêm `ShippingTask/getAllByOpMan` vào `Draft:ReadAllowlist` (appsettings/filter), không tạo SP mới.
+- ⬜ **Phase B — Draft API**: `DraftTaskDocsController` (create multipart→S3→insert, getByTask, getPaging, delete) + cấu hình S3 cho DraftAPI.
+- ⬜ **Phase C — draft-web** `src/app/shipping-task/`: list mirror cột opman (read-only, nguồn ERP getAllByOpMan), cột "Tài liệu (n)" + modal xem ảnh + upload tay CS.
+- ⬜ **Phase D — ERP opman**: badge/cột "Tài liệu nháp (n)" + modal read-only xem ảnh theo chuyến (pattern view draft lô hàng).
+- ⬜ **Phase E — Bot**: chốt hợp đồng API (upload + register). Code bot làm sau.
+- ⬜ **Phase F (sau)**: nút Duyệt → promote DraftTaskDocs → Attachfiles thật (`frmName=SHIPPINGTASK`, `refNo=shippingTaskId`), set `PromotedAttachId/Status='Promoted'`.
+
 ## ▶ Session 2026-06-07 — chờ anh test E2E (SQL đã chạy xong 2026-06-08)
 5 SQL trên đã chạy: SP_DriverFuelClosing_Delete (@Id), SP_DraftEntries_GetPaging (LIKE pattern), SP_DispatchOrder_GetForSummary (+FuelDriverName), SP_DriverFuelApproval_CancelExpired, F039 grant.
 

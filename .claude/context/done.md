@@ -1,5 +1,19 @@
 # Completed Features
 
+## Draft Site — TaskDocs: commit view draft Lô hàng/Canon + SQL design tài liệu giao nhận (Bot) — 2026-06-11
+Session ngắn: chốt + commit phần view draft đã làm, rồi lên kế hoạch + viết SQL design cho feature mới "Công việc vận chuyển + tài liệu Bot".
+
+### Commit `9b00042` (web-app-update main) — view draft Lô hàng thường + Canon
+Gói lại Stage 3 đã làm trước đó: `modal-shipment` + `modal-job-canon` thêm chế độ `_isDraftView` read-only nền vàng + badge "NHÁP #id" + `viewDraft(payload, draftId)` (parse create-DTO YYYYMMDD qua `_draftDate()` tolerant) + nút Duyệt **disabled** (placeholder Phase 4) + nút Hủy. List `shipment-normal`/`job-canon` badge draft `(click)="showDraft()"`. Tất cả additive, reset `_isDraftView=false` ở `add()/edit()` → không đụng luồng thật. Build 0 error.
+
+### SQL design feature mới (CHƯA chạy — chờ anh duyệt)
+[Migration_DraftSite_TaskDocs_20260611.sql](D:/Delta/DeltaSoft/NewAPI/Migration_DraftSite_TaskDocs_20260611.sql) — viết theo convention Phase0 (idempotent, PRINT/GO, owner-check, soft-delete, TotalRows OVER()):
+- **Bảng `draft.DraftTaskDocs`**: 1 dòng = 1 ảnh/tài liệu, link chuyến ERP bằng `ShippingTaskId` INT (tham chiếu mềm, **KHÔNG FK sang dbo** → giữ cô lập). Cột: `DocType` (DeliveryNote/HandoverDoc/Other), `FileName/PathFile(S3)/ContentType/Size/Note`, `Status` (Draft→Promoted), `Source` (Bot/Manual), audit + `PromotedAttachId` (map Attachfiles thật Phase sau). 2 index (Task, Created).
+- **5 SP draft**: `SP_DraftTaskDocs_Insert/GetByTask/GetPaging/Delete/UpdateStatus`. `draft_app` đã có `GRANT EXECUTE ON SCHEMA::[draft]` → tự cấp quyền.
+- **1 SP dbo**: `SP_DraftTaskDocs_GetForErp_GetByDateRange` (ERP login gọi, đọc theo khoảng ngày rồi FE gộp theo `ShippingTaskId` — né `STRING_SPLIT` vì SQL 2014).
+
+**Quyết định kiến trúc**: list draft mirror chuyến ERP read-only (bot chỉ gắn tài liệu, không nhân bản chuyến); ảnh S3 + Draft API tự nhận multipart→S3→insert. Kế hoạch A→D đầy đủ ở [todo.md](.claude/context/todo.md) section đầu.
+
 ## PendingInvoice → Payment: modal picker chọn hóa đơn AI + đính kèm file vào phiếu (move, không copy) — 2026-06-10 (code+SQL xong, chờ test E2E)
 Tích hợp F043 vào lập phiếu thanh toán. **2 commit**: web-app-update `main` 9c10562, NewAPI `master` bb88319. **SQL đã chạy**: chỉ `Migration_PendingInvoice_AttachOnPayment_20260610.sql` (SP `SP_PendingInvoice_UpdatePathFileLocal`); picker migration `Migration_PendingInvoice_PickerForPayment_20260610.sql` (GetForPicker/MarkUsedByPaymentBatch/ReleaseByPayment + cột `UsedByPaymentId` + TVP `Type_PendingInvoiceIds`) đã chạy từ trước. **Cần restart/build API** (API.dll bị IIS Express/VS khóa lúc build).
 
