@@ -2,6 +2,30 @@
   width: 100px;
 }
 
+/* Chế độ xem nháp (draft) — đồng bộ màu với list draft (#FFF8E1 / #FFC107) */
+.modal-content.draft-view {
+  background-color: #FFFDF5;
+  border: 2px solid #FFC107;
+}
+.modal-content.draft-view .modal-header {
+  background-color: #FFF8E1;
+  border-bottom: 1px solid #FFC107;
+}
+.draft-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  margin-left: 6px;
+  border-radius: 10px;
+  background: #FFC107;
+  color: #4a3a00;
+  font-weight: 600;
+  font-size: 12px;
+  vertical-align: middle;
+}
+.draft-badge .fa {
+  margin-right: 3px;
+}
+
 .clicks-disabled {
   pointer-events: none;
 }

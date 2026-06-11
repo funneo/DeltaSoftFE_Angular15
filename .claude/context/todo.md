@@ -37,11 +37,15 @@ Mỗi list cần:
 3. HTML: `[class.row-draft]` + badge JobId/RefNo + `<ng-container *ngIf="!item._isDraft">` quanh cột Tác vụ. CSS copy 4 dòng `row-draft`/`badge-draft`.
 4. Defensive guard 3 lớp: `code=200/201` + `Array.isArray` + client-side filter loại Canon (chỉ áp cho Shipment).
 
-### ▶ Stage 3 — 5 modal-draft-*-view (read-only)
-- `modal-draft-shipment-view`, `modal-draft-canon-view`, `modal-draft-payment-view`, `modal-draft-workflow-view`, `modal-draft-debit-view`.
-- Layout: hiển thị fields parse từ Payload, badge "NHÁP" trên header, KHÔNG có save button.
-- Open qua `@Input() payload + draftType` (hiện đã có `_draftPayload` trên row).
-- Trigger từ click badge JobId của dòng nháp (hiện badge chưa có click handler).
+### ▶ Stage 3 — view chi tiết draft (read-only)
+- ✅ **Lô hàng thường — XONG (2026-06-11)**: KHÔNG tạo modal riêng, **reuse y nguyên `modal-shipment`** ở chế độ draft-view. Cách làm (pattern cho các list sau):
+  - `modal-shipment.component.ts`: thêm cờ `_isDraftView`/`_draftId` + method `viewDraft(payload, draftId)` (parse payload→entity, `flagXem=true`, format ngày tolerant `_draftDate()` cho YYYYMMDD/MM-DD/ISO) + `approveDraft()` (hiện chỉ toast "sẽ bổ sung sau" + emit `@Output ApproveDraft`). Reset `_isDraftView=false` ở `add()`/`edit()` để KHÔNG ảnh hưởng luồng thật.
+  - HTML: `.modal-content [class.draft-view]` + badge "NHÁP #id" header + footer nút **Duyệt** (`*ngIf="_isDraftView"`) + nút đổi label "Hủy". Lưu/Lưu&Thêm tự ẩn vì `flagXem`.
+  - CSS: `.draft-view` nền `#FFFDF5` viền `#FFC107`, header `#FFF8E1` (đồng bộ list).
+  - List `shipment-normal`: badge nháp thêm `(click)="showDraft(item)"` → `modalAddEdit.viewDraft(item._draftPayload, item._draftId)`.
+- ✅ **Lô hàng Canon — XONG (2026-06-11)**: áp y hệt pattern trên vào `modal-job-canon` (thêm `_isDraftView`/`_draftId`/`viewDraft()`/`_draftDate()`/`approveDraft()` + reset ở add/edit; HTML nền vàng + badge + nút Duyệt; CSS `.draft-view`; list `job-canon` badge `(click)="showDraft(item)"`).
+- 🟡 **3 list còn lại** (Payment / Workflow / Debit): áp cùng pattern — reuse modal gốc tương ứng thêm `viewDraft()`.
+- **▶ Phase 4 Promote**: nút "Duyệt" hiện chỉ toast; khi AI đủ chính xác → wire `ApproveDraft` → controller promote (bê Payload→Tbl_* thật, parse `targetEmployeeId`, `jobDate/refDate` từ `createdAt`).
 
 ### Phase 4 — Promote (sau khi view xong)
 ERP cần màn "Duyệt nháp" để bê record `draft.DraftEntries.Payload` → `Tbl_*` thật. Controller promote phải:

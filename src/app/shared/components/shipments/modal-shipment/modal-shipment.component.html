@@ -1,9 +1,11 @@
 <div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
   tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
   <div class="modal-dialog modal-lg">
-    <div class="modal-content">
+    <div class="modal-content" [class.draft-view]="_isDraftView">
       <div #myHandle class="modal-header">
-        <h4 class="modal-title pull-left">LÔ HÀNG <a style="font-size: 14px;">{{entity?.jobStaff}}</a></h4>
+        <h4 class="modal-title pull-left">LÔ HÀNG
+          <span *ngIf="_isDraftView" class="draft-badge"><i class="fa fa-edit"></i> NHÁP #{{_draftId}}</span>
+          <a style="font-size: 14px;">{{entity?.jobStaff}}</a></h4>
         <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -552,8 +554,11 @@
               <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
                 [disabled]="!addEditForm.form.valid || flagSave">
                 <i class="fa fa-save"></i> Lưu</button>
+              <button *ngIf="_isDraftView" type="button" class="btn btn-success btn-sm" [disabled]="true"
+                title="Sẽ mở khi hoàn tất kiểm tra độ chính xác AI">
+                <i class="fa fa-check"></i> Duyệt</button>
               <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
-                <i class="fa fa-close"></i> Thoát</button>
+                <i class="fa fa-close"></i> {{_isDraftView ? 'Hủy' : 'Thoát'}}</button>
             </div>
           </div>
           <!-- /.box-footer -->

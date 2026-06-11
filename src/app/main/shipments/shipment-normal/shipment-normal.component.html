@@ -135,7 +135,8 @@
           <td>{{item.customerCode}}</td>
           <td class="col-enter">{{item.customerName}}</td>
           <td>
-            <span *ngIf="item._isDraft" class="badge-draft" title="Nháp"><i class="fa fa-edit"></i> {{item.jobId}}</span>
+            <span *ngIf="item._isDraft" class="badge-draft" title="Xem chi tiết nháp" style="cursor:pointer"
+              (click)="showDraft(item)"><i class="fa fa-edit"></i> {{item.jobId}}</span>
             <a *ngIf="!item._isDraft" [routerLink]="[]" (click)="showModal(item)">{{item.jobId}}</a>
           </td>
           <td>{{item.shipmentType?.toString()|List:listShipmentType}}</td>

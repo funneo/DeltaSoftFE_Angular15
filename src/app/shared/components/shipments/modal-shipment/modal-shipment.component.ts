@@ -27,6 +27,9 @@ export class ModalShipmentComponent implements OnInit {
   public flagXem: boolean = false;
   public flagSave: boolean = false;
   public flagNew:boolean=false;
+  // Chế độ xem nháp (draft.DraftEntries) — read-only, nền vàng, nút Duyệt/Hủy. KHÔNG ảnh hưởng luồng add/edit thật.
+  public _isDraftView: boolean = false;
+  public _draftId: number;
   public busy: Subscription;
   listBranch: Branch[];
   // listUser: User[];
@@ -97,6 +100,7 @@ export class ModalShipmentComponent implements OnInit {
 
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter;
+  @Output() ApproveDraft: EventEmitter<number> = new EventEmitter();
   @ViewChild('modalAddEdit', { static: false }) modalAddEdit: ModalDirective;
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent;
   @ViewChild(ModalAllDocumentsComponent, { static: false }) modalAllAttackFiles: ModalAllDocumentsComponent;
@@ -259,10 +263,12 @@ export class ModalShipmentComponent implements OnInit {
     this.flagXem = false;
     this.flagSave = false;
     this.flagNew=true;
+    this._isDraftView = false;
     this.modalAddEdit.show();
   }
 
   edit(id: string, flag: boolean) {
+    this._isDraftView = false;
     this.shipmentService.getDetail(id).subscribe((res: ResponseValue<Shipment>) => {
       if (res.code == '200' || res.code == '201') {
         this.entity = res.data;
@@ -366,6 +372,69 @@ export class ModalShipmentComponent implements OnInit {
         this._notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG);
       }
     });
+  }
+
+  /**
+   * Xem chi tiết 1 lô hàng NHÁP (draft.DraftEntries.Payload) ở chế độ read-only.
+   * Reuse y nguyên form modal-shipment (flagXem=true) + nền vàng + nút Duyệt/Hủy.
+   * Payload là DTO tạo-thật do site nháp gửi → shape giống Shipment. KHÔNG gọi BE lưu.
+   */
+  viewDraft(payload: any, draftId: number) {
+    let p: any = payload;
+    if (typeof payload === 'string') {
+      try { p = JSON.parse(payload || '{}'); } catch { p = {}; }
+    }
+    this.entity = p || {};
+    this._draftId = draftId;
+    this._isDraftView = true;
+    this.flagXem = true;
+    this.flagNew = false;
+    this.flagSave = false;
+
+    this._customerId = this.entity.customerId;
+    if (this.entity.customerId && (this.listCustomer == null ||
+        this.listCustomer.findIndex(x => x.id == this.entity.customerId) == -1)) {
+      this.listCustomer = this.listCustomer || [];
+      this.listCustomer.push({ id: this.entity.customerId, customerName: this.entity.customerName });
+    }
+
+    this.listChinhanhthamgia = [];
+    this.entity.shipmentBranches?.forEach(x => this.listChinhanhthamgia.push(x.branchId));
+    this.listConts = this.entity.shipmentContSeals ?? [];
+    this.listPakages = this.entity.shipmentPackages ?? [];
+    this.listDichVuSoHoa = this.entity.shipmentServiceDetails ?? [];
+
+    // Ngày trong payload có thể là 'YYYYMMDD'/'MM/DD/YYYY'/ISO → format VN để hiển thị
+    this._jobDate = this._draftDate(this.entity.jobDate, false);
+    this._cdsDate = this._draftDate(this.entity.cdsDate, false);
+    this._ngayCutOff = this._draftDate(this.entity.cutoffTime, true);
+    this._ngayLayHang = this._draftDate(this.entity.pickupTime, true);
+    this._ngayGiaoHang = this._draftDate(this.entity.deliveryTime, true);
+    this._ngayTraRong = this._draftDate(this.entity.emptyContDeadline, true);
+
+    this._typePrice = this.entity.contractId ? 0 : 1;
+    this._isBaoGiaSoHoa = !!this.entity.jobDig;
+    if (this.entity.jobType == 0 && this._customerId) {
+      this.loadHopDong();
+      this.loadBaoGia();
+    }
+    this.modalAddEdit.show();
+  }
+
+  private _draftDate(v: any, withTime: boolean): string {
+    if (!v) return null;
+    const m = moment(v, [
+      'YYYYMMDD HH:mm:ss', 'YYYYMMDDHHmmss', 'YYYYMMDD',
+      'MM/DD/YYYY HH:mm:ss', 'MM/DD/YYYY',
+      'YYYY-MM-DDTHH:mm:ss', 'YYYY-MM-DD', moment.ISO_8601
+    ], false);
+    if (!m.isValid()) return null;
+    return m.format(withTime ? FormatContstants.DATETIMEVN : FormatContstants.DATEVN);
+  }
+
+  /** Nút "Duyệt" — Phase 4 (promote). Hiện disabled, chưa wire; mở khi AI đủ chính xác. */
+  approveDraft() {
+    // TODO Phase 4: this.ApproveDraft.emit(this._draftId);
   }
 
   saveChange(form: NgForm) {

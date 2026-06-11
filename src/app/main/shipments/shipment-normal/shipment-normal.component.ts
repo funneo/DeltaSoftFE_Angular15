@@ -377,6 +377,14 @@ export class ShipmentNormalComponent implements OnInit {
     }, 50);
   }
 
+  // Xem chi tiết dòng NHÁP (read-only) — CS kiểm tra độ chính xác AI trước khi duyệt.
+  showDraft(item: any) {
+    this.viewModal = true;
+    setTimeout(() => {
+      this.modalAddEdit.viewDraft(item._draftPayload, item._draftId);
+    }, 50);
+  }
+
   copyJobConfirm(item: Shipment): void {
     this.notificationService.printConfirmationDialog('Bạn muốn sao chép lô hàng mới?', () => this.copyJob(item.id?.toString()));
   }

@@ -324,6 +324,14 @@ export class JobCanonComponent implements OnInit {
     }, 50);
   }
 
+  // Xem chi tiết dòng NHÁP Canon (read-only) — CS kiểm tra độ chính xác AI trước khi duyệt.
+  showDraft(item: any) {
+    this.viewModal = true;
+    setTimeout(() => {
+      this.modalAddEdit.viewDraft(item._draftPayload, item._draftId);
+    }, 50);
+  }
+
   showOpenJob(event:Shipment): void {
     const params = new HttpParams()
       .set('shipmentId', event.id?.toString())
