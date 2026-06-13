@@ -14,11 +14,30 @@
 
       <div class="modal-body">
 
+        <!-- Thanh chọn nhóm phí cấp 1 + tùy chọn xem trước (LUÔN hiện) -->
+        <div class="groupfee-bar">
+          <div class="gf-field">
+            <label class="gf-label">Nhóm phí cấp 1 (Lĩnh vực) <span class="text-danger">*</span></label>
+            <ng-select name="groupFee" [items]="feeCodeLvl1List" bindValue="feeCode"
+              [(ngModel)]="selectedGroupFeeCode" [readonly]="hasResult || loading"
+              placeholder="-- Chọn nhóm phí --" [clearable]="false">
+              <ng-template ng-label-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
+              <ng-template ng-option-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
+            </ng-select>
+          </div>
+          <label class="gf-check" title="Bật: xem/sửa thông tin đã đọc rồi bấm Lưu. Tắt: đọc xong tự lưu vào DB ngay.">
+            <input type="checkbox" [(ngModel)]="showReview" [disabled]="hasResult || loading" />
+            Hiển thị thông tin hóa đơn trước khi lưu
+          </label>
+        </div>
+
         <!-- Upload area (hiện khi chưa có kết quả) -->
-        <div *ngIf="!hasResult && !loading" class="upload-area" (click)="fileInput.click()"
-          (dragover)="onDragOver($event)" (drop)="onDrop($event)">
+        <div *ngIf="!hasResult && !loading" class="upload-area" [class.upload-disabled]="!canUpload"
+          (click)="canUpload && fileInput.click()"
+          (dragover)="onDragOver($event)" (drop)="canUpload && onDrop($event)">
           <i class="fa fa-cloud-upload fa-3x text-muted"></i>
-          <p class="upload-text">Kéo thả file vào đây hoặc <strong>nhấn để chọn</strong></p>
+          <p class="upload-text" *ngIf="canUpload">Kéo thả file vào đây hoặc <strong>nhấn để chọn</strong></p>
+          <p class="upload-text text-danger" *ngIf="!canUpload"><i class="fa fa-lock"></i> Hãy chọn Nhóm phí cấp 1 trước</p>
           <p class="text-muted small">Hỗ trợ: JPG, PNG, PDF — hoặc file nén ZIP/RAR (nhiều hóa đơn)</p>
           <input #fileInput type="file" style="display:none" accept="image/*,.pdf,.zip,.rar"
             (change)="onFileSelected($event)">

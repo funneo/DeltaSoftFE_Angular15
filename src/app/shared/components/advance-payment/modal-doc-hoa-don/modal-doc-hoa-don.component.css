@@ -1,3 +1,20 @@
+.groupfee-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  background: #f5f7fa;
+  border: 1px solid #e1e6ec;
+  border-radius: 6px;
+}
+.groupfee-bar .gf-field { flex: 1 1 320px; min-width: 260px; }
+.groupfee-bar .gf-label { display: block; font-weight: 600; font-size: 12px; margin-bottom: 3px; }
+.groupfee-bar .form-control { height: 28px; }
+.groupfee-bar .gf-check { display: flex; align-items: center; gap: 6px; font-weight: 500; margin: 0 0 4px; cursor: pointer; }
+.groupfee-bar .gf-check input { margin: 0; }
+
 .upload-area {
   border: 2px dashed #aaa;
   border-radius: 8px;
@@ -12,6 +29,17 @@
 .upload-area:hover {
   border-color: #337ab7;
   background: #f0f6ff;
+}
+
+.upload-area.upload-disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background: #f3f3f3;
+  border-color: #ccc;
+}
+.upload-area.upload-disabled:hover {
+  border-color: #ccc;
+  background: #f3f3f3;
 }
 
 .loading-area {

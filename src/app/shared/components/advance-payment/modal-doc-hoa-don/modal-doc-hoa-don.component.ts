@@ -3,6 +3,8 @@ import { AuthService, NotificationService } from '@app/shared/services';
 import { ExportService } from '@app/shared/services/export-excel.service';
 import { GeminiAiService, InvoiceExtractionResult } from '@app/shared/services/gemini-ai.service';
 import { PendingInvoiceService, PendingInvoiceCreateItem } from '@app/shared/services/pending-invoice.service';
+import { FeeCodeService } from '@app/shared/services/fee-code.service';
+import { FeeCode } from '@app/shared/models';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 
 @Component({
@@ -26,6 +28,11 @@ export class ModalDocHoaDonComponent implements OnInit {
   previewUrl: string = null;
   isImage = false;
 
+  // ===== Nhóm phí cấp 1 (FeeCode Lvl1) — bắt chọn TRƯỚC khi upload =====
+  feeCodeLvl1List: FeeCode[] = [];
+  selectedGroupFeeCode: string = null;          // = FeeCodes.FeeCode của bản Lvl1
+  showReview = false;                           // checkbox "Hiển thị thông tin hóa đơn trước khi lưu"
+
   private allowedSingle = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
 
   constructor(
@@ -33,14 +40,33 @@ export class ModalDocHoaDonComponent implements OnInit {
     private pendingInvoiceService: PendingInvoiceService,
     private notificationService: NotificationService,
     private exportService: ExportService,
-    private authService: AuthService
+    private authService: AuthService,
+    private feeCodeService: FeeCodeService
   ) { }
 
   ngOnInit(): void { }
 
   show() {
     this.reset();
+    this.selectedGroupFeeCode = null;
+    this.showReview = false;
+    this.loadFeeCodeLvl1();
     this.modal.show();
+  }
+
+  /** Load FeeCode cấp 1 (Lĩnh vực) đã duyệt (status=2). */
+  loadFeeCodeLvl1() {
+    if (this.feeCodeLvl1List?.length) return;   // cache trong vòng đời component
+    this.feeCodeService.getAll(null, 1, 2).subscribe(res => {
+      this.feeCodeLvl1List = res?.data || [];
+    });
+  }
+
+  get canUpload(): boolean { return !!this.selectedGroupFeeCode; }
+
+  private get selectedGroupFeeName(): string {
+    const f = this.feeCodeLvl1List?.find(x => x.feeCode === this.selectedGroupFeeCode);
+    return f?.feeName || null;
   }
 
   close() {
@@ -124,6 +150,10 @@ export class ModalDocHoaDonComponent implements OnInit {
   }
 
   private processFile(file: File) {
+    if (!this.selectedGroupFeeCode) {
+      this.notificationService.printErrorMessage('Vui lòng chọn Nhóm phí cấp 1 (Lĩnh vực) trước khi tải hóa đơn.');
+      return;
+    }
     const name = (file.name || '').toLowerCase();
     const isArchive = name.endsWith('.zip') || name.endsWith('.rar');
     const isSingleOk = this.allowedSingle.includes(file.type);
@@ -154,6 +184,11 @@ export class ModalDocHoaDonComponent implements OnInit {
         // Default check: OK rows checked, error unchecked.
         this.selectNonErrorOnly();
         this.loading = false;
+        // Không bật "xem trước khi lưu" → tự lưu hết dòng OK ngay (auto-insert).
+        // Còn dòng lỗi: saveSelected lưu OK, modal giữ lại để user đọc lại.
+        if (!this.showReview && this.checkedCount > 0) {
+          this.saveSelected();
+        }
       },
       (err) => {
         this.loading = false;
@@ -223,7 +258,12 @@ export class ModalDocHoaDonComponent implements OnInit {
     const branchId = Number.parseInt(this.authService.getLoggedInUser()?.branchId);
 
     this.saving = true;
-    this.pendingInvoiceService.createBatch({ uploadId: this.uploadId, items }, branchId).subscribe(
+    this.pendingInvoiceService.createBatch({
+      uploadId: this.uploadId,
+      groupFeeCode: this.selectedGroupFeeCode,
+      groupFeeName: this.selectedGroupFeeName,
+      items
+    }, branchId).subscribe(
       (res: any) => {
         this.saving = false;
         if (res?.code == '200' || res?.code == '201') {

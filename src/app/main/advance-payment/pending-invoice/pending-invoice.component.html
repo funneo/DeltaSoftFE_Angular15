@@ -1,10 +1,10 @@
 <div class="box box-primary box-chieu-cao">
   <div class="box-header with-border">
     <div class="row">
-      <div class="col-md-3">
-        <h3 class="box-title">Hóa đơn chờ thanh toán</h3>
+      <div class="col-md-4">
+        <h3 class="box-title">Hóa đơn AI</h3>
       </div>
-      <div class="col-md-9 text-right">
+      <div class="col-md-8 text-right">
         <button class="btn btn-primary btn-sm" (click)="openModalDoc()" appPermission appFunction="F043" appAction="CREATE">
           <i class="fa fa-cloud-upload"></i> Đọc hóa đơn AI (ảnh / PDF / ZIP / RAR)
         </button>
@@ -14,11 +14,6 @@
       <div class="col-md-2">
         <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
                class="form-control" />
-      </div>
-      <div class="col-md-2">
-        <select class="form-control" [(ngModel)]="status" (change)="timKiem()">
-          <option *ngFor="let s of statusList" [ngValue]="s.id">{{ s.text }}</option>
-        </select>
       </div>
       <div class="col-md-4">
         <div class="input-group">
@@ -32,9 +27,28 @@
         </div>
       </div>
     </div>
+    <!-- 2 tab -->
+    <div class="row" style="padding-top: 8px;">
+      <div class="col-md-12">
+        <ul class="nav nav-tabs">
+          <li [class.active]="activeTab === 1">
+            <a (click)="setTab(1)">
+              <i class="fa fa-clock-o"></i> Hóa đơn chờ thanh toán
+              <span class="badge" style="background:#f0ad4e;">{{ tab1Count }}</span>
+            </a>
+          </li>
+          <li [class.active]="activeTab === 2">
+            <a (click)="setTab(2)">
+              <i class="fa fa-ban"></i> Hóa đơn bị từ chối (trùng)
+              <span class="badge" style="background:#d9534f;">{{ tab2Count }}</span>
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
   </div>
 
-  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" id="div#style-scroll-1">
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper">
     <table class="table table-bordered table-striped table-hover">
       <thead>
         <tr>
@@ -49,92 +63,77 @@
           <th>Mã tra cứu</th>
           <th>Người upload</th>
           <th>Ngày upload</th>
-          <th>Trạng thái</th>
           <th>Token (in/out)</th>
-          <th style="width: 130px;">Tác vụ</th>
+          <th style="width: 110px;">Tác vụ</th>
         </tr>
       </thead>
-      <tbody>
-        <tr *ngFor="let item of list"
-            [class.row-paid]="item.status === 1"
-            [class.row-duplicate]="item.isDuplicate && item.status !== 1">
-          <td>
-            <a *ngIf="item.pathFileLocal" [href]="buildFileUrl(item.pathFileLocal)" target="_blank"
-               [title]="item.fileName">
-              <i class="fa fa-file-pdf-o"></i> {{ item.fileName | slice:0:30 }}
-            </a>
-            <span *ngIf="!item.pathFileLocal" class="text-muted">—</span>
-          </td>
-          <td>{{ item.vendorName }}</td>
-          <td>{{ item.taxNumber }}</td>
-          <td>
-            {{ item.invoiceNo }}
-            <span *ngIf="item.isDuplicate" class="badge-dup" [title]="dupTooltip(item)">
-              <i class="fa fa-exclamation-circle"></i> TRÙNG
-            </span>
-          </td>
-          <td>{{ item.invoicePattern }}</td>
-          <td>{{ item.invoiceDate }}</td>
-          <td class="text-right">{{ item.totalAmount | number }}</td>
-          <td>
-            <a *ngIf="item.web" [href]="item.web" target="_blank" [title]="item.web">
-              {{ item.web | slice:0:25 }}
-            </a>
-          </td>
-          <td>{{ item.code }}</td>
-          <td>{{ item.createdByName }}</td>
-          <td>{{ item.createdDate | date:'dd/MM/yyyy HH:mm' }}</td>
-          <td>
-            <span class="label" [ngClass]="{
-              'label-warning': item.status === 0,
-              'label-success': item.status === 1,
-              'label-default': item.status === -1
-            }">
-              {{ item.status === 0 ? 'Chờ TT' : (item.status === 1 ? 'Đã TT' : 'Xóa') }}
-            </span>
-          </td>
-          <td class="text-muted small">
-            {{ item.promptTokens | number }} / {{ item.completionTokens | number }}
-          </td>
-          <td>
-            <button *ngIf="item.status === 0" type="button"
-                    class="btn btn-warning btn-xs" (click)="reExtract(item)"
-                    [disabled]="reExtractingId === item.id"
-                    appPermission appFunction="F043" appAction="UPDATE"
-                    title="Đọc lại Gemini cho file này">
-              <i class="fa" [ngClass]="reExtractingId === item.id ? 'fa-spinner fa-spin' : 'fa-refresh'"></i>
-              Đọc lại
-            </button>
-            <button *ngIf="item.status === 0" type="button"
-                    class="btn btn-danger btn-xs" (click)="deleteConfirm(item)"
-                    appPermission appFunction="F043" appAction="DELETE">
-              <i class="fa fa-trash"></i>
-            </button>
+      <tbody *ngFor="let g of groups">
+        <!-- Header nhóm phí cấp 1 -->
+        <tr class="group-header" (click)="toggleGroup(g)">
+          <td colspan="13">
+            <i class="fa" [ngClass]="g.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+            <strong>{{ g.code ? (g.code + ' - ' + g.name) : g.name }}</strong>
+            <span class="badge group-count">{{ g.items.length }} hóa đơn</span>
           </td>
         </tr>
-        <tr *ngIf="list?.length === 0">
-          <td colspan="100%">Không có bản ghi nào.</td>
+        <!-- Dòng hóa đơn -->
+        <ng-container *ngIf="g.expanded">
+          <tr *ngFor="let item of g.items" [class.row-duplicate]="item.isDuplicate">
+            <td>
+              <a *ngIf="item.pathFileLocal" [href]="buildFileUrl(item.pathFileLocal)" target="_blank"
+                 [title]="item.fileName">
+                <i class="fa fa-file-pdf-o"></i> {{ item.fileName | slice:0:30 }}
+              </a>
+              <span *ngIf="!item.pathFileLocal" class="text-muted">—</span>
+            </td>
+            <td>{{ item.vendorName }}</td>
+            <td>{{ item.taxNumber }}</td>
+            <td>
+              {{ item.invoiceNo }}
+              <span *ngIf="item.isDuplicate" class="badge-dup" [title]="dupTooltip(item)">
+                <i class="fa fa-exclamation-circle"></i> TRÙNG
+              </span>
+            </td>
+            <td>{{ item.invoicePattern }}</td>
+            <td>{{ item.invoiceDate }}</td>
+            <td class="text-right">{{ item.totalAmount | number }}</td>
+            <td>
+              <a *ngIf="item.web" [href]="item.web" target="_blank" [title]="item.web">
+                {{ item.web | slice:0:25 }}
+              </a>
+            </td>
+            <td>{{ item.code }}</td>
+            <td>{{ item.createdByName }}</td>
+            <td>{{ item.createdDate | date:'dd/MM/yyyy HH:mm' }}</td>
+            <td class="text-muted small">
+              {{ item.promptTokens | number }} / {{ item.completionTokens | number }}
+            </td>
+            <td>
+              <!-- Tab Chờ TT: đọc lại + xóa.  Tab Từ chối: chỉ xóa (xem qua link file). -->
+              <button *ngIf="activeTab === 1" type="button"
+                      class="btn btn-warning btn-xs" (click)="reExtract(item)"
+                      [disabled]="reExtractingId === item.id"
+                      appPermission appFunction="F043" appAction="UPDATE"
+                      title="Đọc lại Gemini cho file này">
+                <i class="fa" [ngClass]="reExtractingId === item.id ? 'fa-spinner fa-spin' : 'fa-refresh'"></i>
+              </button>
+              <button type="button"
+                      class="btn btn-danger btn-xs" (click)="deleteConfirm(item)"
+                      appPermission appFunction="F043" appAction="DELETE" title="Xóa">
+                <i class="fa fa-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </ng-container>
+      </tbody>
+      <tbody *ngIf="groups?.length === 0">
+        <tr>
+          <td colspan="13" class="text-center text-muted" style="padding:20px;">
+            {{ activeTab === 1 ? 'Không có hóa đơn chờ thanh toán.' : 'Không có hóa đơn bị từ chối.' }}
+          </td>
         </tr>
       </tbody>
     </table>
-  </div>
-
-  <div class="box-footer no-padding">
-    <div *ngIf="list?.length > 0" class="col-md-12 footer-phantrang">
-      <div class="row">
-        <div class="col-md-5">
-          <div class="dataTables_info">
-            <span>Tổng số bản ghi: {{ totalRows }}</span>
-          </div>
-        </div>
-        <div class="col-md-7 text-right">
-          <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="9"
-                      (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize"
-                      previousText="&lsaquo;" nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
-          </pagination>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 

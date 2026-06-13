@@ -33,6 +33,7 @@ export interface Payments{
   advancesRefNo?:string;
   createdBy?:string;
   isDirectPayment?:number;//Thanh toán trực tiếp hoặc có tạm ứng
+  groupFeeCode?:string;//Nhóm phí cấp 1 (FeeCode Lvl1) — 1 phiếu thuộc 1 nhóm phí
 }
 
 export interface PaymentDetail {

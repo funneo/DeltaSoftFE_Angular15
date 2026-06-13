@@ -37,6 +37,9 @@ export interface PendingInvoice {
   totalTokens?: number;
   isDuplicate?: boolean;
   duplicatesJson?: string;        // JSON array [{ paymentId, paymentRefNo, paymentRefDate, paymentStatus }]
+  groupFeeCode?: string;          // nhóm phí cấp 1 (FeeCode Lvl1) — lưu code
+  groupFeeName?: string;          // snapshot tên nhóm phí
+  usedByPaymentId?: number;       // !=null => đã dùng cho 1 Payment (ẩn khỏi tab Chờ TT)
   status?: number;
   createdBy?: string;
   createdDate?: string;
@@ -63,6 +66,7 @@ export interface PendingInvoicePickerFilter {
   keyword?: string;
   fromDate?: string;
   toDate?: string;
+  groupFeeCode?: string;       // lọc hóa đơn theo nhóm phí cấp 1 của Payment
 }
 
 /** 1 dòng trả về cho picker — đủ field để fill PaymentDetail. */
@@ -84,6 +88,8 @@ export interface PendingInvoicePickerItem {
   pathFileLocal?: string;
   isDuplicate?: boolean;
   duplicatesJson?: string;
+  groupFeeCode?: string;
+  groupFeeName?: string;
   createdDate?: string;
   // UI state — không gửi BE
   checked?: boolean;
@@ -96,6 +102,8 @@ export interface PendingInvoiceCreateItem extends PendingInvoice {
 
 export interface CreateBatchRequest {
   uploadId: string;
+  groupFeeCode?: string;       // nhóm phí cấp 1 áp cho cả batch
+  groupFeeName?: string;
   items: PendingInvoiceCreateItem[];
 }
 

@@ -1,9 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import * as moment from 'moment';
-import { PageChangedEvent } from 'ngx-bootstrap/pagination';
 import { MessageContstants } from '@app/shared/constants';
-import { SystemContstants } from '@app/shared/constants/SystemConstants';
 import { AuthService, NotificationService, UtilityService } from '@app/shared/services';
 import {
   PendingInvoice,
@@ -12,18 +10,23 @@ import {
 } from '@app/shared/services/pending-invoice.service';
 import { ModalDocHoaDonComponent } from '@app/shared/components/advance-payment/modal-doc-hoa-don/modal-doc-hoa-don.component';
 
+interface PendingInvoiceGroup {
+  code: string;            // groupFeeCode ('' = chưa phân loại)
+  name: string;            // groupFeeName để hiển thị
+  items: PendingInvoice[];
+  expanded: boolean;
+}
+
 @Component({
   selector: 'app-pending-invoice',
   templateUrl: './pending-invoice.component.html',
   styleUrls: ['./pending-invoice.component.css']
 })
 export class PendingInvoiceComponent implements OnInit {
-  list: PendingInvoice[] = [];
-  totalRows = 0;
-  pageIndex = 1;
-  pageSize = SystemContstants.PAGESIZE;
+  allRows: PendingInvoice[] = [];      // toàn bộ hóa đơn theo khoảng ngày (load-all)
+  groups: PendingInvoiceGroup[] = [];  // đã group theo GroupFeeCode cho tab hiện tại
+  activeTab: 1 | 2 = 1;                // 1 = Chờ TT, 2 = Bị từ chối (trùng)
   keyword = '';
-  status: number | null = null;        // null = all
   busy: Subscription;
   ngayBatDau: Date = this._utilityService.ngayBanDau;
   ngayKetThuc: Date = this._utilityService.ngayKetThuc;
@@ -32,11 +35,7 @@ export class PendingInvoiceComponent implements OnInit {
   reExtractingId: number | null = null;
   viewModal = false;
 
-  statusList = [
-    { id: null, text: 'Tất cả' },
-    { id: 0, text: 'Chờ TT' },
-    { id: 1, text: 'Đã chọn cho Payment' },
-  ];
+  private expandedCodes = new Set<string>();   // giữ trạng thái mở/đóng khi reload
 
   @ViewChild(ModalDocHoaDonComponent, { static: false }) modalDocHoaDon: ModalDocHoaDonComponent;
 
@@ -64,33 +63,77 @@ export class PendingInvoiceComponent implements OnInit {
   }
 
   timKiem(): void {
-    this.pageIndex = 1;
     this.loadData();
   }
 
-  pageChanged(event: PageChangedEvent): void {
-    this.pageIndex = event.page;
-    this.loadData();
+  setTab(tab: 1 | 2): void {
+    this.activeTab = tab;
+    this.buildGroups();
   }
 
   loadData(): void {
+    // Load-all theo khoảng ngày (status null) → tách 2 tab + group client-side.
     const filter: PendingInvoiceFilter = {
       branchId: this._branchId,
-      status: this.status,
+      status: null,
       fromDate: moment(this.ngayBatDau).format('YYYY-MM-DD'),
       toDate: moment(this.ngayKetThuc).format('YYYY-MM-DD'),
       keyword: this.keyword,
-      pageIndex: this.pageIndex,
-      pageSize: this.pageSize,
+      pageIndex: 1,
+      pageSize: 99999,
     };
     this.busy = this.service.getPaging(filter, this._branchId).subscribe((res: any) => {
       if (res.code == '200' || res.code == '201') {
-        this.list = res.data ?? [];
-        this.totalRows = this.list?.[0]?.totalRows ?? 0;
+        this.allRows = Array.isArray(res.data) ? res.data : [];
+        this.buildGroups();
       } else {
         this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code);
       }
     });
+  }
+
+  /** Hóa đơn thuộc tab Chờ TT: status=0, không trùng, chưa dùng cho Payment. */
+  private isPending(r: PendingInvoice): boolean {
+    return r.status === 0 && !r.isDuplicate && !r.usedByPaymentId;
+  }
+  /** Hóa đơn thuộc tab Bị từ chối: trùng, chưa dùng, chưa xóa. */
+  private isRejected(r: PendingInvoice): boolean {
+    return !!r.isDuplicate && !r.usedByPaymentId && r.status !== -1;
+  }
+
+  get tab1Count(): number { return this.allRows.filter(r => this.isPending(r)).length; }
+  get tab2Count(): number { return this.allRows.filter(r => this.isRejected(r)).length; }
+
+  /** Group hóa đơn của tab hiện tại theo GroupFeeCode. */
+  buildGroups(): void {
+    const rows = this.allRows.filter(r => this.activeTab === 1 ? this.isPending(r) : this.isRejected(r));
+    const map = new Map<string, PendingInvoiceGroup>();
+    for (const r of rows) {
+      const code = (r.groupFeeCode || '').trim();
+      let g = map.get(code);
+      if (!g) {
+        g = {
+          code,
+          name: r.groupFeeName || (code ? code : 'Chưa phân loại'),
+          items: [],
+          expanded: this.expandedCodes.size === 0 ? true : this.expandedCodes.has(code),
+        };
+        map.set(code, g);
+      }
+      g.items.push(r);
+    }
+    // Sort: nhóm có code trước (theo code), 'Chưa phân loại' xuống cuối.
+    this.groups = Array.from(map.values()).sort((a, b) => {
+      if (!a.code) return 1;
+      if (!b.code) return -1;
+      return a.code.localeCompare(b.code);
+    });
+  }
+
+  toggleGroup(g: PendingInvoiceGroup): void {
+    g.expanded = !g.expanded;
+    if (g.expanded) this.expandedCodes.add(g.code);
+    else this.expandedCodes.delete(g.code);
   }
 
   openModalDoc() {

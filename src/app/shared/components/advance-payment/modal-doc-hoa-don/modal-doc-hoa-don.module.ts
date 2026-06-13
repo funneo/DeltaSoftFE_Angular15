@@ -4,6 +4,7 @@ import { ModalDocHoaDonComponent } from './modal-doc-hoa-don.component';
 import { ModalModule } from 'ngx-bootstrap/modal';
 import { AngularDraggableModule } from 'angular2-draggable';
 import { FormsModule } from '@angular/forms';
+import { NgSelectModule } from '@ng-select/ng-select';
 
 @NgModule({
   declarations: [ModalDocHoaDonComponent],
@@ -11,6 +12,7 @@ import { FormsModule } from '@angular/forms';
     CommonModule,
     ModalModule,
     FormsModule,
+    NgSelectModule,
     AngularDraggableModule,
   ],
   exports: [ModalDocHoaDonComponent]

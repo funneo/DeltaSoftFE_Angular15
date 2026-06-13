@@ -6,9 +6,9 @@
           <h3 class="box-title">Chi tiết thanh toán</h3>
         </div>
         <div class="col-md-8 text-right">
-          <button type="button" class="btn btn-warning btn-sm" title="Chọn từ hóa đơn đã đọc bằng AI"
+          <button *ngIf="entity.groupFeeCode" type="button" class="btn btn-warning btn-sm" title="Chọn từ hóa đơn đã đọc bằng AI (theo nhóm phí đã chọn)"
             [disabled]="_isChuyeduyet || flagXem" (click)="showInvoicePicker()">
-            <i class="fa fa-file-text-o" aria-hidden="true"></i> Chọn từ hóa đơn đã đọc
+            <i class="fa fa-file-text-o" aria-hidden="true"></i> Lấy hóa đơn đã đọc
           </button>
           <button type="button" class="btn btn-success btn-sm" title="Import Excel" [disabled]="_isChuyeduyet"
             (click)="showImport()">
@@ -82,6 +82,17 @@
                     <i class="fa  fa-eye" title="Xem lô hàng"></i>
                   </span>
                 </div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Nhóm phí cấp 1</label>
+              <div class="col-sm-9">
+                <ng-select name="groupFee" [items]="_listGroupFee" bindValue="feeCode"
+                  [ngModel]="entity.groupFeeCode" (ngModelChange)="onChangeGroupFee($event)"
+                  [readonly]="flagXem || _isChuyeduyet" placeholder="Chọn nhóm phí (Lĩnh vực)" [clearable]="false">
+                  <ng-template ng-label-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
+                  <ng-template ng-option-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
+                </ng-select>
               </div>
             </div>
             <div class="form-group">

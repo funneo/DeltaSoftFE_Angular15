@@ -1,6 +1,15 @@
 # Pending / In-Progress Work
 
-## ▶ Draft Site — "Công việc vận chuyển" + tài liệu giao nhận do BOT đính kèm (2026-06-11, KẾ HOẠCH — chờ anh duyệt SQL)
+## ▶ PendingInvoice (F043) GroupFeeCode — chờ anh chạy SQL + deploy API + test E2E (2026-06-13, BE+FE code xong build 0 err)
+Code BE+FE đã xong (xem done.md). **Anh cần:**
+1. ✅ **Chạy 2 SQL XONG (2026-06-13)**: `Migration_PendingInvoice_GroupFeeCode_20260613.sql` + `Migration_Payments_GroupFeeCode_20260613.sql`.
+2. **Deploy API mới cuối tuần** (~06-14/15) — lúc đó BE mới bắt đầu truyền @GroupFeeCode.
+3. **Test E2E:**
+   - Modal đọc hóa đơn: chưa chọn nhóm phí → upload bị khóa; chọn FeeCode Lvl1 → upload + đọc → mặc định auto-insert; tick "Hiển thị trước khi lưu" → hiện form review + nút Lưu như cũ.
+   - List 2 tab: Tab1 Chờ TT / Tab2 Bị từ chối; group theo nhóm phí (header `code - name` + count, collapse); hóa đơn đã làm Payment ẩn khỏi cả 2 tab.
+   - Payment: field Nhóm phí cấp 1 dưới Lô hàng/trên Nội dung; chọn nhóm mới hiện nút "Lấy hóa đơn đã đọc"; picker chỉ hóa đơn đúng nhóm; đổi nhóm → confirm → xóa hết detail; lưu Payments.GroupFeeCode.
+
+## ▶ Draft Site — "Công việc vận chuyển" + tài liệu giao nhận do BOT đính kèm (2026-06-12, Phase A/B/C XONG — còn Phase D ERP + E Bot)
 
 **Mục tiêu**: thêm 1 list bên site nháp hiển thị **công việc vận chuyển** (mirror `shipping-task-opman`). Một **BOT** lấy ảnh **biên bản giao hàng + chứng từ giao nhận hàng hóa**, gắn vào từng chuyến. Tài liệu nằm ở draft; **ERP shipping-task-opman vẫn link tới xem được** (giống view draft lô hàng).
 
@@ -8,14 +17,19 @@
 - **Nguồn list = mirror chuyến ERP read-only** (KHÔNG nhân bản chuyến). Draft chỉ chứa *tài liệu*, link bằng `ShippingTaskId`. Draft site đọc chuyến qua ERP API (cần thêm `ShippingTask/getAllByOpMan` vào `Draft:ReadAllowlist`).
 - **Ảnh lưu S3 + bảng draft riêng `draft.DraftTaskDocs`** (không nhúng Payload). **Draft API tự nhận multipart → đẩy S3 → insert** (bot chỉ POST ảnh).
 
-**Thứ tự (A→D, đã chốt):**
-- 🟡 **Phase A — SQL** (đang chờ anh duyệt/chạy): [Migration_DraftSite_TaskDocs_20260611.sql](D:/Delta/DeltaSoft/NewAPI/Migration_DraftSite_TaskDocs_20260611.sql) — bảng `draft.DraftTaskDocs` + 5 SP draft (`Insert/GetByTask/GetPaging/Delete/UpdateStatus`) + 1 SP `dbo.SP_DraftTaskDocs_GetForErp_GetByDateRange`. `draft_app` đã có `GRANT EXECUTE ON SCHEMA::[draft]` → không cần grant thêm. **CHƯA chạy** (memory: no auto DB writes). Câu hỏi mở: DocType đủ 3 loại chưa (`DeliveryNote/HandoverDoc/Other`)? Cần thêm cột đối soát (ContainerNumber/SealNumber/BotBatchId)?
-- ⬜ **Phase A.2 — ERP** thêm `ShippingTask/getAllByOpMan` vào `Draft:ReadAllowlist` (appsettings/filter), không tạo SP mới.
-- ⬜ **Phase B — Draft API**: `DraftTaskDocsController` (create multipart→S3→insert, getByTask, getPaging, delete) + cấu hình S3 cho DraftAPI.
-- ⬜ **Phase C — draft-web** `src/app/shipping-task/`: list mirror cột opman (read-only, nguồn ERP getAllByOpMan), cột "Tài liệu (n)" + modal xem ảnh + upload tay CS.
-- ⬜ **Phase D — ERP opman**: badge/cột "Tài liệu nháp (n)" + modal read-only xem ảnh theo chuyến (pattern view draft lô hàng).
-- ⬜ **Phase E — Bot**: chốt hợp đồng API (upload + register). Code bot làm sau.
-- ⬜ **Phase F (sau)**: nút Duyệt → promote DraftTaskDocs → Attachfiles thật (`frmName=SHIPPINGTASK`, `refNo=shippingTaskId`), set `PromotedAttachId/Status='Promoted'`.
+**QĐ MỚI (2026-06-12):**
+- **BỎ PROMOTE.** Tài liệu giữ vĩnh viễn ở `draft.DraftTaskDocs`; ERP chỉ ĐỌC NGƯỢC đường dẫn để hiển thị, KHÔNG bê vào `Attachfiles` thật → Phase F bị loại; cột `Status='Promoted'/PromotedAttachId` để không (vô hại).
+- **S3 PUBLIC, KHÔNG presign.** Bucket `files-manager-delta-erp` có policy public-read; upload NoACL (giống hệt ERP). `viewUrl = https://{bucket}.s3.{region}.amazonaws.com/{key}` (vĩnh viễn). → ERP đọc ngược chỉ cần ghép URL, KHÔNG cần S3 cred/SDK.
+- **File đa loại**: ảnh / PDF / Word / Excel (không chỉ ảnh). BE không chặn loại (chỉ 50MB); FE render thumbnail ảnh + icon Word/Excel/PDF.
+
+**Thứ tự:**
+- ✅ **Phase A — SQL XONG (2026-06-12)**: anh chạy [Migration_DraftSite_TaskDocs_20260611.sql]. Bảng `draft.DraftTaskDocs` + 5 SP draft + `dbo.SP_DraftTaskDocs_GetForErp_GetByDateRange` đã tồn tại.
+- ✅ **Phase A.2 — KHÔNG cần sửa allowlist**: `GetAllByOpMan` đã có `[ClaimRequirement(WORKFLOW, VIEW)]` → DraftAudienceGuard cho VIEW qua + ClaimRequirementFilter pass nếu token nháp có `WORKFLOW_VIEW` (FilterDraftPermissions giữ `_VIEW`). → user nháp cần WORKFLOW_VIEW ở ERP.
+- ✅ **Phase C — draft-web XONG (2026-06-12, build pass)**: `src/app/shipping-task/` list mirror opman read-only (ERP `/api/shippingtask/getallbyopman`) + date range/keyword + cột "Tài liệu (n)" badge + **modal `shipping-task-docs-modal`** (upload nhiều file ảnh/PDF/Word/Excel theo loại, thumbnail ảnh + icon theo loại, xem qua public URL, xóa của mình) + `docCount` thật (1 call `draftTaskDocs/getPaging` gộp client-side). `LookupService.shippingTasksOpMan()` + `DraftTaskDocsService` + interface `ShippingTaskOpManLookup`/`DraftTaskDoc` + route `/shipping-task` + nav nhóm cha **"Quản lý vận tải" → "CV vận chuyển"**.
+- ✅ **Phase B — Draft API XONG (2026-06-12, build 0 err)**: `DraftTaskDocsController` (create multipart→S3→insert / getByTask / getPaging / delete, all trả `viewUrl` public) + `DraftTaskDocsRepository` (4 SP draft) + `Services/S3StorageService` (upload NoACL + `GetViewUrl` ghép **public URL**, bucket `files-manager-delta-erp` ap-southeast-1, prefix `DraftTaskDocs/<taskId>/`) + DTOs + DI + `appsettings.AwsConfiguration` + pkg `AWSSDK.S3`. **PathFile lưu S3 KEY**; viewUrl = `https://{bucket}.s3.{region}.amazonaws.com/{key}` (public, vĩnh viễn, không presign).
+  - ▶ **Anh cần**: (1) `dotnet restore/run` DraftAPI (nạp AWSSDK.S3 + endpoints); (2) đổi password `draft_app` thật trong appsettings (đang `CHANGE_ME`); (3) `ng serve` draft-web → test upload/xem/xóa chứng từ theo chuyến.
+- ⬜ **Phase D — ERP opman** (cách đã chốt: KHÔNG viết SP mới): (1) chạy [Migration_DraftSite_TaskDocs_OpManDocCount_20260612.sql] — **ALTER `SP_ShippingTask_GetByOpMan`** (SP màn opman THẬT, lọc 1 ngày `@Day`) thêm 1 cột `DraftDocCount` (correlated subquery sang draft.DraftTaskDocs). ⚠️ KHÔNG nhầm sang `SP_ShippingTask_GetAllByOpMan` (cái đó draft-web dùng). (2) thêm property `int DraftDocCount` vào `ShippingTaskViewModel`. (3) endpoint ERP đọc file theo `ShippingTaskId` (Dapper inline schema draft, **không SP mới**) → FE ghép public URL. (4) nút 📎 + modal read-only trong `shipping-task-opman`. → `dbo.SP_DraftTaskDocs_GetForErp_GetByDateRange` thành thừa, có thể DROP. **File ALTER mới chỉ là ĐỀ XUẤT — chưa chạy.**
+- ⬜ **Phase E — Bot**: chốt hợp đồng API (POST multipart `api/draftTaskDocs/create` kèm token aud=draft). Code bot làm sau.
 
 ## ▶ Session 2026-06-07 — chờ anh test E2E (SQL đã chạy xong 2026-06-08)
 5 SQL trên đã chạy: SP_DriverFuelClosing_Delete (@Id), SP_DraftEntries_GetPaging (LIKE pattern), SP_DispatchOrder_GetForSummary (+FuelDriverName), SP_DriverFuelApproval_CancelExpired, F039 grant.

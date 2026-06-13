@@ -1,5 +1,46 @@
 # Completed Features
 
+## PendingInvoice (F043) — gắn Nhóm phí cấp 1 (GroupFeeCode) + modal auto-insert + list 2-tab group + Payment lọc theo nhóm — 2026-06-13 (BE+FE build 0 error, ✅ 2 SQL ĐÃ CHẠY, chờ deploy API cuối tuần → test E2E)
+Nâng cấp module Đọc hóa đơn AI / PendingInvoice: gắn **nhóm phí cấp 1 = FeeCode Level 1 (Lĩnh vực)** trong hệ phí MỚI vào hóa đơn + phiếu thanh toán. Lưu **GroupFeeCode = `FeeCodes.FeeCode`** (chuỗi code, KHÔNG id) + `GroupFeeName` snapshot; hiển thị mọi nơi `feeCode - feeName`.
+
+### Modal đọc hóa đơn (`modal-doc-hoa-don`)
+- Bắt **chọn FeeCode Lvl1 TRƯỚC** khi cho upload (khóa upload-area tới khi chọn nhóm); cả batch gắn 1 nhóm. ng-select load `feeCodeService.getAll(null,1,2)`.
+- Checkbox **"Hiển thị thông tin hóa đơn trước khi lưu"** (mặc định TẮT): tắt = đọc xong tự `createBatch` insert luôn (tick hết dòng OK → saveSelected); bật = giữ màn review + nút Lưu như cũ. createBatch kèm groupFeeCode/groupFeeName.
+
+### List PendingInvoice → 2 tab group
+- Tab1 **Chờ thanh toán** (status0 + !isDuplicate + UsedByPaymentId null), Tab2 **Bị từ chối** (isDuplicate=trùng). Mỗi tab group theo GroupFeeCode (collapsible, header = `code - name` + count). Tab1: đọc-lại + xóa; Tab2: chỉ xem + xóa. Load-all theo date range → tách + group client-side. Hóa đơn đã Used ẩn khỏi cả 2 tab.
+
+### Payment (`payment-detail`)
+- Thêm field FeeCode Lvl1 (ng-select, bindValue=feeCode, label `code - name`) đặt **dưới Lô hàng/Công việc, trên Nội dung**. Chọn xong MỚI hiện nút **"Lấy hóa đơn đã đọc"** (*ngIf groupFeeCode); picker truyền `groupFeeCode` lọc đúng nhóm. ĐỔI nhóm phí → `confirm()` đồng bộ (revert được) → xóa TOÀN BỘ listDetail. Lưu `Payments.GroupFeeCode` vào DB.
+
+### SQL ✅ ĐÃ CHẠY (2026-06-13), `NewAPI/`
+- `Migration_PendingInvoice_GroupFeeCode_20260613.sql`: Tbl_PendingInvoice +GroupFeeCode/Name +index; SP_Create +2 param; SP_GetForPicker +@GroupFeeCode filter +2 cột. GetPaging GIỮ NGUYÊN (SELECT * tự trả).
+- `Migration_Payments_GroupFeeCode_20260613.sql`: Tbl_Payments +GroupFeeCode; **ALTER (không drop, giữ grant)** SP_Payments_Create/_Update/_GetById thêm `@GroupFeeCode NVARCHAR(50) = NULL` (default → API cũ đang chạy không lỗi). Đã verify diff chuẩn hóa khớp logic gốc; chỉ PaymentsRepository gọi 3 SP, không trigger/dependency.
+
+### BE (NewAPI, build 0 err)
+PendingInvoice.cs +GroupFeeCode/Name; PendingInvoiceViewModel (CreateBatchRequest/PickerFilter/PickerItem); Controller.CreateBatch set GroupFee mỗi item; Repository Create +2 param, GetForPicker +@GroupFeeCode. Payments.cs +GroupFeeCode; PaymentsRepository Create/Update +param (GetById tự map qua VM kế thừa).
+
+**Anh cần**: ~~(1) chạy 2 SQL~~ ✅ XONG; (2) deploy API mới cuối tuần (~06-14/15) — lúc đó BE bắt đầu truyền @GroupFeeCode; (3) test E2E. Chi tiết quyết định: memory `project_pending_invoice_groupfee`.
+
+## Draft Site — TaskDocs: Phase B (Draft API) + Phase C (draft-web) — đính kèm chứng từ vào chuyến — 2026-06-12 (build sạch, chờ test E2E)
+Vòng đầy đủ end-to-end: draft-web đọc chuyến ERP → mở "Chứng từ" theo chuyến → upload ảnh/PDF/Word/Excel → DraftAPI đẩy S3 → insert `draft.DraftTaskDocs` → list hiện badge "Tài liệu (n)" thật; xem qua public URL, xóa của mình.
+
+### Quyết định chốt trong session
+- **BỎ PROMOTE**: tài liệu ở mãi `draft.DraftTaskDocs`; ERP chỉ đọc ngược đường dẫn để hiển thị, KHÔNG copy vào Attachfiles thật → Phase F loại.
+- **S3 PUBLIC, KHÔNG presign**: bucket `files-manager-delta-erp` có policy public-read; upload NoACL (giống ERP — đã kiểm chứng `S3StorageServiceRepository`/`S3Controller` của ERP cũng NoACL, không presign). `viewUrl = https://{bucket}.s3.{region}.amazonaws.com/{key}` (vĩnh viễn). Trước đó làm private+presign rồi đổi sang public.
+- **File đa loại**: ảnh/PDF/Word/Excel (không chỉ ảnh). BE không chặn loại (chỉ 50MB).
+
+### Phase B — DraftAPI (`D:\Delta\DeltaSoft\DraftAPI`, build 0 err)
+`Controllers/DraftTaskDocsController` (create multipart→S3→insert / getByTask / getPaging / delete; trả `viewUrl` public; xóa chỉ chủ tạo, admin null) + `Data/DraftTaskDocsRepository` (4 SP draft) + `Services/S3StorageService` (`UploadAsync` NoACL + `GetViewUrl` ghép public URL, encode segment) + `Models/DraftTaskDocsDtos` + DI `Program.cs` + `appsettings.AwsConfiguration` + pkg AWSSDK.S3 3.7.203.7. **PathFile lưu S3 key**, prefix `DraftTaskDocs/<taskId>/`.
+
+### Phase C — draft-web (`D:\Delta\DeltaSoft\draft-web`, ng build pass)
+`src/app/shipping-task/`: `shipping-task-list` (mirror opman read-only qua ERP `/api/shippingtask/getallbyopman`, date range/keyword, cột "Tài liệu (n)" badge, nút 📎) + `shipping-task-docs-modal` (upload nhiều file theo loại, thumbnail ảnh + icon Word/Excel/PDF via `fileKind()`, xem public URL, xóa của mình, phát `countChanged`) + `core/draft-task-docs.service` + `LookupService.shippingTasksOpMan()` + interface `ShippingTaskOpManLookup`/`DraftTaskDoc` + route `/shipping-task` + nav nhóm cha **"Quản lý vận tải" → "CV vận chuyển"**.
+
+### Phase A.2 — KHÔNG cần sửa allowlist
+`GetAllByOpMan` đã có `[ClaimRequirement(WORKFLOW, VIEW)]` → DraftAudienceGuard cho VIEW qua; user nháp chỉ cần `WORKFLOW_VIEW` ở ERP.
+
+**Anh cần**: (1) `dotnet restore/run` DraftAPI; (2) đổi password `draft_app` thật trong appsettings (đang `CHANGE_ME`); (3) `ng serve` draft-web → test upload/xem/xóa. Còn lại: Phase D (ERP opman badge + modal) + Phase E (bot) — xem todo.md.
+
 ## Draft Site — TaskDocs: commit view draft Lô hàng/Canon + SQL design tài liệu giao nhận (Bot) — 2026-06-11
 Session ngắn: chốt + commit phần view draft đã làm, rồi lên kế hoạch + viết SQL design cho feature mới "Công việc vận chuyển + tài liệu Bot".
 

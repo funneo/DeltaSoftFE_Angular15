@@ -20,3 +20,20 @@ tr.row-duplicate:hover > td { background-color: #FFE69C !important; }
 }
 
 .btn-xs { padding: 2px 5px; font-size: 11px; }
+
+/* Header nhóm phí cấp 1 */
+tr.group-header > td {
+  background: #e8eef5 !important;
+  cursor: pointer;
+  font-size: 13px;
+  border-top: 2px solid #b9c7d6;
+}
+tr.group-header:hover > td { background: #dde6f0 !important; }
+tr.group-header .fa { margin-right: 6px; color: #4a6fa5; }
+.group-count {
+  background: #6c8cba;
+  margin-left: 8px;
+  font-weight: 600;
+}
+.nav-tabs > li > a { cursor: pointer; }
+.nav-tabs .badge { margin-left: 5px; color: #fff; }

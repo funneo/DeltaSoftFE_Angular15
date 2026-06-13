@@ -27,6 +27,8 @@ import { ModalPaymentDetailedComponent } from '@app/shared/components/advance-pa
 import { ModalImportExcelComponent } from '@app/shared/components/systems/modal-import-excel/modal-import-excel.component';
 import { ModalPendingInvoicePickerComponent } from '@app/shared/components/advance-payment/modal-pending-invoice-picker/modal-pending-invoice-picker.component';
 import { PendingInvoicePickerItem } from '@app/shared/services/pending-invoice.service';
+import { FeeCodeService } from '@app/shared/services/fee-code.service';
+import { FeeCode } from '@app/shared/models';
 @Component({
   selector: 'app-payment-detail',
   templateUrl: './payment-detail.component.html',
@@ -44,6 +46,7 @@ export class PaymentDetailComponent implements OnInit {
   busy: Subscription;
   listBranch: Branch[];
   listFee: Fee[];
+  _listGroupFee: FeeCode[] = [];     // FeeCode cấp 1 (Lĩnh vực) cho dropdown nhóm phí
   listWorkflow: Workflow[];
   listShipment: Shipment[];
   listType: any[] = [
@@ -98,7 +101,8 @@ export class PaymentDetailComponent implements OnInit {
     private authService: AuthService, private branchService: BranchService, private employeeService: EmployeeService,
     private paymentsService: PaymentsService, private customerService: CustomerService, private cdr: ChangeDetectorRef,
     private feeService: FeeService, private _notificationService: NotificationService, permissionPaymentService: PermissionPaymentService,
-    private workflowsService: WorkflowsService, private rateExchangeService: RateExchangeService, private suppliertSerive: SupplierService, private shipmentService: ShipmentService) {
+    private workflowsService: WorkflowsService, private rateExchangeService: RateExchangeService, private suppliertSerive: SupplierService, private shipmentService: ShipmentService,
+    private feeCodeService: FeeCodeService) {
     let user = this.authService.getLoggedInUser();
     this._auth = Number.parseInt(user.authorisationLevel);
     this._branchId = Number.parseInt(user.branchId);
@@ -132,6 +136,7 @@ export class PaymentDetailComponent implements OnInit {
     this._type = this._type % 2;
     this.loadChiNhanh();
     this.loadFee();
+    this.loadGroupFee();
     this.loadOtherCategory();
     this.entity = {
       status: false,
@@ -253,6 +258,31 @@ export class PaymentDetailComponent implements OnInit {
     }
   }
 
+  loadGroupFee() {
+    // FeeCode cấp 1 (Lĩnh vực) đã duyệt (status=2). bindValue = feeCode (lưu code, không id).
+    this.feeCodeService.getAll(null, 1, 2).subscribe(res => {
+      this._listGroupFee = res?.data || [];
+    });
+  }
+
+  _lastGroupFee: string;     // giá trị nhóm phí đã "chốt" (để revert khi user hủy)
+
+  /** Đổi nhóm phí cấp 1 → xóa toàn bộ chi tiết (phiếu thuộc 1 nhóm). */
+  onChangeGroupFee(newCode: string) {
+    if (newCode === this._lastGroupFee) return;
+    const hasReal = (this.listDetail || []).some(x => x.feeId);
+    // confirm() đồng bộ → revert được ngay khi user hủy (printConfirmationDialog không có callback hủy).
+    if (hasReal && !confirm('Đổi nhóm phí cấp 1 sẽ XÓA toàn bộ chi tiết thanh toán hiện tại. Tiếp tục?')) {
+      this.entity.groupFeeCode = this._lastGroupFee;   // hủy → revert
+      return;
+    }
+    this.entity.groupFeeCode = newCode;
+    this._lastGroupFee = newCode;
+    this.listDetail = [];
+    this.sumTien();
+    this.inputTen();
+  }
+
   loadFee() {
     const params = new HttpParams()
     this.feeService.getAll(params).subscribe((res: ResponseValue<Fee[]>) => {
@@ -299,6 +329,7 @@ export class PaymentDetailComponent implements OnInit {
     this.paymentsService.getDetail(id).subscribe((res: ResponseValue<Payments>) => {
       if (res.code == '200' || res.code == '201') {
         this.entity = res.data;
+        this._lastGroupFee = this.entity.groupFeeCode;   // chốt giá trị nhóm phí để revert khi đổi
         // Map IsDirectPayment from PascalCase if necessary
         if (this.entity['IsDirectPayment'] !== undefined && this.entity.isDirectPayment === undefined) {
           this.entity.isDirectPayment = this.entity['IsDirectPayment'];
@@ -741,8 +772,15 @@ export class PaymentDetailComponent implements OnInit {
   // ====== Pick từ PendingInvoice (Hóa đơn đã đọc) ======
   showInvoicePicker(): void {
     if (this.flagXem || this._isChuyeduyet) return;
+    if (!this.entity.groupFeeCode) {
+      this._notificationService.printAlert('THÔNG BÁO', 'Vui lòng chọn Nhóm phí cấp 1 trước khi lấy hóa đơn đã đọc!');
+      return;
+    }
     this.viewInvoicePicker = true;
-    setTimeout(() => this.modalInvoicePicker?.show(), 50);
+    setTimeout(() => {
+      if (this.modalInvoicePicker) this.modalInvoicePicker.groupFeeCode = this.entity.groupFeeCode;
+      this.modalInvoicePicker?.show();
+    }, 50);
   }
 
   closeInvoicePicker(): void {
