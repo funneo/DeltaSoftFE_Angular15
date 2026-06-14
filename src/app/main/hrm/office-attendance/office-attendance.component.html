@@ -1,37 +1,74 @@
-<div class="card">
-  <div class="card-header toolbar">
-    <div class="tb-left">
-      <ng-select class="sel-branch" [items]="listBranch" bindLabel="branchName" [(ngModel)]="branchId"
-        bindValue="id" (change)="loadData()" placeholder="Chi nhánh" [clearable]="false"></ng-select>
-      <select class="form-control input-sm sel-sm" [(ngModel)]="month" (change)="loadData()">
-        <option *ngFor="let m of months" [value]="m">Tháng {{m}}</option>
-      </select>
-      <input type="number" class="form-control input-sm sel-year" [(ngModel)]="year" (change)="loadData()">
-      <input type="text" class="form-control input-sm sel-kw" [(ngModel)]="keyword" placeholder="Tìm tên..."
-        (keyup.enter)="loadData()">
-      <button class="btn btn-sm btn-default" (click)="loadData()"><i class="fa fa-search"></i></button>
-    </div>
-    <div class="tb-right">
-      <button class="btn btn-sm btn-info" (click)="openConfig()"><i class="fa fa-cog"></i> Cấu hình</button>
-      <button class="btn btn-sm btn-primary" (click)="openImport()"><i class="fa fa-upload"></i> Import chấm công</button>
-      <button class="btn btn-sm btn-success" (click)="calculate()"><i class="fa fa-calculator"></i> Tính</button>
-      <button class="btn btn-sm btn-default" (click)="exportExcel()" [disabled]="!list.length"><i class="fa fa-file-excel-o"></i> Xuất Excel</button>
+<div class="box box-primary box-chieu-cao">
+  <div class="row">
+    <div class="box-header with-border">
+      <div class="col-md-2">
+        <h3 class="box-title">Bảng công văn phòng</h3>
+      </div>
+      <div class="col-md-2">
+        <ng-select [items]="listBranch" bindLabel="branchName" bindValue="id" [(ngModel)]="branchId"
+          (change)="loadData()" placeholder="Chọn chi nhánh..." [clearable]="false">
+        </ng-select>
+      </div>
+      <div class="col-md-2">
+        <div class="input-group">
+          <select class="form-control" [(ngModel)]="month" (change)="loadData()">
+            <option *ngFor="let m of months" [value]="m">Tháng {{m}}</option>
+          </select>
+          <span class="input-group-addon" style="padding:0;border:none;background:none;">
+            <input type="number" class="form-control" [(ngModel)]="year" (change)="loadData()" style="width:80px;">
+          </span>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="input-group">
+          <input type="text" class="form-control" name="filter" (keyup.enter)="loadData()" [(ngModel)]="keyword"
+            placeholder="Tìm tên..." />
+          <span class="input-group-btn">
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="loadData()">
+              <i class="fa fa-search"></i>
+            </button>
+          </span>
+        </div>
+      </div>
+      <div class="col-md-4 text-right">
+        <button class="btn btn-default btn-sm" (click)="openConfig()">
+          <i class="fa fa-cog"></i> Cấu hình
+        </button>
+        <button class="btn btn-primary btn-sm" (click)="openImport()" appPermission appFunction="F044" appAction="CREATE">
+          <i class="fa fa-upload"></i> Import chấm công
+        </button>
+        <button class="btn btn-success btn-sm" (click)="calculate()" appPermission appFunction="F044" appAction="UPDATE">
+          <i class="fa fa-calculator"></i> Tính
+        </button>
+        <button class="btn btn-info btn-sm" (click)="exportExcel()" [disabled]="!list.length" appPermission
+          appFunction="F044" appAction="EXPORT">
+          <i class="fa fa-file-excel-o"></i> Xuất Excel
+        </button>
+      </div>
     </div>
   </div>
-
-  <div class="card-body table-wrap">
-    <table class="table table-bordered table-condensed table-striped att">
+  <!-- /.box-header -->
+  <div class="box-body table-responsive no-padding">
+    <table class="table table-bordered table-striped table-hover att">
       <thead>
         <tr>
-          <th rowspan="2">STT</th><th rowspan="2">Tên</th>
-          <th rowspan="2">Ngày công</th><th rowspan="2">Công chuẩn</th>
-          <th rowspan="2" class="text-danger">Tiền phạt</th><th rowspan="2">Nghỉ KL</th>
-          <th colspan="3">Nghỉ phép</th><th colspan="3">Làm online</th>
+          <th rowspan="2" class="text-center">STT</th>
+          <th rowspan="2">Tên</th>
+          <th rowspan="2" class="text-center">Ngày công</th>
+          <th rowspan="2" class="text-center">Công chuẩn</th>
+          <th rowspan="2" class="text-center text-danger">Tiền phạt</th>
+          <th rowspan="2" class="text-center">Nghỉ KL</th>
+          <th colspan="3" class="text-center">Nghỉ phép</th>
+          <th colspan="3" class="text-center">Làm online</th>
           <th rowspan="2"></th>
         </tr>
         <tr>
-          <th>Tháng {{month}}</th><th>Tới T{{month-1}}</th><th>Tới T{{month}}</th>
-          <th>Tháng {{month}}</th><th>Tới T{{month-1}}</th><th>Tới T{{month}}</th>
+          <th class="text-center">Tháng {{month}}</th>
+          <th class="text-center">Tới T{{month-1}}</th>
+          <th class="text-center">Tới T{{month}}</th>
+          <th class="text-center">Tháng {{month}}</th>
+          <th class="text-center">Tới T{{month-1}}</th>
+          <th class="text-center">Tới T{{month}}</th>
         </tr>
       </thead>
       <tbody>
@@ -48,17 +85,24 @@
           <td class="text-center">{{x.onlineDaysMonth}}</td>
           <td class="text-center">{{x.onlineValidPrev}}</td>
           <td class="text-center">{{x.onlineValidThis}}</td>
-          <td class="text-center"><button class="btn btn-xs btn-default" (click)="openDetail(x)"><i class="fa fa-eye"></i></button></td>
+          <td class="text-center">
+            <button class="btn btn-xs btn-default" (click)="openDetail(x)"><i class="fa fa-eye"></i></button>
+          </td>
         </tr>
-        <tr *ngIf="!list.length"><td colspan="13" class="text-center text-muted">Chưa có dữ liệu — Import chấm công rồi bấm "Tính".</td></tr>
+        <tr *ngIf="!list.length">
+          <td colspan="13" class="text-center text-muted">Chưa có dữ liệu — Import chấm công rồi bấm "Tính".</td>
+        </tr>
       </tbody>
       <tfoot *ngIf="list.length">
-        <tr><td colspan="4" class="text-right"><b>Tổng tiền phạt:</b></td>
+        <tr>
+          <td colspan="4" class="text-right"><b>Tổng tiền phạt:</b></td>
           <td class="text-right text-danger"><b>{{sumPenalty | number}}</b></td>
-          <td colspan="8"></td></tr>
+          <td colspan="8"></td>
+        </tr>
       </tfoot>
     </table>
   </div>
+  <!-- /.box-body -->
 </div>
 
 <modal-office-attendance-import (SaveSuccess)="onImported()"></modal-office-attendance-import>
