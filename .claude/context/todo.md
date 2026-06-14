@@ -1,6 +1,6 @@
 # Pending / In-Progress Work
 
-## ▶ Bảng công văn phòng (F044) — chờ grant SQL + deploy + test E2E (2026-06-14, SQL chính đã chạy, BE+FE build 0 err)
+## ▶ Bảng công văn phòng (F044) — chờ grant SQL + deploy + test E2E (2026-06-14, SQL chính đã chạy, BE+FE build 0 err, ✅ ĐÃ COMMIT — layout box chuẩn HRM + box chạm đáy)
 Module tổng hợp công tháng + tiền phạt NV văn phòng (xem done.md). **Anh cần:**
 1. ✅ Chạy `Migration_OfficeAttendance_20260614.sql` (XONG).
 2. ⬜ Chạy `Migration_OfficeAttendance_Grant_20260614.sql` (Functions F044 + quyền Admin → hiện menu).

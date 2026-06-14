@@ -16,8 +16,10 @@ ReasonId **1368=muộn/1369=sớm** (HRM01); **OnLeave.Type 0=phép/1=online**; 
 ### BE (NewAPI, build 0 err) — FunctionCode F044
 Models/ViewModels/Interface/Repository/Controller HRMs. Controller: Import (multipart, EPPlus parse, date M/d/yyyy, match theo tên qua SP_ApplyMatch) + ImportPreview (chọn dòng bắt đầu) + ReMatch + NameMapSave/GetAll + Calculate + GetPaging/GetDetail + SetStatus + Holiday/Opening CRUD + Export (EPPlus).
 
-### FE (web-app-update, build 0 err)
-main/hrm/office-attendance (list + toolbar chi nhánh/tháng/năm + Import/Tính/Export/Cấu hình + tổng phạt) + 3 modal: import (upload→preview chọn dòng→import→map tên chưa khớp), detail (drill ngày), config (2 tab Ngày lễ + Số dư đầu kỳ). Route data.functionCode='F044'.
+### FE (web-app-update, build 0 err) — ✅ ĐÃ COMMIT
+main/hrm/office-attendance (list + toolbar chi nhánh/tháng/năm + Import/Tính/Export/Cấu hình + tổng phạt) + 3 modal: import (upload→preview chọn dòng→import→map tên chưa khớp), detail (drill ngày), config (2 tab Ngày lễ + Số dư đầu kỳ). Route data.functionCode='F044'. Layout **box box-primary box-chieu-cao** chuẩn AdminLTE (giống các trang HRM), box-body chạm đáy (height calc(100vh-165px)+overflow scoped) + sticky 2-row header; nút Import/Tính/Export gắn appPermission F044.
+
+**Commit**: BE `90c6413`, FE `eeb09e0` (module + skill invoice-ai-reader + done/todo) → `1877583` (đổi card→box) → `0878d92` (box chạm đáy + sticky header). `Luong-Delta/` KHÔNG commit (data lương thật, binary lớn).
 
 **Anh cần**: (1) chạy grant SQL; (2) deploy API mới + ng build FE; (3) relogin → Nhân sự → Bảng công văn phòng → Cấu hình lễ/số dư → Import HN/VT → map tên → Tính → kiểm tra bảng vs file chị Huệ → Export. Chi tiết: memory `project_office_attendance_module`.
 
