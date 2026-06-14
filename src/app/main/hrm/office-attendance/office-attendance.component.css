@@ -1,3 +1,12 @@
+.box-chieu-cao > .box-body {
+  height: calc(100vh - 165px);
+  overflow: auto;
+}
+
 table.att { font-size: 13px; }
-table.att thead th { text-align: center; vertical-align: middle; background: #f5f7fa; white-space: nowrap; }
+table.att thead th { text-align: center; vertical-align: middle; background: #dcefe5f6; white-space: nowrap; }
 table.att td { padding: 4px 8px; vertical-align: middle; }
+
+/* sticky 2-row header khi cuộn dọc trong khung */
+table.att thead tr:nth-child(1) th { position: sticky; top: 0px; z-index: 10; }
+table.att thead tr:nth-child(2) th { position: sticky; top: 31px; z-index: 10; }
