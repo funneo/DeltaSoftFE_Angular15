@@ -1,5 +1,14 @@
 # Pending / In-Progress Work
 
+## ▶ Bảng công văn phòng (F044) — chờ grant SQL + deploy + test E2E (2026-06-14, SQL chính đã chạy, BE+FE build 0 err)
+Module tổng hợp công tháng + tiền phạt NV văn phòng (xem done.md). **Anh cần:**
+1. ✅ Chạy `Migration_OfficeAttendance_20260614.sql` (XONG).
+2. ⬜ Chạy `Migration_OfficeAttendance_Grant_20260614.sql` (Functions F044 + quyền Admin → hiện menu).
+3. ⬜ Deploy API mới + `ng build` FE.
+4. ⬜ Test E2E: relogin → Nhân sự → **Bảng công văn phòng** → **Cấu hình** (nhập ngày lễ + số dư phép/online đầu kỳ nếu cần) → **Import chấm công** (chọn file HN_T4/VT_T4, chọn dòng bắt đầu, import, map tên chưa khớp) → **Tính** → đối chiếu bảng với file tay chị Huệ → **Xuất Excel**.
+
+**Còn để dành (đã chốt hoãn):** quy tắc giải trình ≤5 lần/lần 6+ =30k (cột PenaltyExplain/ExplainCount đã có, chưa tính); phụ cấp giờ đặc biệt (IT phía Nam +60', nữ nuôi con nhỏ +60'); đẩy tiền phạt sang module lương VP. Điểm cần soi khi test: bậc phạt về sớm T7 (so mốc 10:00), nửa ngày phép+công, match tên trùng.
+
 ## ▶ PendingInvoice (F043) GroupFeeCode — chờ anh chạy SQL + deploy API + test E2E (2026-06-13, BE+FE code xong build 0 err)
 Code BE+FE đã xong (xem done.md). **Anh cần:**
 1. ✅ **Chạy 2 SQL XONG (2026-06-13)**: `Migration_PendingInvoice_GroupFeeCode_20260613.sql` + `Migration_Payments_GroupFeeCode_20260613.sql`.

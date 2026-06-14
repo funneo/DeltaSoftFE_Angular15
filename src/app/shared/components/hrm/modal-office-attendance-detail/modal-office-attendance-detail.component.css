@@ -1,0 +1,7 @@
+.sum-row { display:flex; flex-wrap:wrap; gap:18px; margin-bottom:10px; font-size:13px; }
+table.det { font-size:12px; }
+table.det td, table.det th { padding:3px 6px; }
+tr.dt-leave > td { background:#fff3cd !important; }
+tr.dt-online > td { background:#d1ecf1 !important; }
+tr.dt-absent > td { background:#f8d7da !important; }
+tr.dt-off > td { background:#f1f1f1 !important; color:#999; }

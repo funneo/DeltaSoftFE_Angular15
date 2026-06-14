@@ -1,0 +1,4 @@
+.add-row { display:flex; gap:8px; align-items:center; margin-bottom:10px; }
+.nav-tabs > li > a { cursor:pointer; padding:6px 12px; }
+table td { vertical-align:middle !important; }
+table .input-sm { height:26px; padding:2px 6px; }

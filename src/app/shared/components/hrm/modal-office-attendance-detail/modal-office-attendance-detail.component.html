@@ -1,0 +1,55 @@
+<div ngDraggable [handle]="hdlDet" class="modal fade" bsModal #modalDetail="bs-modal"
+  [config]="{backdrop:'static'}" tabindex="-1" role="dialog">
+  <div class="modal-dialog" style="width:85vw; max-width:1100px;">
+    <div class="modal-content">
+      <div #hdlDet class="modal-header">
+        <h4 class="modal-title pull-left">
+          <i class="fa fa-calendar"></i> Chi tiết công — {{header.employeeName}} ({{header.month}}/{{header.year}})
+        </h4>
+        <button type="button" class="close pull-right" (click)="close()"><span>&times;</span></button>
+      </div>
+      <div class="modal-body" style="max-height:75vh; overflow:auto;">
+        <div *ngIf="loading" class="text-center text-primary"><i class="fa fa-spinner fa-spin"></i> Đang tải...</div>
+
+        <div *ngIf="!loading" class="sum-row">
+          <span>Ngày công: <b>{{header.workingDays}}</b>/{{header.standardDays}}</span>
+          <span>Tiền phạt: <b class="text-danger">{{header.penaltyTotal | number}}</b></span>
+          <span>Nghỉ KL: <b>{{header.unpaidLeaveDays}}</b></span>
+          <span>Phép tháng: <b>{{header.leaveDaysMonth}}</b></span>
+          <span>Online tháng: <b>{{header.onlineDaysMonth}}</b></span>
+        </div>
+
+        <table *ngIf="!loading" class="table table-bordered table-condensed table-striped det">
+          <thead>
+            <tr>
+              <th>Ngày</th><th>T7</th><th>Vào</th><th>Ra</th>
+              <th>Muộn (')</th><th>Sớm (')</th><th>Phạt muộn</th><th>Phạt sớm</th>
+              <th>Loại</th><th>Công</th><th>Ghi chú</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let d of details" [ngClass]="dayTypeClass(d.dayType)">
+              <td>{{d.workDate | date:'dd/MM (EEE)'}}</td>
+              <td class="text-center">{{d.isSaturday ? '✓' : ''}}</td>
+              <td>{{d.timeIn}}</td>
+              <td>{{d.timeOut}}</td>
+              <td class="text-right">{{d.lateMinutes || ''}}</td>
+              <td class="text-right">{{d.earlyMinutes || ''}}</td>
+              <td class="text-right">{{d.latePenalty ? (d.latePenalty | number) : ''}}<span *ngIf="d.isExemptLate" class="text-success"> (miễn)</span></td>
+              <td class="text-right">{{d.earlyPenalty ? (d.earlyPenalty | number) : ''}}<span *ngIf="d.isExemptEarly" class="text-success"> (miễn)</span></td>
+              <td>{{dayTypeText(d.dayType)}}</td>
+              <td class="text-center">{{d.workDayValue}}</td>
+              <td>
+                <span *ngIf="d.noCheckIn" class="text-danger">Thiếu vào </span>
+                <span *ngIf="d.noCheckOut" class="text-danger">Thiếu ra </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-default btn-sm" (click)="close()">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>

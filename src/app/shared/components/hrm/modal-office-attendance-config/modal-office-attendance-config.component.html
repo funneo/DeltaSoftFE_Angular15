@@ -1,0 +1,61 @@
+<div ngDraggable [handle]="hdlCfg" class="modal fade" bsModal #modalCfg="bs-modal"
+  [config]="{backdrop:'static'}" tabindex="-1" role="dialog">
+  <div class="modal-dialog" style="width:80vw; max-width:900px;">
+    <div class="modal-content">
+      <div #hdlCfg class="modal-header">
+        <h4 class="modal-title pull-left"><i class="fa fa-cog"></i> Cấu hình — Năm {{year}}</h4>
+        <button type="button" class="close pull-right" (click)="close()"><span>&times;</span></button>
+      </div>
+      <div class="modal-body" style="max-height:75vh; overflow:auto;">
+        <ul class="nav nav-tabs" style="margin-bottom:10px;">
+          <li [class.active]="tab==='holiday'"><a (click)="tab='holiday'">Ngày lễ</a></li>
+          <li [class.active]="tab==='opening'"><a (click)="tab='opening'">Số dư phép/online đầu kỳ</a></li>
+        </ul>
+
+        <!-- HOLIDAY -->
+        <div *ngIf="tab==='holiday'">
+          <div class="add-row">
+            <input type="date" [(ngModel)]="newHoliday.holidayDate" class="form-control input-sm" style="width:170px;">
+            <input type="text" [(ngModel)]="newHoliday.name" placeholder="Tên ngày lễ" class="form-control input-sm" style="width:260px;">
+            <button class="btn btn-sm btn-success" (click)="addHoliday()"><i class="fa fa-plus"></i> Thêm</button>
+          </div>
+          <table class="table table-bordered table-condensed">
+            <thead><tr><th style="width:160px">Ngày</th><th>Tên</th><th style="width:60px"></th></tr></thead>
+            <tbody>
+              <tr *ngFor="let h of holidays">
+                <td>{{h.holidayDate | date:'dd/MM/yyyy'}}</td>
+                <td>{{h.name}}</td>
+                <td><button class="btn btn-xs btn-danger" (click)="delHoliday(h)"><i class="fa fa-trash"></i></button></td>
+              </tr>
+              <tr *ngIf="!holidays.length"><td colspan="3" class="text-center text-muted">Chưa có ngày lễ</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- OPENING -->
+        <div *ngIf="tab==='opening'">
+          <div class="add-row">
+            <ng-select [items]="employees" bindValue="id" bindLabel="employeeFullName" [(ngModel)]="newOpening.employeeId"
+              placeholder="-- Chọn NV --" appendTo="body" style="width:280px;"></ng-select>
+            <input type="number" [(ngModel)]="newOpening.leaveValidOpening" placeholder="Phép" class="form-control input-sm" style="width:90px;">
+            <input type="number" [(ngModel)]="newOpening.onlineValidOpening" placeholder="Online" class="form-control input-sm" style="width:90px;">
+            <button class="btn btn-sm btn-success" (click)="addOpening()"><i class="fa fa-plus"></i> Thêm</button>
+          </div>
+          <table class="table table-bordered table-condensed">
+            <thead><tr><th>Nhân viên</th><th style="width:120px">Phép tới T(n-1)</th><th style="width:120px">Online tới T(n-1)</th><th style="width:70px"></th></tr></thead>
+            <tbody>
+              <tr *ngFor="let o of openings">
+                <td>{{o.employeeFullName}}</td>
+                <td><input type="number" [(ngModel)]="o.leaveValidOpening" class="form-control input-sm"></td>
+                <td><input type="number" [(ngModel)]="o.onlineValidOpening" class="form-control input-sm"></td>
+                <td><button class="btn btn-xs btn-primary" (click)="saveOpening(o)"><i class="fa fa-save"></i></button></td>
+              </tr>
+              <tr *ngIf="!openings.length"><td colspan="4" class="text-center text-muted">Chưa có số dư đầu kỳ</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-default btn-sm" (click)="close()">Đóng</button></div>
+    </div>
+  </div>
+</div>

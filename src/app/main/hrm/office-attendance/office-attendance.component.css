@@ -1,0 +1,10 @@
+.toolbar { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; padding:8px; }
+.tb-left, .tb-right { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.sel-branch { width:240px; }
+.sel-sm { width:100px; height:30px; }
+.sel-year { width:80px; height:30px; }
+.sel-kw { width:160px; height:30px; }
+.table-wrap { overflow:auto; }
+table.att { font-size:13px; }
+table.att th { text-align:center; vertical-align:middle; background:#f5f7fa; }
+table.att td { padding:4px 8px; }

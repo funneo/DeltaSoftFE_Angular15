@@ -1,5 +1,26 @@
 # Completed Features
 
+## Bảng công văn phòng (F044) — tổng hợp công tháng + tiền phạt đi muộn/về sớm cho NV văn phòng — 2026-06-14 (SQL chính đã chạy, BE+FE build 0 error, chờ grant SQL + deploy + test E2E)
+Module HRM mới thay file Excel chấm công tay của HR. Import "Chi tiết chấm công" (Vào/Ra) → engine tính ngày công + tiền phạt + nghỉ không lương + tổng hợp phép/online lũy kế → bảng Tổng + export. Nguồn `Luong-Delta/` (HN_T4, VT_T4, PDF, ảnh quy định).
+
+### Quy định (PDF + ảnh) đã code
+Đi muộn so 8h00 (ân hạn ≤5'): 06–15'=10k/16–35'=20k/36–65'=40k/66–185'=100k/>185'=½ ngày. Về sớm so 17h30: 1–10'=10k/11–30'=20k/31–60'=40k/61–180'=100k/>180'=½ ngày. **T7 chỉ làm sáng, mốc ra 10:00**; CN+lễ nghỉ; không nghỉ trưa. Đăng ký đi muộn/về sớm đã duyệt → miễn. Vắng không phép = nghỉ không lương. Online duyệt = ngày làm. Giải trình 30k HOÃN.
+
+### Đã verify từ DB thật
+ReasonId **1368=muộn/1369=sớm** (HRM01); **OnLeave.Type 0=phép/1=online**; **Status=2=Duyệt** (cả GoLate+OnLeave); map `CreatedBy→Users.Id→Users.EmployeeId→Employee.Id`; match chấm công theo **TÊN** (mã CC≠mã NV).
+
+### SQL
+- ✅ ĐÃ CHẠY: [Migration_OfficeAttendance_20260614.sql] — 6 bảng (Import/NameMap/Holiday/Opening/Attendance header/Detail) + TVP + ~15 SP gồm engine `SP_OfficeAttendance_Calculate` (dựng lịch tháng, join OnLeave/GoLate, áp bậc phạt, lũy kế phép/online cap 15).
+- ⬜ CHƯA CHẠY: [Migration_OfficeAttendance_Grant_20260614.sql] — Functions F044 (menu HRM, Url /main/hrm/office-attendance) + ActionInFunctions VIEW/CREATE/UPDATE/EXPORT + Permissions Admin.
+
+### BE (NewAPI, build 0 err) — FunctionCode F044
+Models/ViewModels/Interface/Repository/Controller HRMs. Controller: Import (multipart, EPPlus parse, date M/d/yyyy, match theo tên qua SP_ApplyMatch) + ImportPreview (chọn dòng bắt đầu) + ReMatch + NameMapSave/GetAll + Calculate + GetPaging/GetDetail + SetStatus + Holiday/Opening CRUD + Export (EPPlus).
+
+### FE (web-app-update, build 0 err)
+main/hrm/office-attendance (list + toolbar chi nhánh/tháng/năm + Import/Tính/Export/Cấu hình + tổng phạt) + 3 modal: import (upload→preview chọn dòng→import→map tên chưa khớp), detail (drill ngày), config (2 tab Ngày lễ + Số dư đầu kỳ). Route data.functionCode='F044'.
+
+**Anh cần**: (1) chạy grant SQL; (2) deploy API mới + ng build FE; (3) relogin → Nhân sự → Bảng công văn phòng → Cấu hình lễ/số dư → Import HN/VT → map tên → Tính → kiểm tra bảng vs file chị Huệ → Export. Chi tiết: memory `project_office_attendance_module`.
+
 ## PendingInvoice (F043) — gắn Nhóm phí cấp 1 (GroupFeeCode) + modal auto-insert + list 2-tab group + Payment lọc theo nhóm — 2026-06-13 (BE+FE build 0 error, ✅ 2 SQL ĐÃ CHẠY, chờ deploy API cuối tuần → test E2E)
 Nâng cấp module Đọc hóa đơn AI / PendingInvoice: gắn **nhóm phí cấp 1 = FeeCode Level 1 (Lĩnh vực)** trong hệ phí MỚI vào hóa đơn + phiếu thanh toán. Lưu **GroupFeeCode = `FeeCodes.FeeCode`** (chuỗi code, KHÔNG id) + `GroupFeeName` snapshot; hiển thị mọi nơi `feeCode - feeName`.
 

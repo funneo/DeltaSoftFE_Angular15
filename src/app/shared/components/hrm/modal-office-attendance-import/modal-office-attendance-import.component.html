@@ -1,0 +1,84 @@
+<div ngDraggable [handle]="hdlImp" class="modal fade" bsModal #modalImport="bs-modal"
+  [config]="{backdrop:'static'}" tabindex="-1" role="dialog">
+  <div class="modal-dialog" style="width:90vw; max-width:1200px;">
+    <div class="modal-content">
+      <div #hdlImp class="modal-header">
+        <h4 class="modal-title pull-left"><i class="fa fa-upload"></i> Import chấm công — Tháng {{month}}/{{year}}</h4>
+        <button type="button" class="close pull-right" (click)="close()"><span>&times;</span></button>
+      </div>
+
+      <div class="modal-body" style="max-height:75vh; overflow:auto;">
+
+        <!-- STEP UPLOAD -->
+        <div *ngIf="step==='upload'">
+          <div class="up-bar">
+            <label class="btn btn-primary btn-sm">
+              <i class="fa fa-file-excel-o"></i> Chọn file Excel
+              <input type="file" hidden accept=".xlsx,.xls" (change)="onFile($event)">
+            </label>
+            <span *ngIf="fileName" class="text-muted">{{fileName}}</span>
+            <span *ngIf="loading" class="text-primary"><i class="fa fa-spinner fa-spin"></i> Đang đọc...</span>
+          </div>
+
+          <div *ngIf="preview.length" class="cfg-bar">
+            <span>Cột: Mã <input type="number" class="ci" [(ngModel)]="cols.colCode"></span>
+            <span>Tên <input type="number" class="ci" [(ngModel)]="cols.colName"></span>
+            <span>Ngày <input type="number" class="ci" [(ngModel)]="cols.colDate"></span>
+            <span>Vào <input type="number" class="ci" [(ngModel)]="cols.colIn"></span>
+            <span>Ra <input type="number" class="ci" [(ngModel)]="cols.colOut"></span>
+            <span class="text-info">→ Bấm vào dòng đầu tiên CÓ DỮ LIỆU (dòng bắt đầu = <b>{{startRow}}</b>)</span>
+          </div>
+
+          <div *ngIf="preview.length" class="prev-wrap">
+            <table class="table table-bordered table-condensed prev">
+              <tbody>
+                <tr *ngFor="let row of preview" [class.start-row]="row.rowNumber===startRow"
+                    (click)="pickStartRow(row.rowNumber)">
+                  <td class="rn">{{row.rowNumber}}</td>
+                  <td *ngFor="let c of row.cells">{{c}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- STEP MAPPING -->
+        <div *ngIf="step==='mapping'">
+          <div class="alert alert-warning" style="padding:8px 12px;">
+            Đã import <b>{{result?.rowCount}}</b> dòng. Còn <b>{{unmatched.length}}</b> tên CHƯA khớp nhân viên —
+            chọn nhân viên để map (map xong dòng đó tự biến mất).
+          </div>
+          <table class="table table-bordered table-condensed">
+            <thead><tr><th>Mã CC</th><th>Tên trong file</th><th>Số ngày</th><th style="width:320px">Nhân viên</th><th></th></tr></thead>
+            <tbody>
+              <tr *ngFor="let u of unmatched">
+                <td>{{u.attendanceCode}}</td>
+                <td>{{u.employeeName}}</td>
+                <td class="text-center">{{u.days}}</td>
+                <td>
+                  <ng-select [items]="employees" bindValue="id" bindLabel="employeeFullName"
+                    [(ngModel)]="u.employeeId" placeholder="-- Chọn NV --" appendTo="body">
+                  </ng-select>
+                </td>
+                <td><button class="btn btn-xs btn-success" (click)="saveMap(u)"><i class="fa fa-check"></i> Map</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <span *ngIf="step==='upload'">
+          <button class="btn btn-success btn-sm" (click)="doImport()" [disabled]="!preview.length || importing">
+            <i class="fa" [ngClass]="importing?'fa-spinner fa-spin':'fa-download'"></i> Import từ dòng {{startRow}}
+          </button>
+        </span>
+        <span *ngIf="step==='mapping'">
+          <button class="btn btn-warning btn-sm" (click)="finishWithUnmatched()">Bỏ qua tên còn lại & đóng</button>
+        </span>
+        <button class="btn btn-default btn-sm" (click)="close()"><i class="fa fa-times"></i> Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
