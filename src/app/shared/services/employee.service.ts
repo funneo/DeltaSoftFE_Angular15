@@ -99,6 +99,53 @@ export class EmployeeService extends BaseService {
       }), catchError(this.handleError));
   }
 
+  // ===== Module HR (Hồ sơ NV) — endpoint MỚI =====
+  addHR(entity: Employee) {
+    let p: FromBodyBase<Employee> = { item: entity, tokenKey: this.token };
+    Object.keys(entity).forEach(key => entity[key] === null ? delete entity[key] : '');
+    return this.http.post(`${environment.apiUrl}/api/employee/addHR`, p)
+      .pipe(
+        map((response: any) => {
+          if (response.code == '401') this.authService.logout();
+          else return response;
+        }),
+        tap((response: any) => {
+          if (response.code == '200' || response.code == '201') {
+            this.clearCache();
+            this.signalRService.notifyUpdate(CacheConstants.EMPLOYEE);
+          }
+        }),
+        catchError(this.handleError)
+      );
+  }
+
+  updateHR(entity: Employee) {
+    let p: FromBodyBase<Employee> = { item: entity, tokenKey: this.token };
+    return this.http.post(`${environment.apiUrl}/api/employee/updateHR`, p)
+      .pipe(
+        map((response: any) => {
+          if (response.code == '401') this.authService.logout();
+          else return response;
+        }),
+        tap((response: any) => {
+          if (response.code == '200' || response.code == '201') {
+            this.clearCache();
+            this.signalRService.notifyUpdate(CacheConstants.EMPLOYEE);
+          }
+        }),
+        catchError(this.handleError)
+      );
+  }
+
+  getDetailHR(id: string) {
+    let p: FromBodyBase<Employee> = { id: id, tokenKey: this.token };
+    return this.http.post(`${environment.apiUrl}/api/employee/getByIdHR`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401') this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
+  }
+
   delete(id: string) {
     let p: FromBodyBase<Employee> = { item: {} };
     p.item.id = Number.parseInt(id);

@@ -1,0 +1,4 @@
+.table_wrapper { height: calc(100vh - 220px); overflow: auto; }
+.table_wrapper table { font-size: 13px; }
+tr.row-warn > td { background-color: #fdecea !important; }
+.btn-xs { padding: 1px 6px; }

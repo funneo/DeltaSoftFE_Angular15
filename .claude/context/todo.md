@@ -1,5 +1,48 @@
 # Pending / In-Progress Work
 
+## ▶ HR — Hợp đồng lao động & Hồ sơ NV (F045, Mức B) — SQL design XONG, chờ chạy SQL + mẫu Word → BE/FE (2026-06-16)
+Thay Excel "Danh sách theo dõi HĐLĐ" bằng module trong ERP: theo dõi vòng đời HĐ + **in HĐLĐ ra Word (tải hàng loạt, KHÔNG lưu file)**. Quyết định: **Mức B** = tái dùng tối đa schema HR có sẵn (EmployeeContract/EmployeeSalary/EmployeeAllowance/EmployeeDegree/EmployeeFamily/EmployeeFile), không tạo bảng mới. Lương in từ `EmployeeSalary` IsActived=1 (cơ chế phụ lục khi tăng lương). Chức năng chi tiết: [hr-nhan-su-chuc-nang.md](hr-nhan-su-chuc-nang.md).
+
+**Đã check lại theo yêu cầu chi tiết của anh (2026-06-16) + 3 mẫu Word — đã vá SQL (chưa chạy):**
+- Số HĐ tự sinh dạng **STT/VP/<token> Năm** (CT01→"HĐ TV", CT02+CT03→"HĐLĐ", CT04→"HĐ Khoán"), **STT đếm theo VP+Năm+nhóm token** → SP mới `SP_EmployeeContract_GetNextNumber`. Khớp đúng mẫu Word (`045/HN/HĐLĐ 2025`, `001/HN/HĐ TV 2026`).
+- **Email tách 2**: Email cũ = email công ty + thêm cột `Employee.PersonalEmail`.
+- **Địa điểm làm việc = dropdown**: thêm `Employee.WorkLocationId` + seed `WORK_LOCATION` (HN IDMC / HP 1023 Nguyễn Bỉnh Khiêm); contract.WorkLocation lưu snapshot text in HĐ.
+- **Trạng thái NV**: seed `EMPLOYEE_STATUS` (Đang hoạt động/Thử việc/Tạm hoãn/Đã nghỉ) cho `EmployeeStatusId`.
+- **Cảnh báo trước 10 ngày**: GetPaging + GetByEmployee thêm tier ≤10 ngày + cờ `IsExpiringSoon`.
+- **Chuỗi tính ngày** (TV→XĐ1→XĐ2→KXĐ: start = end trước +1; end = start + N tháng −1 ngày) = prefill ở FE bước B5/B6 (không nằm SQL).
+- Bộ phận/Chức danh đã sẵn dropdown (`DEPT`/`TITLES`). Bằng cấp + Người phụ thuộc: SP để bước B6.
+
+**Anh cần (trước khi em code BE/FE):**
+1. ⬜ Chạy `Migration_HR_LaborContract_DDL_20260616.sql` (ALTER Employee +12 cột gồm **PersonalEmail/WorkLocationId**, ALTER EmployeeContract +9 cột gồm **EmployeeId** + index, seed CONTRACT_TYPE + EMPLOYEE_STATUS + WORK_LOCATION).
+2. ⬜ Chạy `Migration_HR_LaborContract_SPs_20260616.sql` (14 SP: EmployeeSalary ×5; EmployeeContract ×9 gồm **GetNextNumber** + Create/Update/SetActive/Delete(soft)/GetById/GetByEmployee/**GetPaging**/**GetForPrint**).
+3. ✅ Có **3 mẫu Word** ở `NewAPI/`: `Hợp đồng thử việc_xxx.docx`, `HĐLĐ xác định thời hạn.docx`, `HĐLĐ không xác định thời hạn.docx` → em wire placeholder ở bước B3 (chọn lib Word sẽ hỏi anh).
+
+**✅ ĐÃ LÀM (2026-06-16) — Hồ sơ NV (Tab 1) BE+FE build 0 lỗi, chờ deploy + test:**
+- SQL #3 `Migration_HR_Employee_HR_SPs_20260616.sql` (anh ĐÃ CHẠY): `SP_Employee_GetByIdHR/CreateHR/UpdateHR` MỚI (không đụng SP cũ); mã NV tự sinh `NV00xxx` y chang SP cũ.
+- BE: `Employee.cs` +12 field; `EmployeeViewModel` +EmployeeStatusName/WorkLocationName; `IEmployee`+repo (CreateHRAsync/UpdateHRAsync/GetByIdHR, output param); `EmployeeController` 3 endpoint `/addHR /updateHR /getByIdHR` (gate FunctionCode.EMPLOYEE).
+- FE: `Employee` model +field mới; `EmployeeService` +addHR/updateHR/getDetailHR; **component MỚI `modal-employee-hr`** (modal-xl 4 tab; **Tab 1 đầy đủ 6 nhóm A-F**, Tab 2/3/4 placeholder); wire nút **"Hồ sơ HR"** trong list NV (danhmuc/employee) để test.
+- **Anh cần**: deploy API mới + `ng build` → vào Danh mục Nhân viên → chọn 1 NV → **Hồ sơ HR** (hoặc test tạo mới qua nút này nếu muốn) → kiểm tra Tab 1 lưu/đọc đủ field mới (email cá nhân, địa điểm LV, trạng thái, liên hệ khẩn cấp, BHXH/BHYT). *(Nút "Hồ sơ HR" hiện mở chế độ sửa NV đang chọn; muốn tạo mới HR thì bấm khi không chọn dòng — em có thể tách nút Thêm HR riêng nếu anh cần.)*
+
+**✅ ĐÃ LÀM (2026-06-16, cụm 2) — F045 + F046 đầy đủ, BE+FE build 0 lỗi:**
+- **SQL grant** `Migration_HR_F045_F046_Grant_20260616.sql` (⬜ anh CHẠY): Functions F045 (`/main/hrm/employee-hr`) + F046 (`/main/hrm/labor-contract`) nhóm HRM, **CHỈ VIEW** + Permissions Admin VIEW. (Thao tác CUD vẫn gate EMPLOYEE.)
+- **BE EmployeeContract + EmployeeSalary** (build 0 lỗi): Model + ViewModel (DaysToExpire/IsExpiringSoon/TrackingStatus + ContractNumberSuggestion) + Interface + Repository (map 9 SP Contract gồm GetNextNumber, 5 SP Salary; output param; parse ngày dd/MM/yyyy) + Controller (`/api/employeecontract/*`, `/api/employeesalary/*`, gate EMPLOYEE). Scrutor auto-DI.
+- **FE**: model `employee-contract.model` + service `employee-contract.service` / `employee-salary.service`.
+- **modal-employee-hr Tab 2 (Hợp đồng) + Tab 3 (Lương)** giờ FUNCTIONAL: bảng lịch sử + thêm/sửa/đặt hiện hành/xóa; **Thêm HĐ → chọn loại → tự sinh số `001/HN/HĐ TV 2026` + prefill ngày theo chuỗi** (TV today/+2th−1d; XĐ end trước+1/+12th−1d; KXĐ end+1 không hạn); tô đỏ HĐ ≤10 ngày. Tab 3 mốc lương (thêm mốc tự tắt mốc cũ).
+- **Màn F045 `employee-hr`** (list NV + Thêm/Sửa/Xem mở modal-employee-hr) + **Màn F046 `labor-contract`** (Theo dõi HĐLĐ: lọc chi nhánh/loại HĐ/năm/sắp hết hạn/chỉ hiện hành + keyword; cột còn N ngày màu + trạng thái theo dõi + lương; nút "Quản lý" mở modal NV tại Tab Hợp đồng). Route đăng ký trong hrm-routing (F045/F046).
+- **Anh cần**: (1) chạy grant SQL F045/F046; (2) deploy API + `ng build`; (3) **relogin** → menu Nhân sự có "Hồ sơ nhân viên" + "Theo dõi HĐLĐ"; (4) test: thêm/sửa HĐ (kiểm tra tự sinh số + prefill ngày chuỗi TV→XĐ→KXĐ), mốc lương, bảng theo dõi cảnh báo ≤10 ngày.
+- **Còn lại**: Tab 4 Hồ sơ phụ (bằng cấp/người phụ thuộc) + **In Word HĐLĐ** (B3, cần chọn lib + dùng 3 mẫu .docx).
+
+**Kế hoạch thực hiện (theo thứ tự):**
+- ✅ **B1 — BE Model/VM Employee** (XONG): `Employee.cs` +12 prop; `EmployeeViewModel` +field hiển thị. (EmployeeContract.cs / EmployeeSalary.cs VM cho Tab 2/3 — làm ở bước sau.)
+- **B2 — BE Repo/Interface**: `IEmployeeContract`/`EmployeeContractRepository` (CRUD + GetPaging + GetByEmployee + GetForPrint), `IEmployeeSalary`/`EmployeeSalaryRepository` (CRUD + GetByEmployee). Map 13 SP qua DapperAdapter. (Scrutor auto-scan.)
+- **B3 — BE Controller**: `EmployeeContractController` + `EmployeeSalaryController` (POST hết, FromBodyBase<T> + CheckTokenKey + ClaimRequirement). Riêng endpoint **In Word**: nhận `@Ids` → gọi GetForPrint → merge docx (lib: DocX/OpenXML hoặc Syncfusion) → nhiều người đóng .zip → trả file stream (KHÔNG lưu Path).
+- **B4 — FE service/model**: `employee-contract.service.ts`, `employee-salary.service.ts`, models tương ứng (theo BaseService/CacheService convention).
+- **B5 — FE màn Theo dõi HĐLĐ**: list mới (giống Excel) — cột tên/CCCD/loại HĐ/từ-đến ngày/lương BHXH/còn N ngày/trạng thái màu; filter keyword/chi nhánh/loại HĐ/năm/sắp hết hạn; chọn nhiều dòng → nút **In HĐLĐ** (tải .zip).
+- **B6 — FE hồ sơ NV**: dựng **component MỚI `modal-employee-hr`** (modal-xl, 4 tab — KHÔNG đụng modal-employee cũ). Tab1 Thông tin chung (đủ field cũ+mới), Tab2 Hợp đồng (lịch sử + thêm/sửa/đặt hiện hành/in + auto số HĐ qua GetNextNumber + prefill ngày theo chuỗi), Tab3 Lương/BHXH (lịch sử + thêm mốc), Tab4 Hồ sơ phụ (phụ cấp/bằng cấp/người phụ thuộc/file). **Thiết kế đã chốt 2026-06-16** — chi tiết mockup + field từng tab ở [hr-nhan-su-chuc-nang.md](hr-nhan-su-chuc-nang.md) §4b. Chờ anh duyệt mới code.
+- **B7**: rà permission (FunctionCode HR riêng nếu cần) + test E2E.
+
+**Lưu ý:** chưa chọn lib Word — đề xuất hỏi anh khi tới B3 (DocX free vs OpenXML thuần vs Syncfusion). KHÔNG đụng SP/bảng cũ; bảng EmployeeContract trống nên ALTER an toàn.
+
 ## ▶ Bảng công văn phòng (F044) — chờ grant SQL + deploy + test E2E (2026-06-14, SQL chính đã chạy, BE+FE build 0 err, ✅ ĐÃ COMMIT — layout box chuẩn HRM + box chạm đáy)
 Module tổng hợp công tháng + tiền phạt NV văn phòng (xem done.md). **Anh cần:**
 1. ✅ Chạy `Migration_OfficeAttendance_20260614.sql` (XONG).
@@ -9,14 +52,22 @@ Module tổng hợp công tháng + tiền phạt NV văn phòng (xem done.md). *
 
 **Còn để dành (đã chốt hoãn):** quy tắc giải trình ≤5 lần/lần 6+ =30k (cột PenaltyExplain/ExplainCount đã có, chưa tính); phụ cấp giờ đặc biệt (IT phía Nam +60', nữ nuôi con nhỏ +60'); đẩy tiền phạt sang module lương VP. Điểm cần soi khi test: bậc phạt về sớm T7 (so mốc 10:00), nửa ngày phép+công, match tên trùng.
 
-## ▶ PendingInvoice (F043) GroupFeeCode — chờ anh chạy SQL + deploy API + test E2E (2026-06-13, BE+FE code xong build 0 err)
-Code BE+FE đã xong (xem done.md). **Anh cần:**
-1. ✅ **Chạy 2 SQL XONG (2026-06-13)**: `Migration_PendingInvoice_GroupFeeCode_20260613.sql` + `Migration_Payments_GroupFeeCode_20260613.sql`.
-2. **Deploy API mới cuối tuần** (~06-14/15) — lúc đó BE mới bắt đầu truyền @GroupFeeCode.
-3. **Test E2E:**
-   - Modal đọc hóa đơn: chưa chọn nhóm phí → upload bị khóa; chọn FeeCode Lvl1 → upload + đọc → mặc định auto-insert; tick "Hiển thị trước khi lưu" → hiện form review + nút Lưu như cũ.
-   - List 2 tab: Tab1 Chờ TT / Tab2 Bị từ chối; group theo nhóm phí (header `code - name` + count, collapse); hóa đơn đã làm Payment ẩn khỏi cả 2 tab.
-   - Payment: field Nhóm phí cấp 1 dưới Lô hàng/trên Nội dung; chọn nhóm mới hiện nút "Lấy hóa đơn đã đọc"; picker chỉ hóa đơn đúng nhóm; đổi nhóm → confirm → xóa hết detail; lưu Payments.GroupFeeCode.
+## ▶ PendingInvoice/Payment (F043) phân loại phí 2 CẤP — chờ chạy 2 SQL còn lại + deploy + test E2E (2026-06-15, BE+FE build 0 err; xem done.md)
+Nâng từ 1 cấp (GroupFeeCode) lên 2 cấp (Lv1→Lv2) + cờ IsInvoiceInput + list group lồng 2 cấp + payment 2 dòng nhóm phí dưới Số tạm ứng + scroll ngang cố định đáy. **Anh cần:**
+1. ✅ Đã chạy 3 SQL: `Migration_FeeCodes_2Level_Invoice_20260615.sql` + `Migration_PendingInvoice_SubFee_20260615.sql` + `Migration_Payments_SubFee_20260615.sql`.
+2. ⬜ **Chạy nốt 2 SQL**:
+   - `Migration_FeeCodes_CreateUpdate_IsInvoiceInput_20260615.sql` (ALTER SP_FeeCodes_Create/Update +@IsInvoiceInput → cho chỉnh cờ tay trong Danh mục phí).
+   - `Migration_PendingInvoice_SeedSubFee_DEV_20260615.sql` (CHỈ DB test — giả lập SubFeeCode cho HĐ nháp cũ để xem list group 2 cấp).
+3. ⬜ **Deploy API mới + `ng build` FE** (BE giờ truyền @IsInvoiceInput/@SubFeeCode; cần Stop IIS Express trước khi build vì lock Common.dll).
+4. ⬜ **Test E2E:**
+   - Danh mục phí mới → phí Cấp 2: cột "HĐ đầu vào" ✓/−; sửa mã → tích/bỏ tích "Có hóa đơn đầu vào" → lưu; thêm Lv2 mới (mặc định tích).
+   - Modal đọc hóa đơn: 2 dropdown Cấp 1 → Cấp 2 (Cấp 2 chỉ mã được tích invoice); phải chọn đủ 2 cấp mới upload; lưu → DB có SubFeeCode/Name.
+   - List PendingInvoice: group LỒNG 2 cấp (Lv1 → Lv2 → hóa đơn), collapse từng cấp; cả 2 tab.
+   - Payment: 2 dòng Nhóm phí cấp 1/Phân nhóm cấp 2 dưới Số tạm ứng, thẳng hàng; picker lọc đúng nhóm+phân nhóm; đổi Cấp 1 → reset Cấp 2 + xóa detail; lưu Payments.SubFeeCode; mở lại phiếu hiện đúng 2 cấp.
+   - **Scroll ngang** bảng chi tiết phiếu: thanh cuộn ngang cố định ở đáy màn hình (không nhích theo số dòng). Nếu bị che → chỉnh số `430px` trong `.table_wrapper` của payment-detail.component.css.
+
+## ▶ Bảo mật key (2026-06-15) — đã dời Vietmap key khỏi source
+Đã dời `VietmapApiKey` vào `appsettings.Development.json` + `.Production.json` (gitignore), bỏ hardcode trong controller (xem done.md). **Anh cân nhắc:** xin Vietmap cấp key MỚI vì key cũ còn trong git history; đảm bảo `appsettings.Production.json` trên server prod có key (file không theo git). Có thể rà thêm các key khác (Google Maps/Firebase/S3) nếu cần.
 
 ## ▶ Draft Site — "Công việc vận chuyển" + tài liệu giao nhận do BOT đính kèm (2026-06-12, Phase A/B/C XONG — còn Phase D ERP + E Bot)
 

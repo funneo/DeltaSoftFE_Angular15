@@ -1,5 +1,51 @@
 # Completed Features
 
+## HR — Hợp đồng lao động & Hồ sơ NV (F045, Mức B) — SQL DESIGN XONG (chờ chạy) — 2026-06-16
+Thiết kế DB cho module thay Excel "Danh sách theo dõi HĐLĐ_03042025.xlsx": theo dõi vòng đời HĐ + in HĐLĐ ra Word (tải hàng loạt, không lưu). Phân tích Excel (3 sheet: XĐTH/KXĐTH/TB KPI) → map cột vào schema HR có sẵn. **Quyết định Mức B**: tái dùng tối đa bảng HR sẵn có (đang trống + chưa wire), KHÔNG tạo bảng mới.
+
+### Map tái dùng
+EmployeeContract = HĐLĐ (1 NV nhiều HĐ, IsActived = HĐ hiện hành); EmployeeSalary = lương cơ bản + BHXH có lịch sử (= cơ chế ký phụ lục khi tăng lương, lương in lấy bản IsActived=1); EmployeeAllowance+Allowances = phụ cấp; EmployeeDegree = bằng cấp; EmployeeFamily = người phụ thuộc; EmployeeFile = file đính kèm; OtherCategories Type='CONTRACT_TYPE' = loại HĐ.
+
+### SQL đã soạn (⬜ CHƯA CHẠY, ở `NewAPI/`) — đã refine theo yêu cầu chi tiết + 3 mẫu Word (2026-06-16)
+- `Migration_HR_LaborContract_DDL_20260616.sql`: ALTER Employee **+12 cột** chuẩn HR (PlaceOfBirth, HomeTown, CurrentAddress, Nationality, IdType, EmployeeStatusId, BankBranch, EmergencyContact{Name,Phone,Relation}, **PersonalEmail** [email cá nhân; Email cũ=công ty], **WorkLocationId** [địa điểm làm việc dropdown]); ALTER EmployeeContract +9 cột (**EmployeeId** đang thiếu, BranchId, SigningPlace, WorkLocation, audit, Deleted) + index `IX_EmployeeContract_EmployeeId`; seed OtherCategories **CONTRACT_TYPE** CT01–CT04 + **EMPLOYEE_STATUS** (Đang hoạt động/Thử việc/Tạm hoãn/Đã nghỉ) + **WORK_LOCATION** (HN IDMC / HP 1023 Nguyễn Bỉnh Khiêm). Idempotent (COL_LENGTH/IF NOT EXISTS).
+- `Migration_HR_LaborContract_SPs_20260616.sql`: **14 SP** mới. **EmployeeSalary** ×5 (Create deactivate-others / Update / SetActive / Delete / GetByEmployee). **EmployeeContract** ×9: **GetNextNumber** (sinh số HĐ `STT/VP/<token> Năm`; token CT01→"HĐ TV", CT02+CT03→"HĐLĐ", CT04→"HĐ Khoán"; STT=MAX leading số +1, đếm theo VP+Năm+nhóm token), Create (auto ContractDuration DATEDIFF; deactivate current), Update, SetActive, Delete (soft), GetById, GetByEmployee (history + DaysToExpire + **IsExpiringSoon** ≤10 ngày), **GetPaging** (bảng theo dõi: filter Keyword/BranchId/ContractTypeId/Year/ExpiringInDays/OnlyActive; TrackingStatus có tier **CẢNH BÁO ≤10 ngày** + cờ IsExpiringSoon; lương active OUTER APPLY), **GetForPrint** (@Id hoặc @Ids CSV split XML; Result1 = HĐ + full field NV (gồm PersonalEmail) + lương active; Result2 = phụ cấp active). App login db_owner → không cần grant.
+
+### Tài liệu chức năng
+[hr-nhan-su-chuc-nang.md](hr-nhan-su-chuc-nang.md) — mô tả cho người dùng: quản lý hồ sơ NV mở rộng, lịch sử HĐ, lương/BHXH có lịch sử, hồ sơ phụ, màn Theo dõi HĐLĐ, in Word hàng loạt. **Tiếp theo**: chạy 2 SQL + gửi mẫu Word → BE/FE (kế hoạch B1–B7 trong todo.md).
+
+## PendingInvoice/Payment (F043) — phân loại phí 2 CẤP (Lv1→Lv2) + cờ "được quét invoice" + list group lồng 2 cấp + fix scroll ngang — 2026-06-15 (BE+FE build 0 error, 3/5 SQL ĐÃ CHẠY, chờ chạy 2 SQL còn lại + deploy API + test E2E)
+Nâng cấp phân loại hóa đơn từ 1 cấp (GroupFeeCode Lvl1) lên **2 cấp** theo file `Danh mục chi phí_Phân loại hóa đơn_June 15 2026.xlsx` (ở `NewAPI/`). Hệ phí `FeeCodes` là cây: Level1 = nhóm phí 01–05, Level2 = phân nhóm 0101…. User chốt 3 hướng: sync Lv2 theo Excel + thêm cờ `IsInvoiceInput` + giữ GroupFeeCode (Lv1) thêm SubFeeCode (Lv2).
+
+### SQL ✅ ĐÃ CHẠY (2026-06-15, `NewAPI/`)
+- `Migration_FeeCodes_2Level_Invoice_20260615.sql`: ADD `FeeCodes.IsInvoiceInput BIT`; **MERGE 48 mã Lv2 từ Excel** (UPSERT tên + insert mã thiếu 0113/0114/0206–0212/0307–0309/0504–0507…, set cờ theo cột "x"); ALTER `SP_FeeCodes_GetAll` +`@IsInvoiceInput` (SELECT t1.* tự trả cột mới). ⚠️ Có đổi tên một số mã Lv2 cũ cho khớp Excel (tên đã lưu trên HĐ/phiếu là snapshot → không ảnh hưởng).
+- `Migration_FeeCodes_CreateUpdate_IsInvoiceInput_20260615.sql` (⬜ CHƯA CHẠY): ALTER `SP_FeeCodes_Create` (+`@IsInvoiceInput` default 0) + `SP_FeeCodes_Update` (+`@IsInvoiceInput` default NULL → `ISNULL` giữ giá trị cũ) → cho phép chỉnh cờ tay trong màn Danh mục phí. (GetPaging `SELECT t1.*` tự trả cột — không cần sửa.)
+- `Migration_PendingInvoice_SubFee_20260615.sql`: `Tbl_PendingInvoice` +`SubFeeCode/SubFeeName`; DROP+CREATE `SP_PendingInvoice_Create` (+2 param) + `SP_PendingInvoice_GetForPicker` (+2 cột + filter `@SubFeeCode`).
+- `Migration_Payments_SubFee_20260615.sql`: `Payments` +`SubFeeCode`; ALTER (giữ grant) `SP_Payments_Create/_Update/_GetById` +`@SubFeeCode` (thân SP y nguyên bản 06-13).
+
+### BE (build 0 err)
+`FeeCodes` model +`IsInvoiceInput`; `IFeeCode`/`FeeCodeRepository`/`FeeCodeController` GetAll +`isInvoiceInput`; `FeeCodeRepository.CreateAsync/UpdateAsync` truyền `IsInvoiceInput`. PendingInvoice model/VM (CreateBatchRequest/PickerFilter/PickerItem)/Controller (CreateBatch set SubFee)/Repository (Create +2 param, GetForPicker +`@SubFeeCode`). Payments model/repo (Create+Update) +`SubFeeCode`.
+
+### FE (build 0 err)
+- `fee-code.service.getAll(parentId, level, status, isInvoiceInput?)`; FeeCode model +`isInvoiceInput`.
+- **modal-doc-hoa-don**: 2 dropdown nối tầng — Cấp 1 (01–05, hiện đủ) → Cấp 2 (`getAll(parentId,2,2,true)` = lọc theo cha + **chỉ mã được quét invoice**). `onChangeGroupFeeLvl1()` reset+load Lv2; `canUpload` cần ĐỦ 2 cấp; createBatch gửi `subFeeCode/subFeeName`.
+- **payment-detail**: bật lại field đã ẩn tạm → 2 ng-select cạnh nhau (nested row col-6). `_listSubFee` + `loadSubFee()` (robust nếu list Lv1 chưa load); onChangeGroupFee reset Lv2; `edit()` loadSubFee để hiện lựa chọn đã lưu; `showInvoicePicker` truyền cả `subFeeCode`.
+- **modal-pending-invoice-picker**: +`subFeeCode` (parent set trước show) → filter.
+- Interfaces `pending-invoice.service` + `payments.model` +`subFeeCode/subFeeName`.
+- **Quản lý cờ trong Danh mục phí mới**: `modal-fee-code-lvl2` thêm ô check "Có hóa đơn đầu vào (được quét invoice)" (add mặc định tích); list `fee.component` (subTab==2) thêm cột "HĐ đầu vào" ✓/− như cột "x" Excel.
+
+### List PendingInvoice — group LỒNG 2 CẤP (Lv1 → Lv2) + SQL giả lập (2026-06-15)
+- `pending-invoice.component`: `buildGroups()` group 2 cấp — `PendingInvoiceGroup{code,name,subGroups[],count,expanded}` → `PendingInvoiceSubGroup{code,name,items[],expanded}`. Mỗi cấp collapse riêng (`expandedCodes` + `expandedSubCodes` key `"lv1|lv2"`), nhóm rỗng xuống cuối. HTML tbody lồng: header cấp 1 → header cấp 2 (thụt lề 34px, class `subgroup-header` nền nhạt) → dòng hóa đơn. Áp cho cả 2 tab.
+- **SQL giả lập (DEV)**: `Migration_PendingInvoice_SeedSubFee_DEV_20260615.sql` — gán `SubFeeCode/Name` cho HĐ nháp cũ chưa có, chọn 1 mã Lv2 (`IsInvoiceInput=1`) thuộc đúng GroupFeeCode, rải đều bằng `ORDER BY ABS(CHECKSUM(Id, FeeCode))`. CHỈ chạy môi trường test.
+
+### Payment-detail layout + scroll ngang (chốt 2026-06-15)
+- **Nhóm phí → 2 DÒNG riêng dưới "Số tạm ứng"** (cột phải col-md-4, label `col-sm-4`/`col-sm-8`) thay vì chia 2 cột nửa-nửa ở cột trái (bị lệch hàng). Cấp 1 trên, Cấp 2 dưới.
+- **Scroll ngang CỐ ĐỊNH đáy màn hình**: đặt scroll trên CHÍNH thẻ `<table>` `.table_wrapper{ display:block; overflow:auto; height: calc(100vh - 430px); white-space:nowrap }` — chỉ table `display:block` mới chịu clip theo chiều rộng (container ngoài không clip được table `display:table`); dùng `height` cố định (không `max-height`) → thanh cuộn ngang luôn ở đáy viewport, không nhích theo số dòng. (Bỏ approach overflow-trên-container trước đó vì không clip width.) Số `430px` chỉnh theo độ cao form nếu cần.
+
+## Bảo mật — dời Vietmap API key khỏi source (2026-06-15)
+Key Vietmap trước hardcode trong [VietmapApiController.cs] (fallback `8ee07d…`). Đã: thêm `"VietmapApiKey"` vào `appsettings.Development.json` + `appsettings.Production.json` (cả 2 đều gitignore + không track); controller bỏ literal, chỉ đọc `_configuration["VietmapApiKey"]`, trống → trả lỗi rõ ràng. `git status`: chỉ controller (không còn key) là tracked → commit an toàn. ⚠️ Key cũ VẪN trong git history → cân nhắc xin key mới (giống vụ Gemini). Deploy prod: máy prod phải có `appsettings.Production.json` chứa key (copy tay / env var).
+
+**Quy tắc lọc (user chốt)**: Cấp 1 hiện đủ; chỉ Cấp 2 lọc "được quét invoice". **Anh cần**: deploy API mới + `ng build` FE → test E2E (modal đọc HĐ chọn 2 cấp/lọc quét invoice/lưu SubFee; payment 2 dropdown nối tầng + picker lọc nhóm+phân nhóm + lưu Payments.SubFeeCode; scroll ngang). Chi tiết quyết định: memory `project_pending_invoice_groupfee`.
+
 ## Bảng công văn phòng (F044) — tổng hợp công tháng + tiền phạt đi muộn/về sớm cho NV văn phòng — 2026-06-14 (SQL chính đã chạy, BE+FE build 0 error, chờ grant SQL + deploy + test E2E)
 Module HRM mới thay file Excel chấm công tay của HR. Import "Chi tiết chấm công" (Vào/Ra) → engine tính ngày công + tiền phạt + nghỉ không lương + tổng hợp phép/online lũy kế → bảng Tổng + export. Nguồn `Luong-Delta/` (HN_T4, VT_T4, PDF, ảnh quy định).
 

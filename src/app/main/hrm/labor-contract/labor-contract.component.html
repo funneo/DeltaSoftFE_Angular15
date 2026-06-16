@@ -1,0 +1,100 @@
+<div class="box box-primary box-chieu-cao">
+  <div class="row">
+    <div class="box-header with-border">
+      <div class="col-md-2"><h3 class="box-title">Theo dõi HĐLĐ</h3></div>
+      <div class="col-md-10">
+        <div class="row">
+          <div class="col-md-2">
+            <ng-select [items]="listBranch" bindLabel="branchName" bindValue="id" [(ngModel)]="_branchId"
+              placeholder="Chi nhánh" (change)="timKiem()"></ng-select>
+          </div>
+          <div class="col-md-2">
+            <ng-select [items]="listContractType" bindLabel="categoryName" bindValue="id" [(ngModel)]="contractTypeId"
+              placeholder="Loại HĐ" (change)="timKiem()"></ng-select>
+          </div>
+          <div class="col-md-1">
+            <ng-select [items]="listYear" [(ngModel)]="year" placeholder="Năm" (change)="timKiem()"></ng-select>
+          </div>
+          <div class="col-md-2">
+            <ng-select [items]="listExpiring" bindLabel="name" bindValue="id" [(ngModel)]="expiringInDays"
+              [clearable]="false" (change)="timKiem()"></ng-select>
+          </div>
+          <div class="col-md-2" style="padding-top:6px">
+            <label class="custom-checkbox">
+              <input type="checkbox" [(ngModel)]="onlyActive" (change)="timKiem()" />
+              <span class="helping-el"></span> Chỉ HĐ hiện hành
+            </label>
+          </div>
+          <div class="col-md-3">
+            <div class="input-group">
+              <input type="text" class="form-control" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+                placeholder="Tên / mã NV / số HĐ" />
+              <span class="input-group-btn">
+                <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()"><i class="fa fa-search"></i></button>
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="box-body table-responsive no-padding table_wrapper">
+    <table class="table table-bordered table-striped table-hover">
+      <thead>
+        <tr>
+          <th>Mã NV</th>
+          <th>Nhân viên</th>
+          <th>Bộ phận / Chức danh</th>
+          <th>Số HĐ</th>
+          <th>Loại HĐ</th>
+          <th>Từ ngày</th>
+          <th>Đến ngày</th>
+          <th>Còn lại</th>
+          <th>Trạng thái theo dõi</th>
+          <th class="text-right">Lương cơ bản</th>
+          <th class="text-center">Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let c of listData" [class.row-warn]="c.isExpiringSoon">
+          <td>{{c.employeeCode}}</td>
+          <td>{{c.employeeFullName}}</td>
+          <td>{{c.departmentName}}<br><small class="text-muted">{{c.titleName}}</small></td>
+          <td>{{c.contractNumber}}</td>
+          <td>{{c.contractTypeName}}</td>
+          <td>{{c.effectiveDate | date:'dd/MM/yyyy'}}</td>
+          <td>{{ c.endDate ? (c.endDate | date:'dd/MM/yyyy') : 'KXĐTH' }}</td>
+          <td><span [ngClass]="rowClass(c)">{{ c.endDate ? (c.daysToExpire + ' ngày') : '—' }}</span></td>
+          <td>{{c.trackingStatus}}</td>
+          <td class="text-right">{{c.mainSalary | number}}</td>
+          <td class="text-center">
+            <button class="btn btn-xs btn-info" (click)="manage(c)" title="Quản lý HĐ của NV">
+              <i class="fa fa-folder-open"></i> Quản lý
+            </button>
+          </td>
+        </tr>
+        <tr *ngIf="listData?.length == 0"><td colspan="100%">Không có bản ghi nào được tìm thấy!</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="box-footer no-padding">
+    <div *ngIf="listData?.length > 0" class="col-md-12 footer-phantrang">
+      <div class="row">
+        <div class="col-md-5"><div class="dataTables_info"><span>Tổng số bản ghi: {{ totalRows }}</span></div></div>
+        <div class="col-md-7 text-right">
+          <div class="page">
+            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
+              firstText="&laquo;" lastText="&raquo;">
+            </pagination>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<modal-employee-hr *ngIf="viewModalHr" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModalHr()">
+</modal-employee-hr>

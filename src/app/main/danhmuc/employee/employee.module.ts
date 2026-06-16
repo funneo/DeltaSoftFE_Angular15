@@ -9,6 +9,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { EmployeeComponent } from './employee.component';
 import { EmployeeRoutingModule } from './employee-routing.module';
 import { ModalEmployeeModule } from '@app/shared/components/danhmuc/modal-employee/modal-employee.module';
+import { ModalEmployeeHrModule } from '@app/shared/components/danhmuc/modal-employee-hr/modal-employee-hr.module';
 
 @NgModule({
   declarations: [EmployeeComponent],
@@ -21,7 +22,8 @@ import { ModalEmployeeModule } from '@app/shared/components/danhmuc/modal-employ
     PipeSharedModule,
     NgSelectModule,
     EmployeeRoutingModule,
-    ModalEmployeeModule
+    ModalEmployeeModule,
+    ModalEmployeeHrModule
   ]
 })
 export class EmployeeModule { }

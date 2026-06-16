@@ -40,6 +40,9 @@
         appAction="EXPORT">
           <i class="fa fa-file-excel-o"></i> Export
         </button>
+        <button class="btn btn-warning btn-sm" (click)="editHr(false)" [disabled]="!flagEdit" title="Hồ sơ nhân sự đầy đủ (HĐLĐ, lương...)">
+          <i class="fa fa-id-card-o"></i> Hồ sơ HR
+        </button>
       </div>
     </div>
   </div>
@@ -129,4 +132,6 @@
 
 <modal-employee *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
 </modal-employee>
+<modal-employee-hr *ngIf="viewModalHr" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModalHr()">
+</modal-employee-hr>
 <!-- <div [ngBusy]="busy"></div> -->

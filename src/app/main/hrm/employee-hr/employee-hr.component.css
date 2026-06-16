@@ -1,0 +1,3 @@
+.table_wrapper { height: calc(100vh - 220px); overflow: auto; }
+.table-checkbox { width: 36px; text-align: center; }
+.trang-thai { white-space: nowrap; }

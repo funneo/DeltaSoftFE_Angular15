@@ -1,0 +1,440 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal"
+  [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content" *ngIf="entity">
+      <div #myHandle class="modal-header hr-header">
+        <h4 class="modal-title pull-left">
+          <i class="fa fa-id-card-o"></i>
+          Hồ sơ nhân viên
+          <span *ngIf="entity.employeeFullName"> — {{entity.employeeFullName}}</span>
+          <span class="badge-code" *ngIf="entity.employeeCode">{{entity.employeeCode}}</span>
+          <span class="badge-status" *ngIf="entity.employeeStatusName">● {{entity.employeeStatusName}}</span>
+        </h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <form novalidate #addEditForm="ngForm" (ngSubmit)="saveChange(addEditForm)">
+        <div class="modal-body hr-body">
+          <tabset>
+            <!-- ============ TAB 1 — THÔNG TIN CHUNG ============ -->
+            <tab heading="Thông tin chung">
+              <div class="row">
+                <!-- cột trái: các nhóm -->
+                <div class="col-sm-9">
+
+                  <div class="sec-title">A. Định danh &amp; nhân thân</div>
+                  <div class="row form-row">
+                    <div class="col-sm-4">
+                      <label>Mã NV</label>
+                      <input class="form-control" [value]="entity.employeeCode || '(tự sinh khi lưu)'" readonly>
+                    </div>
+                    <div class="col-sm-8">
+                      <label>Họ tên <span class="error">*</span></label>
+                      <input class="form-control" name="fullName" [(ngModel)]="entity.employeeFullName" required
+                        maxlength="255" placeholder="Nhập họ tên" [readonly]="flagXem" focus>
+                    </div>
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-4">
+                      <label>Ngày sinh</label>
+                      <input class="form-control" name="dob" type="text" daterangepicker [options]="dobOptions"
+                        [(ngModel)]="entity.dateOfBirth" (selected)="selectedDob($event)" autocomplete="off"
+                        [disabled]="flagXem">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Giới tính</label>
+                      <ng-select name="sex" [items]="listSex" bindLabel="name" bindValue="id"
+                        [(ngModel)]="entity.sex" [readonly]="flagXem"></ng-select>
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Tình trạng hôn nhân</label>
+                      <ng-select name="marital" [items]="listMarital" bindLabel="name" bindValue="id"
+                        [(ngModel)]="entity.maritalStatusId" [readonly]="flagXem"></ng-select>
+                    </div>
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-4">
+                      <label>Nơi sinh</label>
+                      <input class="form-control" name="pob" [(ngModel)]="entity.placeOfBirth" [readonly]="flagXem">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Nguyên quán</label>
+                      <input class="form-control" name="homeTown" [(ngModel)]="entity.homeTown" [readonly]="flagXem">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Quốc tịch</label>
+                      <input class="form-control" name="nationality" [(ngModel)]="entity.nationality" [readonly]="flagXem">
+                    </div>
+                  </div>
+
+                  <div class="sec-title">B. Giấy tờ tùy thân</div>
+                  <div class="row form-row">
+                    <div class="col-sm-3">
+                      <label>Loại giấy tờ</label>
+                      <ng-select name="idType" [items]="listIdType" bindLabel="name" bindValue="id"
+                        [(ngModel)]="entity.idType" [readonly]="flagXem"></ng-select>
+                    </div>
+                    <div class="col-sm-3">
+                      <label>Số CCCD/GT</label>
+                      <input class="form-control" name="idNumber" [(ngModel)]="entity.idNumber" [readonly]="flagXem">
+                    </div>
+                    <div class="col-sm-3">
+                      <label>Ngày cấp</label>
+                      <input class="form-control" name="issueDate" type="text" daterangepicker [options]="issueOptions"
+                        [(ngModel)]="entity.issueedDate" (selected)="selectedIssue($event)" autocomplete="off"
+                        [disabled]="flagXem">
+                    </div>
+                    <div class="col-sm-3">
+                      <label>Mã số thuế</label>
+                      <input class="form-control" name="taxCode" [(ngModel)]="entity.taxCode" [readonly]="flagXem">
+                    </div>
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-12">
+                      <label>Nơi cấp</label>
+                      <input class="form-control" name="issuePlace" [(ngModel)]="entity.issueedPlace" [readonly]="flagXem">
+                    </div>
+                  </div>
+
+                  <div class="sec-title">C. Liên hệ</div>
+                  <div class="row form-row">
+                    <div class="col-sm-4">
+                      <label>Điện thoại</label>
+                      <input class="form-control" name="tel" [(ngModel)]="entity.telephone" [readonly]="flagXem">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Email công ty</label>
+                      <input class="form-control" name="email" [(ngModel)]="entity.email" [readonly]="flagXem">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Email cá nhân</label>
+                      <input class="form-control" name="personalEmail" [(ngModel)]="entity.personalEmail" [readonly]="flagXem">
+                    </div>
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-6">
+                      <label>Địa chỉ thường trú</label>
+                      <textarea class="form-control" rows="2" name="address" [(ngModel)]="entity.address" [readonly]="flagXem"></textarea>
+                    </div>
+                    <div class="col-sm-6">
+                      <label>Chỗ ở hiện tại</label>
+                      <textarea class="form-control" rows="2" name="currentAddress" [(ngModel)]="entity.currentAddress" [readonly]="flagXem"></textarea>
+                    </div>
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-4">
+                      <label>Liên hệ khẩn cấp</label>
+                      <input class="form-control" name="emName" placeholder="Họ tên" [(ngModel)]="entity.emergencyContactName" [readonly]="flagXem">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>&nbsp;</label>
+                      <input class="form-control" name="emPhone" placeholder="SĐT" [(ngModel)]="entity.emergencyContactPhone" [readonly]="flagXem">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>&nbsp;</label>
+                      <input class="form-control" name="emRel" placeholder="Quan hệ" [(ngModel)]="entity.emergencyContactRelation" [readonly]="flagXem">
+                    </div>
+                  </div>
+
+                  <div class="sec-title">D. Công việc</div>
+                  <div class="row form-row">
+                    <div class="col-sm-4">
+                      <label>Chi nhánh / VP <span class="error">*</span></label>
+                      <ng-select name="branch" [items]="listBranch" bindLabel="branchName" bindValue="id"
+                        [(ngModel)]="entity.branchId" required [readonly]="flagXem"></ng-select>
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Bộ phận <span class="error">*</span></label>
+                      <ng-select name="dept" [items]="listDepartment" bindLabel="categoryName" bindValue="id"
+                        [(ngModel)]="entity.departmentId" required [readonly]="flagXem"></ng-select>
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Chức danh <span class="error">*</span></label>
+                      <ng-select name="title" [items]="listTitle" bindLabel="categoryName" bindValue="id"
+                        [(ngModel)]="entity.titleId" required [readonly]="flagXem"></ng-select>
+                    </div>
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-5">
+                      <label>Địa điểm làm việc</label>
+                      <ng-select name="workLoc" [items]="listWorkLocation" bindLabel="categoryName" bindValue="id"
+                        [(ngModel)]="entity.workLocationId" [readonly]="flagXem"></ng-select>
+                    </div>
+                    <div class="col-sm-3">
+                      <label>Ngày vào công ty</label>
+                      <input class="form-control" name="startDate" type="text" daterangepicker [options]="startOptions"
+                        [(ngModel)]="entity.startDate" (selected)="selectedStart($event)" autocomplete="off"
+                        [disabled]="flagXem">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Trạng thái NV</label>
+                      <ng-select name="empStatus" [items]="listStatus" bindLabel="categoryName" bindValue="id"
+                        [(ngModel)]="entity.employeeStatusId" [readonly]="flagXem"></ng-select>
+                    </div>
+                  </div>
+
+                  <div class="sec-title">E. Ngân hàng &amp; Bảo hiểm</div>
+                  <div class="row form-row">
+                    <div class="col-sm-4">
+                      <label>Số tài khoản</label>
+                      <input class="form-control" name="acc" [(ngModel)]="entity.accountNumber" [readonly]="flagXem">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Ngân hàng</label>
+                      <input class="form-control" name="bank" [(ngModel)]="entity.bank" [readonly]="flagXem">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Chi nhánh NH</label>
+                      <input class="form-control" name="bankBranch" [(ngModel)]="entity.bankBranch" [readonly]="flagXem">
+                    </div>
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-6">
+                      <label>Số sổ BHXH</label>
+                      <input class="form-control" name="bhxh" [(ngModel)]="entity.socialInsurance" [readonly]="flagXem">
+                    </div>
+                    <div class="col-sm-6">
+                      <label>Số thẻ BHYT</label>
+                      <input class="form-control" name="bhyt" [(ngModel)]="entity.healthInsurance" [readonly]="flagXem">
+                    </div>
+                  </div>
+
+                  <div class="sec-title">F. Ghi chú</div>
+                  <div class="row form-row">
+                    <div class="col-sm-12">
+                      <textarea class="form-control" rows="3" name="note" [(ngModel)]="entity.note" [readonly]="flagXem"
+                        placeholder="Ghi chú"></textarea>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- cột phải: ảnh -->
+                <div class="col-sm-3">
+                  <div class="img_employee">
+                    <img [src]="pathImage || 'assets/img/no-avatar.png'" alt="Ảnh chân dung">
+                  </div>
+                  <div class="text-center" style="margin-top:8px" *ngIf="!flagXem && _hr && entity.id">
+                    <input style="display:none" type="file" #filePod (change)="onFileChanged($event)"
+                      accept=".jpg,.png,.gif,.jpeg">
+                    <button type="button" class="btn btn-sm btn-primary" (click)="filePod.click()">
+                      <i class="fa fa-upload"></i> Tải ảnh
+                    </button>
+                  </div>
+                  <p class="text-muted text-center" style="margin-top:6px;font-size:11px" *ngIf="!entity.id">
+                    Lưu hồ sơ trước rồi mới tải được ảnh.
+                  </p>
+                </div>
+              </div>
+            </tab>
+
+            <!-- ============ TAB 2 — HỢP ĐỒNG LĐ ============ -->
+            <tab heading="Hợp đồng LĐ">
+              <div class="tab-placeholder" *ngIf="!entity.id">Lưu hồ sơ nhân viên trước để quản lý hợp đồng.</div>
+              <div *ngIf="entity.id">
+                <div class="child-toolbar">
+                  <button type="button" class="btn btn-success btn-xs" (click)="addContract()" *ngIf="!showContractForm && !flagXem">
+                    <i class="fa fa-plus"></i> Thêm hợp đồng
+                  </button>
+                </div>
+
+                <!-- form thêm/sửa HĐ -->
+                <div class="child-form" *ngIf="showContractForm">
+                  <div class="row form-row">
+                    <div class="col-sm-4">
+                      <label>Loại hợp đồng <span class="error">*</span></label>
+                      <ng-select name="c_type" [items]="listContractType" bindLabel="categoryName" bindValue="id"
+                        [(ngModel)]="contractEdit.contractTypeId" (change)="onChangeContractType($event?.id)"></ng-select>
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Số hợp đồng <span class="error">*</span></label>
+                      <input class="form-control" name="c_no" [(ngModel)]="contractEdit.contractNumber">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Ngày ký</label>
+                      <input class="form-control" name="c_signDate" type="text" daterangepicker [options]="cOpt"
+                        [(ngModel)]="contractEdit.contractDate" (selected)="selectedCDate($event,'contractDate')" autocomplete="off">
+                    </div>
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-4">
+                      <label>Từ ngày <span class="error">*</span></label>
+                      <input class="form-control" name="c_eff" type="text" daterangepicker [options]="cOpt"
+                        [(ngModel)]="contractEdit.effectiveDate" (selected)="selectedCDate($event,'effectiveDate')" autocomplete="off">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Đến ngày <small class="text-muted">(trống = KXĐTH)</small></label>
+                      <input class="form-control" name="c_end" type="text" daterangepicker [options]="cOpt"
+                        [(ngModel)]="contractEdit.endDate" (selected)="selectedCDate($event,'endDate')" autocomplete="off">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Nơi ký</label>
+                      <input class="form-control" name="c_signPlace" [(ngModel)]="contractEdit.signingPlace">
+                    </div>
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-8">
+                      <label>Địa điểm làm việc</label>
+                      <input class="form-control" name="c_workLoc" [(ngModel)]="contractEdit.workLocation">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>&nbsp;</label>
+                      <label class="custom-checkbox" style="display:block">
+                        <input type="checkbox" name="c_active" [(ngModel)]="contractEdit.isActived" />
+                        <span class="helping-el"></span> HĐ hiện hành
+                      </label>
+                    </div>
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-12">
+                      <label>Ghi chú</label>
+                      <input class="form-control" name="c_note" [(ngModel)]="contractEdit.note">
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <button type="button" class="btn btn-primary btn-xs" (click)="saveContract()" [disabled]="savingChild">
+                      <i class="fa fa-save"></i> Lưu HĐ
+                    </button>
+                    <button type="button" class="btn btn-default btn-xs" (click)="cancelContract()">Hủy</button>
+                  </div>
+                </div>
+
+                <table class="table table-bordered table-hover child-table">
+                  <thead>
+                    <tr>
+                      <th>Số HĐ</th><th>Loại</th><th>Từ ngày</th><th>Đến ngày</th><th>Thời hạn</th>
+                      <th>Còn lại</th><th class="text-center">Hiện hành</th><th class="text-center">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let c of listContracts" [class.row-active]="c.isActived">
+                      <td>{{c.contractNumber}}</td>
+                      <td>{{c.contractTypeName}}</td>
+                      <td>{{c.effectiveDate | date:'dd/MM/yyyy'}}</td>
+                      <td>{{ c.endDate ? (c.endDate | date:'dd/MM/yyyy') : 'KXĐTH' }}</td>
+                      <td>{{c.contractDuration}}</td>
+                      <td><span [ngClass]="trackingClass(c)">{{ c.endDate ? (c.daysToExpire + ' ngày') : '—' }}</span></td>
+                      <td class="text-center"><i class="fa fa-check text-success" *ngIf="c.isActived"></i></td>
+                      <td class="text-center" *ngIf="!flagXem">
+                        <button type="button" class="btn btn-xs btn-info" (click)="editContract(c)" title="Sửa"><i class="fa fa-edit"></i></button>
+                        <button type="button" class="btn btn-xs btn-default" (click)="setActiveContract(c)" title="Đặt hiện hành" *ngIf="!c.isActived"><i class="fa fa-flag"></i></button>
+                        <button type="button" class="btn btn-xs btn-danger" (click)="deleteContract(c)" title="Xóa"><i class="fa fa-trash"></i></button>
+                      </td>
+                      <td class="text-center" *ngIf="flagXem">—</td>
+                    </tr>
+                    <tr *ngIf="listContracts?.length === 0"><td colspan="8" class="text-center text-muted">Chưa có hợp đồng.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </tab>
+
+            <!-- ============ TAB 3 — LƯƠNG & BHXH ============ -->
+            <tab heading="Lương &amp; BHXH">
+              <div class="tab-placeholder" *ngIf="!entity.id">Lưu hồ sơ nhân viên trước để quản lý lương.</div>
+              <div *ngIf="entity.id">
+                <div class="child-toolbar">
+                  <button type="button" class="btn btn-success btn-xs" (click)="addSalary()" *ngIf="!showSalaryForm && !flagXem">
+                    <i class="fa fa-plus"></i> Thêm mốc lương
+                  </button>
+                </div>
+
+                <div class="child-form" *ngIf="showSalaryForm">
+                  <div class="row form-row">
+                    <div class="col-sm-4">
+                      <label>Hiệu lực từ</label>
+                      <input class="form-control" name="s_eff" type="text" daterangepicker [options]="cOpt"
+                        [(ngModel)]="salaryEdit.effectiveDate" (selected)="selectedSDate($event)" autocomplete="off">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Lương cơ bản</label>
+                      <input class="form-control text-right" name="s_main" type="number" [(ngModel)]="salaryEdit.mainSalary">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>Lương đóng BHXH</label>
+                      <input class="form-control text-right" name="s_ins" type="number" [(ngModel)]="salaryEdit.insuranceSalary">
+                    </div>
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-8">
+                      <label>Ghi chú</label>
+                      <input class="form-control" name="s_note" [(ngModel)]="salaryEdit.note">
+                    </div>
+                    <div class="col-sm-4">
+                      <label>&nbsp;</label>
+                      <label class="custom-checkbox" style="display:block">
+                        <input type="checkbox" name="s_active" [(ngModel)]="salaryEdit.isActived" />
+                        <span class="helping-el"></span> Đang áp dụng
+                      </label>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <button type="button" class="btn btn-primary btn-xs" (click)="saveSalary()" [disabled]="savingChild">
+                      <i class="fa fa-save"></i> Lưu mốc lương
+                    </button>
+                    <button type="button" class="btn btn-default btn-xs" (click)="cancelSalary()">Hủy</button>
+                  </div>
+                </div>
+
+                <table class="table table-bordered table-hover child-table">
+                  <thead>
+                    <tr>
+                      <th>Hiệu lực từ</th><th class="text-right">Lương cơ bản</th><th class="text-right">Lương BHXH</th>
+                      <th class="text-center">Đang áp dụng</th><th>Ghi chú</th><th class="text-center">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let s of listSalary" [class.row-active]="s.isActived">
+                      <td>{{s.effectiveDate | date:'dd/MM/yyyy'}}</td>
+                      <td class="text-right">{{s.mainSalary | number}}</td>
+                      <td class="text-right">{{s.insuranceSalary | number}}</td>
+                      <td class="text-center"><i class="fa fa-check text-success" *ngIf="s.isActived"></i></td>
+                      <td>{{s.note}}</td>
+                      <td class="text-center" *ngIf="!flagXem">
+                        <button type="button" class="btn btn-xs btn-info" (click)="editSalary(s)" title="Sửa"><i class="fa fa-edit"></i></button>
+                        <button type="button" class="btn btn-xs btn-default" (click)="setActiveSalary(s)" title="Đặt đang áp dụng" *ngIf="!s.isActived"><i class="fa fa-flag"></i></button>
+                        <button type="button" class="btn btn-xs btn-danger" (click)="deleteSalary(s)" title="Xóa"><i class="fa fa-trash"></i></button>
+                      </td>
+                      <td class="text-center" *ngIf="flagXem">—</td>
+                    </tr>
+                    <tr *ngIf="listSalary?.length === 0"><td colspan="6" class="text-center text-muted">Chưa có mốc lương.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </tab>
+
+            <!-- ============ TAB 4 — HỒ SƠ PHỤ ============ -->
+            <tab heading="Hồ sơ phụ">
+              <div class="tab-placeholder" *ngIf="!entity.id">Lưu hồ sơ nhân viên trước.</div>
+              <div class="tab-placeholder" *ngIf="entity.id">
+                <i class="fa fa-folder-open-o"></i>
+                Phụ cấp / Bằng cấp / Người phụ thuộc — đang phát triển.
+                <div style="margin-top:10px">
+                  <button type="button" class="btn btn-info btn-sm" (click)="showFiles()">
+                    <i class="fa fa-paperclip"></i> Hồ sơ đính kèm
+                  </button>
+                </div>
+              </div>
+            </tab>
+          </tabset>
+        </div>
+
+        <div class="modal-footer">
+          <button *ngIf="entity.id && _hr" type="button" class="btn btn-info btn-sm pull-left" (click)="showFiles()">
+            <i class="fa fa-paperclip"></i> Hồ sơ đính kèm
+          </button>
+          <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+            [disabled]="!addEditForm.form.valid || flagSave">
+            <i class="fa fa-save"></i> Lưu
+          </button>
+          <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
+            <i class="fa fa-close"></i> Đóng
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
+</modal-attachfile>

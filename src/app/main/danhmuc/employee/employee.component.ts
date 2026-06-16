@@ -1,6 +1,7 @@
 import { HttpParams } from '@angular/common/http';
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { ModalEmployeeComponent } from '@app/shared/components/danhmuc/modal-employee/modal-employee.component';
+import { ModalEmployeeHrComponent } from '@app/shared/components/danhmuc/modal-employee-hr/modal-employee-hr.component';
 import { MessageContstants } from '@app/shared/constants';
 import { Branch, Employee, Pagination, ResponseValue } from '@app/shared/models';
 import { NotificationService, BranchService, EmployeeService, AuthService } from '@app/shared/services';
@@ -26,8 +27,10 @@ export class EmployeeComponent implements OnInit {
   _branchId:number;
   busy: Subscription;
   viewModal = false;
+  viewModalHr = false;
   public flagLinkEdit:boolean = false;
   @ViewChild(ModalEmployeeComponent, { static: false }) modalAddEdit: ModalEmployeeComponent
+  @ViewChild(ModalEmployeeHrComponent, { static: false }) modalHr: ModalEmployeeHrComponent
   constructor(private branchService: BranchService, private notificationService: NotificationService, private employeeService:EmployeeService,
     private authService:AuthService, private _export:ExportService) {
     let user = this.authService.getLoggedInUser();
@@ -165,6 +168,23 @@ export class EmployeeComponent implements OnInit {
 
   closeModal(): void {
     this.viewModal = false;
+  }
+
+  // ===== Modal HR mới (Hồ sơ nhân viên đầy đủ) =====
+  addHr(): void {
+    this.viewModalHr = true;
+    setTimeout(() => this.modalHr.add(), 50);
+  }
+
+  editHr(flag: boolean): void {
+    const index = this.listEmployee.findIndex(x => x.checked);
+    if (index < 0) return;
+    this.viewModalHr = true;
+    setTimeout(() => this.modalHr.edit(this.listEmployee[index].id.toString(), flag), 50);
+  }
+
+  closeModalHr(): void {
+    this.viewModalHr = false;
   }
 
 }

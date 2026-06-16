@@ -26,4 +26,28 @@ export interface Employee {
   checked?: boolean;
   userId?:string;
   paymentLevel?:number;
+  // nhân thân / bảo hiểm (đã có trong DB, modal HR mới dùng)
+  nationId?: number;
+  religionId?: number;
+  maritalStatusId?: boolean;
+  socialInsurance?: string;
+  healthInsurance?: string;
+  // ===== Field MỚI module HR (Hồ sơ NV) =====
+  placeOfBirth?: string;            // Nơi sinh
+  homeTown?: string;                // Nguyên quán
+  currentAddress?: string;          // Chỗ ở hiện tại (address = thường trú)
+  nationality?: string;             // Quốc tịch
+  idType?: number;                  // 1=CCCD, 2=Hộ chiếu, 3=CMND
+  employeeStatusId?: number;        // Trạng thái NV (EMPLOYEE_STATUS)
+  bankBranch?: string;              // Chi nhánh ngân hàng
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  emergencyContactRelation?: string;
+  personalEmail?: string;           // Email cá nhân (email = email công ty)
+  workLocationId?: number;          // Địa điểm làm việc (WORK_LOCATION)
+  // tên hiển thị trả từ GetByIdHR
+  branchCode?: string;
+  branchName?: string;
+  employeeStatusName?: string;
+  workLocationName?: string;
 }
