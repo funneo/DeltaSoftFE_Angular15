@@ -14,7 +14,10 @@
   background: #e6f4ea; color: #1e7e34; font-size: 12px; font-weight: 600;
 }
 
-.hr-body { height: calc(100vh - 130px); overflow-y: auto; }
+/* lề ngang cố định cho thân modal; .row margin âm -15 + col padding +15 = net inset = padding thân = 20px */
+.modal-hr-full .modal-body.hr-body { height: calc(100vh - 130px); overflow-y: auto; padding: 12px 20px; }
+.modal-hr-full .modal-header.hr-header,
+.modal-hr-full .modal-footer { padding-left: 20px; padding-right: 20px; }
 
 /* tiêu đề nhóm */
 .sec-title {
