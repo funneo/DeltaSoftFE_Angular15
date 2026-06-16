@@ -32,6 +32,12 @@ Thay Excel "Danh sách theo dõi HĐLĐ" bằng module trong ERP: theo dõi vòn
 - **Anh cần**: (1) chạy grant SQL F045/F046; (2) deploy API + `ng build`; (3) **relogin** → menu Nhân sự có "Hồ sơ nhân viên" + "Theo dõi HĐLĐ"; (4) test: thêm/sửa HĐ (kiểm tra tự sinh số + prefill ngày chuỗi TV→XĐ→KXĐ), mốc lương, bảng theo dõi cảnh báo ≤10 ngày.
 - **Còn lại**: Tab 4 Hồ sơ phụ (bằng cấp/người phụ thuộc) + **In Word HĐLĐ** (B3, cần chọn lib + dùng 3 mẫu .docx).
 
+**✅ ĐÃ LÀM (2026-06-16, cụm 3) — polish UI modal Hồ sơ NV (FE đã push main):**
+- Modal Hồ sơ NV chuyển **full màn hình** (`.modal-hr-full` 98vw, body cao theo viewport, cuộn dọc) vì nhiều dữ liệu.
+- **Chuẩn hóa Tab 1 về lưới 3 cột `col-sm-4`** (bỏ lệch bậc thang do trộn 3/4 cột) — `beb4475`.
+- **Lề ngang 20px cho thân/header/footer modal** (`.modal-body.hr-body padding:12px 20px`; input không còn dính mép trái/phải do `.row` margin âm) — `7c7b6e3`.
+- Commit FE đẩy main đủ để **app mobile** cập nhật.
+
 **Kế hoạch thực hiện (theo thứ tự):**
 - ✅ **B1 — BE Model/VM Employee** (XONG): `Employee.cs` +12 prop; `EmployeeViewModel` +field hiển thị. (EmployeeContract.cs / EmployeeSalary.cs VM cho Tab 2/3 — làm ở bước sau.)
 - **B2 — BE Repo/Interface**: `IEmployeeContract`/`EmployeeContractRepository` (CRUD + GetPaging + GetByEmployee + GetForPrint), `IEmployeeSalary`/`EmployeeSalaryRepository` (CRUD + GetByEmployee). Map 13 SP qua DapperAdapter. (Scrutor auto-scan.)

@@ -1,7 +1,17 @@
 # Completed Features
 
-## HR — Hợp đồng lao động & Hồ sơ NV (F045, Mức B) — SQL DESIGN XONG (chờ chạy) — 2026-06-16
-Thiết kế DB cho module thay Excel "Danh sách theo dõi HĐLĐ_03042025.xlsx": theo dõi vòng đời HĐ + in HĐLĐ ra Word (tải hàng loạt, không lưu). Phân tích Excel (3 sheet: XĐTH/KXĐTH/TB KPI) → map cột vào schema HR có sẵn. **Quyết định Mức B**: tái dùng tối đa bảng HR sẵn có (đang trống + chưa wire), KHÔNG tạo bảng mới.
+## HR — Hợp đồng lao động & Hồ sơ NV (F045 + F046, Mức B) — BE+FE XONG (build 0 lỗi, đã push BE+FE main), chờ chạy SQL grant + deploy + in Word — 2026-06-16
+Module thay Excel "Danh sách theo dõi HĐLĐ_03042025.xlsx": hồ sơ NV mở rộng + theo dõi vòng đời HĐ + (sắp tới) in HĐLĐ ra Word hàng loạt. **Quyết định Mức B**: tái dùng tối đa bảng HR sẵn có (đang trống + chưa wire), KHÔNG tạo bảng mới; SP/BE/FE MỚI hoàn toàn, KHÔNG đụng Employee cũ.
+
+### ✅ BE+FE đã build 0 lỗi + push (2026-06-16)
+- **SQL ĐÃ CHẠY**: DDL (`Migration_HR_LaborContract_DDL_20260616.sql`), 14 SP (`..._SPs_...`), 3 SP Employee HR (`Migration_HR_Employee_HR_SPs_...`). **⬜ CHƯA CHẠY**: `Migration_HR_F045_F046_Grant_20260616.sql` (Functions F045 `/main/hrm/employee-hr` + F046 `/main/hrm/labor-contract`, CHỈ VIEW; CUD gate EMPLOYEE).
+- **BE**: Employee +12 field HR + 3 endpoint `/addHR /updateHR /getByIdHR`; EmployeeContract (9 SP gồm GetNextNumber) + EmployeeSalary (5 SP) đủ Model/VM/Interface/Repo/Controller, Scrutor auto-DI.
+- **FE**: component MỚI **`modal-employee-hr`** (4 tab) — Tab 1 hồ sơ đủ 6 nhóm A-F, Tab 2 Hợp đồng (tự sinh số `001/HN/HĐ TV 2026` + prefill chuỗi ngày TV→XĐ→KXĐ, tô đỏ ≤10 ngày), Tab 3 mốc lương/BHXH có lịch sử, Tab 4 placeholder. Màn **F045 `employee-hr`** (list NV) + **F046 `labor-contract`** (theo dõi HĐLĐ + lọc). Route trong hrm-routing.
+- **Polish UI**: modal **full màn hình** (`.modal-hr-full` 98vw); Tab 1 chuẩn lưới 3 cột `col-sm-4` (commit `beb4475`); **lề ngang 20px** thân/header/footer (`7c7b6e3`) — input không dính mép.
+- **Anh cần**: chạy grant SQL F045/F046 → deploy API + `ng build` → **relogin** → menu Nhân sự có "Hồ sơ nhân viên" + "Theo dõi HĐLĐ".
+- **Còn lại (todo)**: Tab 4 Hồ sơ phụ (bằng cấp/người phụ thuộc) + **In Word HĐLĐ** (chọn lib + 3 mẫu .docx ở `NewAPI/`).
+
+### Thiết kế DB (đã chạy) — phân tích Excel (3 sheet: XĐTH/KXĐTH/TB KPI) → map cột vào schema HR có sẵn.
 
 ### Map tái dùng
 EmployeeContract = HĐLĐ (1 NV nhiều HĐ, IsActived = HĐ hiện hành); EmployeeSalary = lương cơ bản + BHXH có lịch sử (= cơ chế ký phụ lục khi tăng lương, lương in lấy bản IsActived=1); EmployeeAllowance+Allowances = phụ cấp; EmployeeDegree = bằng cấp; EmployeeFamily = người phụ thuộc; EmployeeFile = file đính kèm; OtherCategories Type='CONTRACT_TYPE' = loại HĐ.
