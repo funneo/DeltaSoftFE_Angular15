@@ -1,4 +1,7 @@
-.modal-xl { max-width: 1100px; }
+/* modal full màn hình (nhiều dữ liệu) */
+.modal-hr-full { max-width: 98vw; width: 98vw; margin: 8px auto; }
+.modal-hr-full .modal-content { min-height: calc(100vh - 16px); display: flex; flex-direction: column; }
+.modal-hr-full .modal-body { flex: 1 1 auto; }
 
 .hr-header { background: #f4f7fb; cursor: move; }
 .hr-header .modal-title { font-size: 16px; }
@@ -11,7 +14,7 @@
   background: #e6f4ea; color: #1e7e34; font-size: 12px; font-weight: 600;
 }
 
-.hr-body { max-height: calc(100vh - 200px); overflow-y: auto; }
+.hr-body { height: calc(100vh - 130px); overflow-y: auto; }
 
 /* tiêu đề nhóm */
 .sec-title {

@@ -1,6 +1,6 @@
 <div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal"
   [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" (onHidden)="OnHidden()">
-  <div class="modal-dialog modal-xl">
+  <div class="modal-dialog modal-hr-full">
     <div class="modal-content" *ngIf="entity">
       <div #myHandle class="modal-header hr-header">
         <h4 class="modal-title pull-left">
@@ -22,7 +22,7 @@
             <tab heading="Thông tin chung">
               <div class="row">
                 <!-- cột trái: các nhóm -->
-                <div class="col-sm-9">
+                <div class="col-sm-10">
 
                   <div class="sec-title">A. Định danh &amp; nhân thân</div>
                   <div class="row form-row">
@@ -211,7 +211,7 @@
                 </div>
 
                 <!-- cột phải: ảnh -->
-                <div class="col-sm-3">
+                <div class="col-sm-2">
                   <div class="img_employee">
                     <img [src]="pathImage || 'assets/img/no-avatar.png'" alt="Ảnh chân dung">
                   </div>
