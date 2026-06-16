@@ -73,12 +73,22 @@
           <td colspan="13">
             <i class="fa" [ngClass]="g.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
             <strong>{{ g.code ? (g.code + ' - ' + g.name) : g.name }}</strong>
-            <span class="badge group-count">{{ g.items.length }} hóa đơn</span>
+            <span class="badge group-count">{{ g.count }} hóa đơn</span>
           </td>
         </tr>
-        <!-- Dòng hóa đơn -->
         <ng-container *ngIf="g.expanded">
-          <tr *ngFor="let item of g.items" [class.row-duplicate]="item.isDuplicate">
+          <ng-container *ngFor="let sg of g.subGroups">
+            <!-- Header phân nhóm cấp 2 -->
+            <tr class="subgroup-header" (click)="toggleSubGroup(g, sg)">
+              <td colspan="13" style="padding-left:34px;">
+                <i class="fa" [ngClass]="sg.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                {{ sg.code ? (sg.code + ' - ' + sg.name) : sg.name }}
+                <span class="badge">{{ sg.items.length }}</span>
+              </td>
+            </tr>
+            <!-- Dòng hóa đơn -->
+            <ng-container *ngIf="sg.expanded">
+          <tr *ngFor="let item of sg.items" [class.row-duplicate]="item.isDuplicate">
             <td>
               <a *ngIf="item.pathFileLocal" [href]="buildFileUrl(item.pathFileLocal)" target="_blank"
                  [title]="item.fileName">
@@ -124,6 +134,8 @@
               </button>
             </td>
           </tr>
+            </ng-container>
+          </ng-container>
         </ng-container>
       </tbody>
       <tbody *ngIf="groups?.length === 0">

@@ -13,6 +13,7 @@ export class FeeCode {
     creditAccount?: string;
     mappingFeeIds?: string;
     mappedCodes?: string;
+    isInvoiceInput?: boolean;   // cờ "được quét invoice" (lọc dropdown phân nhóm cấp 2)
     checked?: boolean;
     totalRows?: number;
 }

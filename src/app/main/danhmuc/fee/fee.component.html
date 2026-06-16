@@ -150,6 +150,7 @@
           <th>Mã Fee</th>
           <th>Tên phí (VN)</th>
           <th>Tên phí (EN)</th>
+          <th *ngIf="subTab == 2" class="text-center">HĐ đầu vào</th>
           <th *ngIf="subTab == 3">Ánh xạ (Cũ)</th>
           <th>Ghi chú</th>
           <th>Trạng thái</th>
@@ -183,6 +184,7 @@
           <td>
             <input type="text" class="form-control input-sm" [(ngModel)]="filterFeeNameEn" (keyup.enter)="timKiem()" placeholder="Lọc tên EN" />
           </td>
+          <td *ngIf="subTab == 2"></td>
           <td *ngIf="subTab == 3"></td>
           <td></td>
           <td>
@@ -208,6 +210,10 @@
           </td>
           <td>{{item.feeName}}</td>
           <td>{{item.feeNameEnglish}}</td>
+          <td *ngIf="subTab == 2" class="text-center">
+            <i class="fa" [ngClass]="item.isInvoiceInput ? 'fa-check text-success' : 'fa-minus text-muted'"
+               [title]="item.isInvoiceInput ? 'Có hóa đơn đầu vào' : 'Không quét invoice'"></i>
+          </td>
           <td *ngIf="subTab == 3">{{item.mappedCodes}}</td>
           <td>{{item.notes}}</td>
           <td>

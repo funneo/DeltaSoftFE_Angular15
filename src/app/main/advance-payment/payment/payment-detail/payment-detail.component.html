@@ -85,17 +85,6 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="col-sm-3 control-label">Nhóm phí cấp 1</label>
-              <div class="col-sm-9">
-                <ng-select name="groupFee" [items]="_listGroupFee" bindValue="feeCode"
-                  [ngModel]="entity.groupFeeCode" (ngModelChange)="onChangeGroupFee($event)"
-                  [readonly]="flagXem || _isChuyeduyet" placeholder="Chọn nhóm phí (Lĩnh vực)" [clearable]="false">
-                  <ng-template ng-label-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
-                  <ng-template ng-option-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
-                </ng-select>
-              </div>
-            </div>
-            <div class="form-group">
               <label class="col-sm-3 control-label">Nội dung</label>
               <div class="col-sm-9">
                 <input class="form-control" [(ngModel)]="entity.contents" type="text" name="noidung"
@@ -173,6 +162,29 @@
                     <i class="fa  fa-eye" title="Chọn tạm ứng"></i>
                   </span>
                 </div>
+              </div>
+            </div>
+            <!-- F043: phân loại 2 cấp — 2 dòng riêng cho thẳng hàng. Cấp 2 chỉ hiện mã được quét invoice. -->
+            <div class="form-group">
+              <label class="col-sm-4 control-label">Nhóm phí cấp 1</label>
+              <div class="col-sm-8">
+                <ng-select name="groupFee" [items]="_listGroupFee" bindValue="feeCode"
+                  [ngModel]="entity.groupFeeCode" (ngModelChange)="onChangeGroupFee($event)"
+                  [readonly]="flagXem || _isChuyeduyet" placeholder="Lĩnh vực" [clearable]="false">
+                  <ng-template ng-label-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
+                  <ng-template ng-option-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-4 control-label">Phân nhóm cấp 2</label>
+              <div class="col-sm-8">
+                <ng-select name="subFee" [items]="_listSubFee" bindValue="feeCode"
+                  [(ngModel)]="entity.subFeeCode"
+                  [readonly]="flagXem || _isChuyeduyet || !entity.groupFeeCode" placeholder="Phân nhóm" [clearable]="false">
+                  <ng-template ng-label-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
+                  <ng-template ng-option-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
+                </ng-select>
               </div>
             </div>
             <div class="form-group">

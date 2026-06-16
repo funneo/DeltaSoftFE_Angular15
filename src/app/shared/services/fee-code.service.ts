@@ -14,13 +14,14 @@ export class FeeCodeService {
 
   constructor(private http: HttpClient) { }
 
-  getAll(parentId?: number, level?: number, status?: number): Observable<ResponseValue<FeeCode[]>> {
-    const obj = { 
-      Item: { 
-        ParentId: parentId, 
-        Level: level, 
-        Status: status 
-      } 
+  getAll(parentId?: number, level?: number, status?: number, isInvoiceInput?: boolean): Observable<ResponseValue<FeeCode[]>> {
+    const obj = {
+      Item: {
+        ParentId: parentId,
+        Level: level,
+        Status: status,
+        IsInvoiceInput: isInvoiceInput
+      }
     };
     return this.http.post<ResponseValue<FeeCode[]>>(this.url + '/GetAll', obj);
   }

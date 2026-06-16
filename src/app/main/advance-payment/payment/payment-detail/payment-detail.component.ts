@@ -47,6 +47,7 @@ export class PaymentDetailComponent implements OnInit {
   listBranch: Branch[];
   listFee: Fee[];
   _listGroupFee: FeeCode[] = [];     // FeeCode cấp 1 (Lĩnh vực) cho dropdown nhóm phí
+  _listSubFee: FeeCode[] = [];       // FeeCode cấp 2 (phân nhóm, chỉ "được quét invoice") theo nhóm cấp 1 đã chọn
   listWorkflow: Workflow[];
   listShipment: Shipment[];
   listType: any[] = [
@@ -265,9 +266,22 @@ export class PaymentDetailComponent implements OnInit {
     });
   }
 
+  /** Load phân nhóm cấp 2 (chỉ mã được quét invoice) theo nhóm cấp 1. Robust nếu list cấp 1 chưa kịp load. */
+  loadSubFee(groupCode: string) {
+    this._listSubFee = [];
+    if (!groupCode) return;
+    const doLoad = () => {
+      const parent = this._listGroupFee?.find(x => x.feeCode === groupCode);
+      if (!parent?.id) return;
+      this.feeCodeService.getAll(parent.id, 2, 2, true).subscribe(r => { this._listSubFee = r?.data || []; });
+    };
+    if (this._listGroupFee?.length) doLoad();
+    else this.feeCodeService.getAll(null, 1, 2).subscribe(res => { this._listGroupFee = res?.data || []; doLoad(); });
+  }
+
   _lastGroupFee: string;     // giá trị nhóm phí đã "chốt" (để revert khi user hủy)
 
-  /** Đổi nhóm phí cấp 1 → xóa toàn bộ chi tiết (phiếu thuộc 1 nhóm). */
+  /** Đổi nhóm phí cấp 1 → reset phân nhóm cấp 2 + xóa toàn bộ chi tiết (phiếu thuộc 1 nhóm). */
   onChangeGroupFee(newCode: string) {
     if (newCode === this._lastGroupFee) return;
     const hasReal = (this.listDetail || []).some(x => x.feeId);
@@ -278,6 +292,8 @@ export class PaymentDetailComponent implements OnInit {
     }
     this.entity.groupFeeCode = newCode;
     this._lastGroupFee = newCode;
+    this.entity.subFeeCode = null;     // đổi cấp 1 → bỏ chọn cấp 2
+    this.loadSubFee(newCode);
     this.listDetail = [];
     this.sumTien();
     this.inputTen();
@@ -330,6 +346,7 @@ export class PaymentDetailComponent implements OnInit {
       if (res.code == '200' || res.code == '201') {
         this.entity = res.data;
         this._lastGroupFee = this.entity.groupFeeCode;   // chốt giá trị nhóm phí để revert khi đổi
+        this.loadSubFee(this.entity.groupFeeCode);       // load phân nhóm cấp 2 để hiển thị lựa chọn đã lưu
         // Map IsDirectPayment from PascalCase if necessary
         if (this.entity['IsDirectPayment'] !== undefined && this.entity.isDirectPayment === undefined) {
           this.entity.isDirectPayment = this.entity['IsDirectPayment'];
@@ -778,7 +795,10 @@ export class PaymentDetailComponent implements OnInit {
     }
     this.viewInvoicePicker = true;
     setTimeout(() => {
-      if (this.modalInvoicePicker) this.modalInvoicePicker.groupFeeCode = this.entity.groupFeeCode;
+      if (this.modalInvoicePicker) {
+        this.modalInvoicePicker.groupFeeCode = this.entity.groupFeeCode;
+        this.modalInvoicePicker.subFeeCode = this.entity.subFeeCode;
+      }
       this.modalInvoicePicker?.show();
     }, 50);
   }

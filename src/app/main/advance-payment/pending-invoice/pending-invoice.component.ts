@@ -10,10 +10,18 @@ import {
 } from '@app/shared/services/pending-invoice.service';
 import { ModalDocHoaDonComponent } from '@app/shared/components/advance-payment/modal-doc-hoa-don/modal-doc-hoa-don.component';
 
+interface PendingInvoiceSubGroup {
+  code: string;            // subFeeCode ('' = chưa phân nhóm cấp 2)
+  name: string;            // subFeeName để hiển thị
+  items: PendingInvoice[];
+  expanded: boolean;
+}
+
 interface PendingInvoiceGroup {
   code: string;            // groupFeeCode ('' = chưa phân loại)
   name: string;            // groupFeeName để hiển thị
-  items: PendingInvoice[];
+  subGroups: PendingInvoiceSubGroup[];   // nhóm con cấp 2
+  count: number;           // tổng hóa đơn trong nhóm cấp 1
   expanded: boolean;
 }
 
@@ -35,7 +43,8 @@ export class PendingInvoiceComponent implements OnInit {
   reExtractingId: number | null = null;
   viewModal = false;
 
-  private expandedCodes = new Set<string>();   // giữ trạng thái mở/đóng khi reload
+  private expandedCodes = new Set<string>();      // trạng thái mở/đóng nhóm cấp 1
+  private expandedSubCodes = new Set<string>();   // trạng thái mở/đóng nhóm cấp 2 (key = "lv1|lv2")
 
   @ViewChild(ModalDocHoaDonComponent, { static: false }) modalDocHoaDon: ModalDocHoaDonComponent;
 
@@ -104,7 +113,7 @@ export class PendingInvoiceComponent implements OnInit {
   get tab1Count(): number { return this.allRows.filter(r => this.isPending(r)).length; }
   get tab2Count(): number { return this.allRows.filter(r => this.isRejected(r)).length; }
 
-  /** Group hóa đơn của tab hiện tại theo GroupFeeCode. */
+  /** Group hóa đơn của tab hiện tại theo 2 cấp: GroupFeeCode (Lv1) → SubFeeCode (Lv2). */
   buildGroups(): void {
     const rows = this.allRows.filter(r => this.activeTab === 1 ? this.isPending(r) : this.isRejected(r));
     const map = new Map<string, PendingInvoiceGroup>();
@@ -115,25 +124,48 @@ export class PendingInvoiceComponent implements OnInit {
         g = {
           code,
           name: r.groupFeeName || (code ? code : 'Chưa phân loại'),
-          items: [],
+          subGroups: [],
+          count: 0,
           expanded: this.expandedCodes.size === 0 ? true : this.expandedCodes.has(code),
         };
         map.set(code, g);
       }
-      g.items.push(r);
+      const subCode = (r.subFeeCode || '').trim();
+      let sg = g.subGroups.find(s => s.code === subCode);
+      if (!sg) {
+        const subKey = code + '|' + subCode;
+        sg = {
+          code: subCode,
+          name: r.subFeeName || (subCode ? subCode : 'Chưa phân nhóm cấp 2'),
+          items: [],
+          expanded: this.expandedSubCodes.size === 0 ? true : this.expandedSubCodes.has(subKey),
+        };
+        g.subGroups.push(sg);
+      }
+      sg.items.push(r);
+      g.count++;
     }
-    // Sort: nhóm có code trước (theo code), 'Chưa phân loại' xuống cuối.
-    this.groups = Array.from(map.values()).sort((a, b) => {
+    // Sort: mã có trước (theo code), nhóm rỗng xuống cuối — áp cho cả 2 cấp.
+    const byCode = (a: { code: string }, b: { code: string }) => {
       if (!a.code) return 1;
       if (!b.code) return -1;
       return a.code.localeCompare(b.code);
-    });
+    };
+    this.groups = Array.from(map.values()).sort(byCode);
+    this.groups.forEach(g => g.subGroups.sort(byCode));
   }
 
   toggleGroup(g: PendingInvoiceGroup): void {
     g.expanded = !g.expanded;
     if (g.expanded) this.expandedCodes.add(g.code);
     else this.expandedCodes.delete(g.code);
+  }
+
+  toggleSubGroup(g: PendingInvoiceGroup, sg: PendingInvoiceSubGroup): void {
+    sg.expanded = !sg.expanded;
+    const key = g.code + '|' + sg.code;
+    if (sg.expanded) this.expandedSubCodes.add(key);
+    else this.expandedSubCodes.delete(key);
   }
 
   openModalDoc() {

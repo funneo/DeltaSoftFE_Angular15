@@ -40,7 +40,8 @@ export class ModalFeeCodeLvl2Component implements OnInit {
   add() {
     this.entity = {
       level: 2,
-      status: 0
+      status: 0,
+      isInvoiceInput: true   // mặc định có hóa đơn đầu vào (đa số phân nhóm); user bỏ tích nếu không
     };
     this.flagXem = false;
     this.flagSave = false;

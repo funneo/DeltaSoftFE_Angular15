@@ -28,9 +28,11 @@ export class ModalDocHoaDonComponent implements OnInit {
   previewUrl: string = null;
   isImage = false;
 
-  // ===== Nhóm phí cấp 1 (FeeCode Lvl1) — bắt chọn TRƯỚC khi upload =====
+  // ===== Phân loại 2 cấp (FeeCode Lvl1 → Lvl2) — bắt chọn TRƯỚC khi upload =====
   feeCodeLvl1List: FeeCode[] = [];
   selectedGroupFeeCode: string = null;          // = FeeCodes.FeeCode của bản Lvl1
+  feeCodeLvl2List: FeeCode[] = [];              // phân nhóm cấp 2 (lọc theo Lvl1 + chỉ "được quét invoice")
+  selectedSubFeeCode: string = null;            // = FeeCodes.FeeCode của bản Lvl2
   showReview = false;                           // checkbox "Hiển thị thông tin hóa đơn trước khi lưu"
 
   private allowedSingle = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
@@ -49,6 +51,8 @@ export class ModalDocHoaDonComponent implements OnInit {
   show() {
     this.reset();
     this.selectedGroupFeeCode = null;
+    this.selectedSubFeeCode = null;
+    this.feeCodeLvl2List = [];
     this.showReview = false;
     this.loadFeeCodeLvl1();
     this.modal.show();
@@ -62,10 +66,27 @@ export class ModalDocHoaDonComponent implements OnInit {
     });
   }
 
-  get canUpload(): boolean { return !!this.selectedGroupFeeCode; }
+  /** Đổi Lvl1 → reset Lvl2 + load phân nhóm cấp 2 (chỉ mã được quét invoice). */
+  onChangeGroupFeeLvl1() {
+    this.selectedSubFeeCode = null;
+    this.feeCodeLvl2List = [];
+    const parent = this.feeCodeLvl1List?.find(x => x.feeCode === this.selectedGroupFeeCode);
+    if (!parent?.id) return;
+    this.feeCodeService.getAll(parent.id, 2, 2, true).subscribe(res => {
+      this.feeCodeLvl2List = res?.data || [];
+    });
+  }
+
+  // Bắt chọn ĐỦ 2 cấp trước khi cho upload.
+  get canUpload(): boolean { return !!this.selectedGroupFeeCode && !!this.selectedSubFeeCode; }
 
   private get selectedGroupFeeName(): string {
     const f = this.feeCodeLvl1List?.find(x => x.feeCode === this.selectedGroupFeeCode);
+    return f?.feeName || null;
+  }
+
+  private get selectedSubFeeName(): string {
+    const f = this.feeCodeLvl2List?.find(x => x.feeCode === this.selectedSubFeeCode);
     return f?.feeName || null;
   }
 
@@ -262,6 +283,8 @@ export class ModalDocHoaDonComponent implements OnInit {
       uploadId: this.uploadId,
       groupFeeCode: this.selectedGroupFeeCode,
       groupFeeName: this.selectedGroupFeeName,
+      subFeeCode: this.selectedSubFeeCode,
+      subFeeName: this.selectedSubFeeName,
       items
     }, branchId).subscribe(
       (res: any) => {

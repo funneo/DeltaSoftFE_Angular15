@@ -22,6 +22,7 @@ export class ModalPendingInvoicePickerComponent implements OnInit {
   branchId?: number;
   keyword = '';
   groupFeeCode: string = null;     // parent (PaymentDetail) set trước khi show() — lọc theo nhóm phí cấp 1
+  subFeeCode: string = null;       // parent set — lọc thêm theo phân nhóm cấp 2
   ngayBatDau: Date;
   ngayKetThuc: Date;
   dateOptions: any;
@@ -70,6 +71,7 @@ export class ModalPendingInvoicePickerComponent implements OnInit {
       fromDate: moment(this.ngayBatDau).format('YYYY-MM-DD'),
       toDate: moment(this.ngayKetThuc).format('YYYY-MM-DD'),
       groupFeeCode: this.groupFeeCode,
+      subFeeCode: this.subFeeCode,
     };
     this.busy = this.service.getForPicker(filter, this.branchId).subscribe(
       (res: any) => {

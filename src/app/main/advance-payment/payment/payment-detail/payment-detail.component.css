@@ -44,9 +44,12 @@
   cursor: pointer; /* Hiển thị con trỏ bàn tay */
 }
 .table_wrapper{
-  height: 100%;
+  /* Scroll đặt TRÊN chính thẻ <table> (display:block) — table mới chịu clip theo chiều rộng.
+     Dùng HEIGHT cố định (không phải max-height) → bảng luôn cao kịch đáy viewport nên thanh
+     cuộn ngang NẰM CỐ ĐỊNH ở dưới cùng màn hình, không nhích lên theo số dòng. */
   display: block;
-  overflow-x: auto;
+  overflow: auto;
+  height: calc(100vh - 430px);
   white-space: nowrap;
 }
 
