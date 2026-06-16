@@ -71,28 +71,28 @@
 
                   <div class="sec-title">B. Giấy tờ tùy thân</div>
                   <div class="row form-row">
-                    <div class="col-sm-3">
+                    <div class="col-sm-4">
                       <label>Loại giấy tờ</label>
                       <ng-select name="idType" [items]="listIdType" bindLabel="name" bindValue="id"
                         [(ngModel)]="entity.idType" [readonly]="flagXem"></ng-select>
                     </div>
-                    <div class="col-sm-3">
+                    <div class="col-sm-4">
                       <label>Số CCCD/GT</label>
                       <input class="form-control" name="idNumber" [(ngModel)]="entity.idNumber" [readonly]="flagXem">
                     </div>
-                    <div class="col-sm-3">
+                    <div class="col-sm-4">
                       <label>Ngày cấp</label>
                       <input class="form-control" name="issueDate" type="text" daterangepicker [options]="issueOptions"
                         [(ngModel)]="entity.issueedDate" (selected)="selectedIssue($event)" autocomplete="off"
                         [disabled]="flagXem">
                     </div>
-                    <div class="col-sm-3">
+                  </div>
+                  <div class="row form-row">
+                    <div class="col-sm-4">
                       <label>Mã số thuế</label>
                       <input class="form-control" name="taxCode" [(ngModel)]="entity.taxCode" [readonly]="flagXem">
                     </div>
-                  </div>
-                  <div class="row form-row">
-                    <div class="col-sm-12">
+                    <div class="col-sm-8">
                       <label>Nơi cấp</label>
                       <input class="form-control" name="issuePlace" [(ngModel)]="entity.issueedPlace" [readonly]="flagXem">
                     </div>
@@ -116,11 +116,11 @@
                   <div class="row form-row">
                     <div class="col-sm-6">
                       <label>Địa chỉ thường trú</label>
-                      <textarea class="form-control" rows="2" name="address" [(ngModel)]="entity.address" [readonly]="flagXem"></textarea>
+                      <textarea class="form-control" rows="1" name="address" [(ngModel)]="entity.address" [readonly]="flagXem"></textarea>
                     </div>
                     <div class="col-sm-6">
                       <label>Chỗ ở hiện tại</label>
-                      <textarea class="form-control" rows="2" name="currentAddress" [(ngModel)]="entity.currentAddress" [readonly]="flagXem"></textarea>
+                      <textarea class="form-control" rows="1" name="currentAddress" [(ngModel)]="entity.currentAddress" [readonly]="flagXem"></textarea>
                     </div>
                   </div>
                   <div class="row form-row">
@@ -157,12 +157,12 @@
                     </div>
                   </div>
                   <div class="row form-row">
-                    <div class="col-sm-5">
+                    <div class="col-sm-4">
                       <label>Địa điểm làm việc</label>
                       <ng-select name="workLoc" [items]="listWorkLocation" bindLabel="categoryName" bindValue="id"
                         [(ngModel)]="entity.workLocationId" [readonly]="flagXem"></ng-select>
                     </div>
-                    <div class="col-sm-3">
+                    <div class="col-sm-4">
                       <label>Ngày vào công ty</label>
                       <input class="form-control" name="startDate" type="text" daterangepicker [options]="startOptions"
                         [(ngModel)]="entity.startDate" (selected)="selectedStart($event)" autocomplete="off"
@@ -191,11 +191,11 @@
                     </div>
                   </div>
                   <div class="row form-row">
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                       <label>Số sổ BHXH</label>
                       <input class="form-control" name="bhxh" [(ngModel)]="entity.socialInsurance" [readonly]="flagXem">
                     </div>
-                    <div class="col-sm-6">
+                    <div class="col-sm-4">
                       <label>Số thẻ BHYT</label>
                       <input class="form-control" name="bhyt" [(ngModel)]="entity.healthInsurance" [readonly]="flagXem">
                     </div>
