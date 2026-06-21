@@ -28,6 +28,24 @@ export class ShipmentService extends BaseService {
     }), catchError(this.handleError));
   }
 
+  /**
+   * Duyệt nháp (draft.DraftEntries) thành Lô hàng / Canon thật — Phase 4 Draft Site.
+   * Gửi id = draftId + item = entity đã map; BE tạo job xong tự ghi ngược draft
+   * (Status='Promoted' + shipmentId + jobId). Trả { shipmentId, jobId, alreadyPromoted }.
+   */
+  addFromDraft(entity: Shipment, draftId: number) {
+    let p: FromBodyBase<Shipment> = {};
+    p.item = entity;
+    p.id = '' + draftId;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/shipment/addFromDraft`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
   update(entity: Shipment) {
     let p: FromBodyBase<Shipment> = {};
     p.item = entity;

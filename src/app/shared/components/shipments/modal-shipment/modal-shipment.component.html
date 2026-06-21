@@ -554,8 +554,9 @@
               <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
                 [disabled]="!addEditForm.form.valid || flagSave">
                 <i class="fa fa-save"></i> Lưu</button>
-              <button *ngIf="_isDraftView" type="button" class="btn btn-success btn-sm" [disabled]="true"
-                title="Sẽ mở khi hoàn tất kiểm tra độ chính xác AI">
+              <button *ngIf="_isDraftView" type="button" class="btn btn-success btn-sm"
+                (click)="approveDraft()" [disabled]="flagSave"
+                title="Duyệt nháp này thành Lô hàng thật">
                 <i class="fa fa-check"></i> Duyệt</button>
               <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
                 <i class="fa fa-close"></i> {{_isDraftView ? 'Hủy' : 'Thoát'}}</button>

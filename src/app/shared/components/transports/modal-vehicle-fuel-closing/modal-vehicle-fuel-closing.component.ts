@@ -106,10 +106,8 @@ export class ModalVehicleFuelClosingComponent implements OnInit {
       toDate: moment(toD).format('YYYY-MM-DD'),
       closeReason: 1,
       oilPrice: 0,
-      topUpLiters: 0,
-      approvalDiffQty: 0,
-      dispatchOrderQty: 0,
-      additionalFeeQty: 0,
+      supplyOperQty: 0, demandOperQty: 0, netOperLiters: 0, netOperAmount: 0,
+      supplyGenQty: 0, demandGenQty: 0, netGenLiters: 0, netGenAmount: 0,
       netLiters: 0,
       netAmount: 0,
       status: 0,
@@ -193,20 +191,30 @@ export class ModalVehicleFuelClosingComponent implements OnInit {
       });
   }
 
-  // ====== Compute summary ======
+  // ====== Compute summary — 2 BUCKET (net CÓ DẤU) ======
   recalcSummary() {
     const list = (this.entity.detaileds ?? []).filter(x => x.checked !== false);
-    const q1 = this.sumBy(list, d => d.source === 1);
-    const q2 = this.sumBy(list, d => d.source === 2 || d.source === 3);
-    const q3 = this.sumBy(list, d => d.source === 4);
-    this.entity.approvalDiffQty = q1;
-    this.entity.dispatchOrderQty = q2;
-    this.entity.additionalFeeQty = q3;
-    const top = +(this.entity.topUpLiters ?? 0);
-    const net = top - q3 - q2 - q1;
-    this.entity.netLiters = +net.toFixed(3);
     const price = +(this.entity.oilPrice ?? 0);
-    this.entity.netAmount = +(Math.abs(net) * price).toFixed(2);
+
+    // Bucket VẬN HÀNH: supply = tạm ứng (source 1, bucket 1) ; demand = source 2/3/4
+    const supOper = this.sumBy(list, d => d.source === 1 && (d.bucket ?? 1) === 1);
+    const demOper = this.sumBy(list, d => d.source === 2 || d.source === 3 || d.source === 4);
+    this.entity.supplyOperQty = supOper;
+    this.entity.demandOperQty = demOper;
+    this.entity.netOperLiters = +(supOper - demOper).toFixed(3);
+    this.entity.netOperAmount = +(this.entity.netOperLiters * price).toFixed(2);
+
+    // Bucket MÁY PHÁT: supply = tạm ứng (source 1, bucket 2) ; demand = source 5
+    const supGen = this.sumBy(list, d => d.source === 1 && d.bucket === 2);
+    const demGen = this.sumBy(list, d => d.source === 5);
+    this.entity.supplyGenQty = supGen;
+    this.entity.demandGenQty = demGen;
+    this.entity.netGenLiters = +(supGen - demGen).toFixed(3);
+    this.entity.netGenAmount = +(this.entity.netGenLiters * price).toFixed(2);
+
+    // Tổng (cộng 2 bucket) — net có dấu: >0 trừ lương, <0 trả tiền
+    this.entity.netLiters = +(this.entity.netOperLiters + this.entity.netGenLiters).toFixed(3);
+    this.entity.netAmount = +(this.entity.netOperAmount + this.entity.netGenAmount).toFixed(2);
   }
 
   private sumBy(list: DriverFuelClosingDetail[], pred: (x: DriverFuelClosingDetail) => boolean): number {
@@ -238,12 +246,17 @@ export class ModalVehicleFuelClosingComponent implements OnInit {
 
   sourceLabel(s: number): string {
     switch (s) {
-      case 1: return '(1) Chênh duyệt - rút Igas';
-      case 2: return '(2) Lệnh DispatchOrder';
-      case 3: return '(2) Lệnh FCL';
-      case 4: return '(3) Phát sinh AdditionalFee';
+      case 1: return 'Tạm ứng dầu (nhận)';
+      case 2: return 'Lệnh DispatchOrder (định mức)';
+      case 3: return 'Lệnh FCL (định mức)';
+      case 4: return 'Phát sinh';
+      case 5: return 'Dầu máy phát (FCL)';
       default: return '?';
     }
+  }
+
+  bucketLabel(b: number): string {
+    return b === 2 ? 'Máy phát' : 'Vận hành';
   }
 
   // ====== Save ======

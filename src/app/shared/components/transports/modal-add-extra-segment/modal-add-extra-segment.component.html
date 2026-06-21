@@ -101,7 +101,7 @@
                     </span>
                   </td>
                   <td class="loc-td-addr">
-                    {{ loc.address }}
+                    {{ locationLabel(loc) }}
                     <span *ngIf="isPickerSelected(loc) === 'start'" class="extra-loc-tag tag-start">Điểm đi</span>
                     <span *ngIf="isPickerSelected(loc) === 'end'" class="extra-loc-tag tag-end">Điểm đến</span>
                     <span *ngIf="!hasGeoCoord(loc)" class="loc-no-coord" title="Chưa có tọa độ GPS">
@@ -152,9 +152,17 @@
             [(ngModel)]="draft.payloadWeight"
             (change)="onPayloadChange($event)"
             [ngModelOptions]="{standalone: true}"
+            [loading]="loadingQuota"
             appendTo="body"
             placeholder="Chọn tải trọng (để tính dầu)...">
           </ng-select>
+          <small class="text-muted" *ngIf="loadingQuota">
+            <i class="fa fa-spinner fa-spin"></i> Đang tải định mức dầu của xe…
+          </small>
+          <small class="text-danger" *ngIf="!loadingQuota && !listOilQuota.length">
+            <i class="fa fa-exclamation-triangle"></i>
+            Xe của lệnh chưa cấu hình định mức dầu theo tải trọng — vào Danh mục xe để thêm.
+          </small>
           <small class="text-muted" *ngIf="draft.payloadWeight && draft.fuelAmountCalculated">
             Định mức {{ draft.fuelNorm }} • Dầu ≈ <strong>{{ draft.fuelAmountCalculated | number:'1.0-2' }}</strong> lít
           </small>
@@ -174,7 +182,7 @@
           <i class="fa fa-close"></i> Hủy
         </button>
         <button type="button" class="btn btn-sm btn-success"
-          [disabled]="!canSave()"
+          [disabled]="saving"
           (click)="save()">
           <i class="fa fa-save"></i> Lưu cung đường phát sinh
         </button>

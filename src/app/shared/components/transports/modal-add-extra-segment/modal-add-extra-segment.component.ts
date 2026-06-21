@@ -2,6 +2,7 @@ import { Component, EventEmitter, OnDestroy, Output, ViewChild } from '@angular/
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { NotificationService } from '@app/shared/services';
 import { TransportOrderService } from '@app/shared/services/transports/transport-order.service';
+import { VihicleService } from '@app/shared/services/vihicle.service';
 import {
   UnifiedLocation, SegmentStation,
   TransportOrderExtraSegment, TransportOrderTotalsResult
@@ -24,6 +25,8 @@ export interface ExtraSegmentOpenContext {
   listOilQuota?: any[];
   /** Lệnh chạy cung đường ngắn → dùng shortWayValue thay value */
   shortWay?: boolean;
+  /** Xe của lệnh — fallback tự nạp listOilQuota nếu parent truyền rỗng. */
+  vehicleId?: number | null;
 }
 
 /**
@@ -46,6 +49,7 @@ export class ModalAddExtraSegmentComponent implements OnDestroy {
   draft: TransportOrderExtraSegment | null = null;
   locations: UnifiedLocation[] = [];
   listOilQuota: any[] = [];
+  loadingQuota = false;
   saving = false;
   private _shortWay = false;
 
@@ -61,6 +65,7 @@ export class ModalAddExtraSegmentComponent implements OnDestroy {
 
   constructor(
     private _transportService: TransportOrderService,
+    private _vihicleService: VihicleService,
     private _notif: NotificationService
   ) { }
 
@@ -74,6 +79,11 @@ export class ModalAddExtraSegmentComponent implements OnDestroy {
     this._vehicleBotTypeId = ctx.vehicleBotTypeId ?? null;
     this.listOilQuota = ctx.listOilQuota || [];
     this._shortWay = !!ctx.shortWay;
+    // Parent đôi khi chưa nạp xong định mức dầu của xe (lệnh thầu phụ / vehicle load chậm).
+    // Nếu list rỗng mà có vehicleId → tự nạp để dropdown Tải trọng luôn có dữ liệu.
+    if (!this.listOilQuota.length && ctx.vehicleId) {
+      this._loadOilQuota(ctx.vehicleId);
+    }
     this.draft = {
       transportOrderId: ctx.transportOrderId,
       startLocationType: 1,
@@ -121,7 +131,8 @@ export class ModalAddExtraSegmentComponent implements OnDestroy {
     let list = this.locations;
     const addr = this.pickerFilter.address.trim().toLowerCase();
     const type = this.pickerFilter.type.trim();
-    if (addr) list = list.filter(l => l.address?.toLowerCase().includes(addr));
+    if (addr) list = list.filter(l => l.address?.toLowerCase().includes(addr)
+      || l.name?.toLowerCase().includes(addr));
     if (type) list = list.filter(l => l.locationType?.toString() === type);
     return [...list].sort((a, b) => {
       const va = this.pickerSortCol === 'locationType' ? (a.locationType || 0) : (a.address || '');
@@ -167,12 +178,17 @@ export class ModalAddExtraSegmentComponent implements OnDestroy {
   locationTypeName(type: number): string {
     return type === 2 ? 'Cảng/Bãi' : 'Nhà máy';
   }
+  /** Nhãn điểm: cảng/bãi có tên → "Tên - Địa chỉ"; nhà máy (không tên) → "Địa chỉ". */
+  locationLabel(loc: UnifiedLocation): string {
+    const name = (loc?.name || '').trim();
+    return name ? `${name} - ${loc.address || ''}` : (loc?.address || '');
+  }
 
   private _pickStart(loc: UnifiedLocation) {
     if (!this.draft) return;
     this.draft.startLocationId = loc.id;
     this.draft.startLocationType = loc.locationType;
-    this.draft.startLocationName = loc.address;
+    this.draft.startLocationName = this.locationLabel(loc);
     this.draft.startLat = loc.latitude;
     this.draft.startLng = loc.longtitude;
     this._resetRoute();
@@ -181,7 +197,7 @@ export class ModalAddExtraSegmentComponent implements OnDestroy {
     if (!this.draft) return;
     this.draft.endLocationId = loc.id;
     this.draft.endLocationType = loc.locationType;
-    this.draft.endLocationName = loc.address;
+    this.draft.endLocationName = this.locationLabel(loc);
     this.draft.endLat = loc.latitude;
     this.draft.endLng = loc.longtitude;
     this._resetRoute();
@@ -259,6 +275,20 @@ export class ModalAddExtraSegmentComponent implements OnDestroy {
     this._recalcFuelAmount(); // km đổi → tính lại lượng dầu theo định mức tải trọng đã chọn
   }
 
+  /** Fallback: nạp định mức dầu theo tải trọng từ xe của lệnh khi parent truyền rỗng. */
+  private _loadOilQuota(vehicleId: number) {
+    this.loadingQuota = true;
+    this._vihicleService.getDetail(vehicleId).subscribe({
+      next: (res: any) => {
+        this.loadingQuota = false;
+        if ((res?.code === '200' || res?.code === '201') && res?.data?.listOilQuota?.length) {
+          this.listOilQuota = res.data.listOilQuota;
+        }
+      },
+      error: () => { this.loadingQuota = false; }
+    });
+  }
+
   // ───────────── Tải trọng → định mức dầu ─────────────
   // Chọn tải trọng (từ định mức dầu của xe trên lệnh) → suy ra định mức + lượng dầu,
   // giống chặng chính: fuelNorm = shortWay ? shortWayValue : value; fuel = norm*km/100.
@@ -298,8 +328,26 @@ export class ModalAddExtraSegmentComponent implements OnDestroy {
   }
 
   save() {
-    if (!this.canSave()) return;
+    if (this.saving) return;
     const d = this.draft;
+    if (!d) return;
+    // Báo rõ thiếu gì thay vì disable câm (trước đây bấm không thấy phản ứng).
+    if (!d.startLocationId || !d.endLocationId) {
+      this._notif.printErrorMessage('Vui lòng chọn cả Điểm đi và Điểm đến.');
+      return;
+    }
+    if (!d.distanceKm) {
+      this._notif.printErrorMessage('Chưa có số km — bấm "Tính Vietmap" hoặc "So sánh" trước khi lưu.');
+      return;
+    }
+    if (!d.payloadWeight) {
+      this._notif.printErrorMessage('Vui lòng chọn Tải trọng (để tính dầu).');
+      return;
+    }
+    if (!(d.note || '').trim()) {
+      this._notif.printErrorMessage('Vui lòng nhập Ghi chú phát sinh.');
+      return;
+    }
     const payload: TransportOrderExtraSegment = {
       transportOrderId: d.transportOrderId,
       startLocationId: d.startLocationId,

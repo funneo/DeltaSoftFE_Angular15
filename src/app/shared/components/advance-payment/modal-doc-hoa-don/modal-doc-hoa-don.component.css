@@ -1,7 +1,7 @@
 .groupfee-bar {
   display: flex;
   align-items: flex-end;
-  gap: 20px;
+  gap: 6px 20px;            /* row-gap nhỏ để các dòng sát nhau hơn */
   flex-wrap: wrap;
   padding: 8px 10px;
   margin-bottom: 10px;
@@ -10,10 +10,36 @@
   border-radius: 6px;
 }
 .groupfee-bar .gf-field { flex: 1 1 320px; min-width: 260px; }
+.groupfee-bar .gf-field-full { flex-basis: 100%; }
+/* Hàng Công việc + Job: chia đôi */
+.groupfee-bar .gf-assign-row {
+  flex-basis: 100%;
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+}
+.groupfee-bar .gf-assign-row .gf-col { flex: 0 1 calc(50% - 10px); min-width: 240px; }
+.groupfee-bar .gf-radio-wrap { flex-wrap: wrap; height: auto; gap: 6px 20px; }
 .groupfee-bar .gf-label { display: block; font-weight: 600; font-size: 12px; margin-bottom: 3px; }
 .groupfee-bar .form-control { height: 28px; }
 .groupfee-bar .gf-check { display: flex; align-items: center; gap: 6px; font-weight: 500; margin: 0 0 4px; cursor: pointer; }
 .groupfee-bar .gf-check input { margin: 0; }
+.groupfee-bar .gf-radio { display: flex; align-items: center; gap: 16px; height: 28px; }
+.groupfee-bar .gf-radio label { font-weight: 500; margin: 0; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+.groupfee-bar .gf-radio input { margin: 0; }
+.groupfee-bar .input-group .form-control { height: 28px; }
+.groupfee-bar .gf-break { flex-basis: 100%; height: 0; margin: 0; padding: 0; }
+
+/* ===== Khung kết quả: căn mép body trùng đúng hộp thanh "Nhóm phí cấp 1" =====
+   Thanh groupfee-bar tôn trọng padding của modal-body; row của Bootstrap dùng margin âm -15px
+   nên có thể lòi ra ngoài. Zero margin row ngoài cùng + bỏ padding mép trái/phải cột biên
+   để mép ngoài cùng của body khớp đúng hộp groupfee-bar (giữ nguyên gutter giữa các cột con). */
+.dhd-result > .row { margin-left: 0; margin-right: 0; }
+.dhd-result > .row > [class*="col-"]:first-child { padding-left: 0; }
+.dhd-result > .row > [class*="col-"]:last-child { padding-right: 0; }
+
+.dup-alert { font-size: 13px; padding: 8px 12px; }
+.dup-alert .fa { margin-right: 4px; }
 
 .upload-area {
   border: 2px dashed #aaa;

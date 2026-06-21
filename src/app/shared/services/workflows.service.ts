@@ -141,6 +141,23 @@ export class WorkflowsService extends BaseService {
         else return response;
       }), catchError(this.handleError));
   }
+  /** Picker "Công việc (PCCV)" cho modal đọc hóa đơn: chỉ CV người đăng nhập thực hiện + lô chưa khóa. */
+  getForPicker(params: HttpParams) {
+    let p: FromBodyBase<Workflow> = { item: {} };
+    p.tokenKey = this.token;
+    p.keyWord = params.get('keyword');
+    p.fromDate = params.get('fromDate');
+    p.toDate = params.get('toDate');
+    p.customerId = params.get('customerId') ? Number.parseInt(params.get('customerId')) : 0;
+    p.item.branchId = params.get('branchId') ? Number.parseInt(params.get('branchId')) : 0;
+    return this.http.post(`${environment.apiUrl}/api/Workflow/GetForPicker`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authenService.logout();
+        else return response;
+      }), catchError(this.handleError));
+  }
+
   getCanon(params: HttpParams) {
     let p: FromBodyBase<Workflow> = { item: {} };
     p.tokenKey = this.token;

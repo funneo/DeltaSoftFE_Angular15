@@ -1,5 +1,101 @@
 # Completed Features
 
+## PendingInvoice (F043) modal đọc HĐ — picker Công việc dùng SP mới + FE fix gán Lô/CV — FE+BE build 0 lỗi, SQL soạn xong (chờ chạy + deploy) — 2026-06-19
+Nối tiếp mục dưới. User chốt: **bỏ getpaging2** cho picker Công việc → viết **SP mới gọn** `SP_Workflow_GetForPicker`.
+- **SQL MỚI** (chờ chạy) `NewAPI/Migration_Workflow_GetForPicker_20260619.sql`: `SP_Workflow_GetForPicker` (DROP+CREATE, **SP mới hoàn toàn**, KHÔNG đụng GetPagingByOp/ByCs_New). Lọc `JobAssignedUserId=@UserId` (chỉ CV người đó **thực hiện**) + `Shipment.IsFinish=0` (lô chưa khóa) + branch/date/customer/keyword. Trả: Id CV, JobId, ShipmentId, JobName, JobDescription, ReferCode, CustomerName, CreatedDate, JobAssigningUserFullName (tên+SĐT). Join `Shipment k ON k.Id=m.ShipmentId`.
+- **BE**: `IWorkflow.GetForPicker` + `WorkflowRepository.GetForPicker` (QueryAsync, gọn — KHÔNG enrich option/procedure/shipment như GetPaging2) + endpoint `POST /api/Workflow/GetForPicker`.
+- **FE**: `WorkflowsService.getForPicker(params)`; `modal-pick-job` mode workflow đổi sang `getForPicker` (bỏ filter client `jobLocked`/`isFinish` — đã lọc ở SP), **bảng cột riêng** (Mã CV / JobId / Chi tiết CV / Thông tin job / Mã tham chiếu / Người giao việc-SĐT / Ngày lập) + **dòng filter cột** (`wfFilters`, sticky header). ShipmentId ẩn.
+- **FE fix modal-doc-hoa-don** (bug "nhầm"): khi `assignType='workflow'` → ô **Job disable + ẨN nút 🔍 Job**, hiện ô **Công việc + nút 🔍**; Job & Công việc **xuống hàng** (`.gf-break` flex-basis:100%). Mode job giữ nút 🔍 ở ô Job.
+- **Build**: FE `ng build` 0 lỗi; BE `dotnet build` **Build succeeded 0 Error** (IIS Express không chạy lúc build).
+
+## PendingInvoice (F043) modal đọc HĐ — bỏ Cấp 2 + sort Cấp 1 + gán Lô hàng/Công việc — FE build 0 err, BE compile OK, SQL soạn xong (chờ chạy + deploy) — 2026-06-19
+3 yêu cầu trong modal đọc hóa đơn AI ([modal-doc-hoa-don](../../src/app/shared/components/advance-payment/modal-doc-hoa-don/)). Quyết định chốt với user: Công việc = **Workflow (PCCV)**; gán cấp **batch**, **chỉ lưu PendingInvoice** (không sang Payment); **không chặn quyền**.
+- **(1) Ẩn Cấp 2**: bỏ dropdown SubFee khỏi modal; `canUpload` chỉ cần Cấp 1 + đối tượng; `createBatch` gửi `subFeeCode/subFeeName=null`. (Cột SubFee DB vẫn còn, list group 2 cấp & Payment KHÔNG đổi.)
+- **(2) Sort Cấp 1**: `sortLvl1Priority()` — tên chứa "bán hàng"→0, "trả hộ"→1, else→2 (Array.sort ổn định giữ thứ tự gốc).
+- **(3) Gán Lô hàng / Công việc**: radio `assignType` ('job'|'workflow'); ô Job read-only + nút 🔍; mode workflow thêm ô Công việc read-only. Picker MỚI `modal-pick-job` (đặt trong nhóm advance-payment): `@Input mode`, `@Output SelectItem{jobId,shipmentId,customerName,refDisplay,workflowId?}`; lọc KH (ng-select) + date range (`dateOptionMultis`) + keyword; **nhóm theo customerName** (collapsible); mode `job`=`ShipmentService.getPagingNormal` lọc `!isFinish`; mode `workflow`=`WorkflowsService.getPaging`(getpaging2, scope userid+isFinish=0) lọc `!jobLocked`. Module imports: ng2-daterangepicker + ng-busy + ng-select + draggable (theo `modal-list-shipping-task`).
+- **BE** (mirror pattern SubFee, per-item param vô hướng): `PendingInvoice.cs` +`JobId/ShipmentId?/WorkflowId?`; `PendingInvoiceCreateBatchRequest` +3 field; Controller `CreateBatch` set 3 field cho mỗi item từ req; `PendingInvoiceRepository.Create` +3 `p.Add`.
+- **SQL** (chờ user chạy) `NewAPI/Migration_PendingInvoice_JobShipment_20260619.sql`: ALTER +JobId/ShipmentId/WorkflowId; DROP+CREATE `SP_PendingInvoice_Create` (tái tạo y thân bản SubFee 06-15 + 3 param). KHÔNG đụng GetPaging/GetForPicker.
+- **Build**: FE `ng build` 0 lỗi; BE chỉ vướng khóa Common.dll do IIS Express = C# compile sạch.
+- ⚠️ Workflow picker scope theo userid+isFinish=0 — nếu kế toán cần thấy job người khác/đã hoàn thành thì nới (xem todo).
+
+## Draft Site — Lọc nháp theo chi nhánh (ERP) + Site nháp hiện JobId/ShipmentId sau promote — BE+FE+SQL XONG, ĐÃ DEPLOY — 2026-06-19
+Hai yêu cầu nối tiếp Phase 4 Promote. SQL đã chạy + verify trực tiếp DB; 4 build sạch (2 FE + DraftAPI 0 lỗi, ERP API chỉ vướng khóa DLL khi IIS chạy = C# OK); user đã build + deploy.
+
+### YC1 — Site nháp (draft-web) hiển thị JobId + ShipmentId sau promote
+Chốt với user: hiện ở **site nháp** (ERP giữ nguyên — promote xong ẩn nháp, list thật hiện job). Sau promote, `draft.DraftEntries` đã có `PromotedRefNo` (JobId thật) + `PromotedShipmentId` (Id shipment thật) nhưng SP đọc của DraftAPI chưa trả `PromotedShipmentId`.
+- **SQL** `DraftAPI/Migration_DraftSite_ShowPromotedRef_20260618.sql` (ĐÃ CHẠY): `draft.SP_DraftEntries_GetPaging` + `GetById` SELECT thêm `[PromotedShipmentId]` (PromotedRefNo + Status đã có sẵn). Chỉ đổi SELECT, không đổi tham số/điều kiện.
+- **DraftAPI BE**: `DraftEntryListItem` + `DraftEntryDetail` +`int? PromotedShipmentId`.
+- **draft-web FE** ([core/models.ts](../../../draft-web/src/app/core/models.ts) +`promotedRefNo`/`promotedShipmentId`): `shipment-list` + `canon-job-list` `toRow` khi `Status='Promoted'` → cột **JobId** hiện `SHN...` thật (thay `#id`), badge trạng thái = **"Đã tạo SHN... #shipmentId"** (canon nới cột badge 110→190px vì không có cột JobId riêng).
+- **Verify DB**: GetById #87 trả `PromotedRefNo=SHN26060000700001` + `PromotedShipmentId=295002` ✓.
+
+### YC2 — Lọc nháp theo chi nhánh ở ERP (áp cho MỌI user, kể cả admin)
+Chốt với user: nháp tạo ở chi nhánh nào chỉ hiện ở chi nhánh đó, lọc theo **chi nhánh đang chọn trên màn** (không phân biệt admin).
+- **SQL** `NewAPI/Migration_DraftErp_BranchFilter_20260618.sql` (ĐÃ CHẠY): `dbo.SP_DraftEntries_GetForErp_GetPaging` +`@BranchId INT=NULL` + `AND (@BranchId IS NULL OR [BranchId]=@BranchId)`. Phần quyền view/Canon/dải ngày/keyword giữ nguyên. ⚠ Phải chạy SQL TRƯỚC khi deploy BE (BE truyền `@BranchId`, SP cũ chưa có param → "too many arguments").
+- **ERP BE**: `DraftFilterRequest.BranchId` → `IDraft.GetPagingForErp(+int? branchId)` → repo `@BranchId` → `DraftController` truyền `obj.BranchId`.
+- **ERP FE**: `DraftFilterRequest.branchId` ([draft.service.ts](../../src/app/shared/services/draft.service.ts)); `job-canon` truyền chi nhánh đang chọn, `shipment-normal` truyền chi nhánh user — cả 2 `branchId: this._branchId || null` (null=tất cả).
+- **Verify DB**: `@BranchId=4`→39 dòng; `=999`→0; `=NULL`→40 (lọc thật sự thu hẹp 40→39, loại đúng 1 nháp Canon chi nhánh khác).
+
+## FCL cung đường phát sinh — fix Tải trọng + nới modal + nhãn "tên - địa chỉ" + chẩn đoán list nháp — FE XONG (build 0 lỗi) — 2026-06-18
+Loạt fix nhỏ trong/quanh modal `modal-add-extra-segment` (Thêm cung đường phát sinh) + chẩn đoán "list nháp biến mất".
+
+### Tải trọng không hiển thị trong modal phát sinh — ĐÃ FIX (build 0 lỗi)
+- **Root cause:** [modal-add-extra-segment.module.ts](../../src/app/shared/components/transports/modal-add-extra-segment/modal-add-extra-segment.module.ts) **THIẾU `NgSelectModule`** → thẻ `<ng-select>` (có dấu gạch) bị Angular coi là custom element → render **trống không**, KHÔNG báo lỗi build nên lọt lâu. (Picker cảng/nhà máy vẫn chạy vì là table HTML thường.) → thêm `NgSelectModule` vào imports.
+- **Fallback dữ liệu:** thêm `vehicleId` vào `ExtraSegmentOpenContext`; FCL v2 truyền `vehicleId: entity.vehicleId`; modal `open()` nếu `listOilQuota` rỗng mà có vehicleId → tự gọi `VihicleService.getDetail` nạp định mức dầu (`_loadOilQuota`, cờ `loadingQuota`). Không phụ thuộc parent nạp kịp.
+- **UX:** ng-select `[loading]="loadingQuota"`; hint "Đang tải định mức dầu của xe…"; nếu xe chưa cấu hình định mức → báo đỏ "Xe của lệnh chưa cấu hình định mức dầu theo tải trọng — vào Danh mục xe để thêm". (Trước đó nút Lưu đã đổi sang validate báo rõ thiếu gì thay vì disable câm.)
+
+### Nới rộng modal + nhãn "tên - địa chỉ"
+- Modal phát sinh nới **620px → 860px** ([.scss](../../src/app/shared/components/transports/modal-add-extra-segment/modal-add-extra-segment.component.scss), giữ `max-width:96vw`) để đọc địa chỉ rõ hơn.
+- Picker điểm (cả FCL v2 lẫn modal phát sinh) hiển thị **"Tên - Địa chỉ"** cho cảng/bãi, **chỉ Địa chỉ** cho CustomerLocations (không có cột Name). Helper `locationLabel(loc)` = `name ? name+' - '+address : address`. SQL `Migration_GetAllLocations_AddName_20260618.sql` ALTER `SP_GetAllLocations` +cột `[Name]` (Ports lấy Name, CustomerLocations NULL→fallback address). UnifiedLocation BE/FE +`Name`. (User chốt: CustomerLocations chỉ có address là đúng.)
+
+### Chẩn đoán "list nháp gộp ERP biến mất" — KHÔNG phải bug, do bộ lọc (verify trực tiếp DB, chỉ đọc)
+- Code gộp [shipment-normal.component.ts:154-185](../../src/app/main/shipments/shipment-normal/shipment-normal.component.ts#L154-L185) **còn nguyên** (`forkJoin(erp+draft)` → `[...draftRows,...erpItems]`). Dữ liệu nháp **còn**: `draft.DraftEntries` có **58 nháp Shipment** (Status='Draft', chưa xóa).
+- SP `dbo.SP_DraftEntries_GetForErp_GetPaging` chạy thử đúng tham số FE (window 7 ngày, admin) → trả **8 dòng** (các nháp 06-12). → pipeline OK.
+- **2 bộ lọc giấu nháp:** (a) **dải ngày mặc định = 7 ngày** (hôm nay −7 → cuối tháng): 39 nháp ngày **06-08** nằm ngoài cửa sổ → biến mất; chỉ 8 nháp 06-12 lọt. (b) **quyền xem theo NV**: 58 nháp đều do `ai.delta` tạo + gắn `targetEmployeeId` (381×39, 599×8, 33×5, 680, 103, 138…); user thường chỉ thấy nháp mình tạo HOẶC `targetEmployeeId==employeeId mình` → đăng nhập tài khoản không khớp sẽ thấy 0. → **Cách xem lại:** nới dải ngày về đầu tháng + đăng nhập admin (hoặc đúng NV được giao). Chờ user xác nhận đăng nhập bằng tài khoản nào trước khi cân nhắc chỉnh logic quyền.
+
+## Draft Site — Phase 4 PROMOTE: Duyệt nháp Lô hàng/Canon → Job THẬT + ghi ngược shipmentId/jobId — XONG + ĐÃ DEPLOY/TEST THẬT — 2026-06-18
+> ✅ SQL đã chạy. Test thật: promote draft Canon #87 → job thật `SHN26060000700001` (shipmentId 295002, ShipmentType=1176, CustomerId=589, JobDate 06-08 khớp payload); `draft.DraftEntries` #87 `Status='Promoted'` + `PromotedRefNo`/`PromotedShipmentId` ghi đúng. Luồng duyệt nháp → tạo job → ghi ngược id chạy ổn.
+Nút "Duyệt" trong view nháp ở ERP (modal-shipment + modal-job-canon) giờ tạo job thật rồi ghi ngược kết quả vào draft. Trước đó `approveDraft()` chỉ là stub rỗng + nút disabled cứng. Anh chốt: **1 endpoint BE tách hẳn `AddFromDraft`** (FE gửi entity đã map + draftId, BE tạo job xong **mới** ghi ngược draft).
+
+### SQL (⬜ CHƯA CHẠY) — `NewAPI/Migration_DraftSite_PromoteShipment_20260618.sql`
+- ADD cột `draft.DraftEntries.PromotedShipmentId INT` (lưu Id job thật; `PromotedRefNo` đã có = JobId).
+- 2 SP **MỚI** schema draft (KHÔNG đụng SP nháp cũ): `SP_DraftEntries_GetForPromote` (đọc Status/PromotedRefNo/PromotedShipmentId → guard chống duyệt 2 lần) + `SP_DraftEntries_MarkPromoted` (Status='Promoted'+JobId+ShipmentId+ReviewedBy, idempotent chỉ khi đang 'Draft'). ERP login db_owner EXEC được, không cần grant.
+
+### BE (build 0 lỗi)
+- Endpoint **mới** `POST /api/shipment/AddFromDraft` (ShipmentController, gate SHIPMENT_CREATE; inject IDraft): guard nếu đã Promoted → trả lại `{shipmentId,jobId,alreadyPromoted:true}` không tạo trùng; tạo job qua `CreatedAsync` (Repo cũ, định dạng ngày MM/dd/yyyy như Create); ghi ngược `MarkPromoted` best-effort (lỗi bước này KHÔNG hủy job đã tạo). `obj.Id`=draftId, `obj.Item`=entity.
+- `IDraft`/`DraftRepository` +`GetForPromote`/`MarkPromoted` (output param @RowsAffected). VM `DraftPromoteInfo`.
+
+### FE (build 0 lỗi) — cả Lô hàng thường + Canon
+- `shipmentService.addFromDraft(entity, draftId)` → POST AddFromDraft (id=draftId).
+- `modal-shipment` + `modal-job-canon`: `approveDraft()` confirm → `_doApproveDraft()` dựng entity y như `saveChange` (KHÔNG đụng saveChange) → `addFromDraft` → toast (báo cả trường hợp alreadyPromoted) + hide + emit `ApproveDraft`. Nút "Duyệt" mở khóa (`[disabled]="flagSave"` + `(click)`), bỏ disabled cứng.
+- List `shipment-normal` + `job-canon`: bind `(ApproveDraft)="onApproveDraft()"` → `viewModal=false` + `loadData()`. Dòng nháp tự biến mất vì `SP_DraftEntries_GetForErp_GetPaging` đã lọc `Status='Draft'`; job thật hiện ở list thường.
+
+**Anh cần (tối nay)**: (1) chạy `Migration_DraftSite_PromoteShipment_20260618.sql`; (2) deploy API + `ng build`; (3) test: list Lô hàng/Canon → bấm badge "NHÁP #id" → modal vàng → **Duyệt** → xác nhận → job thật xuất hiện, dòng nháp biến mất; bấm Duyệt lại nháp cũ (nếu còn) phải báo "đã duyệt trước đó" không tạo trùng; kiểm `draft.DraftEntries`: `Status='Promoted'`, `PromotedRefNo`=JobId, `PromotedShipmentId`=Id.
+
+## Dầu — Reason phiếu cấp dầu + Dầu máy phát FCL + Chốt dầu 2-bucket — BE+FE XONG (build 0 lỗi), chờ chạy 2 SQL + deploy + test E2E — 2026-06-17
+Tái cấu trúc mảng dầu: (1) phiếu Type=0 đổi nghĩa = **"Tạm ứng dầu"** + thêm **lý do** (4 mục); phiếu Type=1 thêm **loại hình** (3 mục); (2) lệnh FCL thêm **dầu máy phát** (giờ × định mức, tách riêng dầu định mức); (3) chốt dầu **bỏ "Đổ đầy bình"**, tính **2 bucket** (Vận hành/Máy phát) độc lập, NetAmount **có dấu** (trừ lương / trả tiền).
+
+### Quyết định chốt (AskUserQuestion 2026-06-17)
+- Dầu máy phát = `RunningHours × FuelNorm`; **kế toán nhập FuelNorm theo nhiệt độ** (nhiệt độ ghi nhận, KHÔNG cần giờ bắt đầu/kết thúc). `Tongdau` GIỮ NGUYÊN = định mức; tổng dầu lệnh = `Tongdau + GeneratorFuelAmount`.
+- Bỏ hẳn TopUp; **supply** chốt = `QuantityIgas (Y)` từ phiếu Tạm ứng Type=0. Bucket theo lý do: **FA02→Máy phát**, FA01/FA03/FA04→Vận hành (FA03 chỉ ghi chú). `Net = supply − demand`; NetAmount = Net×giá (có dấu).
+- Chốt **tách 2 net riêng**, tổng = cộng lại. Sửa Part7 tại chỗ (chưa lên production).
+
+### SQL (NewAPI/) — đọc SP cũ qua sqlcmd để ALTER chính xác
+- ✅ ĐÃ CHẠY: `Migration_FuelGrant_Reasons_20260617.sql` (seed OtherCategories FA01–04 `FUEL_ADVANCE_REASON` + FC01–03 `FUEL_COMMON_TYPE`; ALTER `DriverFuelApproval` +ReasonId/ReasonName); `Migration_DriverFuelClosing_Part8_2Bucket_20260617.sql` (DROP+CREATE chốt dầu 2-bucket thay Part7: 8 cột bucket, Detail +Bucket/ReasonName, Source=5 FCL máy phát, GetCandidates lấy Y theo lý do, Net có dấu, Delete @Id INT).
+- ✅ ĐÃ CHẠY (2026-06-19): `Migration_DriverFuelApproval_Reason_SPs_20260617.sql` (ALTER `SP_DriverFuelApproval_Create` v1 + `_Update` +`@ReasonId/@ReasonName` default NULL — an toàn API cũ; Update ISNULL preserve). Verify cả 2 SP đã có 2 param → lỗi runtime "SP_DriverFuelApproval_Update has too many arguments specified" đã hết (BE đã deploy truyền sẵn 2 param).
+- ⬜ CHƯA CHẠY: **chạy LẠI** `Migration_FCL_GeneratorFuel_20260617.sql` (đã thêm `SP_DispatchOrderFCL_GetGenerator`; ALTER DispatchOrderFCL +6 cột Generator* + `SP_DispatchOrderFCL_UpdateGenerator`).
+
+### BE (build 0 lỗi)
+- **Chốt dầu**: `DriverFuelClosing.cs`/VM (8 cột 2-bucket thay 4 cột cũ); Detail +Bucket/ReasonName; Repo `BuildDetailTvp` thứ tự cột khớp Part8 (Source,Bucket,…,ReasonName), bỏ @TopUpLiters.
+- **Generator FCL**: `DispatchOrderFCL.cs` +6 field (VM kế thừa); `IDispatchOrderFCL`+Repo `UpdateGeneratorAsync` + nạp generator trong `GetByRefNoWithTOAsync` (SP riêng, không đụng SP lớn); Controller `UpdateGenerator`.
+- **Reason**: `DriverFuelApproval.cs` +ReasonId/ReasonName; Repo Create/Update truyền 2 param. (Create2/Type=2 không đụng.)
+
+### FE (build 0 lỗi)
+- `modal-driver-fuel-approval`: dropdown **Lý do/Loại hình** (`OtherCategoriesService.getAll` type FA*/FC* theo entity.type) + đổi nhãn Type=0 → **"Tạm ứng dầu"** (modal + tiêu đề list `driver-fuel-approval`).
+- `modal-vehicle-fuel-closing`: rebuild `recalcSummary()` **2-bucket signed** (bỏ ô Đổ đầy bình); bảng tổng 2 dòng Vận hành/Máy phát + dòng TỔNG; net đỏ=trừ lương / xanh=trả tiền; chi tiết thêm source 5 + cột Lý do (source 1).
+- `modal-dispatch-order-fcl-v2`: khối **Dầu máy phát** (`computeGenerator()` tự tính; `saveGenerator()` gọi UpdateGenerator, nút Lưu cần refNo); model/service FE +6 field + `updateGenerator()`.
+
+**Anh cần**: (1) chạy `Migration_DriverFuelApproval_Reason_SPs` + chạy lại `Migration_FCL_GeneratorFuel`; (2) deploy API + `ng build`; (3) relogin → test E2E. Lưu ý: 2 dòng định mức+máy phát cùng 1 lệnh FCL nên chọn/bỏ cùng nhau (FCL set IsSummarized khi có Source 3 HOẶC 5). Chi tiết: memory `project_fuel_redesign_reason_generator`.
+
 ## HR — Hợp đồng lao động & Hồ sơ NV (F045 + F046, Mức B) — BE+FE XONG (build 0 lỗi, đã push BE+FE main), chờ chạy SQL grant + deploy + in Word — 2026-06-16
 Module thay Excel "Danh sách theo dõi HĐLĐ_03042025.xlsx": hồ sơ NV mở rộng + theo dõi vòng đời HĐ + (sắp tới) in HĐLĐ ra Word hàng loạt. **Quyết định Mức B**: tái dùng tối đa bảng HR sẵn có (đang trống + chưa wire), KHÔNG tạo bảng mới; SP/BE/FE MỚI hoàn toàn, KHÔNG đụng Employee cũ.
 

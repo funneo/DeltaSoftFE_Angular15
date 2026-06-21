@@ -129,6 +129,7 @@ export class JobCanonComponent implements OnInit {
       keyword: this.keyword,
       fromDate: moment(this.ngayBatDau).format('YYYY-MM-DD'),
       toDate: moment(this.ngayKetThuc).format('YYYY-MM-DD'),
+      branchId: this._branchId || null, // lọc nháp theo chi nhánh đang chọn (NULL=tất cả)
       pageIndex: 1,
       pageSize: 99999,
     };
@@ -310,6 +311,12 @@ export class JobCanonComponent implements OnInit {
   }
 
   saveSuccess(): void {
+    this.loadData();
+  }
+
+  // Duyệt nháp Canon thành Job thật xong → reload (dòng nháp biến mất, job thật hiện lên).
+  onApproveDraft(_draftId: number): void {
+    this.viewModal = false;
     this.loadData();
   }
 

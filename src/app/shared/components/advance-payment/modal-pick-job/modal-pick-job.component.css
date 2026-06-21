@@ -1,0 +1,28 @@
+/* Header kéo-thả (theo convention modal). */
+#hdlPickJob, .modal-header { cursor: move; }
+
+.pick-list {
+  max-height: 55vh;
+  overflow: auto;
+  border: 1px solid #e5e5e5;
+}
+
+.group-row { background: #f5f5f5; cursor: pointer; }
+.group-row:hover { background: #eef3f8; }
+
+.row-pointer { cursor: pointer; }
+.row-pointer:hover { background: #eef7ee; }
+
+/* Sticky header để cuộn vẫn thấy cột + filter */
+.pick-list thead th { position: sticky; top: 0; background: #fff; z-index: 2; }
+.pick-list thead tr.filter-row th { top: 30px; background: #fafbfc; padding: 2px 4px; z-index: 2; }
+.pick-list .filter-row .input-xs { height: 24px; padding: 1px 6px; font-size: 12px; }
+
+.badge-code {
+  display: inline-block;
+  background: #8e44ad;
+  color: #fff;
+  padding: 1px 7px;
+  border-radius: 8px;
+  font-size: 11px;
+}

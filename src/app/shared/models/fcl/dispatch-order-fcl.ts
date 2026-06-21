@@ -146,6 +146,13 @@ export interface DispatchOrderFcl {
     tongKm?:number;
     tongdau?: number;
     chiphidau?: number;
+    // Dầu máy phát (2026-06-17) — tách riêng với tongdau (định mức)
+    generatorRunningHours?: number;
+    generatorTemperature?: number;
+    generatorFuelNorm?: number;
+    generatorFuelAmount?: number;
+    generatorFuelCost?: number;
+    generatorNote?: string;
     isSummarized?: boolean;
     accountingDate?: string;
     shippingTaskItem?: ShippingTask;

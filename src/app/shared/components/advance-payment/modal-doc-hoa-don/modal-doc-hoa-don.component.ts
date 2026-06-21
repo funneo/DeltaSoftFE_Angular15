@@ -6,6 +6,7 @@ import { PendingInvoiceService, PendingInvoiceCreateItem } from '@app/shared/ser
 import { FeeCodeService } from '@app/shared/services/fee-code.service';
 import { FeeCode } from '@app/shared/models';
 import { ModalDirective } from 'ngx-bootstrap/modal';
+import { ModalPickJobComponent, PickJobResult } from '../modal-pick-job/modal-pick-job.component';
 
 @Component({
   selector: 'modal-doc-hoa-don',
@@ -14,6 +15,7 @@ import { ModalDirective } from 'ngx-bootstrap/modal';
 })
 export class ModalDocHoaDonComponent implements OnInit {
   @ViewChild('modalDocHoaDon', { static: false }) modal: ModalDirective;
+  @ViewChild(ModalPickJobComponent, { static: false }) modalPickJob: ModalPickJobComponent;
   @Output() CloseModal = new EventEmitter<any>();
   @Output() SaveSuccess = new EventEmitter<any>();
 
@@ -28,12 +30,20 @@ export class ModalDocHoaDonComponent implements OnInit {
   previewUrl: string = null;
   isImage = false;
 
-  // ===== Phân loại 2 cấp (FeeCode Lvl1 → Lvl2) — bắt chọn TRƯỚC khi upload =====
+  // ===== Phân loại nhóm phí cấp 1 (FeeCode Lvl1) — bắt chọn TRƯỚC khi upload =====
+  // (Cấp 2 đã ẩn khỏi modal này — chỉ giữ Cấp 1; SubFee gửi BE = null.)
   feeCodeLvl1List: FeeCode[] = [];
   selectedGroupFeeCode: string = null;          // = FeeCodes.FeeCode của bản Lvl1
-  feeCodeLvl2List: FeeCode[] = [];              // phân nhóm cấp 2 (lọc theo Lvl1 + chỉ "được quét invoice")
-  selectedSubFeeCode: string = null;            // = FeeCodes.FeeCode của bản Lvl2
   showReview = false;                           // checkbox "Hiển thị thông tin hóa đơn trước khi lưu"
+  // Khi nhóm = Chi phí hàng bán (02): chọn loại chi phí (quyết định có bắt buộc gán Lô/CV không).
+  salesSubType: 'reinvoice' | 'other' | null = null;
+
+  // ===== Gán cả lô hóa đơn cho Lô hàng (Job) HOẶC Công việc (PCCV/Workflow) =====
+  assignType: 'job' | 'workflow' = 'job';       // mặc định gán theo Lô hàng
+  selectedJobId: string = null;                 // JobId (read-only, từ picker)
+  selectedShipmentId: number = null;            // ShipmentId tương ứng
+  selectedWorkflowId: number = null;            // WorkflowId (chỉ khi gán theo Công việc)
+  selectedWorkflowDisplay: string = null;       // refCode/tên công việc hiển thị
 
   private allowedSingle = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'application/pdf'];
 
@@ -51,43 +61,107 @@ export class ModalDocHoaDonComponent implements OnInit {
   show() {
     this.reset();
     this.selectedGroupFeeCode = null;
-    this.selectedSubFeeCode = null;
-    this.feeCodeLvl2List = [];
     this.showReview = false;
+    this.assignType = 'job';
+    this.salesSubType = null;
+    this.clearAssignTarget();
     this.loadFeeCodeLvl1();
     this.modal.show();
   }
 
-  /** Load FeeCode cấp 1 (Lĩnh vực) đã duyệt (status=2). */
+  /** Đổi nhóm phí cấp 1 → reset loại chi phí hàng bán nếu nhóm mới không phải hàng bán. */
+  onChangeGroupFee() {
+    if (!this.isSalesGroup) this.salesSubType = null;
+  }
+
+  /** Load FeeCode cấp 1 (Lĩnh vực) đã duyệt (status=2), sắp xếp theo thứ tự Phụ lục. */
   loadFeeCodeLvl1() {
     if (this.feeCodeLvl1List?.length) return;   // cache trong vòng đời component
     this.feeCodeService.getAll(null, 1, 2).subscribe(res => {
-      this.feeCodeLvl1List = res?.data || [];
+      this.feeCodeLvl1List = this.sortLvl1Priority(res?.data || []);
     });
   }
 
-  /** Đổi Lvl1 → reset Lvl2 + load phân nhóm cấp 2 (chỉ mã được quét invoice). */
-  onChangeGroupFeeLvl1() {
-    this.selectedSubFeeCode = null;
-    this.feeCodeLvl2List = [];
-    const parent = this.feeCodeLvl1List?.find(x => x.feeCode === this.selectedGroupFeeCode);
-    if (!parent?.id) return;
-    this.feeCodeService.getAll(parent.id, 2, 2, true).subscribe(res => {
-      this.feeCodeLvl2List = res?.data || [];
-    });
+  /** Sắp xếp theo thứ tự Phụ lục: trả hộ → hàng bán → quản lý chung → đầu tư → khác (sort ổn định). */
+  private sortLvl1Priority(list: FeeCode[]): FeeCode[] {
+    const rank = (f: FeeCode): number => {
+      const n = (f?.feeName || '').toLowerCase();
+      if (n.includes('trả hộ')) return 0;
+      if (n.includes('hàng bán')) return 1;
+      if (n.includes('quản lý')) return 2;
+      if (n.includes('đầu tư')) return 3;
+      if (n.includes('khác')) return 4;
+      return 5;
+    };
+    return [...list].sort((a, b) => rank(a) - rank(b));
   }
 
-  // Bắt chọn ĐỦ 2 cấp trước khi cho upload.
-  get canUpload(): boolean { return !!this.selectedGroupFeeCode && !!this.selectedSubFeeCode; }
+  // ===== Gán Lô hàng / Công việc =====
+  onChangeAssignType() { this.clearAssignTarget(); }
+
+  private clearAssignTarget() {
+    this.selectedJobId = null;
+    this.selectedShipmentId = null;
+    this.selectedWorkflowId = null;
+    this.selectedWorkflowDisplay = null;
+  }
+
+  /** Mở picker theo loại đang chọn (job = Lô hàng, workflow = Công việc). */
+  openPicker() {
+    if (this.hasResult || this.loading) return;   // đã đọc xong thì khóa, không cho đổi
+    this.modalPickJob?.show(this.assignType);
+  }
+
+  /** Nhận kết quả chọn từ modal-pick-job. */
+  onPickItem(e: PickJobResult) {
+    if (!e) return;
+    this.selectedJobId = e.jobId;
+    this.selectedShipmentId = e.shipmentId;
+    if (this.assignType === 'workflow') {
+      this.selectedWorkflowId = e.workflowId ?? null;
+      this.selectedWorkflowDisplay = e.refDisplay;
+    } else {
+      this.selectedWorkflowId = null;
+      this.selectedWorkflowDisplay = null;
+    }
+  }
 
   private get selectedGroupFeeName(): string {
     const f = this.feeCodeLvl1List?.find(x => x.feeCode === this.selectedGroupFeeCode);
     return f?.feeName || null;
   }
 
-  private get selectedSubFeeName(): string {
-    const f = this.feeCodeLvl2List?.find(x => x.feeCode === this.selectedSubFeeCode);
-    return f?.feeName || null;
+  // ===== Phân loại nhóm → điều kiện bắt buộc gán Lô/Công việc =====
+  private get groupNameLower(): string { return (this.selectedGroupFeeName || '').toLowerCase(); }
+  get isReimbursementGroup(): boolean { return this.groupNameLower.includes('trả hộ'); }   // nhóm Chi phí trả hộ
+  get isSalesGroup(): boolean { return this.groupNameLower.includes('hàng bán'); }          // nhóm Chi phí hàng bán (02)
+
+  /** Bắt buộc gán Lô/CV: nhóm trả hộ, HOẶC nhóm hàng bán + "trả hộ xuất lại hóa đơn cho khách". */
+  get isAssignRequired(): boolean {
+    return this.isReimbursementGroup || (this.isSalesGroup && this.salesSubType === 'reinvoice');
+  }
+
+  /** Nhãn loại chi phí hàng bán đang chọn (snapshot lưu vào subFeeName để truy vết). */
+  get salesSubTypeLabel(): string {
+    if (this.salesSubType === 'reinvoice') return 'Chi phí trả hộ xuất lại hóa đơn cho khách';
+    if (this.salesSubType === 'other') return 'Tất cả các hóa đơn chi phí hàng bán khác';
+    return null;
+  }
+
+  /** Gợi ý khi chưa đủ điều kiện upload. */
+  get uploadHint(): string {
+    if (!this.selectedGroupFeeCode) return 'Hãy chọn Nhóm phí cấp 1 trước';
+    if (this.isSalesGroup && !this.salesSubType) return 'Hãy chọn loại chi phí hàng bán';
+    if (this.isAssignRequired && !this.selectedJobId) return 'Nhóm này bắt buộc chọn Lô hàng hoặc Công việc';
+    return '';
+  }
+
+  // Điều kiện cho upload: chọn nhóm; nếu hàng bán phải chọn loại; nếu bắt buộc thì phải có Lô/CV.
+  get canUpload(): boolean {
+    if (!this.selectedGroupFeeCode) return false;
+    if (this.isSalesGroup && !this.salesSubType) return false;
+    if (this.isAssignRequired && !this.selectedJobId) return false;
+    return true;
   }
 
   close() {
@@ -173,6 +247,14 @@ export class ModalDocHoaDonComponent implements OnInit {
   private processFile(file: File) {
     if (!this.selectedGroupFeeCode) {
       this.notificationService.printErrorMessage('Vui lòng chọn Nhóm phí cấp 1 (Lĩnh vực) trước khi tải hóa đơn.');
+      return;
+    }
+    if (this.isSalesGroup && !this.salesSubType) {
+      this.notificationService.printErrorMessage('Vui lòng chọn loại chi phí hàng bán trước khi tải hóa đơn.');
+      return;
+    }
+    if (this.isAssignRequired && !this.selectedJobId) {
+      this.notificationService.printErrorMessage('Nhóm này bắt buộc chọn Lô hàng hoặc Công việc trước khi tải hóa đơn.');
       return;
     }
     const name = (file.name || '').toLowerCase();
@@ -283,8 +365,11 @@ export class ModalDocHoaDonComponent implements OnInit {
       uploadId: this.uploadId,
       groupFeeCode: this.selectedGroupFeeCode,
       groupFeeName: this.selectedGroupFeeName,
-      subFeeCode: this.selectedSubFeeCode,
-      subFeeName: this.selectedSubFeeName,
+      subFeeCode: null,                 // Cấp 2 đã ẩn khỏi modal này
+      subFeeName: this.salesSubTypeLabel, // chỉ snapshot loại chi phí hàng bán (nếu có) để truy vết
+      jobId: this.selectedJobId,
+      shipmentId: this.selectedShipmentId,
+      workflowId: this.selectedWorkflowId,
       items
     }, branchId).subscribe(
       (res: any) => {

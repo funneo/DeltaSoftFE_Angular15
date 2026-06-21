@@ -5,6 +5,7 @@ import { ModalModule } from 'ngx-bootstrap/modal';
 import { AngularDraggableModule } from 'angular2-draggable';
 import { FormsModule } from '@angular/forms';
 import { NgSelectModule } from '@ng-select/ng-select';
+import { ModalPickJobModule } from '../modal-pick-job/modal-pick-job.module';
 
 @NgModule({
   declarations: [ModalDocHoaDonComponent],
@@ -14,6 +15,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
     FormsModule,
     NgSelectModule,
     AngularDraggableModule,
+    ModalPickJobModule,
   ],
   exports: [ModalDocHoaDonComponent]
 })

@@ -28,6 +28,8 @@ export interface DriverFuelApproval {
     quantityIgas?: number;
     type?: number;
     isLocal?: boolean;
+    reasonId?: number;
+    reasonName?: string;
     note?: string;
     checked?:boolean;
     isFuelClosing?:boolean;

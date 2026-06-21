@@ -18,6 +18,7 @@ export interface DraftFilterRequest {
   keyword?: string;
   fromDate?: string | null;     // ISO 8601 hoặc 'YYYY-MM-DD'
   toDate?: string | null;
+  branchId?: number | null;     // lọc theo chi nhánh đang chọn trên màn (NULL=tất cả)
   pageIndex?: number;
   pageSize?: number;
 }

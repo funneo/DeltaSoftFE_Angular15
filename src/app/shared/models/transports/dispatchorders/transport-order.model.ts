@@ -114,6 +114,7 @@ export interface UnifiedLocation {
     id: number;
     locationType: number; // 1=CustomerLocation, 2=Port
     address: string;
+    name?: string;        // tên cảng/bãi (Port); CustomerLocation = null → FE fallback địa chỉ
     googleLocations?: string;
     latitude: number;
     longtitude: number;

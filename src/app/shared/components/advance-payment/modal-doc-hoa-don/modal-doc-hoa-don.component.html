@@ -14,32 +14,89 @@
 
       <div class="modal-body">
 
-        <!-- Thanh chọn phân loại 2 cấp + tùy chọn xem trước (LUÔN hiện) -->
+        <!-- Thanh chọn nhóm phí cấp 1 + gán đối tượng + tùy chọn xem trước (LUÔN hiện) -->
         <div class="groupfee-bar">
           <div class="gf-field">
             <label class="gf-label">Nhóm phí cấp 1 (Lĩnh vực) <span class="text-danger">*</span></label>
             <ng-select name="groupFee" [items]="feeCodeLvl1List" bindValue="feeCode"
-              [(ngModel)]="selectedGroupFeeCode" (ngModelChange)="onChangeGroupFeeLvl1()"
+              [(ngModel)]="selectedGroupFeeCode" (ngModelChange)="onChangeGroupFee()"
               [readonly]="hasResult || loading"
               placeholder="-- Chọn nhóm phí --" [clearable]="false">
               <ng-template ng-label-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
               <ng-template ng-option-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
             </ng-select>
           </div>
+
+          <!-- Gán cho: Lô hàng / Công việc -->
           <div class="gf-field">
-            <label class="gf-label">Phân nhóm cấp 2 <span class="text-danger">*</span></label>
-            <ng-select name="subFee" [items]="feeCodeLvl2List" bindValue="feeCode"
-              [(ngModel)]="selectedSubFeeCode" [readonly]="hasResult || loading || !selectedGroupFeeCode"
-              placeholder="-- Chọn phân nhóm --" [clearable]="false">
-              <ng-template ng-label-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
-              <ng-template ng-option-tmp let-item="item">{{ item.feeCode }} - {{ item.feeName }}</ng-template>
-            </ng-select>
+            <label class="gf-label">Gán cho <span class="text-danger" *ngIf="isAssignRequired">*</span></label>
+            <div class="gf-radio">
+              <label><input type="radio" name="assignType" value="job"
+                [(ngModel)]="assignType" (ngModelChange)="onChangeAssignType()"
+                [disabled]="hasResult || loading" /> Lô hàng</label>
+              <label><input type="radio" name="assignType" value="workflow"
+                [(ngModel)]="assignType" (ngModelChange)="onChangeAssignType()"
+                [disabled]="hasResult || loading" /> Công việc</label>
+            </div>
           </div>
+
           <label class="gf-check" title="Bật: xem/sửa thông tin đã đọc rồi bấm Lưu. Tắt: đọc xong tự lưu vào DB ngay.">
             <input type="checkbox" [(ngModel)]="showReview" [disabled]="hasResult || loading" />
             Hiển thị thông tin hóa đơn trước khi lưu
           </label>
+
+          <!-- Loại chi phí hàng bán (chỉ khi nhóm = Chi phí hàng bán 02) -->
+          <div class="gf-break" *ngIf="isSalesGroup"></div>
+          <div class="gf-field gf-field-full" *ngIf="isSalesGroup">
+            <label class="gf-label">Loại chi phí hàng bán <span class="text-danger">*</span></label>
+            <div class="gf-radio gf-radio-wrap">
+              <label><input type="radio" name="salesSubType" value="reinvoice"
+                [(ngModel)]="salesSubType" [disabled]="hasResult || loading" />
+                Chi phí trả hộ xuất lại hóa đơn cho khách</label>
+              <label><input type="radio" name="salesSubType" value="other"
+                [(ngModel)]="salesSubType" [disabled]="hasResult || loading" />
+                Tất cả các hóa đơn chi phí hàng bán khác</label>
+            </div>
+          </div>
+
+          <!-- Xuống hàng: Công việc + Job, chia đôi. Gán theo Công việc → Công việc TRƯỚC rồi Job. -->
+          <div class="gf-break"></div>
+          <div class="gf-assign-row">
+            <!-- Công việc (chỉ khi gán theo Công việc) — đứng TRƯỚC Job -->
+            <div class="gf-col" *ngIf="assignType === 'workflow'">
+              <label class="gf-label">Công việc <span class="text-danger" *ngIf="isAssignRequired">*</span></label>
+              <div class="input-group">
+                <input type="text" class="form-control input-sm" [value]="selectedWorkflowDisplay || ''" readonly
+                  placeholder="-- Chọn công việc --" />
+                <span class="input-group-btn">
+                  <button type="button" class="btn btn-info btn-sm" (click)="openPicker()"
+                    [disabled]="hasResult || loading" title="Tìm & chọn công việc">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+
+            <!-- Job (read-only). Gán theo Lô hàng → có nút tìm; gán theo Công việc → khóa & ẩn nút. -->
+            <div class="gf-col">
+              <label class="gf-label">Job <span class="text-danger" *ngIf="isAssignRequired">*</span></label>
+              <div class="input-group">
+                <input type="text" class="form-control input-sm" [value]="selectedJobId || ''" readonly
+                  [disabled]="assignType === 'workflow'"
+                  [placeholder]="assignType === 'workflow' ? '-- Từ công việc --' : '-- Chọn lô hàng --'" />
+                <span class="input-group-btn" *ngIf="assignType === 'job'">
+                  <button type="button" class="btn btn-info btn-sm" (click)="openPicker()"
+                    [disabled]="hasResult || loading" title="Tìm & chọn lô hàng">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- Modal chọn Lô hàng / Công việc -->
+        <modal-pick-job (SelectItem)="onPickItem($event)"></modal-pick-job>
 
         <!-- Upload area (hiện khi chưa có kết quả) -->
         <div *ngIf="!hasResult && !loading" class="upload-area" [class.upload-disabled]="!canUpload"
@@ -47,7 +104,7 @@
           (dragover)="onDragOver($event)" (drop)="canUpload && onDrop($event)">
           <i class="fa fa-cloud-upload fa-3x text-muted"></i>
           <p class="upload-text" *ngIf="canUpload">Kéo thả file vào đây hoặc <strong>nhấn để chọn</strong></p>
-          <p class="upload-text text-danger" *ngIf="!canUpload"><i class="fa fa-lock"></i> Hãy chọn đủ Nhóm phí cấp 1 và Phân nhóm cấp 2 trước</p>
+          <p class="upload-text text-danger" *ngIf="!canUpload"><i class="fa fa-lock"></i> {{ uploadHint }}</p>
           <p class="text-muted small">Hỗ trợ: JPG, PNG, PDF — hoặc file nén ZIP/RAR (nhiều hóa đơn)</p>
           <input #fileInput type="file" style="display:none" accept="image/*,.pdf,.zip,.rar"
             (change)="onFileSelected($event)">
@@ -61,7 +118,7 @@
         </div>
 
         <!-- Kết quả -->
-        <div *ngIf="hasResult">
+        <div *ngIf="hasResult" class="dhd-result">
           <div class="row">
 
             <!-- Cột trái: danh sách file (chỉ khi nhiều hóa đơn) -->
@@ -121,6 +178,20 @@
               <div *ngIf="selected?.error" class="alert alert-danger" style="margin-bottom:10px;">
                 <i class="fa fa-exclamation-triangle"></i>
                 Không đọc được <strong>{{ selected.fileName }}</strong>: {{ selected.error }}
+              </div>
+
+              <!-- Cảnh báo hóa đơn TRÙNG (áp dụng cho cả 1 hóa đơn lẫn nhiều) -->
+              <div *ngIf="selected && !selected.error && selected.isDuplicate"
+                class="alert alert-warning dup-alert" style="margin-bottom:10px;">
+                <i class="fa fa-exclamation-circle"></i>
+                <strong>Hóa đơn này có thể đã TỒN TẠI</strong>
+                (số HĐ <strong>{{ selected.invoiceId || '—' }}</strong> — NCC {{ selected.vendorName || '—' }}).
+                <span *ngIf="selected.duplicates?.length">
+                  Trùng với phiếu:
+                  <span *ngFor="let d of selected.duplicates; let last = last">
+                    <strong>{{ d.paymentRefNo }}</strong><span *ngIf="d.paymentRefDate"> ({{ d.paymentRefDate }})</span><span *ngIf="!last">, </span>
+                  </span>
+                </span>
               </div>
 
               <div class="row" *ngIf="selected && !selected.error">

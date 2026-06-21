@@ -248,4 +248,17 @@ export class DispatchOrderFclService extends BaseService {
       else return response;
     }), catchError(this.handleError));
   }
+
+  // Dầu máy phát (2026-06-17): lưu thông số máy phát + tự tính dầu. Trả về { generatorFuelAmount, generatorFuelCost }.
+  updateGenerator(entity: DispatchOrderFcl) {
+    let p: FromBodyBase<DispatchOrderFcl> = {};
+    p.item = entity;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/UpdateGenerator`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
 }

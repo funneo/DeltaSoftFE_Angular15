@@ -176,7 +176,8 @@
   <!-- /.box -->
 </div>
 
-<modal-job-canon *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+<modal-job-canon *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()"
+  (ApproveDraft)="onApproveDraft($event)">
 </modal-job-canon>
 <modal-open-shipment *ngIf="viewOpenJob" (SaveSuccess)="saveOpenJob($event)" (CloseModal)="closeOpenJob()">
 </modal-open-shipment>

@@ -39,7 +39,7 @@
           </li>
           <li [class.active]="activeTab === 2">
             <a (click)="setTab(2)">
-              <i class="fa fa-ban"></i> Hóa đơn bị từ chối (trùng)
+              <i class="fa fa-ban"></i> Hóa đơn bị từ chối
               <span class="badge" style="background:#d9534f;">{{ tab2Count }}</span>
             </a>
           </li>
@@ -61,34 +61,44 @@
           <th class="text-right">Tổng tiền</th>
           <th>Web tra cứu</th>
           <th>Mã tra cứu</th>
+          <th>Lô/Công việc (JobId)</th>
+          <th>Khách hàng (Lô/CV)</th>
           <th>Người upload</th>
           <th>Ngày upload</th>
           <th>Token (in/out)</th>
           <th style="width: 110px;">Tác vụ</th>
         </tr>
+        <!-- Hàng filter từng cột (lọc client-side trên dữ liệu đã tải) -->
+        <tr class="filter-row">
+          <th><input type="text" class="form-control input-xs" [(ngModel)]="colFilters.file" (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+          <th><input type="text" class="form-control input-xs" [(ngModel)]="colFilters.vendor" (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+          <th><input type="text" class="form-control input-xs" [(ngModel)]="colFilters.tax" (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+          <th><input type="text" class="form-control input-xs" [(ngModel)]="colFilters.invoiceNo" (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+          <th><input type="text" class="form-control input-xs" [(ngModel)]="colFilters.pattern" (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+          <th></th>
+          <th></th>
+          <th></th>
+          <th><input type="text" class="form-control input-xs" [(ngModel)]="colFilters.code" (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+          <th><input type="text" class="form-control input-xs" [(ngModel)]="colFilters.jobId" (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+          <th><input type="text" class="form-control input-xs" [(ngModel)]="colFilters.customer" (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+          <th><input type="text" class="form-control input-xs" [(ngModel)]="colFilters.uploader" (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+          <th></th>
+          <th></th>
+          <th></th>
+        </tr>
       </thead>
       <tbody *ngFor="let g of groups">
         <!-- Header nhóm phí cấp 1 -->
         <tr class="group-header" (click)="toggleGroup(g)">
-          <td colspan="13">
+          <td colspan="15">
             <i class="fa" [ngClass]="g.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
             <strong>{{ g.code ? (g.code + ' - ' + g.name) : g.name }}</strong>
             <span class="badge group-count">{{ g.count }} hóa đơn</span>
           </td>
         </tr>
+        <!-- Dòng hóa đơn (đã bỏ nhóm cấp 2) -->
         <ng-container *ngIf="g.expanded">
-          <ng-container *ngFor="let sg of g.subGroups">
-            <!-- Header phân nhóm cấp 2 -->
-            <tr class="subgroup-header" (click)="toggleSubGroup(g, sg)">
-              <td colspan="13" style="padding-left:34px;">
-                <i class="fa" [ngClass]="sg.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-                {{ sg.code ? (sg.code + ' - ' + sg.name) : sg.name }}
-                <span class="badge">{{ sg.items.length }}</span>
-              </td>
-            </tr>
-            <!-- Dòng hóa đơn -->
-            <ng-container *ngIf="sg.expanded">
-          <tr *ngFor="let item of sg.items" [class.row-duplicate]="item.isDuplicate">
+          <tr *ngFor="let item of g.items" [class.row-duplicate]="item.isDuplicate">
             <td>
               <a *ngIf="item.pathFileLocal" [href]="buildFileUrl(item.pathFileLocal)" target="_blank"
                  [title]="item.fileName">
@@ -113,6 +123,17 @@
               </a>
             </td>
             <td>{{ item.code }}</td>
+            <td>
+              <span *ngIf="item.jobId" class="badge-job"
+                    [title]="item.workflowId ? 'Gán theo Công việc' : 'Gán theo Lô hàng'">{{ item.jobId }}</span>
+              <span *ngIf="!item.jobId" class="text-muted">—</span>
+            </td>
+            <td>
+              <span *ngIf="item.assignCustomerName || item.assignCustomerCode" [title]="item.assignCustomerName">
+                {{ item.assignCustomerCode }}<span *ngIf="item.assignCustomerCode && item.assignCustomerName"> - </span>{{ item.assignCustomerName }}
+              </span>
+              <span *ngIf="!item.assignCustomerName && !item.assignCustomerCode" class="text-muted">—</span>
+            </td>
             <td>{{ item.createdByName }}</td>
             <td>{{ item.createdDate | date:'dd/MM/yyyy HH:mm' }}</td>
             <td class="text-muted small">
@@ -134,13 +155,11 @@
               </button>
             </td>
           </tr>
-            </ng-container>
-          </ng-container>
         </ng-container>
       </tbody>
       <tbody *ngIf="groups?.length === 0">
         <tr>
-          <td colspan="13" class="text-center text-muted" style="padding:20px;">
+          <td colspan="15" class="text-center text-muted" style="padding:20px;">
             {{ activeTab === 1 ? 'Không có hóa đơn chờ thanh toán.' : 'Không có hóa đơn bị từ chối.' }}
           </td>
         </tr>

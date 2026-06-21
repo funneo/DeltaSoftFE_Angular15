@@ -141,7 +141,7 @@ export class PerformDispatchOrderComponent implements OnInit {
     let denNgay = moment(this.ngayKetThucFcl).format('YYYYMMDD');
     const params = new HttpParams()
       .set('branchid',this.branchId?.toString())
-      .set('driverid','602')
+      .set('driverid',this.userLoged?.employeeId?.toString())
       .set('fromDate', tuNgay)
       .set('toDate', denNgay)
       .set('keyword',this.keyword)

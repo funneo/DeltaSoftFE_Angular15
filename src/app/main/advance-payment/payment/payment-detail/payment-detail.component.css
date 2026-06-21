@@ -4,12 +4,9 @@
 /* .box-chieu-cao>.box-body {
   height: calc(100vh - 400px);
 } */
-.box-chieu-cao-tm {
-  max-height: calc(100vh - 400px);
-}
-.box-chieu-cao-ck {
-  height: calc(100vh - 430px); /* hoặc cao hơn tùy ý */
-}
+/* Chiều cao khối bảng KHÔNG còn đặt theo type ở đây nữa.
+   Xem block flex desktop bên dưới: .box-chieu-cao là flex-column, khối bảng tự lấp
+   phần còn lại nên không phụ thuộc chiều cao form header (tiền mặt vs chuyển khoản). */
 .column-ten{
   min-width: 220px;
   max-width: auto;
@@ -44,13 +41,39 @@
   cursor: pointer; /* Hiển thị con trỏ bàn tay */
 }
 .table_wrapper{
-  /* Scroll đặt TRÊN chính thẻ <table> (display:block) — table mới chịu clip theo chiều rộng.
-     Dùng HEIGHT cố định (không phải max-height) → bảng luôn cao kịch đáy viewport nên thanh
-     cuộn ngang NẰM CỐ ĐỊNH ở dưới cùng màn hình, không nhích lên theo số dòng. */
+  /* Scroll đặt TRÊN chính thẻ <table> (display:block) → table chịu clip theo chiều rộng.
+     Chiều cao do block flex desktop bên dưới cấp (height:100% của khối bảng). */
   display: block;
   overflow: auto;
-  height: calc(100vh - 430px);
   white-space: nowrap;
+}
+
+/* ====== FIX scroll ngang (desktop): flex để khối bảng tự lấp phần còn lại ======
+   Chỉ scope trong component này (Angular emulated encapsulation gắn [_ngcontent]),
+   KHÔNG ảnh hưởng .box-chieu-cao ở các trang khác.
+   - .box-chieu-cao: flex-column, cao = viewport trừ thanh trên cùng app.
+   - 2 .row (nút + form) giữ cao tự nhiên (flex 0 0 auto).
+   - khối bảng .box-body.table-responsive: flex 1 → lấp hết chỗ còn lại, đè global
+     height:calc(100vh-165px).
+   - .table_wrapper: cao 100% khối bảng → thanh cuộn ngang luôn nằm sát đáy vùng nhìn,
+     bất kể form tiền mặt hay chuyển khoản cao thấp khác nhau. */
+@media (min-width: 651px) {
+  .box-chieu-cao {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 80px);  /* CHỈ 1 số cần tinh chỉnh: chiều cao chrome phía trên */
+    overflow: hidden;
+  }
+  .box-chieu-cao > .row { flex: 0 0 auto; }
+  .box-chieu-cao > .box-body.table-responsive {
+    flex: 1 1 auto;
+    min-height: 0;               /* cho phép co để scroll bên trong hoạt động */
+    height: auto;                /* đè global .box-chieu-cao>.box-body height:100vh-165 */
+  }
+  .box-chieu-cao > .box-body.table-responsive .table_wrapper {
+    height: 100%;
+    max-height: 100%;
+  }
 }
 
 @media (max-width: 650px) {
@@ -60,7 +83,7 @@
   div#style-scroll-1{
     overflow-x: auto;
     overflow-y: scroll;
-    height: 350px;
+    height: 380px;
   }
   div#style-scroll-2{
     overflow-x: scroll;

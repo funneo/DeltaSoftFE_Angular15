@@ -1,0 +1,138 @@
+<div ngDraggable [handle]="hdlPickJob" class="modal fade" bsModal #modalPickJob="bs-modal"
+  [config]="{backdrop: 'static', ignoreBackdropClick: true, keyboard: false}" tabindex="-1" role="dialog"
+  (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg" style="width:80vw; max-width:1100px;">
+    <div class="modal-content" [ngBusy]="busy">
+
+      <div #hdlPickJob class="modal-header">
+        <h4 class="modal-title pull-left">
+          <i class="fa fa-search"></i> {{ title }}
+        </h4>
+        <button type="button" class="close pull-right" (click)="close()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Thanh lọc: khách hàng + khoảng thời gian + từ khóa -->
+        <div class="row" style="margin-bottom:6px;">
+          <div class="col-md-5">
+            <ng-select name="khachhang" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+              [(ngModel)]="customerId" (change)="changedCustomer($event)" placeholder="Chọn khách hàng...">
+            </ng-select>
+          </div>
+          <div class="col-md-3">
+            <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+              class="form-control" />
+          </div>
+          <div class="col-md-4">
+            <div class="input-group">
+              <input type="text" class="form-control" name="kw" [(ngModel)]="keyword"
+                (keyup.enter)="search()" placeholder="Từ khóa (JobId, KH, ...)" />
+              <span class="input-group-btn">
+                <button class="btn btn-info btn-sm" type="button" (click)="search()">
+                  <i class="fa fa-search"></i>
+                </button>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- ===== Mode LÔ HÀNG (Job) ===== -->
+        <div class="pick-list" *ngIf="mode !== 'workflow'">
+          <table class="table table-bordered table-condensed table-hover" style="margin-bottom:0;">
+            <thead>
+              <tr>
+                <th style="width:170px;">Job</th>
+                <th>Ghi chú</th>
+                <th style="width:110px;">Ngày lập</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let g of groups">
+                <tr class="group-row" (click)="toggleGroup(g)">
+                  <td colspan="3">
+                    <i class="fa" [ngClass]="g.isExpanded ? 'fa-caret-down' : 'fa-caret-right'"></i>
+                    <strong>{{ g.key }}</strong>
+                    <span class="text-muted"> ({{ g.items.length }})</span>
+                  </td>
+                </tr>
+                <tr *ngFor="let r of g.items" class="row-pointer" [hidden]="!g.isExpanded" (click)="pick(r)">
+                  <td><strong class="text-primary">{{ r.jobId }}</strong></td>
+                  <td>{{ r.refDisplay }}</td>
+                  <td>{{ r.dateText }}</td>
+                </tr>
+              </ng-container>
+              <tr *ngIf="!loading && groups.length === 0">
+                <td colspan="3" class="text-center text-muted" style="padding:14px;">Không có dữ liệu</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ===== Mode CÔNG VIỆC (PCCV) — cột riêng + filter dòng đầu ===== -->
+        <div class="pick-list" *ngIf="mode === 'workflow'">
+          <table class="table table-bordered table-condensed table-hover" style="margin-bottom:0;">
+            <thead>
+              <tr>
+                <th style="width:60px;">Mã CV</th>
+                <th style="width:130px;">JobId</th>
+                <th>Chi tiết công việc</th>
+                <th style="width:160px;">Thông tin job</th>
+                <th style="width:120px;">Mã tham chiếu</th>
+                <th style="width:170px;">Người giao việc / SĐT</th>
+                <th style="width:90px;">Ngày lập</th>
+              </tr>
+              <!-- Dòng filter -->
+              <tr class="filter-row">
+                <th></th>
+                <th><input type="text" class="form-control input-xs" [(ngModel)]="wfFilters.jobId"
+                    (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+                <th><input type="text" class="form-control input-xs" [(ngModel)]="wfFilters.detail"
+                    (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+                <th><input type="text" class="form-control input-xs" [(ngModel)]="wfFilters.jobInfo"
+                    (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+                <th><input type="text" class="form-control input-xs" [(ngModel)]="wfFilters.referCode"
+                    (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+                <th><input type="text" class="form-control input-xs" [(ngModel)]="wfFilters.assigner"
+                    (keyup)="applyColFilters()" placeholder="Lọc..." /></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let g of groups">
+                <tr class="group-row" (click)="toggleGroup(g)">
+                  <td colspan="7">
+                    <i class="fa" [ngClass]="g.isExpanded ? 'fa-caret-down' : 'fa-caret-right'"></i>
+                    <strong>{{ g.key }}</strong>
+                    <span class="text-muted"> ({{ g.items.length }})</span>
+                  </td>
+                </tr>
+                <tr *ngFor="let r of g.items" class="row-pointer" [hidden]="!g.isExpanded" (click)="pick(r)">
+                  <td><span class="badge badge-code">{{ r.workflowId }}</span></td>
+                  <td><strong class="text-primary">{{ r.jobId }}</strong></td>
+                  <td>{{ r.jobDescription }}</td>
+                  <td>{{ r.jobName }}</td>
+                  <td>{{ r.referCode }}</td>
+                  <td>{{ r.assigner }}</td>
+                  <td>{{ r.dateText }}</td>
+                </tr>
+              </ng-container>
+              <tr *ngIf="!loading && groups.length === 0">
+                <td colspan="7" class="text-center text-muted" style="padding:14px;">Không có dữ liệu</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <span class="text-muted pull-left" style="line-height:30px;">{{ totalRows }} dòng — bấm 1 dòng để chọn</span>
+        <button type="button" class="btn btn-default btn-sm" (click)="close()">
+          <i class="fa fa-times"></i> Đóng
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

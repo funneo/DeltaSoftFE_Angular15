@@ -29,6 +29,7 @@ import {
   UtilityService,
 } from '@app/shared/services';
 import { GasSiteService } from '@app/shared/services/gas-site.service';
+import { OtherCategoriesService } from '@app/shared/services/other-categories.service';
 import { IgasService } from '@app/shared/services/igas.service';
 import { SupplierService } from '@app/shared/services/supplier.service';
 import { DriverFuelApprovalService } from '@app/shared/services/transports/driver-fuel-approval.service';
@@ -56,6 +57,7 @@ export class ModalDriverFuelApprovalComponent implements OnInit {
   listGasSite: GasSite[] = [];
   listSupplier: Supplier[] = [];
   listVihicle: Vihicle[] = [];
+  listReason: any[] = [];   // OtherCategories: Type=0 -> FUEL_ADVANCE_REASON, Type=1 -> FUEL_COMMON_TYPE
   driverName: string = '';
   vihicleName: string = '';
   title = '';
@@ -83,8 +85,22 @@ export class ModalDriverFuelApprovalComponent implements OnInit {
     private vihicleService: VihicleService,
     private _utilityService: UtilityService,
     private gasManagementService: GasManagementService,
+    private otherCategoriesService: OtherCategoriesService,
     private _igasService: IgasService
   ) {}
+
+  /** Nạp danh mục lý do theo loại phiếu: Type=0 Tạm ứng (FUEL_ADVANCE_REASON), Type=1 Chung (FUEL_COMMON_TYPE) */
+  loadReason(type: number) {
+    const groupType = type == 0 ? 'FUEL_ADVANCE_REASON' : 'FUEL_COMMON_TYPE';
+    const params = new HttpParams().set('type', groupType);
+    this.otherCategoriesService.getAll(params).subscribe((res: ResponseValue<any[]>) => {
+      if (res.code == '200' || res.code == '201') this.listReason = res.data;
+    });
+  }
+
+  onReasonChange(event: any) {
+    this.entity.reasonName = event ? event.categoryName : null;
+  }
 
   ngOnInit(): void {
     this.userLoged = this._authService.getLoggedInUser();
@@ -205,8 +221,9 @@ export class ModalDriverFuelApprovalComponent implements OnInit {
     this.flagXem = false;
     this.flagSave = false;
     this.modalAddEdit.show();
-    this.title = type == 0 ? 'Phiếu cấp dầu téc xe nhà' : 'Phiếu cấp dầu chung';
+    this.title = type == 0 ? 'Tạm ứng dầu' : 'Phiếu cấp dầu chung';
     this.IsDriverFuelApproval = type == 0;
+    this.loadReason(type);
   }
 
   viewAttachFiles:boolean;
@@ -231,8 +248,9 @@ export class ModalDriverFuelApprovalComponent implements OnInit {
           this.entity = res.data;
           this.title =
             this.entity.type == 0
-              ? 'Phiếu cấp dầu téc xe nhà'
+              ? 'Tạm ứng dầu'
               : 'Phiếu cấp dầu chung';
+          this.loadReason(this.entity.type);
           if (this.entity.supplierId == 0) this.entity.supplierId = null;
           if (this.entity.gasSiteId == 0) this.entity.gasSiteId = null;
           if (this.entity.refuelingTimeIgas) {

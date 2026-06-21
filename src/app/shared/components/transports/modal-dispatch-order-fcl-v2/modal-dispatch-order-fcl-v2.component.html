@@ -242,6 +242,33 @@
                       class="form-control" [disabled]="flagXem" />
                   </div>
                 </div>
+                <!-- Dầu máy phát (2026-06-17) — tách riêng dầu định mức; chốt dầu tính bucket Máy phát -->
+                <div class="form-group" *ngIf="!entity.isSubcontractors">
+                  <label class="col-sm-2 control-label">Dầu máy phát</label>
+                  <div class="col-sm-2">
+                    <input type="number" [(ngModel)]="entity.generatorRunningHours" name="generatorRunningHours"
+                      class="form-control" placeholder="Số giờ chạy" (ngModelChange)="computeGenerator()" [disabled]="flagXem" />
+                  </div>
+                  <label class="col-sm-1 control-label">Nhiệt độ</label>
+                  <div class="col-sm-1">
+                    <input type="number" [(ngModel)]="entity.generatorTemperature" name="generatorTemperature"
+                      class="form-control" placeholder="°C" [disabled]="flagXem" />
+                  </div>
+                  <label class="col-sm-2 control-label">Định mức (lít/giờ)</label>
+                  <div class="col-sm-1">
+                    <input type="number" [(ngModel)]="entity.generatorFuelNorm" name="generatorFuelNorm"
+                      class="form-control" (ngModelChange)="computeGenerator()" [disabled]="flagXem" />
+                  </div>
+                  <label class="col-sm-1 control-label">Dầu MP</label>
+                  <div class="col-sm-1">
+                    <span class="form-control text-right">{{entity.generatorFuelAmount | number:'1.2-2'}}</span>
+                  </div>
+                  <div class="col-sm-1">
+                    <button type="button" class="btn btn-info btn-sm" *ngIf="!flagXem"
+                      [disabled]="!entity.refNo" title="Lưu lệnh trước rồi mới lưu được dầu máy phát"
+                      (click)="saveGenerator()"><i class="fa fa-save"></i> Lưu</button>
+                  </div>
+                </div>
                 <!-- <div class="form-group">
                   <label class="col-sm-2 control-label">Mã tham chiếu</label>
                   <div class="col-sm-4">
@@ -658,7 +685,7 @@
                         </span>
                       </td>
                       <td class="loc-td-addr">
-                        {{ loc.address }}
+                        {{ locationLabel(loc) }}
                         <span *ngIf="!hasGeoCoord(loc)" class="loc-no-coord" title="Chưa có tọa độ GPS">
                           <i class="fa fa-map-marker" style="color:#ccc;"></i>
                         </span>
@@ -676,7 +703,7 @@
               <div class="loc-table-action">
                 <span class="text-muted small" *ngIf="selectedCustomLocation">
                   <i class="fa fa-check-circle text-success"></i>
-                  Đã chọn: <strong>{{ selectedCustomLocation.address }}</strong>
+                  Đã chọn: <strong>{{ locationLabel(selectedCustomLocation) }}</strong>
                 </span>
                 <span class="text-muted small" *ngIf="!selectedCustomLocation">Bấm vào hàng để chọn điểm</span>
                 <button type="button" class="btn btn-sm btn-primary ml-auto"

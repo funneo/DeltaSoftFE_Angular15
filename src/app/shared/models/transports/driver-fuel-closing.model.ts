@@ -1,11 +1,13 @@
 export interface DriverFuelClosingDetail {
     id?: number;
     driverFuelClosingId?: number;
-    source?: number; // 1=Approval, 2=DispatchOrder, 3=FCL, 4=AdditionalFee
+    source?: number; // 1=Tạm ứng, 2=DispatchOrder, 3=FCL định mức, 4=Phát sinh, 5=FCL máy phát
+    bucket?: number; // 1=Vận hành, 2=Máy phát
     refNo?: string;
     mergeJobId?: string;
     driverName?: string;
     vihicleLicensePlates?: string;
+    reasonName?: string;
     startVehicleOdor?: number;
     finishVehicleOdor?: number;
     date?: string;
@@ -34,10 +36,17 @@ export interface DriverFuelClosing {
 
     oilPrice?: number;
 
-    approvalDiffQty?: number;
-    dispatchOrderQty?: number;
-    additionalFeeQty?: number;
-    topUpLiters?: number;
+    // Bucket VẬN HÀNH
+    supplyOperQty?: number;
+    demandOperQty?: number;
+    netOperLiters?: number;
+    netOperAmount?: number;
+
+    // Bucket MÁY PHÁT
+    supplyGenQty?: number;
+    demandGenQty?: number;
+    netGenLiters?: number;
+    netGenAmount?: number;
 
     netLiters?: number;
     netAmount?: number;

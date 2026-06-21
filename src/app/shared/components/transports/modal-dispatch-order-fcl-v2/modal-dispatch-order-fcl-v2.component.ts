@@ -325,7 +325,8 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     let list = this.listAllLocations;
     const addr = this.locFilter.address.trim().toLowerCase();
     const type = this.locFilter.type.trim();
-    if (addr) list = list.filter(l => l.address?.toLowerCase().includes(addr));
+    if (addr) list = list.filter(l => l.address?.toLowerCase().includes(addr)
+      || l.name?.toLowerCase().includes(addr));
     if (type) list = list.filter(l => l.locationType?.toString() === type);
     list = [...list].sort((a, b) => {
       const va = this.locSortCol === 'locationType' ? (a.locationType || 0) : (a.address || '');
@@ -1130,6 +1131,35 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       });
   }
   totalOil: number = 0;
+  // ===== Dầu MÁY PHÁT (2026-06-17) — tách riêng với dầu định mức (tongdau) =====
+  // Dầu máy phát = số giờ × định mức (lít/giờ); chi phí = dầu × giá. Lưu qua SP riêng (cần có refNo).
+  computeGenerator() {
+    const hours = Number(this.entity.generatorRunningHours) || 0;
+    const norm = Number(this.entity.generatorFuelNorm) || 0;
+    const price = Number(this.entity.oilPrice) || 0;
+    this.entity.generatorFuelAmount = this._utilityService.round2(hours * norm);
+    this.entity.generatorFuelCost = Math.round((this.entity.generatorFuelAmount || 0) * price);
+  }
+
+  saveGenerator() {
+    if (!this.entity.refNo) {
+      this.notificationService.printErrorMessage('Vui lòng lưu lệnh trước khi nhập dầu máy phát.');
+      return;
+    }
+    this.computeGenerator();
+    this.dispatchOrderService.updateGenerator(this.entity).subscribe((res: any) => {
+      if (res.code == '200' || res.code == '201') {
+        if (res.data) {
+          this.entity.generatorFuelAmount = res.data.generatorFuelAmount;
+          this.entity.generatorFuelCost = res.data.generatorFuelCost;
+        }
+        this.notificationService.printSuccessMessage('Đã lưu dầu máy phát.');
+      } else {
+        this.notificationService.printErrorMessage(res.message ?? 'Lưu dầu máy phát thất bại.');
+      }
+    });
+  }
+
   calulateOil() {
     // Calculate total fuel for round-trip operations
     this.entity.tongdauLuotDi = this._utilityService.round2(
@@ -2146,6 +2176,11 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   locationTypeName(type: number): string {
     return type === 2 ? 'Cảng/Bãi' : 'Nhà máy';
   }
+  /** Nhãn điểm: cảng/bãi có tên → "Tên - Địa chỉ"; nhà máy (không tên) → "Địa chỉ". */
+  locationLabel(loc: UnifiedLocation): string {
+    const name = (loc?.name || '').trim();
+    return name ? `${name} - ${loc.address || ''}` : (loc?.address || '');
+  }
 
   toggleAddCustomPoint() {
     this.showAddCustomPoint = !this.showAddCustomPoint;
@@ -2172,7 +2207,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     this.locations.push({
       locationId: loc.id,
       locationType: loc.locationType,
-      locationName: loc.address,
+      locationName: this.locationLabel(loc),
       lat: loc.latitude,
       lng: loc.longtitude,
       type: 'delivery'
@@ -2574,6 +2609,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       locations: this.listAllLocations,
       vehicleBotTypeId: this._vehicleBotTypeId,
       listOilQuota: this.listOilQuota,        // định mức dầu theo tải trọng của xe trên lệnh
+      vehicleId: this.entity.vehicleId,       // fallback tự nạp nếu listOilQuota rỗng
       shortWay: this.entity.shortWay          // cung đường ngắn → dùng shortWayValue
     });
   }

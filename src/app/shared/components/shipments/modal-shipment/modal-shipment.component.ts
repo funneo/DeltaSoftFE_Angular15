@@ -432,9 +432,60 @@ export class ModalShipmentComponent implements OnInit {
     return m.format(withTime ? FormatContstants.DATETIMEVN : FormatContstants.DATEVN);
   }
 
-  /** Nút "Duyệt" — Phase 4 (promote). Hiện disabled, chưa wire; mở khi AI đủ chính xác. */
+  /**
+   * Nút "Duyệt" — Phase 4 (promote): biến nháp thành Lô hàng THẬT.
+   * Dựng lại entity y như saveChange (entity đã map sẵn ở viewDraft) rồi gọi
+   * addFromDraft — BE tạo job + ghi ngược draft (shipmentId/jobId). Reload list.
+   */
   approveDraft() {
-    // TODO Phase 4: this.ApproveDraft.emit(this._draftId);
+    if (this.flagSave) return;
+    if (!this.entity?.customerId) {
+      this._notificationService.printAlert(MessageContstants.TITLE_ERROR_INFO,
+        'Nháp thiếu khách hàng — không thể duyệt.');
+      return;
+    }
+    this._notificationService.printConfirmationDialog(
+      'Duyệt nháp này thành Lô hàng thật?', () => this._doApproveDraft());
+  }
+
+  private _doApproveDraft() {
+    // Dựng entity giống saveChange (KHÔNG đụng saveChange để tránh ảnh hưởng luồng thật)
+    this.entity.shipmentBranches = [];
+    this.listChinhanhthamgia?.forEach(x => this.entity.shipmentBranches.push({ branchId: x }));
+    if (this._cdsDate)
+      this.entity.cdsDate = moment(this._cdsDate, FormatContstants.DATEVN).format(FormatContstants.CLIENTDATE);
+    if (this._jobDate)
+      this.entity.jobDate = moment(this._jobDate, FormatContstants.DATEVN).format(FormatContstants.CLIENTDATE);
+    if (this._ngayCutOff)
+      this.entity.cutoffTime = moment(this._ngayCutOff, FormatContstants.DATETIMEVN).format('YYYYMMDD HH:mm:ss');
+    if (this._ngayLayHang)
+      this.entity.pickupTime = moment(this._ngayLayHang, FormatContstants.DATETIMEVN).format('YYYYMMDD HH:mm:ss');
+    if (this._ngayGiaoHang)
+      this.entity.deliveryTime = moment(this._ngayGiaoHang, FormatContstants.DATETIMEVN).format('YYYYMMDD HH:mm:ss');
+    if (this._ngayTraRong)
+      this.entity.emptyContDeadline = moment(this._ngayTraRong, FormatContstants.DATETIMEVN).format('YYYYMMDD HH:mm:ss');
+    if (this._typePrice == 0) this.entity.quotationId = null; else this.entity.contractId = null;
+    this.entity.shipmentContSeals = this.listConts?.filter(_ => _.contType != null && _.contType != '');
+    this.entity.shipmentPackages = this.listPakages?.filter(_ => _.packageCode != null && _.packageCode != '');
+    this.entity.shipmentServiceDetails = this.listDichVuSoHoa?.filter(z => z.serviceId);
+    this.entity.id = undefined;        // ép tạo mới
+    this.entity.jobStaff = this.userName;
+
+    this.flagSave = true;
+    this.shipmentService.addFromDraft(this.entity, this._draftId).subscribe((res: ResponseValue<any>) => {
+      if (res.code == '200' || res.code == '201') {
+        const jobId = res.data?.jobId;
+        this._notificationService.printSuccessMessage(
+          res.data?.alreadyPromoted
+            ? ('Nháp đã được duyệt trước đó (Job ' + (jobId || '') + ')')
+            : ('Đã duyệt thành Lô hàng ' + (jobId || '')));
+        this.modalAddEdit.hide();
+        this.ApproveDraft.emit(this._draftId);
+      } else {
+        this._notificationService.printErrorMessage(res.message || MessageContstants.CREATED_ERR_MSG);
+        this.flagSave = false;
+      }
+    }, () => { this.flagSave = false; });
   }
 
   saveChange(form: NgForm) {

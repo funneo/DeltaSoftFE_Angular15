@@ -41,6 +41,11 @@ export interface PendingInvoice {
   groupFeeName?: string;          // snapshot tên nhóm phí
   subFeeCode?: string;            // phân nhóm cấp 2 (FeeCode Lvl2) — lưu code
   subFeeName?: string;            // snapshot tên phân nhóm cấp 2
+  jobId?: string;                 // gán cả lô cho Lô hàng/Công việc (JobId)
+  shipmentId?: number;            // ShipmentId tương ứng
+  workflowId?: number;            // WorkflowId (chỉ khi gán theo Công việc)
+  assignCustomerCode?: string;    // mã KH của Lô/CV đã gán (JOIN từ SP GetPaging)
+  assignCustomerName?: string;    // tên KH của Lô/CV đã gán
   usedByPaymentId?: number;       // !=null => đã dùng cho 1 Payment (ẩn khỏi tab Chờ TT)
   status?: number;
   createdBy?: string;
@@ -111,6 +116,9 @@ export interface CreateBatchRequest {
   groupFeeName?: string;
   subFeeCode?: string;         // phân nhóm cấp 2 áp cho cả batch
   subFeeName?: string;
+  jobId?: string;              // gán cả lô cho Lô hàng/Công việc
+  shipmentId?: number;
+  workflowId?: number;
   items: PendingInvoiceCreateItem[];
 }
 

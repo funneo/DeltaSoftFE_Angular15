@@ -147,6 +147,7 @@ export class ShipmentNormalComponent implements OnInit {
       keyword: this.keyword,
       fromDate: moment(this.ngayBatDau).format('YYYY-MM-DD'),
       toDate: moment(this.ngayKetThuc).format('YYYY-MM-DD'),
+      branchId: this._branchId || null, // lọc nháp theo chi nhánh của user (NULL=tất cả)
       pageIndex: 1,
       pageSize: 99999,
     };
@@ -383,6 +384,12 @@ export class ShipmentNormalComponent implements OnInit {
     setTimeout(() => {
       this.modalAddEdit.viewDraft(item._draftPayload, item._draftId);
     }, 50);
+  }
+
+  // Duyệt nháp thành Lô hàng thật xong → reload (dòng nháp biến mất, job thật hiện lên).
+  onApproveDraft(_draftId: number) {
+    this.viewModal = false;
+    this.loadData();
   }
 
   copyJobConfirm(item: Shipment): void {

@@ -1,5 +1,60 @@
 # Pending / In-Progress Work
 
+## ▶ PendingInvoice (F043) — REVISION list Hóa đơn AI: bỏ nhóm cấp 2 + filter cột + cột JobId/KH + sort lại dropdown — FE build 0 lỗi, chờ chạy 1 SQL + deploy + test (2026-06-21)
+FE đổi (build sạch): list `pending-invoice` group **chỉ Cấp 1** (bỏ tầng Cấp 2 "Chưa phân nhóm cấp 2"); thêm **hàng filter từng cột** (File/NCC/MST/Số HĐ/Mẫu/Mã tra cứu/JobId/KH/Người upload, client-side); thêm **2 cột** Lô/Công việc (JobId, badge tím) + Khách hàng (mã-tên). Modal "Đọc hóa đơn AI" sort dropdown Cấp 1 lại theo Phụ lục: **trả hộ → hàng bán → quản lý chung → đầu tư → khác** (`sortLvl1Priority`). BE: `PendingInvoiceViewModel` +`AssignCustomerCode/AssignCustomerName`.
+
+**Modal "Đọc hóa đơn AI" cũng đổi (build 0 lỗi):**
+- Layout: row-gap nhỏ lại (bớt khoảng trống nhóm↔Job); hàng **Công việc + Job chia đôi** (`gf-assign-row`/`gf-col` 50%). Gán theo **Công việc** → hiện Công việc TRƯỚC rồi Job; gán theo **Lô hàng** → ẩn ô Công việc, chỉ còn Job.
+- **Điều kiện bắt buộc gán Lô/CV** (thay vì luôn bắt buộc): nhóm **trả hộ**, HOẶC nhóm **hàng bán (02) + chọn "Chi phí trả hộ xuất lại hóa đơn cho khách"**. Nhóm khác → KHÔNG bắt buộc.
+- Nhóm **hàng bán (02)** hiện thêm radio **Loại chi phí hàng bán**: `reinvoice` (trả hộ xuất lại HĐ cho khách) | `other` (hàng bán khác). Bắt buộc chọn 1 trước upload. Snapshot nhãn lưu vào `subFeeName` (subFeeCode vẫn NULL) để truy vết — **chưa có cột riêng**; nếu cần lưu mã/cột riêng + báo cáo theo loại này thì báo để thêm SQL.
+
+**Anh cần:**
+1. ⬜ Chạy `NewAPI/Migration_PendingInvoice_GetPaging_CustomerJoin_20260621.sql` — `CREATE OR ALTER SP_PendingInvoice_GetPaging` LEFT JOIN `ShipmentId→Shipment→Customer`, trả thêm `AssignCustomerCode/AssignCustomerName`. Logic filter/paging giữ NGUYÊN.
+2. ⬜ Stop IIS Express → deploy API mới (ViewModel +2 prop) + `ng build` FE (đã build 0 lỗi).
+3. ⬜ **Test E2E:** list chỉ còn group Cấp 1; gõ filter từng cột lọc đúng; cột JobId hiện badge + cột KH hiện "mã - tên" của Lô/CV đã gán; modal dropdown đúng thứ tự trả hộ→hàng bán→quản lý chung→đầu tư→khác; chọn nhóm trả hộ bắt buộc Lô/CV; nhóm 02 hiện 2 lựa chọn + chỉ `reinvoice` mới bắt buộc Job.
+
+## ▶ PendingInvoice (F043) modal đọc HĐ — gán Lô/Công việc + picker SP mới — FE+BE build 0 lỗi, ĐÃ chạy SQL, chờ deploy + test (2026-06-19)
+Chi tiết: done.md + plan `rustling-exploring-wilkes.md`. Quyết định chốt: Công việc = Workflow (PCCV); gán cấp **batch**, chỉ lưu PendingInvoice (không sang Payment); không chặn quyền.
+
+**Anh cần (theo thứ tự):**
+1. ✅ ĐÃ CHẠY (2026-06-21) `NewAPI/Migration_PendingInvoice_JobShipment_20260619.sql` — ALTER `Tbl_PendingInvoice` +`JobId/ShipmentId/WorkflowId`; DROP+CREATE `SP_PendingInvoice_Create` (tái tạo y thân bản SubFee 06-15 + 3 param mới).
+2. ✅ ĐÃ CHẠY (2026-06-21) `NewAPI/Migration_Workflow_GetForPicker_20260619.sql` — `SP_Workflow_GetForPicker` MỚI (KHÔNG đụng GetPagingByOp/ByCs_New). Lọc `JobAssignedUserId=@UserId` + `Shipment.IsFinish=0`.
+3. ⬜ Stop IIS Express → deploy API mới + `ng build` FE.
+4. ⬜ **Test E2E:**
+   - Radio **Gán cho**: chọn **Lô hàng** → nút 🔍 ở ô Job; chọn **Công việc** → ô Job **disable + ẩn 🔍**, hiện ô **Công việc + 🔍**; Job/Công việc xuống hàng riêng.
+   - Picker Công việc: chỉ hiện CV **mình được giao thực hiện** + lô **chưa khóa**; bảng 7 cột + dòng filter cột; nhóm theo KH; chọn 1 → fill jobId/shipmentId/workflowId.
+   - Chưa chọn đối tượng → **không cho upload**; chọn xong + showReview tắt → auto-save. Kiểm DB `Tbl_PendingInvoice`: bản ghi mới có `JobId`+`ShipmentId` (+`WorkflowId` khi gán CV); `SubFeeCode`=NULL.
+
+**⚠️ Còn để ngỏ:** picker Công việc scope `JobAssignedUserId=@UserId` (chỉ CV người đăng nhập **thực hiện**). Nếu kế toán cần thấy CV của cả phòng/nhóm hoặc lô đã hoàn thành → báo để nới điều kiện trong `SP_Workflow_GetForPicker`.
+
+## ✅ Draft — Lọc chi nhánh (ERP) + Site nháp hiện JobId/ShipmentId sau promote — XONG, ĐÃ DEPLOY (2026-06-19)
+SQL chạy + verify DB; 4 build sạch; user đã build + deploy. Chi tiết: done.md section đầu.
+- YC1 (draft-web hiện JobId/shipmentId): SQL `DraftAPI/Migration_DraftSite_ShowPromotedRef_20260618.sql` + DraftAPI model + draft-web `shipment-list`/`canon-job-list`.
+- YC2 (lọc chi nhánh, mọi user kể cả admin): SQL `NewAPI/Migration_DraftErp_BranchFilter_20260618.sql` + ERP BE (model→interface→repo→controller) + ERP FE (`draft.service` + 2 list truyền `branchId`).
+- **Đã chốt** câu hỏi "list nháp biến mất": KHÔNG phải bug (dải ngày 7 ngày + quyền xem theo NV `targetEmployeeId`); nay bồi thêm filter chi nhánh.
+
+## ▶ FCL cung đường phát sinh — fix nhỏ FE (2026-06-18)
+Chi tiết: done.md. Tất cả thay đổi FE (build 0 lỗi); chỉ phần nhãn điểm cần 1 SQL.
+
+**Anh cần:**
+1. ⬜ `ng build` + deploy FE → mở modal **Thêm cung đường phát sinh** ở lệnh FCL: kiểm field **Tải trọng** đã hiện + có dữ liệu (hoặc báo đỏ nếu xe chưa cấu hình định mức); modal rộng 860px đọc địa chỉ rõ.
+2. ✅ ĐÃ CHẠY (2026-06-21) `Migration_GetAllLocations_AddName_20260618.sql` (+cột Name cho `SP_GetAllLocations`) → picker điểm hiện **"Tên - Địa chỉ"** cho cảng/bãi.
+
+## ▶ Dầu — Reason + Dầu máy phát FCL + Chốt dầu 2-bucket — BE+FE XONG (build 0 lỗi), chờ chạy 2 SQL + deploy + test E2E (2026-06-17)
+Chi tiết thiết kế + thay đổi: done.md section đầu + memory `project_fuel_redesign_reason_generator`.
+
+**Anh cần (theo thứ tự):**
+1. ✅ ĐÃ CHẠY (2026-06-19) `Migration_DriverFuelApproval_Reason_SPs_20260617.sql` — verify cả `SP_DriverFuelApproval_Create` + `_Update` đã có `@ReasonId`/`@ReasonName`. Lỗi "too many arguments" đã hết.
+2. ✅ ĐÃ CHẠY (2026-06-21) `Migration_FCL_GeneratorFuel_20260617.sql` (đã thêm `SP_DispatchOrderFCL_GetGenerator`; idempotent — ADD cột đã có sẽ skip).
+3. ⬜ Deploy API mới + `ng build` FE (Stop IIS Express trước khi build BE vì lock Common.dll).
+4. ⬜ **Test E2E:**
+   - Phiếu **Tạm ứng dầu** (Type=0): nhãn đổi đúng, dropdown **Lý do** (FA01–04) bắt buộc, lưu/đọc lại đúng. Phiếu **Cấp dầu chung** (Type=1): dropdown **Loại hình** (FC01–03).
+   - Lệnh **FCL**: khối Dầu máy phát — nhập giờ/nhiệt độ/định mức → "Dầu MP" tự tính; bấm **Lưu** (sau khi lệnh đã có refNo) → đọc lại lệnh thấy số liệu; tổng dầu lệnh = định mức + máy phát.
+   - **Chốt dầu**: tải candidate → thấy phiếu tạm ứng (source 1, cột Lý do) + lệnh định mức (source 2/3) + máy phát (source 5); bảng tổng **2 bucket** Vận hành/Máy phát + dòng TỔNG; net **có dấu** (đỏ trừ lương / xanh trả tiền). Đối chiếu FA02 → vào bucket Máy phát.
+   - **Lưu ý khi test**: 2 dòng định mức (source 3) + máy phát (source 5) của **cùng 1 lệnh FCL** nên tick/bỏ cùng nhau (duyệt set FCL.IsSummarized khi có source 3 HOẶC 5).
+
+**Còn để ngỏ (nếu test phát sinh):** ràng buộc UI ép source 3+5 cùng lệnh đi đôi; báo cáo phân tách dầu máy phát; mẫu in phiếu Tạm ứng có lý do.
+
 ## ▶ HR — Hợp đồng lao động & Hồ sơ NV (F045, Mức B) — SQL design XONG, chờ chạy SQL + mẫu Word → BE/FE (2026-06-16)
 Thay Excel "Danh sách theo dõi HĐLĐ" bằng module trong ERP: theo dõi vòng đời HĐ + **in HĐLĐ ra Word (tải hàng loạt, KHÔNG lưu file)**. Quyết định: **Mức B** = tái dùng tối đa schema HR có sẵn (EmployeeContract/EmployeeSalary/EmployeeAllowance/EmployeeDegree/EmployeeFamily/EmployeeFile), không tạo bảng mới. Lương in từ `EmployeeSalary` IsActived=1 (cơ chế phụ lục khi tăng lương). Chức năng chi tiết: [hr-nhan-su-chuc-nang.md](hr-nhan-su-chuc-nang.md).
 
@@ -13,8 +68,8 @@ Thay Excel "Danh sách theo dõi HĐLĐ" bằng module trong ERP: theo dõi vòn
 - Bộ phận/Chức danh đã sẵn dropdown (`DEPT`/`TITLES`). Bằng cấp + Người phụ thuộc: SP để bước B6.
 
 **Anh cần (trước khi em code BE/FE):**
-1. ⬜ Chạy `Migration_HR_LaborContract_DDL_20260616.sql` (ALTER Employee +12 cột gồm **PersonalEmail/WorkLocationId**, ALTER EmployeeContract +9 cột gồm **EmployeeId** + index, seed CONTRACT_TYPE + EMPLOYEE_STATUS + WORK_LOCATION).
-2. ⬜ Chạy `Migration_HR_LaborContract_SPs_20260616.sql` (14 SP: EmployeeSalary ×5; EmployeeContract ×9 gồm **GetNextNumber** + Create/Update/SetActive/Delete(soft)/GetById/GetByEmployee/**GetPaging**/**GetForPrint**).
+1. ✅ ĐÃ CHẠY (2026-06-21) `Migration_HR_LaborContract_DDL_20260616.sql` (ALTER Employee +12 cột gồm **PersonalEmail/WorkLocationId**, ALTER EmployeeContract +9 cột gồm **EmployeeId** + index, seed CONTRACT_TYPE + EMPLOYEE_STATUS + WORK_LOCATION).
+2. ✅ ĐÃ CHẠY (2026-06-21) `Migration_HR_LaborContract_SPs_20260616.sql` (14 SP: EmployeeSalary ×5; EmployeeContract ×9 gồm **GetNextNumber** + Create/Update/SetActive/Delete(soft)/GetById/GetByEmployee/**GetPaging**/**GetForPrint**).
 3. ✅ Có **3 mẫu Word** ở `NewAPI/`: `Hợp đồng thử việc_xxx.docx`, `HĐLĐ xác định thời hạn.docx`, `HĐLĐ không xác định thời hạn.docx` → em wire placeholder ở bước B3 (chọn lib Word sẽ hỏi anh).
 
 **✅ ĐÃ LÀM (2026-06-16) — Hồ sơ NV (Tab 1) BE+FE build 0 lỗi, chờ deploy + test:**
@@ -24,7 +79,7 @@ Thay Excel "Danh sách theo dõi HĐLĐ" bằng module trong ERP: theo dõi vòn
 - **Anh cần**: deploy API mới + `ng build` → vào Danh mục Nhân viên → chọn 1 NV → **Hồ sơ HR** (hoặc test tạo mới qua nút này nếu muốn) → kiểm tra Tab 1 lưu/đọc đủ field mới (email cá nhân, địa điểm LV, trạng thái, liên hệ khẩn cấp, BHXH/BHYT). *(Nút "Hồ sơ HR" hiện mở chế độ sửa NV đang chọn; muốn tạo mới HR thì bấm khi không chọn dòng — em có thể tách nút Thêm HR riêng nếu anh cần.)*
 
 **✅ ĐÃ LÀM (2026-06-16, cụm 2) — F045 + F046 đầy đủ, BE+FE build 0 lỗi:**
-- **SQL grant** `Migration_HR_F045_F046_Grant_20260616.sql` (⬜ anh CHẠY): Functions F045 (`/main/hrm/employee-hr`) + F046 (`/main/hrm/labor-contract`) nhóm HRM, **CHỈ VIEW** + Permissions Admin VIEW. (Thao tác CUD vẫn gate EMPLOYEE.)
+- **SQL grant** `Migration_HR_F045_F046_Grant_20260616.sql` (✅ ĐÃ CHẠY 2026-06-21): Functions F045 (`/main/hrm/employee-hr`) + F046 (`/main/hrm/labor-contract`) nhóm HRM, **CHỈ VIEW** + Permissions Admin VIEW. (Thao tác CUD vẫn gate EMPLOYEE.)
 - **BE EmployeeContract + EmployeeSalary** (build 0 lỗi): Model + ViewModel (DaysToExpire/IsExpiringSoon/TrackingStatus + ContractNumberSuggestion) + Interface + Repository (map 9 SP Contract gồm GetNextNumber, 5 SP Salary; output param; parse ngày dd/MM/yyyy) + Controller (`/api/employeecontract/*`, `/api/employeesalary/*`, gate EMPLOYEE). Scrutor auto-DI.
 - **FE**: model `employee-contract.model` + service `employee-contract.service` / `employee-salary.service`.
 - **modal-employee-hr Tab 2 (Hợp đồng) + Tab 3 (Lương)** giờ FUNCTIONAL: bảng lịch sử + thêm/sửa/đặt hiện hành/xóa; **Thêm HĐ → chọn loại → tự sinh số `001/HN/HĐ TV 2026` + prefill ngày theo chuỗi** (TV today/+2th−1d; XĐ end trước+1/+12th−1d; KXĐ end+1 không hạn); tô đỏ HĐ ≤10 ngày. Tab 3 mốc lương (thêm mốc tự tắt mốc cũ).
@@ -52,16 +107,23 @@ Thay Excel "Danh sách theo dõi HĐLĐ" bằng module trong ERP: theo dõi vòn
 ## ▶ Bảng công văn phòng (F044) — chờ grant SQL + deploy + test E2E (2026-06-14, SQL chính đã chạy, BE+FE build 0 err, ✅ ĐÃ COMMIT — layout box chuẩn HRM + box chạm đáy)
 Module tổng hợp công tháng + tiền phạt NV văn phòng (xem done.md). **Anh cần:**
 1. ✅ Chạy `Migration_OfficeAttendance_20260614.sql` (XONG).
-2. ⬜ Chạy `Migration_OfficeAttendance_Grant_20260614.sql` (Functions F044 + quyền Admin → hiện menu).
+2. ✅ ĐÃ CHẠY (2026-06-21) `Migration_OfficeAttendance_Grant_20260614.sql` (Functions F044 + quyền Admin → hiện menu).
 3. ⬜ Deploy API mới + `ng build` FE.
 4. ⬜ Test E2E: relogin → Nhân sự → **Bảng công văn phòng** → **Cấu hình** (nhập ngày lễ + số dư phép/online đầu kỳ nếu cần) → **Import chấm công** (chọn file HN_T4/VT_T4, chọn dòng bắt đầu, import, map tên chưa khớp) → **Tính** → đối chiếu bảng với file tay chị Huệ → **Xuất Excel**.
 
 **Còn để dành (đã chốt hoãn):** quy tắc giải trình ≤5 lần/lần 6+ =30k (cột PenaltyExplain/ExplainCount đã có, chưa tính); phụ cấp giờ đặc biệt (IT phía Nam +60', nữ nuôi con nhỏ +60'); đẩy tiền phạt sang module lương VP. Điểm cần soi khi test: bậc phạt về sớm T7 (so mốc 10:00), nửa ngày phép+công, match tên trùng.
 
+## ▶ PendingInvoice (F043) modal đọc HĐ — bỏ Cấp 2 + sort Cấp 1 + gán Lô hàng/Công việc (2026-06-19, FE build 0 err, BE compile OK; chờ chạy 1 SQL + deploy + test)
+Modal đọc hóa đơn AI: (1) **ẩn dropdown Cấp 2** (chỉ giữ Cấp 1, gửi SubFee=null); (2) **sort Cấp 1**: tên chứa "bán hàng"→đầu, "trả hộ"→2, còn lại giữ nguyên; (3) **Gán cả lô cho Lô hàng / Công việc**: radio "Gán cho" + picker mới `modal-pick-job` (mode job=ShipmentService.getPagingNormal lọc !isFinish; mode workflow=Workflow/getpaging2 lọc !jobLocked; nhóm theo KH + search KH + date range). Lưu `JobId/ShipmentId/WorkflowId` vào `Tbl_PendingInvoice` (KHÔNG đụng Payment). **Anh cần:**
+1. ✅ ĐÃ CHẠY (2026-06-21) `Migration_PendingInvoice_JobShipment_20260619.sql` (ALTER +JobId/ShipmentId/WorkflowId; DROP+CREATE SP_PendingInvoice_Create thêm 3 param).
+2. ⬜ **Deploy API + `ng build` FE** (Stop IIS Express trước khi build BE vì lock Common.dll — build verify đã dính đúng lock này, compile sạch).
+3. ⬜ **Test E2E:** modal chỉ còn 1 dropdown Cấp 1 (thứ tự bán hàng→trả hộ→còn lại); chọn "Lô hàng"→🔍 list job nhóm theo KH, search KH+thời gian, KHÔNG hiện job khóa; "Công việc"→🔍 list workflow → ô Job suy ra read-only; chưa chọn đối tượng = không cho upload; lưu xong DB `Tbl_PendingInvoice` có JobId+ShipmentId(+WorkflowId), SubFeeCode=NULL.
+   - ⚠️ **Cần soi khi test**: workflow picker đang scope theo **userid người đăng nhập + isFinish=0** (giống màn "công việc được giao"). Nếu kế toán cần thấy công việc của người khác / đã hoàn thành → báo tôi nới (bỏ userid hoặc bỏ filter isFinish).
+
 ## ▶ PendingInvoice/Payment (F043) phân loại phí 2 CẤP — chờ chạy 2 SQL còn lại + deploy + test E2E (2026-06-15, BE+FE build 0 err; xem done.md)
 Nâng từ 1 cấp (GroupFeeCode) lên 2 cấp (Lv1→Lv2) + cờ IsInvoiceInput + list group lồng 2 cấp + payment 2 dòng nhóm phí dưới Số tạm ứng + scroll ngang cố định đáy. **Anh cần:**
 1. ✅ Đã chạy 3 SQL: `Migration_FeeCodes_2Level_Invoice_20260615.sql` + `Migration_PendingInvoice_SubFee_20260615.sql` + `Migration_Payments_SubFee_20260615.sql`.
-2. ⬜ **Chạy nốt 2 SQL**:
+2. ✅ ĐÃ CHẠY (2026-06-21) **2 SQL**:
    - `Migration_FeeCodes_CreateUpdate_IsInvoiceInput_20260615.sql` (ALTER SP_FeeCodes_Create/Update +@IsInvoiceInput → cho chỉnh cờ tay trong Danh mục phí).
    - `Migration_PendingInvoice_SeedSubFee_DEV_20260615.sql` (CHỈ DB test — giả lập SubFeeCode cho HĐ nháp cũ để xem list group 2 cấp).
 3. ⬜ **Deploy API mới + `ng build` FE** (BE giờ truyền @IsInvoiceInput/@SubFeeCode; cần Stop IIS Express trước khi build vì lock Common.dll).
@@ -142,7 +204,7 @@ Mỗi list cần:
   - List `shipment-normal`: badge nháp thêm `(click)="showDraft(item)"` → `modalAddEdit.viewDraft(item._draftPayload, item._draftId)`.
 - ✅ **Lô hàng Canon — XONG (2026-06-11)**: áp y hệt pattern trên vào `modal-job-canon` (thêm `_isDraftView`/`_draftId`/`viewDraft()`/`_draftDate()`/`approveDraft()` + reset ở add/edit; HTML nền vàng + badge + nút Duyệt; CSS `.draft-view`; list `job-canon` badge `(click)="showDraft(item)"`).
 - 🟡 **3 list còn lại** (Payment / Workflow / Debit): áp cùng pattern — reuse modal gốc tương ứng thêm `viewDraft()`.
-- **▶ Phase 4 Promote**: nút "Duyệt" hiện chỉ toast; khi AI đủ chính xác → wire `ApproveDraft` → controller promote (bê Payload→Tbl_* thật, parse `targetEmployeeId`, `jobDate/refDate` từ `createdAt`).
+- **✅ Phase 4 Promote — Lô hàng + Canon XONG (2026-06-18)**: nút "Duyệt" → `addFromDraft` (endpoint BE mới tách khỏi Create) → tạo job thật + ghi ngược draft (Status='Promoted', PromotedRefNo=JobId, PromotedShipmentId=Id), idempotent chống tạo trùng. Build 0 lỗi, chờ chạy `Migration_DraftSite_PromoteShipment_20260618.sql` + deploy + test E2E. Chi tiết: done.md section đầu. **Còn lại**: promote cho Payment/Workflow/Debit (clone pattern khi 3 list đó có view draft).
 
 ### Phase 4 — Promote (sau khi view xong)
 ERP cần màn "Duyệt nháp" để bê record `draft.DraftEntries.Payload` → `Tbl_*` thật. Controller promote phải:
