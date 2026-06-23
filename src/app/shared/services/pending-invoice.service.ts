@@ -165,6 +165,13 @@ export class PendingInvoiceService extends BaseService {
       catchError(this.handleError));
   }
 
+  /** Người tạo sửa tay thông tin hóa đơn đã đọc (chỉ khi Status=0). */
+  update(entity: PendingInvoice) {
+    return this.http.post(`${environment.apiUrl}/api/pendingInvoice/updateInvoice`, this.wrap(entity)).pipe(
+      map((r: any) => { if (r.code == '401') this.authService.logout(); else return r; }),
+      catchError(this.handleError));
+  }
+
   delete(id: number) {
     return this.http.post(`${environment.apiUrl}/api/pendingInvoice/delete`, this.wrap({ id })).pipe(
       map((r: any) => { if (r.code == '401') this.authService.logout(); else return r; }),

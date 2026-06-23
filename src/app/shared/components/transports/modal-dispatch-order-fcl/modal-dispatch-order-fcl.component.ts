@@ -1016,6 +1016,40 @@ export class ModalDispatchOrderFclComponent implements OnInit {
       (Number(this.entity.kmTrungchuyenNhamayVe) || 0);
   }
 
+  // ===== Dầu MÁY PHÁT (2026-06-23) — bổ sung cho lệnh FCL CŨ (dùng song song FCL mới) =====
+  // Dầu máy phát = số giờ × định mức (lít/giờ); chi phí = dầu × giá. Lưu qua SP riêng (cần có refNo).
+  computeGenerator() {
+    const hours = Number(this.entity.generatorRunningHours) || 0;
+    const norm = Number(this.entity.generatorFuelNorm) || 0;
+    const price = Number(this.entity.oilPrice) || 0;
+    this.entity.generatorFuelAmount = this._utilityService.round2(hours * norm);
+    this.entity.generatorFuelCost = Math.round((this.entity.generatorFuelAmount || 0) * price);
+  }
+
+  // Tổng dầu của lệnh = dầu định mức (tongdau) + dầu máy phát (chỉ hiển thị, KHÔNG lưu DB).
+  get totalOrderOil(): number {
+    return (Number(this.entity.tongdau) || 0) + (Number(this.entity.generatorFuelAmount) || 0);
+  }
+
+  saveGenerator() {
+    if (!this.entity.refNo) {
+      this.notificationService.printErrorMessage('Vui lòng lưu lệnh trước khi nhập dầu máy phát.');
+      return;
+    }
+    this.computeGenerator();
+    this.dispatchOrderService.updateGenerator(this.entity).subscribe((res: any) => {
+      if (res.code == '200' || res.code == '201') {
+        if (res.data) {
+          this.entity.generatorFuelAmount = res.data.generatorFuelAmount;
+          this.entity.generatorFuelCost = res.data.generatorFuelCost;
+        }
+        this.notificationService.printSuccessMessage('Đã lưu dầu máy phát.');
+      } else {
+        this.notificationService.printErrorMessage(res.message ?? 'Lưu dầu máy phát thất bại.');
+      }
+    });
+  }
+
   edit(refNo: string, flag: boolean) {
     this.dispatchOrderService
       .getDetail(refNo)

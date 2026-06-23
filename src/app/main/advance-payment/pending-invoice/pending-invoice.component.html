@@ -20,8 +20,8 @@
           <input type="text" class="form-control" name="kw" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
                  placeholder="Tìm theo: NCC, MST, Số HĐ..." />
           <span class="input-group-btn">
-            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
-              <i class="fa fa-search"></i>
+            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()" [disabled]="loading">
+              <i class="fa" [ngClass]="loading ? 'fa-spinner fa-spin' : 'fa-search'"></i>
             </button>
           </span>
         </div>
@@ -48,7 +48,12 @@
     </div>
   </div>
 
-  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper">
+  <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" style="position: relative;">
+    <!-- Overlay loading khi đang tải list -->
+    <div *ngIf="loading" class="loading-overlay">
+      <i class="fa fa-spinner fa-spin fa-2x"></i>
+      <span>Đang tải hóa đơn...</span>
+    </div>
     <table class="table table-bordered table-striped table-hover">
       <thead>
         <tr>
@@ -100,11 +105,11 @@
         <ng-container *ngIf="g.expanded">
           <tr *ngFor="let item of g.items" [class.row-duplicate]="item.isDuplicate">
             <td>
-              <a *ngIf="item.pathFileLocal" [href]="buildFileUrl(item.pathFileLocal)" target="_blank"
+              <a *ngIf="fileUrl(item)" [href]="fileUrl(item)" target="_blank"
                  [title]="item.fileName">
                 <i class="fa fa-file-pdf-o"></i> {{ item.fileName | slice:0:30 }}
               </a>
-              <span *ngIf="!item.pathFileLocal" class="text-muted">—</span>
+              <span *ngIf="!fileUrl(item)" class="text-muted">—</span>
             </td>
             <td>{{ item.vendorName }}</td>
             <td>{{ item.taxNumber }}</td>
@@ -140,6 +145,11 @@
               {{ item.promptTokens | number }} / {{ item.completionTokens | number }}
             </td>
             <td>
+              <!-- Xem chi tiết hóa đơn (màu giống đọc AI; người tạo sửa được). -->
+              <button type="button" class="btn btn-info btn-xs" (click)="viewDetail(item)"
+                      appPermission appFunction="F043" appAction="VIEW" title="Xem chi tiết hóa đơn">
+                <i class="fa fa-eye"></i>
+              </button>
               <!-- Tab Chờ TT: đọc lại + xóa.  Tab Từ chối: chỉ xóa (xem qua link file). -->
               <button *ngIf="activeTab === 1" type="button"
                       class="btn btn-warning btn-xs" (click)="reExtract(item)"
@@ -157,7 +167,7 @@
           </tr>
         </ng-container>
       </tbody>
-      <tbody *ngIf="groups?.length === 0">
+      <tbody *ngIf="!loading && groups?.length === 0">
         <tr>
           <td colspan="15" class="text-center text-muted" style="padding:20px;">
             {{ activeTab === 1 ? 'Không có hóa đơn chờ thanh toán.' : 'Không có hóa đơn bị từ chối.' }}
@@ -172,3 +182,8 @@
                    (CloseModal)="onModalDocClose()"
                    (SaveSuccess)="onModalDocSaved()">
 </modal-doc-hoa-don>
+
+<modal-pending-invoice-detail *ngIf="viewDetailModal"
+                              (CloseModal)="onDetailClose()"
+                              (SaveSuccess)="onDetailSaved()">
+</modal-pending-invoice-detail>

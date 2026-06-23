@@ -358,6 +358,28 @@ Chiphidau = round( Tongdau × oilPrice , 0 )            // VND, rounded to integ
 weight tier. Pick the tier matching the cargo weight; set `segment.payloadWeight = tier.id` and
 `segment.fuelNorm = shortWay ? tier.shortWayValue : tier.value`.
 
+### 5.2 Generator fuel (dầu máy phát) — separate from định mức
+Reefer/genset fuel, tracked **independently** of `tongdau` (route fuel). 6 fields on the FCL entity:
+
+| field | type | meaning |
+|---|---|---|
+| `generatorRunningHours` | number? | genset run hours (user input) |
+| `generatorTemperature` | number? | recorded °C (informational; not used in the formula) |
+| `generatorFuelNorm` | number? | liters/hour (user input) |
+| `generatorFuelAmount` | number? | **server-computed** = `round(hours × norm, 2)` liters |
+| `generatorFuelCost` | number? | **server-computed** = `round(amount × oilPrice, 0)` VND |
+| `generatorNote` | string? | optional note |
+
+- **Saved via a dedicated endpoint, NOT in Create/Update** — `POST /api/DispatchOrderFcl/UpdateGenerator`
+  with envelope `item` = the FCL carrying `refNo` + `generatorRunningHours/Temperature/FuelNorm/Note` +
+  `oilPrice`. Server computes & returns `{ generatorFuelAmount, generatorFuelCost }`. **Requires the
+  order to already have a `refNo`** (save the order first).
+- **Read**: `GetByRefNoWithTO` returns the 6 fields (loaded server-side via a separate SP) for **both
+  new and legacy** orders.
+- `tongdau` stays = route fuel only (the closing process depends on this split — do NOT merge).
+- **Order total fuel (display only, client-side sum):** `Tổng dầu lệnh = tongdau + generatorFuelAmount`.
+  Not a stored column — compute it for display.
+
 ---
 
 ## 6. Status workflow & locking

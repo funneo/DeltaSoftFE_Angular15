@@ -8,6 +8,7 @@ import { Daterangepicker } from 'ng2-daterangepicker';
 import { PendingInvoiceRoutingModule } from './pending-invoice-routing.module';
 import { PendingInvoiceComponent } from './pending-invoice.component';
 import { ModalDocHoaDonModule } from '@app/shared/components/advance-payment/modal-doc-hoa-don/modal-doc-hoa-don.module';
+import { ModalPendingInvoiceDetailModule } from '@app/shared/components/advance-payment/modal-pending-invoice-detail/modal-pending-invoice-detail.module';
 import { PipeSharedModule } from '@app/shared/pipes/pipe-shared.module';
 import { SharedDirectivesModule } from '@app/shared/directives/shared-directives.module';
 
@@ -21,6 +22,7 @@ import { SharedDirectivesModule } from '@app/shared/directives/shared-directives
     Daterangepicker,
     PendingInvoiceRoutingModule,
     ModalDocHoaDonModule,
+    ModalPendingInvoiceDetailModule,
     PipeSharedModule,
     SharedDirectivesModule,
   ],

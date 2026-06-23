@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Subscription } from 'rxjs';
 import * as moment from 'moment';
+import { environment } from '@environments/environment';
 import { MessageContstants } from '@app/shared/constants';
 import { AuthService, NotificationService, UtilityService } from '@app/shared/services';
 import {
@@ -9,6 +10,7 @@ import {
   PendingInvoiceService
 } from '@app/shared/services/pending-invoice.service';
 import { ModalDocHoaDonComponent } from '@app/shared/components/advance-payment/modal-doc-hoa-don/modal-doc-hoa-don.component';
+import { ModalPendingInvoiceDetailComponent } from '@app/shared/components/advance-payment/modal-pending-invoice-detail/modal-pending-invoice-detail.component';
 
 interface PendingInvoiceGroup {
   code: string;            // groupFeeCode ('' = chưa phân loại)
@@ -42,12 +44,14 @@ export class PendingInvoiceComponent implements OnInit {
   activeTab: 1 | 2 = 1;                // 1 = Chờ TT, 2 = Bị từ chối (trùng)
   keyword = '';
   busy: Subscription;
+  loading = false;            // đang tải list → hiện icon loading
   ngayBatDau: Date = this._utilityService.ngayBanDau;
   ngayKetThuc: Date = this._utilityService.ngayKetThuc;
   dateOptions = this._utilityService.dateOptionMultis(this.ngayBatDau, this.ngayKetThuc);
   _branchId: number;
   reExtractingId: number | null = null;
   viewModal = false;
+  viewDetailModal = false;
 
   private expandedCodes = new Set<string>();      // trạng thái mở/đóng nhóm cấp 1
 
@@ -57,6 +61,7 @@ export class PendingInvoiceComponent implements OnInit {
   };
 
   @ViewChild(ModalDocHoaDonComponent, { static: false }) modalDocHoaDon: ModalDocHoaDonComponent;
+  @ViewChild(ModalPendingInvoiceDetailComponent, { static: false }) modalDetail: ModalPendingInvoiceDetailComponent;
 
   constructor(
     private service: PendingInvoiceService,
@@ -101,14 +106,21 @@ export class PendingInvoiceComponent implements OnInit {
       pageIndex: 1,
       pageSize: 99999,
     };
-    this.busy = this.service.getPaging(filter, this._branchId).subscribe((res: any) => {
-      if (res.code == '200' || res.code == '201') {
-        this.allRows = Array.isArray(res.data) ? res.data : [];
-        this.buildGroups();
-      } else {
-        this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code);
-      }
-    });
+    this.loading = true;
+    this.busy = this.service.getPaging(filter, this._branchId).subscribe(
+      (res: any) => {
+        this.loading = false;
+        if (res.code == '200' || res.code == '201') {
+          this.allRows = Array.isArray(res.data) ? res.data : [];
+          this.buildGroups();
+        } else {
+          this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code);
+        }
+      },
+      (err) => {
+        this.loading = false;
+        this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + (err?.message ?? err));
+      });
   }
 
   /** Hóa đơn thuộc tab Chờ TT: status=0, không trùng, chưa dùng cho Payment. */
@@ -194,6 +206,21 @@ export class PendingInvoiceComponent implements OnInit {
     this.loadData();
   }
 
+  // ===== Modal xem/sửa chi tiết hóa đơn =====
+  viewDetail(item: PendingInvoice) {
+    this.viewDetailModal = true;
+    setTimeout(() => this.modalDetail?.show(item), 50);
+  }
+
+  onDetailClose() {
+    this.viewDetailModal = false;
+  }
+
+  onDetailSaved() {
+    // Người tạo đã sửa → reload list để cập nhật (kể cả snapshot trùng đổi).
+    this.loadData();
+  }
+
   reExtract(item: PendingInvoice) {
     this.notificationService.printConfirmationDialog(
       `Đọc lại Gemini cho hóa đơn "${item.fileName ?? item.invoiceNo}"? Dữ liệu hiện tại sẽ bị ghi đè.`,
@@ -255,9 +282,14 @@ export class PendingInvoiceComponent implements OnInit {
     return 'Trùng với Payment: ' + list.map(d => d.paymentRefNo + (d.paymentRefDate ? ' (' + d.paymentRefDate + ')' : '')).join(', ');
   }
 
-  /** Build URL local cho thẻ <a> tải file gốc. PathFileLocal có dạng "~/UploadFiles/Invoice/2026/06/abc.pdf". */
-  buildFileUrl(path: string): string {
-    if (!path) return '';
-    return path.replace(/^~\//, '/');
+  /**
+   * URL mở file gốc — ưu tiên S3 (public-read, xem mọi nơi không cần server local public).
+   * Fallback local chỉ khi chưa có key S3 (hóa đơn cũ / S3 upload lỗi).
+   */
+  fileUrl(item: PendingInvoice): string {
+    const key = (item?.pathFileS3 || '').trim();
+    if (key) return environment.s3BaseUrl + key.replace(/^\/+/, '');
+    const local = (item?.pathFileLocal || '').trim();
+    return local ? local.replace(/^~\//, '/') : '';
   }
 }

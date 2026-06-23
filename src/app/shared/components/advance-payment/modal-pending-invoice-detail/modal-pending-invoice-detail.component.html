@@ -1,0 +1,245 @@
+<div ngDraggable [handle]="hdlDetail" class="modal fade" bsModal #modalDetail="bs-modal"
+  [config]="{backdrop: 'static'}" tabindex="-1" role="dialog">
+  <div class="modal-dialog modal-lg" style="width:90vw; max-width:1100px;">
+    <div class="modal-content">
+
+      <div #hdlDetail class="modal-header">
+        <h4 class="modal-title pull-left">
+          <i class="fa fa-file-text-o"></i> Chi tiết hóa đơn
+          <small *ngIf="entity?.fileName" class="text-muted"> — {{ entity.fileName }}</small>
+          <span *ngIf="editing" class="badge" style="background:#f0ad4e; margin-left:6px;">Đang sửa</span>
+        </h4>
+        <button type="button" class="close pull-right" (click)="close()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+
+      <div class="modal-body pid-body">
+
+        <!-- Cảnh báo hóa đơn TRÙNG -->
+        <div *ngIf="entity?.isDuplicate" class="alert alert-warning dup-alert">
+          <i class="fa fa-exclamation-circle"></i>
+          <strong>Hóa đơn này có thể đã TỒN TẠI</strong>
+          (số HĐ <strong>{{ entity.invoiceNo || '—' }}</strong> — NCC {{ entity.vendorName || '—' }}).
+        </div>
+
+        <!-- Đơn vị phát hành hóa đơn & Đơn vị thanh toán -->
+        <div class="row">
+          <div class="col-md-6">
+            <div class="info-card vendor-card">
+              <div class="info-card-header"><i class="fa fa-building-o"></i> Đơn vị phát hành hóa đơn</div>
+              <table class="table table-condensed info-table">
+                <tr>
+                  <td class="label-col">Tên</td>
+                  <td *ngIf="!editing"><strong>{{ entity.vendorName || '—' }}</strong></td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.vendorName" /></td>
+                </tr>
+                <tr>
+                  <td class="label-col">MST</td>
+                  <td *ngIf="!editing">{{ entity.taxNumber || '—' }}</td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.taxNumber" /></td>
+                </tr>
+                <tr>
+                  <td class="label-col">Địa chỉ</td>
+                  <td *ngIf="!editing">{{ entity.vendorAddress || '—' }}</td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.vendorAddress" /></td>
+                </tr>
+                <tr>
+                  <td class="label-col">SĐT</td>
+                  <td *ngIf="!editing">{{ entity.vendorPhone || '—' }}</td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.vendorPhone" /></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="info-card customer-card">
+              <div class="info-card-header"><i class="fa fa-user-o"></i> Đơn vị thanh toán hóa đơn</div>
+              <table class="table table-condensed info-table">
+                <tr>
+                  <td class="label-col">Tên</td>
+                  <td *ngIf="!editing"><strong>{{ entity.customerName || '—' }}</strong></td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.customerName" /></td>
+                </tr>
+                <tr>
+                  <td class="label-col">MST</td>
+                  <td *ngIf="!editing">{{ entity.customerTaxId || '—' }}</td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.customerTaxId" /></td>
+                </tr>
+                <tr>
+                  <td class="label-col">Địa chỉ</td>
+                  <td *ngIf="!editing">{{ entity.customerAddress || '—' }}</td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.customerAddress" /></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Thông tin hóa đơn -->
+        <div class="info-card invoice-card" style="margin-top:10px;">
+          <div class="info-card-header"><i class="fa fa-file-text-o"></i> Thông tin hóa đơn</div>
+          <div class="row">
+            <div class="col-md-6">
+              <table class="table table-condensed info-table">
+                <tr>
+                  <td class="label-col">Số hóa đơn</td>
+                  <td *ngIf="!editing"><strong>{{ entity.invoiceNo || '—' }}</strong></td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.invoiceNo" /></td>
+                </tr>
+                <tr>
+                  <td class="label-col">Ký hiệu</td>
+                  <td *ngIf="!editing">{{ entity.invoicePattern || '—' }}</td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.invoicePattern" /></td>
+                </tr>
+                <tr>
+                  <td class="label-col">Ngày</td>
+                  <td *ngIf="!editing">{{ entity.invoiceDate || '—' }}</td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.invoiceDate" placeholder="dd/MM/yyyy" /></td>
+                </tr>
+                <tr>
+                  <td class="label-col">Hình thức TT</td>
+                  <td *ngIf="!editing">{{ entity.paymentMethod || '—' }}</td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.paymentMethod" /></td>
+                </tr>
+              </table>
+            </div>
+            <div class="col-md-6">
+              <table class="table table-condensed info-table">
+                <tr>
+                  <td class="label-col">Tiền hàng</td>
+                  <td *ngIf="!editing" class="text-right so-tien">{{ entity.netAmount | currency:'VND':'' }}</td>
+                  <td *ngIf="editing"><input type="number" class="form-control input-sm text-right" [(ngModel)]="entity.netAmount" /></td>
+                </tr>
+                <tr>
+                  <td class="label-col">Thuế VAT</td>
+                  <td *ngIf="!editing" class="text-right so-tien">{{ entity.taxAmount | currency:'VND':'' }}</td>
+                  <td *ngIf="editing"><input type="number" class="form-control input-sm text-right" [(ngModel)]="entity.taxAmount" /></td>
+                </tr>
+                <tr>
+                  <td class="label-col">Tổng tiền</td>
+                  <td *ngIf="!editing" class="text-right so-tien total-amount">
+                    <strong>{{ entity.totalAmount | currency:'VND':'' }} {{ entity.currency }}</strong>
+                  </td>
+                  <td *ngIf="editing"><input type="number" class="form-control input-sm text-right" [(ngModel)]="entity.totalAmount" /></td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Hàng hóa / Dịch vụ -->
+        <div class="info-card" style="margin-top:10px;">
+          <div class="info-card-header">
+            <i class="fa fa-list"></i> Hàng hóa / Dịch vụ
+            <button *ngIf="editing" type="button" class="btn btn-xs btn-success pull-right" (click)="addLineItem()">
+              <i class="fa fa-plus"></i> Thêm dòng
+            </button>
+          </div>
+          <div style="overflow-x:auto;">
+            <table class="table table-bordered table-condensed table-striped">
+              <thead>
+                <tr>
+                  <th style="width:40px;">#</th>
+                  <th>Tên hàng hóa / Dịch vụ</th>
+                  <th style="width:90px;" class="text-right">SL</th>
+                  <th style="width:70px;">ĐVT</th>
+                  <th style="width:130px;" class="text-right">Đơn giá</th>
+                  <th style="width:140px;" class="text-right">Thành tiền</th>
+                  <th *ngIf="editing" style="width:40px;"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let item of lineItems; let i = index">
+                  <td>{{ i + 1 }}</td>
+                  <td *ngIf="!editing">{{ item.description }}</td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="item.description" /></td>
+
+                  <td *ngIf="!editing" class="text-right">{{ item.quantity | number }}</td>
+                  <td *ngIf="editing"><input type="number" class="form-control input-sm text-right" [(ngModel)]="item.quantity" (ngModelChange)="recalcLine(item)" /></td>
+
+                  <td *ngIf="!editing">{{ item.unit }}</td>
+                  <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="item.unit" /></td>
+
+                  <td *ngIf="!editing" class="text-right so-tien">{{ item.unitPrice | currency:'VND':'' }}</td>
+                  <td *ngIf="editing"><input type="number" class="form-control input-sm text-right" [(ngModel)]="item.unitPrice" (ngModelChange)="recalcLine(item)" /></td>
+
+                  <td *ngIf="!editing" class="text-right so-tien">{{ item.amount | currency:'VND':'' }}</td>
+                  <td *ngIf="editing"><input type="number" class="form-control input-sm text-right" [(ngModel)]="item.amount" /></td>
+
+                  <td *ngIf="editing" class="text-center">
+                    <a class="text-danger" (click)="removeLineItem(i)" title="Xóa dòng"><i class="fa fa-trash"></i></a>
+                  </td>
+                </tr>
+                <tr *ngIf="lineItems.length === 0">
+                  <td [attr.colspan]="editing ? 7 : 6" class="text-center text-muted">Không có dòng hàng hóa.</td>
+                </tr>
+                <tr class="total-row" *ngIf="lineItems.length > 0">
+                  <td colspan="5" class="text-right"><strong>Tổng cộng:</strong></td>
+                  <td class="text-right so-tien"><strong>{{ totalLineItems | currency:'VND':'' }}</strong></td>
+                  <td *ngIf="editing"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tra cứu hóa đơn -->
+        <div *ngIf="entity.web || entity.code" class="info-card weblink-card" style="margin-top:10px;">
+          <div class="info-card-header"><i class="fa fa-search"></i> Tra cứu hóa đơn</div>
+          <table class="table table-condensed info-table" style="margin:0;">
+            <tr *ngIf="entity.code">
+              <td class="label-col">Mã tra cứu</td>
+              <td *ngIf="!editing"><span class="badge badge-code">{{ entity.code }}</span></td>
+              <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.code" /></td>
+            </tr>
+            <tr *ngIf="entity.web || editing">
+              <td class="label-col">Đường link</td>
+              <td *ngIf="!editing">
+                <a [href]="entity.web" target="_blank" class="weblink-url">{{ entity.web }}</a>
+              </td>
+              <td *ngIf="editing"><input class="form-control input-sm" [(ngModel)]="entity.web" /></td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- File gốc — link S3 public (xem được mọi nơi), fallback local nếu chưa có S3. -->
+        <div *ngIf="fileUrl" style="margin-top:10px;">
+          <a [href]="fileUrl" target="_blank" class="btn btn-xs btn-default">
+            <i class="fa fa-file-pdf-o"></i> File hóa đơn
+            <span class="text-muted" *ngIf="!fileIsS3">(local)</span>
+          </a>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+          <div class="text-muted small">
+            <span *ngIf="entity.createdByName"><i class="fa fa-user"></i> {{ entity.createdByName }}</span>
+            <span *ngIf="entity.createdDate"> · {{ entity.createdDate | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div>
+            <!-- View mode: nút Sửa (chỉ người tạo + status=0) -->
+            <button *ngIf="!editing && canEdit" type="button" class="btn btn-warning btn-sm"
+              (click)="startEdit()" appPermission appFunction="F043" appAction="UPDATE">
+              <i class="fa fa-pencil"></i> Sửa
+            </button>
+            <!-- Edit mode: Lưu + Hủy -->
+            <button *ngIf="editing" type="button" class="btn btn-primary btn-sm" (click)="save()" [disabled]="saving">
+              <i class="fa" [ngClass]="saving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+              {{ saving ? 'Đang lưu...' : 'Lưu' }}
+            </button>
+            <button *ngIf="editing" type="button" class="btn btn-default btn-sm" (click)="cancelEdit()" [disabled]="saving">
+              <i class="fa fa-undo"></i> Hủy sửa
+            </button>
+            <button *ngIf="!editing" type="button" class="btn btn-default btn-sm" (click)="close()">
+              <i class="fa fa-times"></i> Đóng
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

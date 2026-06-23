@@ -27,19 +27,6 @@
             </ng-select>
           </div>
 
-          <!-- Gán cho: Lô hàng / Công việc -->
-          <div class="gf-field">
-            <label class="gf-label">Gán cho <span class="text-danger" *ngIf="isAssignRequired">*</span></label>
-            <div class="gf-radio">
-              <label><input type="radio" name="assignType" value="job"
-                [(ngModel)]="assignType" (ngModelChange)="onChangeAssignType()"
-                [disabled]="hasResult || loading" /> Lô hàng</label>
-              <label><input type="radio" name="assignType" value="workflow"
-                [(ngModel)]="assignType" (ngModelChange)="onChangeAssignType()"
-                [disabled]="hasResult || loading" /> Công việc</label>
-            </div>
-          </div>
-
           <label class="gf-check" title="Bật: xem/sửa thông tin đã đọc rồi bấm Lưu. Tắt: đọc xong tự lưu vào DB ngay.">
             <input type="checkbox" [(ngModel)]="showReview" [disabled]="hasResult || loading" />
             Hiển thị thông tin hóa đơn trước khi lưu
@@ -51,15 +38,17 @@
             <label class="gf-label">Loại chi phí hàng bán <span class="text-danger">*</span></label>
             <div class="gf-radio gf-radio-wrap">
               <label><input type="radio" name="salesSubType" value="reinvoice"
-                [(ngModel)]="salesSubType" [disabled]="hasResult || loading" />
+                [(ngModel)]="salesSubType" (ngModelChange)="onChangeSalesSubType()" [disabled]="hasResult || loading" />
                 Chi phí trả hộ xuất lại hóa đơn cho khách</label>
               <label><input type="radio" name="salesSubType" value="other"
-                [(ngModel)]="salesSubType" [disabled]="hasResult || loading" />
+                [(ngModel)]="salesSubType" (ngModelChange)="onChangeSalesSubType()" [disabled]="hasResult || loading" />
                 Tất cả các hóa đơn chi phí hàng bán khác</label>
             </div>
           </div>
 
-          <!-- Xuống hàng: Công việc + Job, chia đôi. Gán theo Công việc → Công việc TRƯỚC rồi Job. -->
+          <!-- Gán Lô hàng / Công việc — CHỈ hiện với nhóm bắt buộc (trả hộ / hàng bán trả hộ xuất lại).
+               Không có bước chọn: CS → Lô hàng, OP → Công việc (tự suy theo bộ phận từ Role). -->
+          <ng-container *ngIf="isAssignRequired">
           <div class="gf-break"></div>
           <div class="gf-assign-row">
             <!-- Công việc (chỉ khi gán theo Công việc) — đứng TRƯỚC Job -->
@@ -93,6 +82,7 @@
               </div>
             </div>
           </div>
+          </ng-container>
         </div>
 
         <!-- Modal chọn Lô hàng / Công việc -->
@@ -207,7 +197,7 @@
                   <div class="row">
                     <div class="col-md-6">
                       <div class="info-card vendor-card">
-                        <div class="info-card-header"><i class="fa fa-building-o"></i> Nhà cung cấp</div>
+                        <div class="info-card-header"><i class="fa fa-building-o"></i> Đơn vị phát hành hóa đơn</div>
                         <table class="table table-condensed info-table">
                           <tr>
                             <td class="label-col">Tên</td>
@@ -230,7 +220,7 @@
                     </div>
                     <div class="col-md-6">
                       <div class="info-card customer-card">
-                        <div class="info-card-header"><i class="fa fa-user-o"></i> Khách hàng</div>
+                        <div class="info-card-header"><i class="fa fa-user-o"></i> Đơn vị thanh toán</div>
                         <table class="table table-condensed info-table">
                           <tr>
                             <td class="label-col">Tên</td>

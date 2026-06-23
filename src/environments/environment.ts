@@ -8,6 +8,8 @@ export const environment = {
   //apiUrl: 'https://115.84.178.66:44375',
   apiXuong: 'https://v2.delta-repair.com/api/v1',
   //apiUrl: 'http://115.84.178.66:8060',
+  // S3 public-read bucket (no presign) — ghép key PathFileS3 để xem file mọi nơi, không phụ thuộc server local.
+  s3BaseUrl: 'https://files-manager-delta-erp.s3.ap-southeast-1.amazonaws.com/',
   production: false,
   transportGroupId: 14,
   parkingFeeId: 665,

@@ -269,6 +269,16 @@
                       (click)="saveGenerator()"><i class="fa fa-save"></i> Lưu</button>
                   </div>
                 </div>
+                <!-- Tổng dầu lệnh = định mức + máy phát (chỉ hiển thị, tự tính) -->
+                <div class="form-group" *ngIf="!entity.isSubcontractors">
+                  <label class="col-sm-2 control-label">Tổng dầu lệnh</label>
+                  <div class="col-sm-2">
+                    <span class="form-control text-right" style="font-weight:600;">{{totalOrderOil | number:'1.2-2'}}</span>
+                  </div>
+                  <label class="col-sm-8 control-label text-left" style="font-weight:400;color:#888;">
+                    = Tổng dầu định mức + Dầu máy phát
+                  </label>
+                </div>
                 <!-- <div class="form-group">
                   <label class="col-sm-2 control-label">Mã tham chiếu</label>
                   <div class="col-sm-4">
@@ -823,8 +833,8 @@
                   <span class="dsg-stat-value text-primary">{{ entity.tongKm | number:'1.0-1' }} km</span>
                 </div>
                 <div class="dsg-stat-item">
-                  <span class="dsg-stat-label">Tổng dầu</span>
-                  <span class="dsg-stat-value text-success">{{ entity.tongdau | number:'1.2-2' }} lít</span>
+                  <span class="dsg-stat-label">Tổng dầu lệnh</span>
+                  <span class="dsg-stat-value text-success">{{ totalOrderOil | number:'1.2-2' }} lít</span>
                 </div>
               </div>
               <!-- Trạm thu phí (ETC) — gộp từ tab ETC cũ, dùng TÊN trạm; tự thêm từ Vietmap -->

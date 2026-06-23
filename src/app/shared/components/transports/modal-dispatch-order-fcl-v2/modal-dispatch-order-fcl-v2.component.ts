@@ -1141,6 +1141,11 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     this.entity.generatorFuelCost = Math.round((this.entity.generatorFuelAmount || 0) * price);
   }
 
+  // Tổng dầu của lệnh = dầu định mức (tongdau) + dầu máy phát (chỉ hiển thị, KHÔNG lưu DB).
+  get totalOrderOil(): number {
+    return (Number(this.entity.tongdau) || 0) + (Number(this.entity.generatorFuelAmount) || 0);
+  }
+
   saveGenerator() {
     if (!this.entity.refNo) {
       this.notificationService.printErrorMessage('Vui lòng lưu lệnh trước khi nhập dầu máy phát.');

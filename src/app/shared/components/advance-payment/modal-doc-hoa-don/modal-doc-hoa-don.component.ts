@@ -62,16 +62,53 @@ export class ModalDocHoaDonComponent implements OnInit {
     this.reset();
     this.selectedGroupFeeCode = null;
     this.showReview = false;
-    this.assignType = 'job';
+    this.assignType = this.defaultAssignTypeByRole();   // CS → Lô hàng; OP → Công việc
     this.salesSubType = null;
     this.clearAssignTarget();
     this.loadFeeCodeLvl1();
     this.modal.show();
   }
 
-  /** Đổi nhóm phí cấp 1 → reset loại chi phí hàng bán nếu nhóm mới không phải hàng bán. */
+  /**
+   * Gán mặc định theo bộ phận (suy từ Role trong token):
+   *   - Role bắt đầu "OPS" (OPS, OPS-M…) = bộ phận điều hành → mặc định "Công việc".
+   *   - Role bắt đầu "CS" (CS, CS-M, CS-CBT…) = bộ phận chứng từ → mặc định "Lô hàng".
+   *   - Còn lại (Admin, ACC…) → "Lô hàng".
+   * User vẫn đổi tay được sau đó (2 radio không bị khóa).
+   */
+  private defaultAssignTypeByRole(): 'job' | 'workflow' {
+    const user = this.authService.getLoggedInUser();
+    let roles: string[] = [];
+    if (Array.isArray(user?.roles)) roles = user.roles as any;
+    else if (typeof user?.roles === 'string') roles = [user.roles as any];
+    const norm = roles.map(r => (r || '').trim().toUpperCase());
+    if (norm.some(r => r.startsWith('OPS'))) return 'workflow';
+    if (norm.some(r => r.startsWith('CS'))) return 'job';
+    return 'job';
+  }
+
+  /** Đổi nhóm phí cấp 1 → reset loại chi phí hàng bán nếu nhóm mới không phải hàng bán, rồi đồng bộ gán. */
   onChangeGroupFee() {
     if (!this.isSalesGroup) this.salesSubType = null;
+    this.syncAssignByGroup();
+  }
+
+  /** Đổi loại chi phí hàng bán → đồng bộ vùng gán (reinvoice mới cần gán). */
+  onChangeSalesSubType() {
+    this.syncAssignByGroup();
+  }
+
+  /**
+   * Đồng bộ vùng gán Lô/CV theo nhóm hiện tại:
+   *   - Không bắt buộc gán → xóa target (không lưu Job/CV thừa).
+   *   - Bắt buộc gán → đặt loại gán tự động theo bộ phận (Role), không có bước chọn tay.
+   */
+  private syncAssignByGroup() {
+    if (!this.isAssignRequired) {
+      this.clearAssignTarget();
+    } else {
+      this.assignType = this.defaultAssignTypeByRole();
+    }
   }
 
   /** Load FeeCode cấp 1 (Lĩnh vực) đã duyệt (status=2), sắp xếp theo thứ tự Phụ lục. */
@@ -82,7 +119,7 @@ export class ModalDocHoaDonComponent implements OnInit {
     });
   }
 
-  /** Sắp xếp theo thứ tự Phụ lục: trả hộ → hàng bán → quản lý chung → đầu tư → khác (sort ổn định). */
+  /** Sắp xếp theo thứ tự Phụ lục: trả hộ → hàng bán → quản lý chung → đầu tư → công cụ dụng cụ → khác (sort ổn định). */
   private sortLvl1Priority(list: FeeCode[]): FeeCode[] {
     const rank = (f: FeeCode): number => {
       const n = (f?.feeName || '').toLowerCase();
@@ -90,8 +127,9 @@ export class ModalDocHoaDonComponent implements OnInit {
       if (n.includes('hàng bán')) return 1;
       if (n.includes('quản lý')) return 2;
       if (n.includes('đầu tư')) return 3;
-      if (n.includes('khác')) return 4;
-      return 5;
+      if (n.includes('công cụ')) return 4;
+      if (n.includes('khác')) return 5;
+      return 6;
     };
     return [...list].sort((a, b) => rank(a) - rank(b));
   }

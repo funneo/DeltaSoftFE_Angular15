@@ -1,5 +1,38 @@
 # Pending / In-Progress Work
 
+## ▶ PendingInvoice (F043) list — icon loading + fix vạch đỏ editor — FE only, chỉ cần `ng build` (2026-06-23)
+2 chỉnh nhỏ FE/editor (chi tiết done.md):
+1. **Loading khi tải list**: cờ `loading` + overlay spinner phủ bảng + spinner nút tìm + ẩn dòng "Không có HĐ" lúc load. (List vẫn load-all `pageSize 99999` client-side → lâu hơn màn khác; chỉ thêm loading, chưa đổi sang server-paging.)
+2. **Fix ts2322 đỏ ở editor**: `.vscode/settings.json` +`"js/ts.implicitProjectConfig.strictNullChecks": false` (chỉ editor, không đụng build). Hiệu lực sau "Restart TS Server".
+
+**Anh cần:** ⬜ `ng build` FE (gộp luôn với các mục F043 FE-only bên dưới); KHÔNG đụng BE/SQL.
+
+## ▶ PendingInvoice (F043) — modal AI bỏ "Gán cho" + auto Lô/CV theo role, link file S3, đổi tên thẻ NCC/KH — FE only, build 0 lỗi, chỉ cần build lại FE (2026-06-22)
+Nối tiếp mục dưới (cùng ngày). 3 chỉnh FE-only, KHÔNG đụng BE/SQL (BE đã upload S3 + trả `PathFileS3` sẵn):
+1. Modal đọc HĐ AI: **bỏ nhãn + radio "Gán cho"**; phí không cần job → ẩn hẳn vùng gán; CHỈ nhóm **trả hộ** hoặc **trả hộ nhóm bán hàng** (`salesSubType==='reinvoice'`) mới gán → **tự quyết** Lô/CV theo role (`OPS*`→Công việc, `CS*`→Lô hàng), bỏ bước chọn tay.
+2. **Link file gốc từ S3** (list + modal chi tiết): `fileUrl` ưu tiên `environment.s3BaseUrl + pathFileS3`, fallback local + nhãn "(local)". Thêm `s3BaseUrl` vào cả `environment.ts` + `.prod.ts`.
+3. **Đổi tên thẻ** ở cả 2 modal (detail + đọc AI): "Nhà cung cấp"→"**Đơn vị phát hành hóa đơn**", "Khách hàng"→"**Đơn vị thanh toán**" (chỉ text, binding giữ nguyên).
+
+**Anh cần:** ⬜ chỉ `ng build` FE (đã build 0 lỗi), KHÔNG có thay đổi BE/SQL. Test: list + modal chi tiết mở file gốc bằng URL S3 (xem được không cần server public); modal AI không còn bước chọn Lô/CV (tự ẩn/tự quyết theo nhóm phí + role); 2 thẻ đổi đúng tên.
+- ⚠️ HĐ cũ trước khi BE bật upload S3 (hoặc S3 upload lỗi, `pathFileS3=null`) → link rơi về local + nhãn "(local)", dev vẫn không mở được. Chỉ HĐ mới có S3 key mới xem mọi nơi.
+
+## ▶ PendingInvoice (F043) — Xem/sửa chi tiết HĐ + nhóm phí 05/06 + CS-OP mặc định — FE build 0 lỗi, BE compile OK, chờ 1 SQL + deploy + test (2026-06-22)
+3 yêu cầu anh chốt:
+1. **Xem chi tiết hóa đơn từ list** (trước chưa có nút): thêm nút 👁 mỗi dòng → modal MỚI `modal-pending-invoice-detail` (tái dùng bố cục thẻ màu của modal đọc AI: NCC xanh dương / KH xanh lá / HĐ vàng / tra cứu tím). **Người tạo (hoặc Admin) sửa được** khi `Status=0`: nút "Sửa" → ô nhập + bảng line items thêm/xóa/sửa (SL×đơn giá tự tính) → Lưu.
+   - BE: endpoint MỚI `POST /api/pendingInvoice/UpdateInvoice` (gate F043 UPDATE) — chặn quyền (`row.CreatedBy==userId` hoặc role Admin), chỉ `Status=0`, tái dùng `_context.Update` (SP_PendingInvoice_Update cũ, KHÔNG tạo SP mới; KHÔNG đụng GroupFee/Job), tự check trùng lại. Token gửi 0 (không cộng dồn khi sửa tay).
+   - FE: `pending-invoice.service.update()`; component `modal-pending-invoice-detail` (ts/html/css/module); list wire nút 👁 + lazy-mount + reload sau lưu.
+2. **Nhóm phí cấp 1**: đổi `05` "Chi phí khác" → **"Chi phí công cụ dụng cụ"**; thêm `06` = **"Chi phí khác"**. (DB thực tế đang có 01-05, 05=Chi phí khác → đổi tên + thêm 06; KHÔNG migrate 4 Payment cũ gắn 05 vì là nháp.) FE modal AI: `sortLvl1Priority` thêm bậc "công cụ" trước "khác".
+3. **Modal đọc HĐ — gán mặc định theo bộ phận (suy từ Role)**: role bắt đầu `OPS*` → mặc định **Công việc**; `CS*` → **Lô hàng**; còn lại → Lô hàng. Vẫn đổi tay được (`defaultAssignTypeByRole()` trong `show()`).
+
+**Anh cần:**
+1. ⬜ Chạy `NewAPI/Migration_FeeCodes_AddGroup0506_20260622.sql` (đổi tên 05 + thêm 06, idempotent, chỉ master data).
+2. ⬜ Stop IIS Express → deploy API mới (controller +UpdateInvoice) + `ng build` FE (đã build 0 lỗi).
+3. ⬜ **Test E2E:**
+   - List HĐ AI: nút 👁 mở modal chi tiết màu giống đọc AI; người tạo thấy nút "Sửa" → sửa NCC/KH/HĐ/tiền/line items → Lưu → list reload; người KHÁC không có nút Sửa; HĐ đã dùng cho Payment (Status≠0) không sửa được.
+   - Nhóm phí: modal đọc HĐ dropdown Cấp 1 có "05 Chi phí công cụ dụng cụ" + "06 Chi phí khác", thứ tự …đầu tư→công cụ→khác.
+   - Bộ phận: login role CS → mặc định radio "Lô hàng"; role OPS → mặc định "Công việc"; vẫn đổi tay được.
+   - ⚠️ Role map dùng tiền tố `CS*`/`OPS*`; role `OCS` hiện rơi vào "còn lại"=Lô hàng. Nếu cần OCS=Công việc hoặc map khác → báo để chỉnh `defaultAssignTypeByRole()`.
+
 ## ▶ PendingInvoice (F043) — REVISION list Hóa đơn AI: bỏ nhóm cấp 2 + filter cột + cột JobId/KH + sort lại dropdown — FE build 0 lỗi, chờ chạy 1 SQL + deploy + test (2026-06-21)
 FE đổi (build sạch): list `pending-invoice` group **chỉ Cấp 1** (bỏ tầng Cấp 2 "Chưa phân nhóm cấp 2"); thêm **hàng filter từng cột** (File/NCC/MST/Số HĐ/Mẫu/Mã tra cứu/JobId/KH/Người upload, client-side); thêm **2 cột** Lô/Công việc (JobId, badge tím) + Khách hàng (mã-tên). Modal "Đọc hóa đơn AI" sort dropdown Cấp 1 lại theo Phụ lục: **trả hộ → hàng bán → quản lý chung → đầu tư → khác** (`sortLvl1Priority`). BE: `PendingInvoiceViewModel` +`AssignCustomerCode/AssignCustomerName`.
 
@@ -54,6 +87,9 @@ Chi tiết thiết kế + thay đổi: done.md section đầu + memory `project_
    - **Lưu ý khi test**: 2 dòng định mức (source 3) + máy phát (source 5) của **cùng 1 lệnh FCL** nên tick/bỏ cùng nhau (duyệt set FCL.IsSummarized khi có source 3 HOẶC 5).
 
 **Còn để ngỏ (nếu test phát sinh):** ràng buộc UI ép source 3+5 cùng lệnh đi đôi; báo cáo phân tách dầu máy phát; mẫu in phiếu Tạm ứng có lý do.
+
+### ➕ Bổ sung dầu máy phát cho FCL CŨ (2026-06-23, BE+FE build 0 lỗi, chờ deploy + test)
+FCL cũ (`modal-dispatch-order-fcl`) nay cũng có dầu máy phát (2 bản chạy song song khi FCL mới đang test). Tái dùng 100% hạ tầng 17/06 (bảng/SP/endpoint/service/model), KHÔNG tạo/sửa SP nào. BE: thêm nạp generator vào legacy `GetByRefNo` (SP riêng). FE: `computeGenerator()`/`saveGenerator()` + khối UI. Chi tiết done.md. **Anh cần**: deploy API (BE additive) → test trên 1 lệnh FCL cũ (nhập→Lưu→mở lại giữ số; chốt dầu ra source 5).
 
 ## ▶ HR — Hợp đồng lao động & Hồ sơ NV (F045, Mức B) — SQL design XONG, chờ chạy SQL + mẫu Word → BE/FE (2026-06-16)
 Thay Excel "Danh sách theo dõi HĐLĐ" bằng module trong ERP: theo dõi vòng đời HĐ + **in HĐLĐ ra Word (tải hàng loạt, KHÔNG lưu file)**. Quyết định: **Mức B** = tái dùng tối đa schema HR có sẵn (EmployeeContract/EmployeeSalary/EmployeeAllowance/EmployeeDegree/EmployeeFamily/EmployeeFile), không tạo bảng mới. Lương in từ `EmployeeSalary` IsActived=1 (cơ chế phụ lục khi tăng lương). Chức năng chi tiết: [hr-nhan-su-chuc-nang.md](hr-nhan-su-chuc-nang.md).
@@ -112,6 +148,14 @@ Module tổng hợp công tháng + tiền phạt NV văn phòng (xem done.md). *
 4. ⬜ Test E2E: relogin → Nhân sự → **Bảng công văn phòng** → **Cấu hình** (nhập ngày lễ + số dư phép/online đầu kỳ nếu cần) → **Import chấm công** (chọn file HN_T4/VT_T4, chọn dòng bắt đầu, import, map tên chưa khớp) → **Tính** → đối chiếu bảng với file tay chị Huệ → **Xuất Excel**.
 
 **Còn để dành (đã chốt hoãn):** quy tắc giải trình ≤5 lần/lần 6+ =30k (cột PenaltyExplain/ExplainCount đã có, chưa tính); phụ cấp giờ đặc biệt (IT phía Nam +60', nữ nuôi con nhỏ +60'); đẩy tiền phạt sang module lương VP. Điểm cần soi khi test: bậc phạt về sớm T7 (so mốc 10:00), nửa ngày phép+công, match tên trùng.
+
+### ⏸ F044 PHẦN 1 — Lịch đặc biệt + Phân ca điều vận (ĐÃ THIẾT KẾ SQL, HOÃN — làm sau)
+File SQL đề xuất (CHỜ DUYỆT, chưa chạy): `NewAPI/Migration_OfficeAttendance_Schedule_20260623.sql`. Quyết định đã chốt với anh Cường:
+- **Cá nhân → phân theo LOẠI** (không hardcode): `Tbl_OfficeWorkScheduleType` (seed HC default / BAC mode ½ngày mốc 10:30 / XUONG 7:30-17:30 / LY 8:00-16:30 / THAISAN flex 60p chung muộn-sớm) + `Tbl_OfficeEmployeeSchedule` gán NV↔loại có EffectiveFrom/To (thai sản tạm thời).
+- **Điều vận → phân ca theo CHI NHÁNH**: `Tbl_OfficeShiftType` (BranchId NULL=chung; seed CA1 6-14 / CA2 14-22 / CA3 22-6 overnight / **OFF IsDayOff=1 = nghỉ luân phiên KHÔNG trừ phép**) + `Tbl_OfficeShiftAssignment` (NV/ngày, OpMan phân tuần, `ChangeReason` bắt buộc khi đổi ca, `IsLocked` chốt cuối tháng). Function mới **F047** "Phân ca điều vận" (menu Nhân sự) — grant để file riêng mirror F046, CHƯA soạn.
+- **Engine** `SP_OfficeAttendance_Calculate` đã viết bản CREATE OR ALTER: phân giải ca→loại→mặc định; ngày có ca = làm full (kể cả T7/CN/**Lễ vẫn chấm muộn/sớm theo ca**); NV mặc định kết quả y hệt engine cũ.
+- ⚠️ **Cần đối chiếu khi test**: ca đêm lấy giờ ra từ bản ghi NGÀY HÔM SAU, đang `COALESCE(nx.TimeOut, nx.TimeIn)` — chỉnh nếu máy chấm ghi khác.
+- **Khi quay lại:** anh duyệt SQL → soạn grant F047 → BE + FE (màn quản lý loại lịch + gán NV; lưới phân ca tuần OpMan). Chi tiết memory `project_office_attendance_module`.
 
 ## ▶ PendingInvoice (F043) modal đọc HĐ — bỏ Cấp 2 + sort Cấp 1 + gán Lô hàng/Công việc (2026-06-19, FE build 0 err, BE compile OK; chờ chạy 1 SQL + deploy + test)
 Modal đọc hóa đơn AI: (1) **ẩn dropdown Cấp 2** (chỉ giữ Cấp 1, gửi SubFee=null); (2) **sort Cấp 1**: tên chứa "bán hàng"→đầu, "trả hộ"→2, còn lại giữ nguyên; (3) **Gán cả lô cho Lô hàng / Công việc**: radio "Gán cho" + picker mới `modal-pick-job` (mode job=ShipmentService.getPagingNormal lọc !isFinish; mode workflow=Workflow/getpaging2 lọc !jobLocked; nhóm theo KH + search KH + date range). Lưu `JobId/ShipmentId/WorkflowId` vào `Tbl_PendingInvoice` (KHÔNG đụng Payment). **Anh cần:**
