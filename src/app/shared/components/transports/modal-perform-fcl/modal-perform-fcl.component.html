@@ -518,15 +518,15 @@
           <div class="box-footer text-right">
             <button *ngIf="entity.status==1" type="button" class="btn btn-success btn-sm" (click)="nhanlenh()">
               <i class="fa fa-share-square-o"></i> Nhận lệnh</button>
-            <button *ngIf="entity.status==1" type="button" class="btn btn-success btn-sm" (click)="tuchoinhanlenh()">
+            <button *ngIf="entity.status==1 && !subcontractorMode" type="button" class="btn btn-success btn-sm" (click)="tuchoinhanlenh()">
               <i class="fa fa-ban"></i> Từ chối nhận lệnh</button>
-            <button *ngIf="entity.status==4" type="button" class="btn btn-success btn-sm" (click)="chotdulieu()">
+            <button *ngIf="entity.status==4 && !subcontractorMode" type="button" class="btn btn-success btn-sm" (click)="chotdulieu()">
               <i class="fa fa-share-square-o"></i> Chốt dữ liệu</button>
-            <button *ngIf="entity.status==4" type="button" class="btn btn-warning btn-sm" (click)="tuchoichotdulieu()">
+            <button *ngIf="entity.status==4 && !subcontractorMode" type="button" class="btn btn-warning btn-sm" (click)="tuchoichotdulieu()">
               <i class="fa fa-ban"></i> Từ chối chốt </button>
-            <button *ngIf="entity.status==2" type="button" class="btn btn-primary btn-sm" (click)="update(false)">
+            <button *ngIf="entity.status==2 && !subcontractorMode" type="button" class="btn btn-primary btn-sm" (click)="update(false)">
               <i class="fa fa-ban"></i> Lưu thông tin </button>
-            <button *ngIf="entity.status==2" type="button" class="btn btn-danger btn-sm" (click)="update(true)">
+            <button *ngIf="entity.status==2 && !subcontractorMode" type="button" class="btn btn-danger btn-sm" (click)="update(true)">
               <i class="fa fa-ban"></i> Kết thúc </button>
             <button type="button" (click)="modalDispatchOrderFcl.hide()" class="btn btn-danger btn-sm">
               <i class="fa fa-close"></i> Hủy</button>

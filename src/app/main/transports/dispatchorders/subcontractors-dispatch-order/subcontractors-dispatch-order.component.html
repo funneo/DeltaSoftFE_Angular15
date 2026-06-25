@@ -1,135 +1,309 @@
-<div class="box box-primary box-chieu-cao">
-  <div class="row">
-    <div class="box-header with-border">
-      <div class="col-md-2">
-        <h3 class="box-title">Lệnh vận chuyển - NHÀ THẦU PHỤ</h3>
-      </div>
-      <div class="col-md-2">
-        <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
-          class="form-control">
-      </div>
-      <div class="col-md-2">
-        <ng-select class="auto-grow" name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
-          [(ngModel)]="branchId" (change)="changedBranch($event)" [readonly]="!adminPermission">
-        </ng-select>
-      </div>
-      <div class="col-md-2">
-        <ng-select class="auto-grow" name="khachhang" [items]="listSupplier" bindLabel="supplierName" bindValue="id"
-          [(ngModel)]="supplierId" (change)="changedSupplier($event)" placeholder="Chọn nhà cung cấp...">
-        </ng-select>
-      </div>
-      <div class="col-md-2">
-        <div class="input-group">
-          <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
-            placeholder="Từ khóa" />
-          <span class="input-group-btn">
-            <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
-              <i class="fa fa-search"></i>
-            </button>
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- /.box-header -->
-  <div class="box-body table-responsive no-padding">
-    <table class="table table-bordered table-striped table-hover">
-      <thead>
-        <tr>
-          <th>Tình trạng</th>
-          <th>RefNo</th>
-          <th class="column-ten-sm">Ngày</th>
-          <th class="column-ten-sm">Người lập</th>
-          <th class="column-ten-lg">Tên nhà thầu phụ</th>
-          <th class="column-ten-sm">Biển số xe</th>
-          <th class="column-ten-lg">Cung đường</th>
-          <th class="column-ten-lg">Tóm tắt lệnh</th>
-          <!-- <th class="column-ten-sm">T/g đến nhà máy/cảng</th> -->
-          <th class="column-ten-sm">Ghi chú</th>
-        </tr>
-        <tr>
-          <th>
-            <ng-select name="filterType" (change)="filter()" [(ngModel)]="tinhtrang" [clearable]="false" [items]="array"
-              bindLabel="text" bindValue="value"></ng-select>
-          </th>
-          <th><input class="form-control" #refNoSearchInput [(ngModel)]="refNoSearch" (input)="filter()" type="text"
-              name="refNoSearch" /></th>
-          <th><input class="form-control" #ngaySearchInput [(ngModel)]="ngaySearch" (input)="filter()" type="text"
-              name="ngaySearch" /></th>
-          <th><input class="form-control" #nguoilapSearchInput [(ngModel)]="nguoilapSearch" (input)="filter()"
-              type="text" name="nguoilapSearch" /></th>
-          <th><input class="form-control" #nccSearchInput [(ngModel)]="nccSearch" (input)="filter()" type="text"
-              name="nccSearch" /></th>
-          <th><input class="form-control" #bksSearchInput [(ngModel)]="bksSearch" (input)="filter()" type="text"
-              name="bksSearch" /></th>
-          <th><input class="form-control" #toantuyenSearchInput [(ngModel)]="toantuyenSearch" (input)="filter()"
-              type="text" name="toantuyenSearch" /></th>
-          <th><input class="form-control" #msumSearchInput [(ngModel)]="sumSearch" (input)="filter()" type="text"
-              name="sumSearch" /></th>
-          <th><input class="form-control" ghichuSearchInput [(ngModel)]="ghichuSearch" (input)="filter()" type="text"
-              name="ghichuSearch" /></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of visibleData">
-          <td>
-            <span [ngClass]="item.status == 6? ' label label-info': item.status==1 ?
-                'label label-success': item.status==2? 'label label-primary': item.status==3?
-                'label label-default':  (item.status===4 && item.finished==false)?'label label-warning':((item.status==4 && item.finished==true)||item.status>=5)?
-                'label label-danger': 'label label-khoitao'">
-              {{item.rStatus}}
-            </span>
-          </td>
-          <td style="font-weight:600; padding-left: 1yem;">
-            <a [routerLink]="[]" (click)="viewDetailed(item)">{{item.refNo}}</a>
-          </td>
-          <td>
-            <span>
-              {{item.createdDate | date:'dd/MM/yyyy'}}
-            </span>
-          </td>
-          <td class="column-ten-sm">
-            <span>{{item.createdByName}}</span>
-          </td>
-          <td>
-            <span><b>{{item.shippingUnitName}}</b></span>
-          </td>
-          <td class="column-ten-sm">
-            <span>
-              {{item.vihiclelLicensePlates}}
-            </span>
-          </td>
-          <td>{{item.fullRoute}}</td>
-          <td>{{item.dispatchSummarize }}</td>
-          <td>{{item.note }}</td>
-        </tr>
-        <tr *ngIf="listDispatchorder?.length == 0">
-          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <!-- /.box-body -->
-  <div class="box-footer no-padding">
-    <div *ngIf="listDispatchorder?.length > 0" class="col-md-12 footer-phantrang">
-      <div class="row">
-        <div class="col-md-5">
-          <div class="dataTables_info">
-            <span>Tổng số bản ghi: {{ totalRows }}</span>
+<div>
+  <tabset>
+    <!-- ===================== TAB 1: LỆNH XE THƯỜNG ===================== -->
+    <tab heading="Lệnh xe thường" (selectTab)="onTabSelect('normal')">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-2">
+              <h3 class="box-title">Lệnh vận chuyển - NHÀ THẦU PHỤ</h3>
+            </div>
+            <div class="col-md-2">
+              <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+                class="form-control">
+            </div>
+            <div class="col-md-2">
+              <ng-select class="auto-grow" name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                [(ngModel)]="branchId" (change)="changedBranch($event)" [readonly]="!adminPermission">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+              <ng-select class="auto-grow" name="khachhang" [items]="listSupplier" bindLabel="supplierName"
+                bindValue="id" [(ngModel)]="supplierId" (change)="changedSupplier($event)"
+                placeholder="Chọn nhà cung cấp...">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()" [(ngModel)]="keyword"
+                  placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiem()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="col-md-7 text-right">
-          <div class="page">
-            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="9"
-              (pageChanged)="pageChanged($event)" [itemsPerPage]="50" previousText="&lsaquo;" nextText="&rsaquo;"
-              firstText="&laquo;" lastText="&raquo;">
-            </pagination>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding">
+          <table class="table table-bordered table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Tình trạng</th>
+                <th>RefNo</th>
+                <th class="column-ten-sm">Ngày</th>
+                <th class="column-ten-sm">Người lập</th>
+                <th class="column-ten-lg">Tên nhà thầu phụ</th>
+                <th class="column-ten-sm">Biển số xe</th>
+                <th class="column-ten-lg">Cung đường</th>
+                <th class="column-ten-lg">Tóm tắt lệnh</th>
+                <th class="column-ten-sm">Ghi chú</th>
+              </tr>
+              <tr>
+                <th>
+                  <ng-select name="filterType" (change)="filter()" [(ngModel)]="tinhtrang" [clearable]="false"
+                    [items]="array" bindLabel="text" bindValue="value"></ng-select>
+                </th>
+                <th><input class="form-control" #refNoSearchInput [(ngModel)]="refNoSearch" (input)="filter()"
+                    type="text" name="refNoSearch" /></th>
+                <th><input class="form-control" #ngaySearchInput [(ngModel)]="ngaySearch" (input)="filter()" type="text"
+                    name="ngaySearch" /></th>
+                <th><input class="form-control" #nguoilapSearchInput [(ngModel)]="nguoilapSearch" (input)="filter()"
+                    type="text" name="nguoilapSearch" /></th>
+                <th><input class="form-control" #nccSearchInput [(ngModel)]="nccSearch" (input)="filter()" type="text"
+                    name="nccSearch" /></th>
+                <th><input class="form-control" #bksSearchInput [(ngModel)]="bksSearch" (input)="filter()" type="text"
+                    name="bksSearch" /></th>
+                <th><input class="form-control" #toantuyenSearchInput [(ngModel)]="toantuyenSearch" (input)="filter()"
+                    type="text" name="toantuyenSearch" /></th>
+                <th><input class="form-control" #msumSearchInput [(ngModel)]="sumSearch" (input)="filter()" type="text"
+                    name="sumSearch" /></th>
+                <th><input class="form-control" ghichuSearchInput [(ngModel)]="ghichuSearch" (input)="filter()"
+                    type="text" name="ghichuSearch" /></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of visibleData">
+                <td>
+                  <span [ngClass]="item.status == 6? ' label label-info': item.status==1 ?
+                      'label label-success': item.status==2? 'label label-primary': item.status==3?
+                      'label label-default':  (item.status===4 && item.finished==false)?'label label-warning':((item.status==4 && item.finished==true)||item.status>=5)?
+                      'label label-danger': 'label label-khoitao'">
+                    {{item.rStatus}}
+                  </span>
+                </td>
+                <td style="font-weight:600; padding-left: 1yem;">
+                  <a [routerLink]="[]" (click)="viewDetailed(item)">{{item.refNo}}</a>
+                </td>
+                <td>
+                  <span>
+                    {{item.createdDate | date:'dd/MM/yyyy'}}
+                  </span>
+                </td>
+                <td class="column-ten-sm">
+                  <span>{{item.createdByName}}</span>
+                </td>
+                <td>
+                  <span><b>{{item.shippingUnitName}}</b></span>
+                </td>
+                <td class="column-ten-sm">
+                  <span>
+                    {{item.vihiclelLicensePlates}}
+                  </span>
+                </td>
+                <td>{{item.fullRoute}}</td>
+                <td>{{item.dispatchSummarize }}</td>
+                <td>{{item.note }}</td>
+              </tr>
+              <tr *ngIf="listDispatchorder?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listDispatchorder?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ totalRows }}</span>
+                </div>
+              </div>
+              <div class="col-md-7 text-right">
+                <div class="page">
+                  <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="9"
+                    (pageChanged)="pageChanged($event)" [itemsPerPage]="50" previousText="&lsaquo;" nextText="&rsaquo;"
+                    firstText="&laquo;" lastText="&raquo;">
+                  </pagination>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
-  <!-- /.box -->
+      <!-- /.box -->
+    </tab>
+
+    <!-- ===================== TAB 2: LỆNH FCL THẦU PHỤ ===================== -->
+    <tab heading="Lệnh FCL" (selectTab)="onTabSelect('fcl')">
+      <div class="box box-primary box-chieu-cao">
+        <div class="row">
+          <div class="box-header with-border">
+            <div class="col-md-2">
+              <h3 class="box-title">Lệnh FCL - NHÀ THẦU PHỤ</h3>
+            </div>
+            <div class="col-md-2">
+              <input type="text" daterangepicker [options]="dateOptionsFcl" (selected)="selectedDateFcl($event)"
+                class="form-control">
+            </div>
+            <div class="col-md-2">
+              <ng-select class="auto-grow" name="chinhanhFcl" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                [(ngModel)]="branchIdFcl" (change)="changedBranchFcl($event)" [readonly]="!adminPermission">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+              <ng-select class="auto-grow" name="khachhangFcl" [items]="listSupplierFcl" bindLabel="supplierName"
+                bindValue="id" [(ngModel)]="supplierIdFcl" (change)="changedSupplierFcl($event)"
+                placeholder="Chọn nhà cung cấp...">
+              </ng-select>
+            </div>
+            <div class="col-md-2">
+              <div class="input-group">
+                <input type="text" class="form-control" name="filterFcl" (keyup.enter)="timKiemFcl()"
+                  [(ngModel)]="keywordFcl" placeholder="Từ khóa" />
+                <span class="input-group-btn">
+                  <button class="btn btn-info btn-flat btn-sm" type="button" (click)="timKiemFcl()">
+                    <i class="fa fa-search"></i>
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- /.box-header -->
+        <div class="box-body table-responsive no-padding" style="position: relative;">
+          <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f4f4f9" size="medium" color="#1010ee"
+            type="ball-clip-rotate">
+            <p class="loading">Tải dữ liệu ...</p>
+          </ngx-spinner>
+          <table class="table table-bordered table-striped table-hover">
+            <thead>
+              <tr>
+                <th>Tình trạng</th>
+                <th class="column-ten-sm">RefNo</th>
+                <th class="column-ten-sm">Ngày</th>
+                <th class="column-ten-sm">Người lập</th>
+                <th class="column-ten-lg">Tên nhà thầu phụ</th>
+                <th class="column-ten-sm">Tên lái xe</th>
+                <th class="column-ten-sm">Biển số xe</th>
+                <th>Mooc</th>
+                <th class="column-ten-sm">Số Cont</th>
+                <th class="column-ten-lg">Điểm giao nhận hàng</th>
+                <th>Tổng Km</th>
+                <th>Tổng dầu</th>
+                <th>Ghi chú</th>
+              </tr>
+              <tr>
+                <th>
+                  <ng-select name="filterTypeFcl" (change)="filterDataFcl()" [(ngModel)]="statusSelectedFcl"
+                    [clearable]="false" [items]="arrayFcl" bindLabel="text" bindValue="value"></ng-select>
+                </th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.refNo" (input)="filterDataFcl()"
+                    type="text" name="refNoFcl" /></th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.createdDate" (input)="filterDataFcl()"
+                    type="text" name="createdDateFcl" /></th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.createdByName" (input)="filterDataFcl()"
+                    type="text" name="createdByNameFcl" /></th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.shippingUnitName" (input)="filterDataFcl()"
+                    type="text" name="shippingUnitNameFcl" /></th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.driverName" (input)="filterDataFcl()"
+                    type="text" name="driverNameFcl" /></th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.vehiclelLicensePlates"
+                    (input)="filterDataFcl()" type="text" name="bksFcl" /></th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.moocLicensePlates" (input)="filterDataFcl()"
+                    type="text" name="moocFcl" /></th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.containerList" (input)="filterDataFcl()"
+                    type="text" name="contFcl" /></th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.locationList" (input)="filterDataFcl()"
+                    type="text" name="locationFcl" /></th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.tongKm" (input)="filterDataFcl()"
+                    type="text" name="tongKmFcl" /></th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.tongdau" (input)="filterDataFcl()"
+                    type="text" name="tongdauFcl" /></th>
+                <th><input class="form-control" [(ngModel)]="filterColumnsFcl.note" (input)="filterDataFcl()" type="text"
+                    name="noteFcl" /></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of visibleDataFcl">
+                <td>
+                  <span [ngClass]="item.isDeny? 'label label-danger': item.status == 6? ' label label-info': item.status==1 ?
+                      'label label-success': item.status==2? 'label label-primary': item.status==3?
+                      'label label-duyetB1':  (item.status===4)?'label label-duyetB2' :item.status==5 ?
+                      'label label-warning': 'label label-khoitao'">
+                    {{item.rStatus}}
+                  </span>
+                </td>
+                <td style="font-weight:600;">
+                  <a [routerLink]="[]" (click)="viewDetailedFcl(item)"><b>{{item.refNo}}</b></a>
+                </td>
+                <td>
+                  <span>{{item.createdDate | date:'dd/MM/yyyy'}}</span>
+                </td>
+                <td class="column-ten-sm">
+                  <span>{{item.createdByName}}</span>
+                </td>
+                <td class="column-ten-lg">
+                  <span><b>{{item.shippingUnitName}}</b></span>
+                </td>
+                <td>
+                  <span><b>{{item.driverName}}</b></span>
+                </td>
+                <td class="column-ten-sm">
+                  <span>{{item.vehiclelLicensePlates}}</span>
+                </td>
+                <td>{{item.moocLicensePlates}}</td>
+                <td class="column-ten-lg">
+                  <div *ngIf="item.containerList?.length > 0">
+                    <div *ngFor="let container of item.containerList">{{ '- '+ container }}</div>
+                  </div>
+                </td>
+                <td class="column-ten-lg">
+                  <div *ngIf="item.locationList?.length > 0">
+                    <div *ngFor="let location of item.locationList">{{'- '+ location }}</div>
+                  </div>
+                </td>
+                <td>{{item.tongKm}}</td>
+                <td>{{item.tongdau}}</td>
+                <td>{{item.note}}</td>
+              </tr>
+              <tr *ngIf="listFilterFcl?.length == 0">
+                <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- /.box-body -->
+        <div class="box-footer no-padding">
+          <div *ngIf="listFilterFcl?.length > 0" class="col-md-12 footer-phantrang">
+            <div class="row">
+              <div class="col-md-5">
+                <div class="dataTables_info">
+                  <span>Tổng số bản ghi: {{ totalRowsFcl }}</span>
+                </div>
+              </div>
+              <div class="col-md-7 text-right">
+                <div class="page">
+                  <pagination [totalItems]="totalRowsFcl" [(ngModel)]="pageIndexFcl" [maxSize]="9"
+                    (pageChanged)="pageChangedFcl($event)" [itemsPerPage]="50" previousText="&lsaquo;" nextText="&rsaquo;"
+                    firstText="&laquo;" lastText="&raquo;">
+                  </pagination>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- /.box -->
+    </tab>
+  </tabset>
 </div>
+
 <modal-subcontractor-dispatch-order *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
 </modal-subcontractor-dispatch-order>
+<modal-perform-fcl *ngIf="viewModalFcl" [subcontractorMode]="true" (SaveSuccess)="saveSuccessFcl()"
+  (CloseModal)="closeModalFcl()">
+</modal-perform-fcl>

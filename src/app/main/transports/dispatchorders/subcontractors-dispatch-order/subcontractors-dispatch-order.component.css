@@ -7,7 +7,7 @@ table  th {
   padding: 2px;
 }
 .box-chieu-cao>.box-body {
-  height: calc(100vh - 150px);
+  height: calc(100vh - 200px);
 }
 /* .table_wrapper{
   display: block;

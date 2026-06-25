@@ -12,6 +12,9 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { ModalWorkflowModule } from '@app/shared/components/workflows/modal-workflow/modal-workflow.module';
 import { Daterangepicker } from 'ng2-daterangepicker';
 import { ModalSubcontractorDispatchOrderModule } from '@app/shared/components/transports/modal-subcontractor-dispatch-order/modal-subcontractor-dispatch-order.module';
+import { ModalPerformFclModule } from '@app/shared/components/transports/modal-perform-fcl/modal-perform-fcl.module';
+import { TabsModule } from 'ngx-bootstrap/tabs';
+import { NgxSpinnerModule } from 'ngx-spinner';
 
 
 @NgModule({
@@ -27,6 +30,9 @@ import { ModalSubcontractorDispatchOrderModule } from '@app/shared/components/tr
     ModalWorkflowModule,
     Daterangepicker,
     ModalSubcontractorDispatchOrderModule,
+    ModalPerformFclModule,
+    TabsModule.forRoot(),
+    NgxSpinnerModule,
     SubcontractorsDispatchOrderRoutingModule
   ],
   providers:[

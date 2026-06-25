@@ -1,5 +1,25 @@
 # Pending / In-Progress Work
 
+## ▶ Thầu phụ — tab "Lệnh FCL" (FCL legacy thầu phụ) trong trang thực hiện lệnh thầu phụ — BE+FE xong, chờ chạy SP + deploy + test (2026-06-25)
+Chi tiết: done.md section đầu. Bổ sung tab 2 "Lệnh FCL" vào `subcontractors-dispatch-order` = FCL legacy (`IsLegacy=1`) của thầu phụ (`IsSubcontractors=1`). Scope: list + thực hiện (nhận lệnh), KHÔNG tạo/sửa. FCL mới (v2) chưa làm — không đụng.
+- BE additive: `GetAll` + controller `getPaging` thêm lọc thầu phụ qua **`obj.BValue`** (không thêm field envelope) + `supplierId=ShippingUnitId`. FE service map `isSubcontractors`→`bValue`, `supplierid`→`item.shippingUnitId`.
+- FE: tabset 2 tab, **bộ lọc tách riêng** (`*Fcl` + `listSupplierFcl`); tab thường load trong `ngOnInit`, tab FCL load qua `(selectTab)`. Modal chung `modal-perform-fcl` + `@Input() subcontractorMode` → chỉ hiện nút "Nhận lệnh" (status==1).
+
+**Anh cần:**
+1. ⬜ Chạy SP `SP_DispatchOrderFCL_GetAll` đã thêm 2 param **`@IsSubcontractors`** + **`@SupplierId`** (đều `DEFAULT NULL`). ⚠️ Tên đúng chính xác — lệch là Dapper "too many arguments" hỏng cả list FCL công ty.
+2. ⬜ Deploy API + build FE.
+3. ⬜ Test: tab "Lệnh FCL" thầu phụ ra đúng list (FCL legacy + thầu phụ), lọc NCC/ngày độc lập tab thường; mở lệnh status Gửi lệnh chỉ có nút "Nhận lệnh"; **list FCL công ty vẫn chạy bình thường**.
+
+## ▶ Garage API — endpoint danh mục Nhân viên — BE only additive, chờ deploy (2026-06-25)
+Thêm `POST /api/Garages/GetEmployees` vào GaragesController (chi tiết done.md). Tái dùng `_employee.GetbyAll()`, lọc Status, projection gọn. KHÔNG đụng SP/DB.
+- **Anh cần:** ⬜ deploy API → app garage gọi `GetEmployees` (header `Api-Key`). Báo nếu cần thêm field / lấy cả NV nghỉ.
+
+## ★ Tái thiết kế Tạm ứng/Thanh toán (Quy trình June 25 2026) — KẾ HOẠCH XONG, CHƯA CODE (2026-06-25)
+Kế hoạch + giải pháp kỹ thuật đầy đủ: [advance-payment-redesign-plan.md](advance-payment-redesign-plan.md) (gap verify từ source + 6 phase P0→P5 + phương án "tiến hóa có kiểm soát"). Memory `project_advance_payment_redesign`. Nguồn: `NewAPI/Quy trình Tạm ứng  Thanh toán_June 25 2026.docx`.
+- **P0** Nhóm phí (GroupFeeCode Lv1) trên Tạm ứng + rule kê khai theo nhóm — nền tảng, làm trước.
+- **P1** Hạn mức enforce + Thời hạn TƯ + khóa quá hạn + gia hạn. **P2** TT đối ứng N tạm ứng + auto phiếu chi/thu + duyệt theo nhóm. **P3** Nợ HĐ đầy đủ rule. **P4** Phiếu chi/thu Thủ quỹ + chặn quỹ thiếu. **P5** Bút toán đối ứng + báo cáo (workshop KT, spec chưa chốt).
+- **Anh cần**: chốt thứ tự ưu tiên + 7 điểm để ngỏ (mục 5 trong plan) → em đọc SP/schema liên quan, soạn SQL trình duyệt cho phase đầu.
+
 ## ▶ Draft Site — chuẩn hóa ngày draft-web + fix datepicker trống — draft-web ĐÃ deploy, chờ deploy ERP + test (2026-06-24)
 Chi tiết: done.md section đầu. 3 nhóm fix FE-only (KHÔNG đụng BE/SQL): (1) helper `core/date-util.ts` parse đa định dạng cho 5 list; (2) shipment/canon form lưu `dd/MM/yyyy`(+`HH:mm:ss`) + ERP `_draftDate` thêm `DD/MM/YYYY` để promote đọc được; (3) **gốc rễ datepicker trống** = `ngx-daterangepicker-material` dùng `dayjs/esm` riêng → `toModel`/`toTimeModel` 5 form trả **CHUỖI** đúng locale (không phải object dayjs). Memory `reference_draftweb_daterangepicker_dayjs_esm`.
 

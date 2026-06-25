@@ -158,6 +158,9 @@ export class ModalPerformFclComponent implements OnInit {
   cangExpanded = false;
   nhaMayExpanded = false;
   @Input() appFuncion: any;
+  // Chế độ thực hiện lệnh THẦU PHỤ: chỉ cho phép "Nhận lệnh" (status==1), ẩn mọi nút thao tác khác.
+  // Mặc định false => tab thực hiện lệnh CÔNG TY giữ nguyên hành vi cũ.
+  @Input() subcontractorMode: boolean = false;
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
   @ViewChild("modalDispatchOrderFcl", { static: false }) modalDispatchOrderFcl: ModalDirective;

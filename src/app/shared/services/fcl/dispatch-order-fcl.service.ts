@@ -154,6 +154,12 @@ export class DispatchOrderFclService extends BaseService {
     // Lọc theo loại lệnh: '1' = lệnh cũ legacy, '0' = lệnh mới; không truyền → SP mặc định lấy lệnh mới (NULL ~ 0)
     const il = params.get('isLegacy');
     if (il !== null && il !== '') p.item.isLegacy = il === '1' || il === 'true';
+    // Lọc thầu phụ (tab "Lệnh FCL" trong module thầu phụ): cờ bValue (false = không lọc; true = chỉ thầu phụ) + supplierId (=ShippingUnitId).
+    // Caller cũ không truyền → bValue mặc định false → BE giữ nguyên hành vi.
+    const isSub = params.get('isSubcontractors');
+    if (isSub === '1' || isSub === 'true') p.bValue = true;
+    const supplierId = params.get('supplierid');
+    if (supplierId !== null && supplierId !== '' && supplierId !== '0') p.item.shippingUnitId = Number.parseInt(supplierId);
     return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/getPaging`, p)
     .pipe(map((response: any) => {
       if (response.code == '401')
