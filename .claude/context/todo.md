@@ -1,5 +1,13 @@
 # Pending / In-Progress Work
 
+## ▶ Draft Site — chuẩn hóa ngày draft-web + fix datepicker trống — draft-web ĐÃ deploy, chờ deploy ERP + test (2026-06-24)
+Chi tiết: done.md section đầu. 3 nhóm fix FE-only (KHÔNG đụng BE/SQL): (1) helper `core/date-util.ts` parse đa định dạng cho 5 list; (2) shipment/canon form lưu `dd/MM/yyyy`(+`HH:mm:ss`) + ERP `_draftDate` thêm `DD/MM/YYYY` để promote đọc được; (3) **gốc rễ datepicker trống** = `ngx-daterangepicker-material` dùng `dayjs/esm` riêng → `toModel`/`toTimeModel` 5 form trả **CHUỖI** đúng locale (không phải object dayjs). Memory `reference_draftweb_daterangepicker_dayjs_esm`.
+
+**Anh cần:**
+1. ✅ draft-web ĐÃ deploy → test: mở sửa nháp PCCV (2 ô Thời gian dự kiến/Hoàn thành + đóng/trả hàng) + lô/canon/debit/TT → datepicker hiện đúng ngày giờ; list ra `dd/MM/yyyy`; tạo nháp mới → payload lưu `dd/MM/yyyy`.
+2. ⬜ **build + deploy ERP** (web-app-update) → màn xem nháp / **promote** (modal-shipment/modal-job-canon) đọc được định dạng `dd/MM/yyyy` mới + tương thích nháp cũ `YYYYMMDD`. Test promote 1 nháp lô/canon → ngày trên job thật đúng.
+3. ⬜ (nếu thấy lệch) 2 chỗ hiện ngày THÔ từ nguồn ERP CHƯA bọc helper: cột "Ngày" trong `modal-list-advance` + cột `invoiceDate` bảng chi phí debit — báo để bọc `formatDateVN`.
+
 ## ▶ PendingInvoice (F043) list — icon loading + fix vạch đỏ editor — FE only, chỉ cần `ng build` (2026-06-23)
 2 chỉnh nhỏ FE/editor (chi tiết done.md):
 1. **Loading khi tải list**: cờ `loading` + overlay spinner phủ bảng + spinner nút tìm + ẩn dòng "Không có HĐ" lúc load. (List vẫn load-all `pageSize 99999` client-side → lâu hơn màn khác; chỉ thêm loading, chưa đổi sang server-paging.)
@@ -25,7 +33,7 @@ Nối tiếp mục dưới (cùng ngày). 3 chỉnh FE-only, KHÔNG đụng BE/S
 3. **Modal đọc HĐ — gán mặc định theo bộ phận (suy từ Role)**: role bắt đầu `OPS*` → mặc định **Công việc**; `CS*` → **Lô hàng**; còn lại → Lô hàng. Vẫn đổi tay được (`defaultAssignTypeByRole()` trong `show()`).
 
 **Anh cần:**
-1. ⬜ Chạy `NewAPI/Migration_FeeCodes_AddGroup0506_20260622.sql` (đổi tên 05 + thêm 06, idempotent, chỉ master data).
+1. ✅ ĐÃ CHẠY (2026-06-24) `NewAPI/Migration_FeeCodes_AddGroup0506_20260622.sql` (đổi tên 05 + thêm 06, idempotent, chỉ master data).
 2. ⬜ Stop IIS Express → deploy API mới (controller +UpdateInvoice) + `ng build` FE (đã build 0 lỗi).
 3. ⬜ **Test E2E:**
    - List HĐ AI: nút 👁 mở modal chi tiết màu giống đọc AI; người tạo thấy nút "Sửa" → sửa NCC/KH/HĐ/tiền/line items → Lưu → list reload; người KHÁC không có nút Sửa; HĐ đã dùng cho Payment (Status≠0) không sửa được.
@@ -42,7 +50,7 @@ FE đổi (build sạch): list `pending-invoice` group **chỉ Cấp 1** (bỏ t
 - Nhóm **hàng bán (02)** hiện thêm radio **Loại chi phí hàng bán**: `reinvoice` (trả hộ xuất lại HĐ cho khách) | `other` (hàng bán khác). Bắt buộc chọn 1 trước upload. Snapshot nhãn lưu vào `subFeeName` (subFeeCode vẫn NULL) để truy vết — **chưa có cột riêng**; nếu cần lưu mã/cột riêng + báo cáo theo loại này thì báo để thêm SQL.
 
 **Anh cần:**
-1. ⬜ Chạy `NewAPI/Migration_PendingInvoice_GetPaging_CustomerJoin_20260621.sql` — `CREATE OR ALTER SP_PendingInvoice_GetPaging` LEFT JOIN `ShipmentId→Shipment→Customer`, trả thêm `AssignCustomerCode/AssignCustomerName`. Logic filter/paging giữ NGUYÊN.
+1. ✅ ĐÃ CHẠY (2026-06-24) `NewAPI/Migration_PendingInvoice_GetPaging_CustomerJoin_20260621.sql` — `CREATE OR ALTER SP_PendingInvoice_GetPaging` LEFT JOIN `ShipmentId→Shipment→Customer`, trả thêm `AssignCustomerCode/AssignCustomerName`. Logic filter/paging giữ NGUYÊN.
 2. ⬜ Stop IIS Express → deploy API mới (ViewModel +2 prop) + `ng build` FE (đã build 0 lỗi).
 3. ⬜ **Test E2E:** list chỉ còn group Cấp 1; gõ filter từng cột lọc đúng; cột JobId hiện badge + cột KH hiện "mã - tên" của Lô/CV đã gán; modal dropdown đúng thứ tự trả hộ→hàng bán→quản lý chung→đầu tư→khác; chọn nhóm trả hộ bắt buộc Lô/CV; nhóm 02 hiện 2 lựa chọn + chỉ `reinvoice` mới bắt buộc Job.
 

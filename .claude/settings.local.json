@@ -115,7 +115,12 @@
       "Bash(sqlcmd -S 115.84.178.66 -d DELTASOFT -U delta.erp -P 'khsd89#$\\)?h>24' -Q \"SET NOCOUNT ON; SELECT MAX\\(CAST\\(FeeCode AS INT\\)\\) AS MaxLvl1Code FROM FeeCodes WHERE [Level]=1 AND ISNUMERIC\\(FeeCode\\)=1;\" -W -s \"|\")",
       "Bash(sqlcmd -S 115.84.178.66 -d DELTASOFT -U delta.erp -P 'khsd89#$\\)?h>24' -Q \"SET NOCOUNT ON; SELECT COLUMN_NAME, DATA_TYPE, IS_NULLABLE, COLUMNPROPERTY\\(OBJECT_ID\\('FeeCodes'\\), COLUMN_NAME, 'IsIdentity'\\) AS IsIdentity FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME='FeeCodes' ORDER BY ORDINAL_POSITION;\" -W -s \"|\")",
       "Bash(sqlcmd -S 115.84.178.66 -d DELTASOFT -U delta.erp -P 'khsd89#$\\)?h>24' -Q \"SET NOCOUNT ON; SELECT Id, FeeCode, FeeName, ParentId, [Level], Status, IsInvoiceInput FROM FeeCodes WHERE FeeCode='05' AND [Level]=1;\" -W -s \"|\")",
-      "Bash(unzip -p \"Điều chỉnh bảng chấm công 2.docx\" word/document.xml)"
+      "Bash(unzip -p \"Điều chỉnh bảng chấm công 2.docx\" word/document.xml)",
+      "Bash(grep -E \"\\(routing|module\\)\\\\.ts$\")",
+      "Bash(node -e ' *)",
+      "Bash(cat)",
+      "Bash(node /tmp/dtest.mjs)",
+      "Bash(node dtest.mjs)"
     ],
     "additionalDirectories": [
       "d:\\Delta\\DeltaSoft\\web-app-update\\.git",

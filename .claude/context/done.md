@@ -1,5 +1,26 @@
 # Completed Features
 
+## Draft Site — chuẩn hóa định dạng ngày + fix datepicker không hiện ngày (draft-web + ERP) — FE build 0 lỗi, draft-web ĐÃ deploy, ERP chờ deploy — 2026-06-24
+Loạt fix hiển thị/lưu ngày bên site nháp `draft-web` (Angular 21). Toàn bộ FE-only, KHÔNG đụng BE/SQL.
+
+### YC1 — List không convert ngày → rỗng (helper parse đa định dạng)
+draft-web lưu ngày trong Payload theo NHIỀU định dạng (Lô/Canon cũ `YYYYMMDD`, TT/Debit `DD/MM/YYYY`, PCCV `DD/MM/YYYY HH:mm:ss`, `createdAt` ISO). List cũ dùng `new Date()`/slice tay → `new Date('20260624')` Invalid → cột ngày rỗng. ERP không gặp vì API trả ISO.
+- **MỚI** [core/date-util.ts](../../../draft-web/src/app/core/date-util.ts): `parseDraftDate()` (strict 8 định dạng → fallback ISO) + `formatDateVN()` (`DD/MM/YYYY`) + `formatDateTimeVN()` (`DD/MM/YYYY HH:mm`). Dùng `dayjs + customParseFormat` (đã có sẵn).
+- [data-table.component.ts](../../../draft-web/src/app/shared/components/data-table/data-table.component.ts): formatter `type:'date'` đổi `new Date()` → `formatDateVN()`.
+- **5 list** (shipment/canon/payment/debit/workflow): cột `createdInfo` + cột ngày (`cdsDate`/`refDate`/`estimatedStartTime/FinishTime`) qua helper; bỏ slice tay YYYYMMDD ở canon.
+
+### YC2 — Chuẩn hóa ĐỊNH DẠNG LƯU (user chốt)
+Chốt: ngày = `dd/MM/yyyy`; ngày-giờ PCCV (estimatedStart/Finish + đóng/trả hàng) = `dd/MM/yyyy HH:mm:ss`; debit (ngày doanh thu/vận hành) + chi tiết TT (ngày hóa đơn) = `dd/MM/yyyy`. Kiểm thực tế: payment/debit/workflow form **đã** lưu đúng; chỉ **shipment-form + canon-job-form** còn lưu `YYYYMMDD`/`YYYYMMDD HH:mm:ss`.
+- shipment-form + canon-job-form: `API_DATE=VN` (dd/MM/yyyy), `API_TIME=VN_TIME` (dd/MM/yyyy HH:mm:ss).
+- **ERP** [modal-shipment](../../src/app/shared/components/shipments/modal-shipment/modal-shipment.component.ts) + [modal-job-canon](../../src/app/shared/components/canon/modal-job-canon/modal-job-canon.component.ts) `_draftDate()`: thêm `DD/MM/YYYY` + `DD/MM/YYYY HH:mm:ss` (đặt TRƯỚC `MM/DD/YYYY` tránh nhầm ngày↔tháng) → promote nháp đọc được cả nháp cũ lẫn mới. **ERP chờ build+deploy.**
+
+### YC3 — Datepicker form sửa hiện TRỐNG dù payload có ngày (gốc rễ: dayjs/esm)
+`ngx-daterangepicker-material` import **`dayjs/esm`** = instance dayjs RIÊNG với app. Truyền model `{startDate,endDate}` là **object dayjs của app** → thư viện không nhận (cross-instance) → `chosenLabel` rỗng → ô input trống dù model đã set. `setStartDate` có nhánh **string** → `dayjs(str, locale.format)` bằng chính instance nó (an toàn).
+- Fix: `toModel`/`toTimeModel` của **cả 5 form** trả về **CHUỖI** đã chuẩn hóa đúng locale picker (date `DD/MM/YYYY`, time `DD/MM/YYYY HH:mm:ss`) thay vì object dayjs. Vẫn dùng `parseDraftDate` để đọc mọi định dạng nháp rồi format lại.
+- Memory: `reference_draftweb_daterangepicker_dayjs_esm`.
+
+**Anh cần**: (1) draft-web ĐÃ deploy — test mở sửa nháp PCCV/lô/canon/debit/TT: datepicker hiện đúng; list ra ngày `dd/MM/yyyy`; tạo nháp mới kiểm payload lưu `dd/MM/yyyy`. (2) build+deploy **ERP** → màn xem nháp/promote đọc định dạng mới. Build: draft-web `ng build` 0 lỗi (3 vòng); ERP `ng build` 0 lỗi (chỉ warning CommonJS).
+
 ## Dầu máy phát — BỔ SUNG cho FCL CŨ (legacy, dùng song song FCL mới đang test) — BE+FE build 0 lỗi, chờ deploy + test — 2026-06-23
 FCL cũ (`modal-dispatch-order-fcl`) trước chỉ FCL **mới** (v2) có dầu máy phát. Nay thêm vào FCL cũ vì 2 bản chạy song song một thời gian. **Tái dùng toàn bộ hạ tầng có sẵn** — KHÔNG đụng SP lớn/Create/Update cũ:
 - **Bảng/SP/endpoint dùng chung**: cùng bảng `DispatchOrderFCL` (6 cột Generator* đã có) + `SP_DispatchOrderFCL_UpdateGenerator`/`_GetGenerator` + endpoint `UpdateGenerator` + FE service `updateGenerator()` + model `DispatchOrderFcl` (6 field) — tất cả đã tồn tại từ đợt 17/06, không tạo mới gì.
