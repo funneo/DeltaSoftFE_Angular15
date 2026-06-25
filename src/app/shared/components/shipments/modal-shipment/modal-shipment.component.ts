@@ -424,6 +424,7 @@ export class ModalShipmentComponent implements OnInit {
   private _draftDate(v: any, withTime: boolean): string {
     if (!v) return null;
     const m = moment(v, [
+      'DD/MM/YYYY HH:mm:ss', 'DD/MM/YYYY',
       'YYYYMMDD HH:mm:ss', 'YYYYMMDDHHmmss', 'YYYYMMDD',
       'MM/DD/YYYY HH:mm:ss', 'MM/DD/YYYY',
       'YYYY-MM-DDTHH:mm:ss', 'YYYY-MM-DD', moment.ISO_8601
