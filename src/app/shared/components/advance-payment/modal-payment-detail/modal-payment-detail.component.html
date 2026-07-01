@@ -48,8 +48,23 @@
                                                 <div class="input-group" style="width: 100%;">
                                                     <ng-select name="job" [items]="listWorkflow" bindLabel="jobName"
                                                         bindValue="id" [(ngModel)]="entity.workflowId" required
-                                                        placeholder="Chọn công việc" [readonly]="entity.id>0"
+                                                        placeholder="Chọn công việc" [readonly]="flagXem || entity.id>0"
                                                         [clearable]="false">
+                                                    </ng-select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div *ngIf="!_wfId" class="form-group">
+                                            <label class="col-sm-3 control-label">Lô hàng
+                                                <span class="error">*</span>
+                                            </label>
+                                            <div class="col-sm-9">
+                                                <div class="input-group" style="width: 100%;">
+                                                    <ng-select name="shipmentidd" [items]="listShipment"
+                                                        bindLabel="jobId" bindValue="id"
+                                                        [(ngModel)]="entity.shipmentId"
+                                                        placeholder="Chọn lô hàng"
+                                                        [readonly]="flagXem || entity.id!=null" [clearable]="false">
                                                     </ng-select>
                                                 </div>
                                             </div>

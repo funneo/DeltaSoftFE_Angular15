@@ -1,5 +1,24 @@
 # Completed Features
 
+## Draft — Debit view ở ERP + PROMOTE thật Payment & Debit (`AddFromDraft`) — BE build 0 err + FE tsc sạch, chờ redeploy API + ng build — 2026-07-01
+Nối nốt 2 mảnh còn thiếu của Draft Site tài chính: (1) xem nháp **Debit** trong ERP (reuse `modal-debit-notes`), (2) **duyệt nháp → tạo phiếu thật** cho cả Payment lẫn Debit (thay placeholder). Clone y hệt pattern Shipment/Workflow `AddFromDraft`. **KHÔNG SQL mới** (`GetForPromote`/`MarkPromoted` generic theo draftId; `SP_DraftEntries_GetForErp_GetPaging` đã filter `@DraftType='Debit'` sẵn).
+
+### Debit view ở ERP — reuse `modal-debit-notes` (mirror Payment/Workflow)
+- [modal-debit-notes](../../src/app/shared/components/shipments/modal-debit-notes/modal-debit-notes.component.ts): +`_isDraftView`/`_draftId`, +`@Output() ApproveDraft`, +`viewDraft(payload,draftId)` (parse JSON→`entity`+`listDetail`, `flagXem/flagLocked=true`, parse ngày khoan dung `DD/MM/YYYY`+ISO, seed `listShipments`+`_thongTinLoHang` từ payload, `loadChiPhi`/`loadEmployee`, KHÔNG gọi getDetail), `_isDraftView=false` đầu `edit()`. HTML `[class.draft-view]` nền vàng + badge **NHÁP #id** + nút **"Xác nhận chuyển sang ERP"**. CSS `.draft-view`/`.draft-badge` (#FFFDF5/#FFC107/#FFF8E1).
+- [debit-note list](../../src/app/main/shipments/debit-note/debit-note.component.ts): `loadData` = `forkJoin({erp: getPaging, draft: draftService.getPagingForErp({draftType:'Debit',...})})` (draft `catchError`→[]), `mapDraftToDebitRow` (payload→row `_isDraft/_draftId/_draftPayload`, `debitNo='NHÁP'`), `[...draftRows,...erpItems]`; `clickRow` guard `_isDraft`; badge "Nháp #" → `showDraft`→`viewDraft`. CSS `.row-draft` vàng. **Không cần BE redeploy cho phần view** (endpoint `getPagingForErp` generic đã live).
+
+### PROMOTE thật Payment + Debit — endpoint `AddFromDraft` (BE cần redeploy)
+- **BE** (clone `ShipmentController.AddFromDraft`, KHÔNG đụng Create cũ):
+  - [PaymentsController.AddFromDraft](../../../NewAPI/API/Controllers/AdvanceAndPayments/PaymentsController.cs) (+inject `IDraft`): guard token → parse draftId → `GetForPromote` idempotent (đã Promoted → trả phiếu cũ) → `CreatedAsync(Payments)` → `MarkPromoted(draftId, result.RefNo, result.Id, reviewer)` best-effort → trả `{paymentId, refNo, alreadyPromoted}`. `[ClaimRequirement(PAYMENT, CREATE)]`.
+  - [DebitNoteController.AddFromDraft](../../../NewAPI/API/Controllers/Shipments/DebitNoteController.cs) (+inject `IDraft`): tương tự → `MarkPromoted(draftId, result.DebitNo, result.Id, ...)` → `{debitId, debitNo, alreadyPromoted}`. `[ClaimRequirement(DEBITNOTES, CREATE)]`. (Payment `CreatedAsync`→`Payments{Id,RefNo}`; Debit `CreatedAsync`→`DebitNotes{Id,DebitNo}`.)
+- **FE**:
+  - `payments.service`/`debit-notes.service`: +`addFromDraft(entity,draftId)` → POST `/api/payments/addFromDraft` | `/api/debitnote/addFromDraft` (FromBodyBase: `item=entity`, `id=draftId`).
+  - `modal-payment-detail`/`modal-debit-notes`: `approveDraft()` → confirm → `_doApproveDraft()` dựng entity giống `save()` (ngày→CLIENTDATE, details lọc `feeId`, `id=undefined`) → gọi service → success emit `ApproveDraft`+hide (KHÔNG đụng `save()` thật).
+  - `payment.component`/`debit-note.component`: `onConfirmPromote` → đóng modal + `loadData()` (bỏ toast placeholder; nháp biến mất, phiếu/debit thật hiện).
+- **Validate promote MINIMAL** (giống Shipment): Payment cần `shipmentId||workflowId` + ≥1 mã phí; Debit cần `shipmentId` + ≥1 chi tiết. KHÔNG replicate check "ngày doanh thu trong tháng"/"job đã khóa" của Create thật (reviewer đã duyệt).
+- **Verify**: `dotnet build` NewAPI = 0 error (997 warning cũ); `tsc --noEmit` web-app-update = exit 0.
+- **Anh cần**: (1) **tắt API** đang chạy → `dotnet build`/publish → chạy lại (khóa DLL khi đang chạy); (2) `ng build` + deploy FE. Rồi test: list Debit "Nháp #" mở modal vàng; nút "Xác nhận chuyển sang ERP" ở cả Payment/Debit tạo phiếu thật + nháp biến mất + reload. Idempotent (bấm 2 lần không tạo trùng).
+
 ## Draft view ở ERP — REUSE modal phiếu thật + cờ `isDraft` (Payment + Workflow) — FE, tsc sạch, chờ build/deploy — 2026-06-30
 Nguyên tắc chốt với anh: xem nháp trong ERP phải **reuse chính modal chi tiết thật** (đổi nền vàng + cờ `isDraft`, giống modal-shipment), **KHÔNG đẻ modal mới**.
 ### Payment (phiên này) — thay `modal-draft-payment-view` mới đẻ → reuse `modal-payment-detail`

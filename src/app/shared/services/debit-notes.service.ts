@@ -41,6 +41,24 @@ export class DebitNotesService extends BaseService {
       }), catchError(this.handleError));
   }
 
+  /**
+   * Duyệt nháp (draft.DraftEntries) thành Debit thật — Phase 4 Draft Site.
+   * Gửi id = draftId + item = entity đã map; BE tạo debit xong tự ghi ngược draft
+   * (Status='Promoted' + refNo=debitNo + shipmentId=debitId). Trả { debitId, debitNo, alreadyPromoted }.
+   */
+  addFromDraft(entity: DebitNotes, draftId: number) {
+    let p: FromBodyBase<DebitNotes> = {};
+    p.item = entity;
+    p.id = '' + draftId;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/debitnote/addFromDraft`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
+  }
+
   update(entity: DebitNotes) {
     let p: FromBodyBase<DebitNotes> = {};
     p.item = entity;

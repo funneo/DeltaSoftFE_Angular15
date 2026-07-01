@@ -1,9 +1,11 @@
 <div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
     tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
     <div class="modal-dialog modal-lg">
-        <div class="modal-content">
+        <div class="modal-content" [class.draft-view]="_isDraftView">
             <div #myHandle class="modal-header">
-                <h5 class="modal-title pull-left">Chi tiết DebitNotes</h5>
+                <h5 class="modal-title pull-left">Chi tiết DebitNotes
+                    <span *ngIf="_isDraftView" class="draft-badge"><i class="fa fa-edit"></i> NHÁP #{{_draftId}}</span>
+                </h5>
 
                 <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
                     <span aria-hidden="true">&times;</span>
@@ -129,6 +131,10 @@
                             <div class="col-md-4">
 
                               <div class="form-group text-right" style="padding-right: 10px;">
+                                  <button *ngIf="_isDraftView" class="btn btn-success btn-sm" type="button"
+                                    (click)="approveDraft()" [disabled]="flagSave" title="Xác nhận chuyển sang ERP">
+                                    <i class="fa fa-check"></i> Xác nhận chuyển sang ERP
+                                  </button>
                                   <button *ngIf="entity?.id" type="button" class="btn btn-info btn-sm" title="In" (click)="showPrint(3)">
                                     <i class="fa fa-print" aria-hidden="true"></i> In
                                   </button>

@@ -302,16 +302,55 @@ export class ModalPaymentDetailComponent implements OnInit {
     if (this.listDetail.length) {
       this.listDetail.forEach((_) => { _.tempId = _.id ?? _.tempId; _.checked = false; });
     }
+    // Nháp: payload đã kèm sẵn jobId → seed thẳng để hiện lô hàng ngay, không phụ thuộc BE getDetail.
+    const jobIdFromPayload = (p && (p.jobId ?? p.JobId)) || null;
+    if (this._shipmentId && jobIdFromPayload) {
+      this.listShipment = [{ id: this._shipmentId, jobId: jobIdFromPayload }];
+    } else {
+      this.loadShipment();
+    }
     this.loadWorkflow();
-    this.loadShipment();
     this.loadEmployee();
     if (this.entity.type == 1) this.loadSupplier();
     this.modalAddEdit.show();
   }
 
-  /** Nút "Xác nhận chuyển sang ERP" — phát sự kiện cho parent (BE promote nối ở bước sau). */
+  /** Nút "Xác nhận chuyển sang ERP" — duyệt nháp thành Thanh toán thật (BE addFromDraft, idempotent). */
   approveDraft(): void {
-    this.ApproveDraft.emit(this._draftId);
+    if (this.flagSave) return;
+    if (!this.entity?.shipmentId && !this.entity?.workflowId) {
+      this._notificationService.printAlert("THÔNG BÁO", "Nháp thiếu lô hàng / công việc — không thể duyệt.");
+      return;
+    }
+    this._notificationService.printConfirmationDialog(
+      "Duyệt nháp này thành Thanh toán thật?", () => this._doApproveDraft());
+  }
+
+  private _doApproveDraft(): void {
+    // Dựng entity giống save() (KHÔNG đụng save() để tránh ảnh hưởng luồng thật)
+    if (this._ngay)
+      this.entity.refDate = moment(this._ngay, FormatContstants.DATEVN).format(FormatContstants.CLIENTDATE);
+    this.entity.paymentDetails = this.listDetail.filter((x) => x.feeId != undefined && x.feeId != null);
+    if (!this.entity.paymentDetails?.length) {
+      this._notificationService.printAlert("THÔNG BÁO", "Nháp chưa có mã phí — không thể duyệt.");
+      return;
+    }
+    this.entity.id = undefined;   // ép tạo mới
+    this.flagSave = true;
+    this.paymentsService.addFromDraft(this.entity, this._draftId).subscribe((res: ResponseValue<any>) => {
+      if (res.code == "200" || res.code == "201") {
+        const refNo = res.data?.refNo;
+        this._notificationService.printSuccessMessage(
+          res.data?.alreadyPromoted
+            ? ("Nháp đã được duyệt trước đó (Phiếu " + (refNo || "") + ")")
+            : ("Đã duyệt thành Thanh toán " + (refNo || "")));
+        this.modalAddEdit.hide();
+        this.ApproveDraft.emit(this._draftId);
+      } else {
+        this._notificationService.printErrorMessage(res.message || MessageContstants.CREATED_ERR_MSG);
+        this.flagSave = false;
+      }
+    }, () => { this.flagSave = false; });
   }
 
   edit(id: number, flag: boolean): void {

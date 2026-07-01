@@ -68,3 +68,6 @@ li:hover {
 thead tr:nth-child(1) th{background: #dcefe5f6; position: sticky;top: 0px;z-index: 10;border: 1px solid rgba(109, 107, 107, 0.445);}
 thead tr:nth-child(2) th{background: #dcefe5f6; position: sticky;top: 30px;z-index: 10;border: 1px solid rgba(109, 107, 107, 0.445);}
 thead tr:nth-child(3) th{background: #dcefe5f6; position: sticky;top: 60px;z-index: 10;border: 1px solid rgba(109, 107, 107, 0.445);}
+/* Dòng nháp (draft) — đồng bộ list Payment */
+.row-draft { background-color: #fff8e1 !important; }
+.row-draft td { font-style: italic; }

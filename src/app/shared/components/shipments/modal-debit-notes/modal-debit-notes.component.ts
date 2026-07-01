@@ -115,8 +115,12 @@ export class ModalDebitNotesComponent implements OnInit {
   listChiPhiLoHang: PaymentDetail[];
   listDebitTypes: OtherCategories[];
   listPermissionCS: PermissionCS[];
+  // Chế độ xem nháp (draft.DraftEntries) — read-only, nền vàng, nút "Xác nhận chuyển sang ERP".
+  _isDraftView: boolean = false;
+  _draftId: number;
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
+  @Output() ApproveDraft: EventEmitter<number> = new EventEmitter();
   @ViewChild('modalAddEdit', { static: false }) modalDebit: ModalDirective;
   @ViewChild(ModalDispatchorderComponent, { static: false }) modalDispatchOrderAddEdit: ModalDispatchorderComponent
   @ViewChild(ModalDebtDebitnotesComponent, { static: false }) modalAddEdit: ModalDebtDebitnotesComponent
@@ -526,7 +530,106 @@ export class ModalDebitNotesComponent implements OnInit {
       this._ngayDoanhThu = moment(event.oldStartDate).format('DD/MM/YYYY');
   }
 
+  /**
+   * Xem 1 phiếu Debit NHÁP (draft.DraftEntries.Payload) read-only — REUSE chính modal này.
+   * flagXem=true + nền vàng + nút "Xác nhận chuyển sang ERP". KHÔNG gọi BE getDetail/lưu.
+   * Payload là DTO tạo-thật site nháp gửi (header DebitNotes + mảng debitNoteDetails).
+   * Nháp AI đã kèm sẵn shipmentId(ERP)+jobId + info lô → seed thẳng, không gọi BE.
+   */
+  viewDraft(payload: any, draftId: number): void {
+    let p: any = payload;
+    if (typeof payload === 'string') {
+      try { p = JSON.parse(payload || '{}'); } catch { p = {}; }
+    }
+    this.entity = (p || {}) as DebitNotes;
+    this._draftId = draftId;
+    this._isDraftView = true;
+    this.flagXem = true;
+    this.flagLocked = true;
+    this.flagSave = false;
+    this._isChuyeduyet = false;
+    this._shipmentId = this.entity.shipmentId;
+    this._sId = this.entity.shipmentId;
+    this._customerId = this.entity.customerId;
+    if (this.entity.branchId) this._branchId = this.entity.branchId;
+    const parseVN = (v: any) => {
+      const d = moment(v, ['DD/MM/YYYY', 'YYYY-MM-DD', moment.ISO_8601], false);
+      return d.isValid() ? d.format(FormatContstants.DATEVN) : '';
+    };
+    this._ngayLamDebit = parseVN(this.entity.refDate) || moment(new Date()).format(FormatContstants.DATEVN);
+    this._ngayDoanhThu = parseVN(this.entity.debitDate);
+    this._ngayHachtoan = parseVN(this.entity.accountingDate);
+    this.listDetail = this.entity.debitNoteDetails ?? [];
+    if (this.listDetail.length) {
+      this.listDetail.forEach((_, i) => { _.tempId = _.id ?? (i + 1); });
+    }
+    this._luongHang = this.entity.quantityOfGgoods;
+    // Seed lô + thông tin từ payload (nháp đã có sẵn) — không round-trip BE.
+    const jobId = this.entity.jobId || this.entity.shipmentNo;
+    if (this.entity.shipmentId && jobId) {
+      this.listShipments = [{ id: this.entity.shipmentId, jobId }];
+      this._thongTinLoHang = 'Tờ khai: ' + (this.entity.cdsNumber ?? '')
+        + '/Booking: ' + (this.entity.bookingNo ?? '')
+        + '/HBill: ' + (this.entity.hawB_HBL ?? '')
+        + '/Invoice: ' + (this.entity.invoiceNo ?? '')
+        + '/Loại hình: ' + ((this.entity as any).shipmentTypeName ?? '');
+      this.loadChiPhi({ id: this.entity.shipmentId, jobId });
+    } else {
+      this.loadShipment();
+    }
+    this.loadEmployee();
+    if (this.entity.type == 1) this.loadSupplier();
+    this.modalDebit.show();
+  }
+
+  /** Nút "Xác nhận chuyển sang ERP" — duyệt nháp thành Debit thật (BE addFromDraft, idempotent). */
+  approveDraft(): void {
+    if (this.flagSave) return;
+    if (!this.entity?.shipmentId) {
+      this._notificationService.printAlert(MessageContstants.TITLE_ERROR_INFO, 'Nháp thiếu lô hàng — không thể duyệt.');
+      return;
+    }
+    this._notificationService.printConfirmationDialog(
+      'Duyệt nháp này thành Debit thật?', () => this._doApproveDraft());
+  }
+
+  private _doApproveDraft(): void {
+    // Dựng entity giống save() (KHÔNG đụng save() để tránh ảnh hưởng luồng thật)
+    if (this._ngayLamDebit)
+      this.entity.refDate = moment(this._ngayLamDebit, FormatContstants.DATEVN).format(FormatContstants.CLIENTDATE);
+    if (this._ngayDoanhThu) {
+      if (!moment(this._ngayDoanhThu, FormatContstants.DATEVN).isValid()) {
+        this._notificationService.printErrorMessage('Ngày doanh thu không hợp lệ'); return;
+      }
+      this.entity.debitDate = moment(this._ngayDoanhThu, FormatContstants.DATEVN).format(FormatContstants.CLIENTDATE);
+    }
+    if (this._ngayHachtoan && moment(this._ngayHachtoan, FormatContstants.DATEVN).isValid())
+      this.entity.accountingDate = moment(this._ngayHachtoan, FormatContstants.DATEVN).format(FormatContstants.CLIENTDATE);
+    this.entity.debitNoteDetails = this.listDetail.filter((x) => x.feeId != undefined && x.feeId != null);
+    if (this.entity.debitNoteDetails.length < 1) {
+      this._notificationService.printErrorMessage('Nháp chưa có chi tiết phí — không thể duyệt.'); return;
+    }
+    this.entity.quantityOfGgoods = this._luongHang;
+    this.entity.id = undefined;   // ép tạo mới
+    this.flagSave = true;
+    this.debitNotesService.addFromDraft(this.entity, this._draftId).subscribe((res: ResponseValue<any>) => {
+      if (res.code == '200' || res.code == '201') {
+        const debitNo = res.data?.debitNo;
+        this._notificationService.printSuccessMessage(
+          res.data?.alreadyPromoted
+            ? ('Nháp đã được duyệt trước đó (Debit ' + (debitNo || '') + ')')
+            : ('Đã duyệt thành Debit ' + (debitNo || '')));
+        this.modalDebit.hide();
+        this.ApproveDraft.emit(this._draftId);
+      } else {
+        this._notificationService.printErrorMessage(res.message || MessageContstants.CREATED_ERR_MSG);
+        this.flagSave = false;
+      }
+    }, () => { this.flagSave = false; });
+  }
+
   edit(id: number): void {
+    this._isDraftView = false;
     this.debitNotesService.getDetail(id.toString()).subscribe((res: ResponseValue<DebitNotes>) => {
       if (res.code == '200' || res.code == '201') {
         this.flagXem = true;

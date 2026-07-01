@@ -29,6 +29,24 @@ export class PaymentsService extends BaseService {
       }), catchError(this.handleError));
   }
 
+  /**
+   * Duyệt nháp (draft.DraftEntries) thành Thanh toán thật — Phase 4 Draft Site.
+   * Gửi id = draftId + item = entity đã map; BE tạo phiếu xong tự ghi ngược draft
+   * (Status='Promoted' + refNo + paymentId). Trả { paymentId, refNo, alreadyPromoted }.
+   */
+  addFromDraft(entity: Payments, draftId: number) {
+    let p: FromBodyBase<Payments> = {};
+    p.item = entity;
+    p.id = '' + draftId;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/payments/addFromDraft`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
+  }
+
   update(entity: Payments) {
     let p: FromBodyBase<Payments> = {};
     p.item = entity;

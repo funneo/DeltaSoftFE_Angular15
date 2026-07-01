@@ -427,9 +427,10 @@ export class PaymentComponent implements OnInit {
     }, 50);
   }
 
-  // BE promote (tạo phiếu thật từ nháp) làm ở bước sau — hiện chỉ báo đã sẵn sàng.
+  // Modal đã gọi BE addFromDraft + báo kết quả → parent chỉ đóng modal + reload (nháp biến mất, phiếu thật hiện lên).
   onConfirmPromote(_draftId: number): void {
-    this.notificationService.printMessage('Đã ghi nhận. Chức năng tạo phiếu thật từ nháp sẽ nối khi BE promote hoàn tất (bước 2).');
+    this.viewDraftModal = false;
+    this.loadData();
   }
 
   closeDraftModal(): void { this.viewDraftModal = false; }

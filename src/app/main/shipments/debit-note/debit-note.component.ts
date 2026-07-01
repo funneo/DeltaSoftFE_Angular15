@@ -4,7 +4,9 @@ import { MessageContstants } from '@app/shared/constants';
 import { DebitNotes, Pagination, ResponseValue, Customer, OpenDebitNote, Branch } from '@app/shared/models';
 import { NotificationService, DebitNotesService, UtilityService, AuthService, CustomerService, OpenDebitNoteService, BranchService } from '@app/shared/services';
 import { PageChangedEvent } from 'ngx-bootstrap/pagination';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { DraftService, DraftEntryView } from '@app/shared/services/draft.service';
 import * as moment from 'moment';
 import { Router } from '@angular/router';
 import { ModalOpenDebitNoteComponent } from '@app/shared/components/shipments/modal-open-debit-note/modal-open-debit-note.component';
@@ -112,6 +114,7 @@ export class DebitNoteComponent implements OnInit {
     private spinner: NgxSpinnerService,
     private openDebitNoteService: OpenDebitNoteService,
     private branchService: BranchService,
+    private draftService: DraftService,
     public datepipe: DatePipe
   ) {
     let user = this.authService.getLoggedInUser();
@@ -395,26 +398,91 @@ export class DebitNoteComponent implements OnInit {
       .set("branchId", this._branchId?.toString())
       .set("type", this._type?.toString())
       .set('datetype', this._dateType.toString());;
-    this.busy = this.debitNotesService
-      .getPaging(params)
-      .subscribe((res: ResponseValue<Pagination<DebitNotes>>) => {
-        if (res.code == "200" || res.code == "201") {
-          this.listDebitNotes = res.data?.items;
-          this.listFilter = res.data?.items;
-          this.spinner.hide();
-          this.filter();
-        } else {
-          this.notificationService.printErrorMessage(
-            MessageContstants.GETDATA_ERR_MSG + "\n" + res.code
-          );
-          this.spinner.hide();
-        }
-      });
+    // Draft endpoint nhận DateTime?, gửi ISO 'YYYY-MM-DD'
+    const draftFilter = {
+      draftType: 'Debit',
+      keyword: this.keyword,
+      fromDate: moment(this.ngayBatDau).format('YYYY-MM-DD'),
+      toDate: moment(this.ngayKetThuc).format('YYYY-MM-DD'),
+      branchId: this._branchId ?? null,
+    };
+    this.busy = forkJoin({
+      erp: this.debitNotesService.getPaging(params),
+      draft: this.draftService.getPagingForErp(draftFilter).pipe(catchError(() => of({ code: '200', data: [] } as any))),
+    }).subscribe((res: any) => {
+      if (res.erp?.code == "200" || res.erp?.code == "201") {
+        const erpItems: DebitNotes[] = res.erp.data?.items ?? [];
+        // Defensive: BE nháp có thể trả 500/204/null → chỉ dùng khi 200/201 + isArray.
+        const draftOk = res.draft?.code == '200' || res.draft?.code == '201';
+        const draftItems: DraftEntryView[] = (draftOk && Array.isArray(res.draft?.data)) ? res.draft.data : [];
+        const draftRows: DebitNotes[] = draftItems
+          .filter(d => d.draftType === 'Debit')
+          .map(d => this.mapDraftToDebitRow(d));
+        this.listDebitNotes = [...draftRows, ...erpItems];
+        this.listFilter = this.listDebitNotes;
+        this.spinner.hide();
+        this.filter();
+      } else {
+        this.notificationService.printErrorMessage(
+          MessageContstants.GETDATA_ERR_MSG + "\n" + res.erp?.code
+        );
+        this.spinner.hide();
+      }
+    });
+  }
+
+  /**
+   * Parse draft.Payload JSON → row shape DebitNotes để hiện chung 1 list.
+   * Cờ `_isDraft=true` để HTML bôi nháp + click badge mở modal xem (KHÔNG route/getDetail).
+   */
+  private mapDraftToDebitRow(d: DraftEntryView): DebitNotes {
+    let p: any = {};
+    try { p = JSON.parse(d.payload ?? '{}'); } catch {}
+    const row: any = {
+      id: d.id,
+      customerName: d.customerName,
+      debitType: p.debitType,
+      debitNo: 'NHÁP',
+      refDate: d.createdAt,
+      debitDate: p.debitDate,
+      accountingDate: p.accountingDate,
+      totalAmount: d.totalAmount ?? p.totalAmount ?? 0,
+      shipmentNo: p.jobId,
+      cdsNumber: p.cdsNumber,
+      hawB_HBL: p.hawB_HBL,
+      bookingNo: p.bookingNo,
+      invoiceNo: p.invoiceNo,
+      createdByName: d.createdByName,
+      notes: p.notes,
+      status: false,
+      step: 0,
+      checked: false,
+      _isDraft: true,
+      _draftId: d.id,
+      _draftPayload: d.payload,
+    };
+    return row as DebitNotes;
   }
 
   clickRow(item: DebitNotes): void {
+    if ((item as any)._isDraft) return;   // dòng nháp chọn qua badge "Nháp #" → mở modal, không tick
     item.checked = !item.checked;
     this.icheck();
+  }
+
+  // ============ NHÁP (xem read-only bằng CHÍNH modal-debit-notes của phiếu thật) ============
+  viewDraftModal = false;
+  showDraft(item: any): void {
+    this.viewDebitnote = true;
+    setTimeout(() => {
+      this.modalDebitNote.viewDraft(item._draftPayload, item._draftId);
+    }, 50);
+  }
+
+  // Modal đã gọi BE addFromDraft + báo kết quả → parent chỉ đóng modal + reload (nháp biến mất, debit thật hiện lên).
+  onConfirmPromote(_draftId: number): void {
+    this.viewDebitnote = false;
+    this.loadData();
   }
 
   timKiem(): void {

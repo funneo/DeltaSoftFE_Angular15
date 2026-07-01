@@ -1,10 +1,14 @@
 # Pending / In-Progress Work
 
-## ▶ Draft view ERP — reuse modal thật + cờ isDraft (Payment + Workflow) — FE xong, chờ build/deploy + nối BE (2026-06-30)
-Chi tiết: done.md section đầu. Xem nháp trong ERP = reuse chính modal chi tiết thật + nền vàng, KHÔNG đẻ modal mới. Payment: xóa `modal-draft-payment-view`, reuse `modal-payment-detail` (+`viewDraft`/`_isDraftView`/`ApproveDraft`). Workflow: reuse `modal-workflow` (+`viewDraft`/`approveDraft`→`PromoteFromDraft`).
-1. ⬜ **build + deploy ERP** → test: list Payment click "Nháp #" mở modal vàng read-only đúng phiếu (header + bảng chi tiết); list Workflow "Xem nháp" mở modal vàng.
-2. ⬜ **Verify BE `POST /api/Workflow/PromoteFromDraft`** đã tồn tại/deploy chưa → test nút "Xác nhận chuyển ERP" ở workflow: tạo job thật + nháp biến mất + reload list.
-3. ⬜ **Nối BE promote Payment** (hiện `onConfirmPromote` chỉ placeholder): tạo phiếu thật từ nháp Payment (clone pattern Shipment promote — memory `project_draft_promote_payment_debit`). Chưa code.
+## ▶ Draft view + PROMOTE ERP (Payment / Debit / Workflow) — code xong, chờ redeploy API + ng build (cập nhật 2026-07-01)
+Chi tiết: done.md 2 section đầu. Xem nháp trong ERP = reuse chính modal chi tiết thật + nền vàng, KHÔNG đẻ modal mới. Payment→`modal-payment-detail`, Debit→`modal-debit-notes`, Workflow→`modal-workflow`. Promote = endpoint `AddFromDraft`/`PromoteFromDraft` clone Shipment (idempotent, GetForPromote+MarkPromoted generic, KHÔNG SQL mới).
+1. ⬜ **Redeploy API** (BE mới: `PaymentsController.AddFromDraft` + `DebitNoteController.AddFromDraft`, đều inject `IDraft`) → **tắt API đang chạy** rồi build (khóa DLL). BE build đã 0 error.
+2. ⬜ **build + deploy ERP FE** (tsc sạch) → test:
+   - list Payment/Debit: click "Nháp #" mở modal vàng read-only đúng phiếu (header + bảng chi tiết);
+   - nút **"Xác nhận chuyển sang ERP"** ở Payment + Debit → tạo phiếu/debit thật + nháp biến mất + reload; bấm 2 lần KHÔNG tạo trùng (idempotent);
+   - list Workflow "Xem nháp" mở modal vàng + "Xác nhận chuyển ERP" tạo job thật.
+3. ⬜ **Verify BE `POST /api/Workflow/PromoteFromDraft`** đã deploy chưa (endpoint workflow từ phiên trước).
+   Ghi chú: validate lúc promote để MINIMAL (giống Shipment) — nếu muốn siết theo Create thật (check ngày doanh thu / job khóa) thì báo bổ sung.
 
 ## ▶ FIX — List FCL công ty nuốt lệnh thầu phụ (BValue non-nullable) — BE 1 dòng, chờ deploy (2026-06-27)
 Chi tiết: done.md section đầu. `getPaging` controller truyền thẳng `obj.BValue` (bool không nullable, default false) → SP `@IsSubcontractors=0` → loại lệnh thầu phụ khỏi list công ty. Fix: map `false→null` (`obj.BValue ? true : (bool?)null`). **Anh cần:** ⬜ deploy API → list FCL công ty view lại được lệnh thầu phụ.

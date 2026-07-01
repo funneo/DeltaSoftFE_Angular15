@@ -156,9 +156,9 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of listFilter" (click)="clickRow(item)">
+        <tr *ngFor="let item of listFilter" (click)="clickRow(item)" [class.row-draft]="item._isDraft">
           <td class="table-checkbox">
-            <label class="custom-checkbox">
+            <label class="custom-checkbox" *ngIf="!item._isDraft">
               <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
               <span class="helping-el"></span>
             </label>
@@ -166,7 +166,11 @@
           <td class="column-name">{{item.customerName}}</td>
           <td>{{item.debitType}}</td>
           <td>
-            <a [routerLink]="[]" (click)="show(item.id || 0)">{{item.debitNo}}</a>
+            <a *ngIf="!item._isDraft" [routerLink]="[]" (click)="show(item.id || 0)">{{item.debitNo}}</a>
+            <a *ngIf="item._isDraft" [routerLink]="[]" (click)="showDraft(item)" class="text-warning"
+              title="Xem nháp (đọc-only)">
+              <i class="fa fa-pencil-square-o"></i> Nháp #{{ item._draftId }}
+            </a>
           </td>
           <td>{{item.refDate|date: "dd/MM/yyyy"}}</td>
           <td>{{item.debitDate|date: "dd/MM/yyyy"}}</td>
@@ -239,7 +243,8 @@
   (CloseModal)="closeModalExchangeRate()">
 </modal-debit-note-update-exchange-rate>
 
-<modal-debit-notes *ngIf="viewDebitnote" (SaveSuccess)="saveDebit()" (CloseModal)="closeDebitnote()">
+<modal-debit-notes *ngIf="viewDebitnote" (SaveSuccess)="saveDebit()" (ApproveDraft)="onConfirmPromote($event)"
+  (CloseModal)="closeDebitnote()">
 </modal-debit-notes>
 <modal-update-accounting-date *ngIf="viewUpdateAccountingDate" (SaveSuccess)="saveUpdateAccountingDate($event)"
   (CloseModal)="closeUpdateAccountingDate()">
