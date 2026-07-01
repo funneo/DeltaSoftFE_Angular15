@@ -31,6 +31,9 @@ export class ModalWorkflowComponent implements OnInit {
   public entity: Workflow;
   public flagXem: boolean = false;
   public flagNew: boolean = false;
+  // Chế độ xem nháp (draft.DraftEntries) — read-only, nền vàng, nút "Xác nhận chuyển sang ERP".
+  public _isDraftView: boolean = false;
+  public _draftId: number;
   public flagOpMan = false;
   public flagSave: boolean = false;
   public flagOption: boolean = false;
@@ -85,6 +88,7 @@ export class ModalWorkflowComponent implements OnInit {
   public busy: Subscription;
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter;
+  @Output() ApproveDraft: EventEmitter<number> = new EventEmitter();
   @ViewChild('modalAddEdit', { static: false }) modalAddEdit: ModalDirective;
   // @ViewChild(ModalWorkflowAttackFilesComponent, { static: false }) modalAttachFiles: ModalWorkflowAttackFilesComponent
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent
@@ -247,10 +251,59 @@ export class ModalWorkflowComponent implements OnInit {
     this.flagNew = true;
     this.flagXem = false;
     this.flagSave = false;
+    this._isDraftView = false;
     this.modalAddEdit.show();
   }
 
+  /**
+   * Xem 1 công việc NHÁP (draft.DraftEntries.Payload) read-only — REUSE form modal-workflow.
+   * flagXem=true (khóa nhập) + nền vàng + nút "Xác nhận chuyển sang ERP". KHÔNG gọi BE lưu.
+   * Payload là DTO tạo-thật site nháp gửi (date đã dạng VN dd/MM/yyyy HH:mm:ss).
+   */
+  viewDraft(payload: any, draftId: number) {
+    let p: any = payload;
+    if (typeof payload === 'string') { try { p = JSON.parse(payload || '{}'); } catch { p = {}; } }
+    this.entity = p || {};
+    this._draftId = draftId;
+    this._isDraftView = true;
+    this.flagXem = true;
+    this.flagNew = false;
+    this.flagSave = false;
+    this.isOpMan = false;
+    this.jobgroupId = this.entity.jobGroupId;
+    this.customerId = this.entity.customerId;
+    this.customerCode = this.entity.customerCode;
+    this.customerName = this.entity.customerName;
+    this.isTransport = this.entity.jobGroupId == environment.transportGroupId;
+    this.loadJobGroupOption();
+    this.modalAddEdit.show();
+  }
+
+  /** Nút "Xác nhận chuyển sang ERP" — tạo công việc THẬT từ nháp + ghi ngược draft. */
+  approveDraft() {
+    if (this.flagSave) return;
+    // Đảm bảo listHandlingGroupId (BE loop theo nhóm); rỗng → suy từ handlingGroupId.
+    if (!this.entity.listHandlingGroupId || this.entity.listHandlingGroupId.length === 0) {
+      this.entity.listHandlingGroupId = this.entity.handlingGroupId ? [this.entity.handlingGroupId] : [];
+    }
+    this.flagSave = true;
+    this.workflowService.promoteFromDraft(this.entity, this._draftId).subscribe((res: ResponseValue<any>) => {
+      if (res.code == '200' || res.code == '201') {
+        this.notificationService.printSuccessMessage(
+          res.data?.alreadyPromoted
+            ? 'Nháp đã được duyệt trước đó (Job ' + (res.data?.jobId || '') + ')'
+            : 'Đã duyệt thành Công việc thật ' + (res.data?.jobId || ''));
+        this.modalAddEdit.hide();
+        this.ApproveDraft.emit(this._draftId);
+      } else {
+        this.notificationService.printErrorMessage(res.message || MessageContstants.UPDATED_ERR_MSG);
+        this.flagSave = false;
+      }
+    });
+  }
+
   edit(id: string, flag: boolean, isOpMan: boolean) {
+    this._isDraftView = false;
     this.workflowService.getDetail(id).subscribe((res: ResponseValue<Workflow>) => {
       if (res.code == '200' || res.code == '201') {
         this.entity = res.data;

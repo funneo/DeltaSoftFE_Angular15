@@ -184,16 +184,20 @@
           </tr>
           <!-- Dòng chi tiết -->
           <ng-container *ngIf="group.isExpanded">
-            <tr *ngFor="let item of group.items" (click)="clickRow(item)">
+            <tr *ngFor="let item of group.items" (click)="clickRow(item)" [class.row-draft]="item._isDraft">
               <td class="table-checkbox">
-                <label class="custom-checkbox">
+                <label class="custom-checkbox" *ngIf="!item._isDraft">
                   <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
                   <span class="helping-el"></span>
                 </label>
               </td>
               <td>{{ item.employeeName }}</td>
               <td>
-                <a [routerLink]="[]" (click)="edit(item.id, true)">{{ item.refNo }}</a>
+                <a *ngIf="!item._isDraft" [routerLink]="[]" (click)="edit(item.id, true)">{{ item.refNo }}</a>
+                <a *ngIf="item._isDraft" [routerLink]="[]" (click)="showDraft(item)" class="text-warning"
+                  title="Xem nháp (đọc-only)">
+                  <i class="fa fa-pencil-square-o"></i> Nháp #{{ item._draftId }}
+                </a>
               </td>
               <td>{{ item.refDate | date: 'dd/MM/yyyy' }}</td>
               <td class="so-tien">{{ item.totalAmount | currency: 'VND' : '' }}</td>
@@ -209,33 +213,36 @@
               <td>{{ item.type?.toString() | List: listType }}</td>
               <td>{{ item.isDirectPayment?.toString() | List: listTypePayment }}</td>
               <td class="trang-thai">
-                <span [ngClass]="
+                <span *ngIf="item._isDraft" class="label label-warning">Nháp</span>
+                <ng-container *ngIf="!item._isDraft">
+                  <span [ngClass]="
+                      item.step == 2
+                        ? 'label label-success'
+                        : item.step == 1
+                        ? 'label label-info'
+                        : item.step == -1
+                        ? 'label label-danger'
+                        : item.status
+                        ? 'label label-warning'
+                        : 'label label-primary'
+                    ">
+                    {{
                     item.step == 2
-                      ? 'label label-success'
-                      : item.step == 1
-                      ? 'label label-info'
-                      : item.step == -1
-                      ? 'label label-danger'
-                      : item.status
-                      ? 'label label-warning'
-                      : 'label label-primary'
-                  ">
-                  {{
-                  item.step == 2
-                  ? 'Đã duyệt'
-                  : item.step == 1
-                  ? 'Đang duyệt'
-                  : item.step == -1
-                  ? 'Từ chối'
-                  : item.status
-                  ? 'Chuyển duyệt'
-                  : 'Khởi tạo'
-                  }}
-                </span>
-                <button type="button" class="btn btn-primary btn-sm action-file" title="Chứng từ đính kèm"
-                  (click)="showFiles(item)">
-                  <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Chứng từ...
-                </button>
+                    ? 'Đã duyệt'
+                    : item.step == 1
+                    ? 'Đang duyệt'
+                    : item.step == -1
+                    ? 'Từ chối'
+                    : item.status
+                    ? 'Chuyển duyệt'
+                    : 'Khởi tạo'
+                    }}
+                  </span>
+                  <button type="button" class="btn btn-primary btn-sm action-file" title="Chứng từ đính kèm"
+                    (click)="showFiles(item)">
+                    <i class="fa fa-file-pdf-o" aria-hidden="true"></i> Chứng từ...
+                  </button>
+                </ng-container>
               </td>
             </tr>
           </ng-container>
@@ -277,6 +284,8 @@
 <modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
 </modal-attachfile>
 <modal-doc-hoa-don *ngIf="viewDocHoaDon" (CloseModal)="closeDocHoaDon()"></modal-doc-hoa-don>
+<modal-payment-detail *ngIf="viewDraftModal" (ApproveDraft)="onConfirmPromote($event)"
+  (CloseModal)="closeDraftModal()"></modal-payment-detail>
 <!-- <modal-repayment-history *ngIf="viewRepaymentHistory" (CloseModal)="closeRepayment()">
 </modal-repayment-history> -->
 <!-- <div [ngBusy]="busy"></div> -->

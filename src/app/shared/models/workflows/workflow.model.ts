@@ -88,6 +88,10 @@ export interface  Workflow {
     updatedBy?: string;
     updatedByFullName?:string;
     deleted?:boolean;
+    // ===== Nháp (draft.DraftEntries, DraftType='Job') trộn ở BE =====
+    isDraft?: boolean;
+    draftId?: number;
+    draftPayload?: string;   // JSON gốc — mở modal xem
     item?:Shipment;
     workflowJobOptions?: WorkflowJobOption[];
     workflowJobOptionProcedures?: WorkflowJobOptionProcedure[];

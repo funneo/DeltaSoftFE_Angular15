@@ -142,6 +142,7 @@
                       <tr>
                         <th *ngIf="flagNew && !flagXem" style="width:32px"></th>
                         <th>Số phiếu</th>
+                        <th>Loại dầu</th>
                         <th>Người nhận dầu</th>
                         <th>Lái xe</th>
                         <th>Biển số xe</th>
@@ -161,6 +162,10 @@
                           </button>
                         </td>
                         <td>{{item.refNo}}</td>
+                        <td>
+                          <span *ngIf="item.mergeJobId === 'GENERATOR'" class="badge badge-warning">Máy phát</span>
+                          <span *ngIf="item.mergeJobId !== 'GENERATOR'">{{item.mergeJobId}}</span>
+                        </td>
                         <td>{{item.fuelDriverName}}</td>
                         <td>{{item.driverName}}</td>
                         <td>{{item.vehicleLicensePlates }}</td>

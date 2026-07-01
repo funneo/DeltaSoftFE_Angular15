@@ -8,7 +8,7 @@ import { AngularDraggableModule } from 'angular2-draggable';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { TabsModule } from 'ngx-bootstrap/tabs';
 import { PipeSharedModule } from '@app/shared/pipes/pipe-shared.module';
-import { Daterangepicker } from 'ng2-daterangepicker';
+import { AppDaterangepickerModule } from '@app/shared/directives/daterangepicker/daterangepicker.module';
 import { ModalWorkflowAttackFilesModule } from '../modal-workflow-attack-files/modal-workflow-attack-files.module';
 import { ModalMultiplyWorkflowModule } from '../modal-multiply-workflow/modal-multiply-workflow.module';
 import { ModalShipmentViewSearchModule } from '../../shipments/modal-shipment-view-search/modal-shipment-view-search.module';
@@ -27,7 +27,7 @@ import { ModalAttachfileModule } from '../../systems/modal-attachfile/modal-atta
     NgSelectModule,
     TabsModule.forRoot(),
     PipeSharedModule,
-    Daterangepicker,
+    AppDaterangepickerModule,
     ModalWorkflowAttackFilesModule,
     ModalMultiplyWorkflowModule,
     ModalShipmentViewSearchModule,

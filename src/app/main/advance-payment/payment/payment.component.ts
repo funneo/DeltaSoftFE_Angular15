@@ -4,9 +4,12 @@ import { MessageContstants } from '@app/shared/constants';
 import { Payments, Pagination, Employee, ResponseValue, Branch } from '@app/shared/models';
 import { AuthService, BranchService, EmployeeService, NotificationService, PaymentsService, UtilityService } from '@app/shared/services';
 import { PageChangedEvent } from 'ngx-bootstrap/pagination';
-import { Subscription } from 'rxjs';
+import { Subscription, forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import * as moment from 'moment';
 import { ModalPhieuChiComponent } from '@app/shared/components/accounting/modal-phieu-chi/modal-phieu-chi.component';
+import { DraftService, DraftEntryView } from '@app/shared/services/draft.service';
+import { ModalPaymentDetailComponent } from '@app/shared/components/advance-payment/modal-payment-detail/modal-payment-detail.component';
 import * as signalR from '@aspnet/signalr';
 import { environment } from '@environments/environment';
 import { Router } from '@angular/router';
@@ -100,7 +103,7 @@ export class PaymentComponent implements OnInit {
   @ViewChild(ModalPhieuChiComponent, { static: false }) modalAccounts: ModalPhieuChiComponent
   constructor(private advanceService: PaymentsService, private exportService: ExportService, private notificationService: NotificationService,
     private _utilityService: UtilityService, private employeeService: EmployeeService, private authService: AuthService, private spinner: NgxSpinnerService,
-    private router: Router, private branchService: BranchService, public datepipe: DatePipe) {
+    private router: Router, private branchService: BranchService, public datepipe: DatePipe, private draftService: DraftService) {
     let user = this.authService.getLoggedInUser();
     this._auth = Number.parseInt(user.authorisationLevel);
     this._employeeId = Number.parseInt(user.employeeId);
@@ -215,17 +218,67 @@ export class PaymentComponent implements OnInit {
       .set('type', this._type?.toString())
       .set('isDirectPayment', this._isDirectPayment?.toString())
       .set('branchId', this._branchId?.toString());
-    this.busy = this.advanceService.getPaging(params).subscribe((res: ResponseValue<Pagination<Payments>>) => {
-      if (res.code == '200' || res.code == '201') {
-        this.listPayments = res.data?.items;
+    // Draft endpoint nhận DateTime?, gửi ISO 'YYYY-MM-DD'
+    const draftFilter = {
+      draftType: 'Payment',
+      keyword: this.keyword,
+      fromDate: moment(this.ngayBatDau).format('YYYY-MM-DD'),
+      toDate: moment(this.ngayKetThuc).format('YYYY-MM-DD'),
+      branchId: this._branchId ?? null,
+    };
+    this.busy = forkJoin({
+      erp: this.advanceService.getPaging(params),
+      draft: this.draftService.getPagingForErp(draftFilter).pipe(catchError(() => of({ code: '200', data: [] } as any))),
+    }).subscribe((res: any) => {
+      if (res.erp?.code == '200' || res.erp?.code == '201') {
+        const erpItems: Payments[] = res.erp.data?.items ?? [];
+        // Defensive: BE nháp có thể trả 500/204/null → chỉ dùng khi 200/201 + isArray.
+        const draftOk = res.draft?.code == '200' || res.draft?.code == '201';
+        const draftItems: DraftEntryView[] = (draftOk && Array.isArray(res.draft?.data)) ? res.draft.data : [];
+        const draftRows: Payments[] = draftItems
+          .filter(d => d.draftType === 'Payment')
+          .map(d => this.mapDraftToPaymentRow(d));
+        this.listPayments = [...draftRows, ...erpItems];
         this.filter();
         this.spinner.hide();
       }
       else {
-        this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
+        this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.erp?.code)
         this.spinner.hide();
       }
     });
+  }
+
+  /**
+   * Parse draft.Payload JSON → row shape giống Payments để hiện chung 1 list (gom nhóm theo NV).
+   * Cờ `_isDraft=true` để HTML bôi nháp + click mở modal xem (KHÔNG route sang payment-detail).
+   */
+  private mapDraftToPaymentRow(d: DraftEntryView): Payments {
+    let p: any = {};
+    try { p = JSON.parse(d.payload ?? '{}'); } catch {}
+    const row: any = {
+      id: d.id,
+      employeeName: p.targetEmployeeName || d.createdByName || '(nháp)',
+      refNo: 'NHÁP',
+      refDate: d.createdAt,
+      totalAmount: d.totalAmount ?? p.totalAmount ?? 0,
+      contents: p.contents,
+      customerName: d.customerName,
+      relatedDocuments: p.relatedDocuments,
+      shipmentNo: p.jobId,
+      advancesRefNo: p.advancesRefNo,
+      type: p.type,
+      isDirectPayment: p.isDirectPayment,
+      status: false,
+      step: 0,
+      checked: false,
+      _isDraft: true,
+      _draftId: d.id,
+      _draftPayload: d.payload,
+      _createdByName: d.createdByName,
+      _createdAt: d.createdAt,
+    };
+    return row as Payments;
   }
   filter() {
     this.listFilter = Object.assign([], this.listPayments);
@@ -355,12 +408,31 @@ export class PaymentComponent implements OnInit {
   }
 
   clickRow(item: Payments): void {
+    if ((item as any)._isDraft) return;   // dòng nháp chọn qua link "Nháp #" → mở modal, không tick
     item.checked = !item.checked;
     this.listFilter.forEach(it => {
       if (it != item) it.checked = false;
     })
     this.icheck();
   }
+
+  // ============ NHÁP (xem read-only bằng CHÍNH modal-payment-detail của phiếu thật) ============
+  viewDraftModal = false;
+  @ViewChild(ModalPaymentDetailComponent, { static: false }) modalPaymentDetail: ModalPaymentDetailComponent;
+
+  showDraft(item: any): void {
+    this.viewDraftModal = true;
+    setTimeout(() => {
+      this.modalPaymentDetail?.viewDraft(item._draftPayload, item._draftId);
+    }, 50);
+  }
+
+  // BE promote (tạo phiếu thật từ nháp) làm ở bước sau — hiện chỉ báo đã sẵn sàng.
+  onConfirmPromote(_draftId: number): void {
+    this.notificationService.printMessage('Đã ghi nhận. Chức năng tạo phiếu thật từ nháp sẽ nối khi BE promote hoàn tất (bước 2).');
+  }
+
+  closeDraftModal(): void { this.viewDraftModal = false; }
 
   timKiem(): void {
     this.pageIndex = 1;

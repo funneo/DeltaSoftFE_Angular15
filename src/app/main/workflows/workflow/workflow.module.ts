@@ -10,7 +10,7 @@ import { PipeSharedModule } from '@app/shared/pipes/pipe-shared.module';
 import { SharedDirectivesModule } from '@app/shared/directives/shared-directives.module';
 import { NgSelectModule } from '@ng-select/ng-select';
 import { ModalWorkflowModule } from '@app/shared/components/workflows/modal-workflow/modal-workflow.module';
-import { Daterangepicker } from 'ng2-daterangepicker';
+import { AppDaterangepickerModule } from '@app/shared/directives/daterangepicker/daterangepicker.module';
 import { WorkflowComponent } from './workflow.component';
 import { ModalGradeWorkflowModule } from '@app/shared/components/workflows/modal-grade-workflow/modal-grade-workflow.module';
 import { ModalWorkflowImagesModule } from '@app/shared/components/workflows/modal-workflow-images/modal-workflow-images.module';
@@ -28,7 +28,7 @@ import { TabsModule } from 'ngx-bootstrap/tabs';
     PipeSharedModule,
     NgSelectModule,
     ModalWorkflowModule,
-    Daterangepicker,
+    AppDaterangepickerModule,
     WorkflowRoutingModule,
     ModalWorkflowModule,
     ModalGradeWorkflowModule,

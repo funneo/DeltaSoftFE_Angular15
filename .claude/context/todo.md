@@ -1,5 +1,17 @@
 # Pending / In-Progress Work
 
+## ▶ Draft view ERP — reuse modal thật + cờ isDraft (Payment + Workflow) — FE xong, chờ build/deploy + nối BE (2026-06-30)
+Chi tiết: done.md section đầu. Xem nháp trong ERP = reuse chính modal chi tiết thật + nền vàng, KHÔNG đẻ modal mới. Payment: xóa `modal-draft-payment-view`, reuse `modal-payment-detail` (+`viewDraft`/`_isDraftView`/`ApproveDraft`). Workflow: reuse `modal-workflow` (+`viewDraft`/`approveDraft`→`PromoteFromDraft`).
+1. ⬜ **build + deploy ERP** → test: list Payment click "Nháp #" mở modal vàng read-only đúng phiếu (header + bảng chi tiết); list Workflow "Xem nháp" mở modal vàng.
+2. ⬜ **Verify BE `POST /api/Workflow/PromoteFromDraft`** đã tồn tại/deploy chưa → test nút "Xác nhận chuyển ERP" ở workflow: tạo job thật + nháp biến mất + reload list.
+3. ⬜ **Nối BE promote Payment** (hiện `onConfirmPromote` chỉ placeholder): tạo phiếu thật từ nháp Payment (clone pattern Shipment promote — memory `project_draft_promote_payment_debit`). Chưa code.
+
+## ▶ FIX — List FCL công ty nuốt lệnh thầu phụ (BValue non-nullable) — BE 1 dòng, chờ deploy (2026-06-27)
+Chi tiết: done.md section đầu. `getPaging` controller truyền thẳng `obj.BValue` (bool không nullable, default false) → SP `@IsSubcontractors=0` → loại lệnh thầu phụ khỏi list công ty. Fix: map `false→null` (`obj.BValue ? true : (bool?)null`). **Anh cần:** ⬜ deploy API → list FCL công ty view lại được lệnh thầu phụ.
+
+## ◽ Skill nội bộ — 2 ứng viên còn để dành (tùy chọn, làm khi bắt đầu phần đó) (2026-06-26)
+Đã có 9 skill nội bộ (xem done.md 2026-06-26). 2 cái nên viết tiếp khi chạm tới: **`deltasoft-advance-payment`** (bản đồ module Tạm ứng/TT — dọn đường refactor lớn P0–P5, rút từ 2 memory `project_advance_payment_redesign` + `reference_advance_payment_module`) và **`deltasoft-draft-site`** (kiến trúc site nháp: 3 process, token aud=draft, promote, JSON envelope). Dùng `skill-creator` (đã cài global). Không gấp.
+
 ## ▶ Thầu phụ — tab "Lệnh FCL" (FCL legacy thầu phụ) trong trang thực hiện lệnh thầu phụ — BE+FE xong, chờ chạy SP + deploy + test (2026-06-25)
 Chi tiết: done.md section đầu. Bổ sung tab 2 "Lệnh FCL" vào `subcontractors-dispatch-order` = FCL legacy (`IsLegacy=1`) của thầu phụ (`IsSubcontractors=1`). Scope: list + thực hiện (nhận lệnh), KHÔNG tạo/sửa. FCL mới (v2) chưa làm — không đụng.
 - BE additive: `GetAll` + controller `getPaging` thêm lọc thầu phụ qua **`obj.BValue`** (không thêm field envelope) + `supplierId=ShippingUnitId`. FE service map `isSubcontractors`→`bValue`, `supplierid`→`item.shippingUnitId`.
@@ -11,8 +23,8 @@ Chi tiết: done.md section đầu. Bổ sung tab 2 "Lệnh FCL" vào `subcontra
 3. ⬜ Test: tab "Lệnh FCL" thầu phụ ra đúng list (FCL legacy + thầu phụ), lọc NCC/ngày độc lập tab thường; mở lệnh status Gửi lệnh chỉ có nút "Nhận lệnh"; **list FCL công ty vẫn chạy bình thường**.
 
 ## ▶ Garage API — endpoint danh mục Nhân viên — BE only additive, chờ deploy (2026-06-25)
-Thêm `POST /api/Garages/GetEmployees` vào GaragesController (chi tiết done.md). Tái dùng `_employee.GetbyAll()`, lọc Status, projection gọn. KHÔNG đụng SP/DB.
-- **Anh cần:** ⬜ deploy API → app garage gọi `GetEmployees` (header `Api-Key`). Báo nếu cần thêm field / lấy cả NV nghỉ.
+Thêm `POST /api/Garages/GetEmployees` vào GaragesController (chi tiết done.md). Tái dùng `_employee.GetbyAll()`, lọc Status, **trả full trường Employee** (bỏ projection cắt trường — chốt 2026-06-27). KHÔNG đụng SP/DB.
+- **Anh cần:** ⬜ deploy API → app garage gọi `GetEmployees` (header `Api-Key`) lấy full field NV. Báo nếu cần lấy cả NV nghỉ (bỏ filter Status).
 
 ## ★ Tái thiết kế Tạm ứng/Thanh toán (Quy trình June 25 2026) — KẾ HOẠCH XONG, CHƯA CODE (2026-06-25)
 Kế hoạch + giải pháp kỹ thuật đầy đủ: [advance-payment-redesign-plan.md](advance-payment-redesign-plan.md) (gap verify từ source + 6 phase P0→P5 + phương án "tiến hóa có kiểm soát"). Memory `project_advance_payment_redesign`. Nguồn: `NewAPI/Quy trình Tạm ứng  Thanh toán_June 25 2026.docx`.

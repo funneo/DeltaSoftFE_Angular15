@@ -118,6 +118,8 @@ public class XController : ControllerBase
 
 **FromBodyBase<T>** fields available without re-reading: `Id, TokenKey, BranchId?, EmployeeId?, CustomerId?, KeyWord, PageIndex, PageSize, ListId, UserId, UserName, FromDate, ToDate, GType, BValue, TValue, DValue, Year?, Item`.
 
+⚠ **`BValue` is non-nullable `bool` (defaults to `false`) — `TValue`/`GType` likewise non-nullable.** A caller that omits the flag still sends `false`/`0`, so you CANNOT distinguish "omitted" from "explicitly false". If an SP param means "NULL = don't filter, true = filter" (e.g. `@IsSubcontractors`), map it in the controller — `obj.BValue ? true : (bool?)null` — or every non-filtering caller silently filters to the false set. (This bit the FCL company list: it dropped all subcontractor orders.) For genuinely tri-state flags, carry them on `Item` (a nullable model prop) instead of `BValue`.
+
 **Extensions**: `User.GetUserId()` → `Guid`. `User.GetEmployeeId()` → `int?` (custom, see DraftAPI).
 
 ## 4) BE Repository template

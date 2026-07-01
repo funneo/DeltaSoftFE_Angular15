@@ -12,6 +12,36 @@ DeltaSoft ERP — logistics/transport management system for a Vietnamese freight
 - **Realtime**: SignalR hub at `/signalr`
 - **Push notifications**: Firebase Cloud Messaging
 
+## Core Working Principles (ĐỌC TRƯỚC KHI CODE)
+
+Bốn nguyên tắc nền (phỏng theo Karpathy skills), đã "siết" theo bài học thực tế của project này. Khi mâu thuẫn với mong muốn "làm nhanh", **nguyên tắc thắng**.
+
+### 1. Think Before Coding — thiết kế & duyệt trước, code sau
+- **SQL/SP thiết kế trước, trình user DUYỆT, rồi mới viết BE/FE.** Mọi SP mới phải show thiết kế để user duyệt trước khi tạo. Không tự ý quyết định schema/flow.
+- Nêu **giả định** rõ ràng (về schema, format ngày, quyền, chi nhánh…). Khi chưa chắc → hỏi, đừng đoán ngầm.
+- Với thay đổi hành vi lớn: trình bày tradeoff **"tạo mới song song" vs "sửa cái cũ"** thay vì tự chọn.
+- Giao tiếp tiếng Việt; user xưng "anh", assistant xưng "em".
+
+### 2. Simplicity First — tối thiểu & đúng phạm vi
+- Code tối thiểu giải đúng bài. Không tính năng/trừu tượng/abstraction suy đoán.
+- **Không vượt parity**: ví dụ form nháp chỉ thêm đúng field ERP có; không thêm field server/auto/workflow.
+- Không thêm dependency mới hay viết lookup chỉ để làm đẹp (vd: bỏ qua tên Nhóm TH cho dòng nháp thay vì inject repo mới) — trừ khi user yêu cầu.
+- Tận dụng skill `deltasoft-*` + `UtilityService`/pipes/`BaseService` sẵn có trước khi tự viết helper.
+
+### 3. Surgical Changes — chạm tối thiểu, KHÔNG đụng cái đang chạy (quan trọng nhất ở project này)
+- **DB CHỈ ĐỌC.** Tuyệt đối KHÔNG tự chạy/soạn-rồi-chạy `ALTER/DROP/UPDATE/DELETE/INSERT` lên DB thật. Chỉ `SELECT`/`OBJECT_DEFINITION` để đọc, và **soạn file `.sql`** cho user tự chạy.
+- **SP/BE/FE hiện hữu là BẤT KHẢ XÂM PHẠM.** Thay đổi lớn → tạo MỚI song song (`*WithTO`, `*FromDraft`, `SP_Employee_*HR`), KHÔNG sửa cái cũ. "Đụng SP cũ là cực nhạy cảm."
+- **KHÔNG đụng list FCL/legacy hay trang TO.** Cần list mới → tạo component MỚI hoàn toàn (copy logic, lọc `isLegacy=0`), không kế thừa/route-data.
+- Match style sẵn có. **Reuse modal ERP thật** (chỉ đổi màu, vd draft = vàng giống shipment) thay vì tạo modal mới.
+- SP đặt tên nghiêm: `SP_<TableName>_<Action>` (không gộp action với tên bảng khác).
+- **DB là SQL Server 2014**: KHÔNG dùng `JSON_VALUE`/`CREATE OR ALTER`/`DROP IF EXISTS`/`STRING_SPLIT`/`STRING_AGG`. Dùng `IF OBJECT_ID...DROP`, XML/CSV split, `FOR XML PATH`, LIKE thay JSON_VALUE.
+
+### 4. Goal-Driven Execution — pilot → verify → nhân rộng
+- **Pilot trước, nhân rộng sau.** Thay đổi diện rộng (vd vendorize directive ~180 module): chứng minh trên 1 màn/1 case, để user xác nhận chuẩn, RỒI mới áp dụng toàn bộ.
+- **Verify trước khi báo xong**: `npx tsc --noEmit` / `ng build` sạch; phân biệt lỗi mới vs lỗi cũ có sẵn (spec files…).
+- Báo trung thực: thay đổi nào là **BE-only cần redeploy** (lưu ý: API đang chạy KHÓA DLL — phải tắt API mới build được), cái nào FE cần `ng build`.
+- Promote/duyệt phải **idempotent** (guard `GetForPromote` trước khi tạo thật).
+
 ## Active Major Refactor — TO ↔ FCL (2026-05-14, IN PROGRESS)
 
 Restructuring relationship between Transport Order (TO) and FCL Dispatch Order:

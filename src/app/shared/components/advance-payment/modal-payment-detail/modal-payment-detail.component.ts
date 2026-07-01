@@ -54,6 +54,9 @@ import { ModalDirective } from "ngx-bootstrap/modal";
 export class ModalPaymentDetailComponent implements OnInit {
   entity: Payments;
   flagXem: boolean;
+  // Chế độ xem nháp (draft.DraftEntries) — read-only, nền vàng, nút "Xác nhận chuyển sang ERP".
+  _isDraftView: boolean = false;
+  _draftId: number;
   _type: number;
   _wfId: number;
   _shipmentId: number;
@@ -102,6 +105,7 @@ export class ModalPaymentDetailComponent implements OnInit {
   @ViewChild('modalAddEdit', { static: false }) modalAddEdit: ModalDirective;
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
+  @Output() ApproveDraft: EventEmitter<number> = new EventEmitter();
   constructor(
     private _utilityService: UtilityService,
     private _otherCategoryService: OtherCategoriesService,
@@ -255,6 +259,7 @@ export class ModalPaymentDetailComponent implements OnInit {
   }
 
   add(id: number) {
+    this._isDraftView = false;
     this._wfId = id;
     this.loadWorkflow();
     this.loadShipment();
@@ -272,7 +277,45 @@ export class ModalPaymentDetailComponent implements OnInit {
     this.modalAddEdit.show();
   }
 
+  /**
+   * Xem 1 phiếu Thanh toán NHÁP (draft.DraftEntries.Payload) read-only — REUSE chính modal này.
+   * flagXem=true (khóa nhập) + nền vàng + nút "Xác nhận chuyển sang ERP". KHÔNG gọi BE getDetail/lưu.
+   * Payload là DTO tạo-thật site nháp gửi (header Payments + mảng paymentDetails).
+   */
+  viewDraft(payload: any, draftId: number): void {
+    let p: any = payload;
+    if (typeof payload === "string") {
+      try { p = JSON.parse(payload || "{}"); } catch { p = {}; }
+    }
+    this.entity = (p || {}) as Payments;
+    this._draftId = draftId;
+    this._isDraftView = true;
+    this.flagXem = true;
+    this.flagSave = false;
+    this._isChuyeduyet = false;
+    this._wfId = this.entity.workflowId;
+    this._shipmentId = this.entity.shipmentId;
+    if (this.entity.branchId) this._branchId = this.entity.branchId;
+    const d = moment(this.entity.refDate, ["DD/MM/YYYY", "YYYY-MM-DD", moment.ISO_8601], false);
+    this._ngay = d.isValid() ? d.format(FormatContstants.DATEVN) : moment(new Date()).format(FormatContstants.DATEVN);
+    this.listDetail = this.entity.paymentDetails ?? [];
+    if (this.listDetail.length) {
+      this.listDetail.forEach((_) => { _.tempId = _.id ?? _.tempId; _.checked = false; });
+    }
+    this.loadWorkflow();
+    this.loadShipment();
+    this.loadEmployee();
+    if (this.entity.type == 1) this.loadSupplier();
+    this.modalAddEdit.show();
+  }
+
+  /** Nút "Xác nhận chuyển sang ERP" — phát sự kiện cho parent (BE promote nối ở bước sau). */
+  approveDraft(): void {
+    this.ApproveDraft.emit(this._draftId);
+  }
+
   edit(id: number, flag: boolean): void {
+    this._isDraftView = false;
     this.paymentsService
       .getDetail(id)
       .subscribe((res: ResponseValue<Payments>) => {

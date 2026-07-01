@@ -195,11 +195,24 @@ export class WorkflowComponent implements OnInit {
   }
 
   clickRow(item: Workflow): void {
+    if (item.isDraft) return;   // dòng nháp xem qua nút "Xem nháp", không tick chọn/sửa thật
     item.checked = !item.checked;
     this.listWorkflow.forEach(it=>{
       if(it.id!=item.id)it.checked=false;
     })
     this.icheck();
+  }
+
+  // ============ NHÁP — REUSE modal-workflow thật (chế độ xem nháp) ============
+  showDraft(item: Workflow): void {
+    this.viewModal = true;
+    setTimeout(() => {
+      this.modalAddEdit.viewDraft(item.draftPayload, item.draftId);
+    }, 50);
+  }
+  // Duyệt nháp xong → reload: dòng nháp biến mất, công việc thật hiện lên.
+  onConfirmPromote(_draftId: number): void {
+    this.loadData();
   }
 
   timKiem(): void {

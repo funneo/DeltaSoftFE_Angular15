@@ -32,6 +32,24 @@ export class WorkflowsService extends BaseService {
       }), catchError(this.handleError));
   }
 
+  /**
+   * Duyệt nháp (draft.DraftEntries, DraftType='Job') thành Công việc thật.
+   * Gửi id=draftId + item=entity (map từ payload nháp); BE tạo job + ghi ngược draft.
+   * Trả { jobId, shipmentId, alreadyPromoted }.
+   */
+  promoteFromDraft(entity: Workflow, draftId: number) {
+    let p: FromBodyBase<Workflow> = {};
+    p.item = entity;
+    p.id = '' + draftId;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/Workflow/PromoteFromDraft`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authenService.logout();
+        else return response;
+      }), catchError(this.handleError));
+  }
+
   update(entity: Workflow) {
     let p: FromBodyBase<Workflow> = {};
     p.item = entity;

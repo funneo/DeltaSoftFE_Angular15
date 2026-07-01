@@ -79,7 +79,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of listWorkflow" (click)="clickRow(item)" [style.background-color]="item.status>0 ? '#DFF6FF' : 'white'">
+              <tr *ngFor="let item of listWorkflow" (click)="clickRow(item)" [style.background-color]="item.isDraft ? '#fff8e1' : (item.status>0 ? '#DFF6FF' : 'white')" [style.font-style]="item.isDraft ? 'italic' : 'normal'">
                 <td class="table-checkbox">
                   <label class="custom-checkbox">
                     <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
@@ -88,6 +88,7 @@
                   </label>
                 </td>
                 <td>
+                  <span *ngIf="item.isDraft" class="label label-warning">Nháp</span>
                   <span>
                     {{item.customerName}}
                   </span>
@@ -103,8 +104,8 @@
                   <br>
                     CV: {{item.jobDescription}}
                 </td>
-                <td>{{item.item.cdsNumber}}</td>
-                <td>{{item.item.hawB_HBL}}</td>
+                <td>{{item.item?.cdsNumber}}</td>
+                <td>{{item.item?.hawB_HBL}}</td>
                 <td>{{item.referCode}}</td>
                 <td>{{item.createdByFullName}}</td>
                 <td>{{item.jobAssigningUserFullName}}</td>
@@ -139,15 +140,21 @@
                   </span>
                 </td>
                 <td>
-                  <button class="btn btn-warning btn-sm"
-                  (click)="copy(item)">Copy
-                </button>
-                  <button *ngIf="item.isJobFinish && item.createdBy==userLoged.id" class="btn btn-success btn-sm"
-                    (click)="grade(item.id)">Đánh giá
+                  <button *ngIf="item.isDraft" class="btn btn-info btn-sm" (click)="showDraft(item); $event.stopPropagation()"
+                    title="Xem nháp (đọc-only)">
+                    <i class="fa fa-eye"></i> Xem nháp
                   </button>
-                  <button class="btn btn-primary btn-sm" (click)="viewimage(item.id)">
-                    <i class="fas fa-image"></i> Ảnh/POD
+                  <ng-container *ngIf="!item.isDraft">
+                    <button class="btn btn-warning btn-sm"
+                    (click)="copy(item)">Copy
                   </button>
+                    <button *ngIf="item.isJobFinish && item.createdBy==userLoged.id" class="btn btn-success btn-sm"
+                      (click)="grade(item.id)">Đánh giá
+                    </button>
+                    <button class="btn btn-primary btn-sm" (click)="viewimage(item.id)">
+                      <i class="fas fa-image"></i> Ảnh/POD
+                    </button>
+                  </ng-container>
                 </td>
               </tr>
               <tr *ngIf="listWorkflow?.length == 0">
@@ -319,7 +326,7 @@
 </div>
 
 
-<modal-workflow *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+<modal-workflow *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()" (ApproveDraft)="onConfirmPromote($event)">
 </modal-workflow>
 <modal-grade-workflow *ngIf="viewGrade" (SaveSuccess)="gradeSuccess($event)" (CloseModal)="closeGradeModal()">
 </modal-grade-workflow>
