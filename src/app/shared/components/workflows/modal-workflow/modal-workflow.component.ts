@@ -12,6 +12,7 @@ import { HandlinggroupService } from '@app/shared/services/handlinggroup.service
 import { JobgroupService } from '@app/shared/services/jobgroup.service';
 import { JobgroupoptionService } from '@app/shared/services/jobgroupoption.service';
 import { environment } from '@environments/environment';
+import { DraftService } from '@app/shared/services/draft.service';
 import * as moment from 'moment';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { element } from 'protractor';
@@ -34,6 +35,9 @@ export class ModalWorkflowComponent implements OnInit {
   // Chế độ xem nháp (draft.DraftEntries) — read-only, nền vàng, nút "Xác nhận chuyển sang ERP".
   public _isDraftView: boolean = false;
   public _draftId: number;
+  // Chế độ SỬA nháp (mở khóa form khi đang xem nháp) — vẫn là nháp, lưu ngược draft, KHÔNG promote.
+  public _isDraftEdit: boolean = false;
+  public _canEditDraft: boolean = false;   // suy từ quyền ERP WORKFLOW_UPDATE
   public flagOpMan = false;
   public flagSave: boolean = false;
   public flagOption: boolean = false;
@@ -89,6 +93,7 @@ export class ModalWorkflowComponent implements OnInit {
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter;
   @Output() ApproveDraft: EventEmitter<number> = new EventEmitter();
+  @Output() SavedDraft: EventEmitter<number> = new EventEmitter();
   @ViewChild('modalAddEdit', { static: false }) modalAddEdit: ModalDirective;
   // @ViewChild(ModalWorkflowAttackFilesComponent, { static: false }) modalAttachFiles: ModalWorkflowAttackFilesComponent
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent
@@ -101,6 +106,7 @@ export class ModalWorkflowComponent implements OnInit {
     , private _utilityService: UtilityService
     , private otherService: OtherCategoriesService
     , private shipmentService: ShipmentService
+    , private draftService: DraftService
   ) { }
 
   ngOnInit(): void {
@@ -252,6 +258,7 @@ export class ModalWorkflowComponent implements OnInit {
     this.flagXem = false;
     this.flagSave = false;
     this._isDraftView = false;
+    this._isDraftEdit = false;
     this.modalAddEdit.show();
   }
 
@@ -266,6 +273,8 @@ export class ModalWorkflowComponent implements OnInit {
     this.entity = p || {};
     this._draftId = draftId;
     this._isDraftView = true;
+    this._isDraftEdit = false;
+    this._canEditDraft = this._authService.hasPermission('WORKFLOW_UPDATE');
     this.flagXem = true;
     this.flagNew = false;
     this.flagSave = false;
@@ -277,6 +286,42 @@ export class ModalWorkflowComponent implements OnInit {
     this.isTransport = this.entity.jobGroupId == environment.transportGroupId;
     this.loadJobGroupOption();
     this.modalAddEdit.show();
+  }
+
+  /** Mở khóa form để SỬA nháp (vẫn nền vàng, chưa promote). */
+  editDraft() {
+    if (!this._canEditDraft) return;
+    this.flagXem = false;
+    this._isDraftEdit = true;
+  }
+
+  /**
+   * Nút "Lưu nháp" — ghi ngược Payload đã sửa vào draft.DraftEntries (VẪN là nháp).
+   * Ngày bind trực tiếp entity (dd/MM/yyyy HH:mm:ss) nên serialize thẳng entity.
+   */
+  saveDraft() {
+    if (this.flagSave) return;
+    if (!this.entity.listHandlingGroupId || this.entity.listHandlingGroupId.length === 0) {
+      this.entity.listHandlingGroupId = this.entity.handlingGroupId ? [this.entity.handlingGroupId] : [];
+    }
+    this.flagSave = true;
+    this.draftService.updateDraft({
+      id: this._draftId,
+      payload: JSON.stringify(this.entity),
+      customerName: this.entity.customerName || null,
+      totalAmount: null,
+      refHint: this.entity.jobId || null,
+    }).subscribe((res: ResponseValue<any>) => {
+      if (res.code == '200') {
+        this.notificationService.printSuccessMessage('Đã lưu nháp.');
+        this.flagXem = true;
+        this._isDraftEdit = false;
+        this.SavedDraft.emit(this._draftId);
+      } else {
+        this.notificationService.printErrorMessage(res.message || MessageContstants.UPDATED_ERR_MSG);
+      }
+      this.flagSave = false;
+    }, () => { this.flagSave = false; });
   }
 
   /** Nút "Xác nhận chuyển sang ERP" — tạo công việc THẬT từ nháp + ghi ngược draft. */
@@ -304,6 +349,7 @@ export class ModalWorkflowComponent implements OnInit {
 
   edit(id: string, flag: boolean, isOpMan: boolean) {
     this._isDraftView = false;
+    this._isDraftEdit = false;
     this.workflowService.getDetail(id).subscribe((res: ResponseValue<Workflow>) => {
       if (res.code == '200' || res.code == '201') {
         this.entity = res.data;
@@ -376,6 +422,7 @@ export class ModalWorkflowComponent implements OnInit {
 
 
   saveChange(form: NgForm) {
+    if (this._isDraftView) return;   // đang xem/sửa nháp → KHÔNG lưu thật (dùng saveDraft/approveDraft)
     if (form.valid) {
       if (this.endTime < this.startTime) {
         this.notificationService.printErrorMessage(MessageContstants.ENDTIME_NOT_LARGER_THAN_STARTTIME);

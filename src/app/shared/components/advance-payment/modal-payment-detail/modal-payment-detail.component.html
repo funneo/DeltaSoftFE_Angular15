@@ -113,6 +113,14 @@
                                                 title="Chứng từ đính kèm" (click)="showFiles(entity)">
                                                 <i class="fa fa-file-pdf-o" aria-hidden="true"></i> File đính kèm
                                             </button>
+                                            <button *ngIf="_isDraftView && !_isDraftEdit && _canEditDraft" class="btn btn-warning btn-sm" type="button"
+                                                (click)="editDraft()" [disabled]="flagSave" title="Sửa thông tin nháp trước khi chuyển sang ERP">
+                                                <i class="fa fa-edit"></i> Sửa nháp
+                                            </button>
+                                            <button *ngIf="_isDraftView && _isDraftEdit" class="btn btn-primary btn-sm" type="button"
+                                                (click)="saveDraft()" [disabled]="flagSave" title="Lưu thay đổi vào nháp (chưa chuyển sang ERP)">
+                                                <i class="fa fa-save"></i> Lưu nháp
+                                            </button>
                                             <button *ngIf="_isDraftView" class="btn btn-success btn-sm" type="button"
                                                 (click)="approveDraft()" [disabled]="flagSave">
                                                 <i class="fa fa-check"></i> Xác nhận chuyển sang ERP

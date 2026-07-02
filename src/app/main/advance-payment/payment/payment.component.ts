@@ -433,6 +433,11 @@ export class PaymentComponent implements OnInit {
     this.loadData();
   }
 
+  // Đã lưu nháp (chưa promote) — refresh list nền, GIỮ modal đang mở.
+  onSavedDraft(): void {
+    this.loadData();
+  }
+
   closeDraftModal(): void { this.viewDraftModal = false; }
 
   timKiem(): void {

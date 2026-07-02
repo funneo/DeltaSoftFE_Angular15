@@ -27,6 +27,7 @@ import { ModalDispatchOrderCbtComponent } from '../../cbt/modal-dispatch-order-c
 import { ModalPaymentCbtComponent } from '../../cbt/modal-payment-cbt/modal-payment-cbt.component';
 import { PaymentCbtService } from '@app/shared/services/cbt/payment-cbt.service';
 import { PaymentCbt } from '@app/shared/models/cbt/payment-cbt.model';
+import { DraftService } from '@app/shared/services/draft.service';
 
 
 @Component({
@@ -118,9 +119,13 @@ export class ModalDebitNotesComponent implements OnInit {
   // Chế độ xem nháp (draft.DraftEntries) — read-only, nền vàng, nút "Xác nhận chuyển sang ERP".
   _isDraftView: boolean = false;
   _draftId: number;
+  // Chế độ SỬA nháp (mở khóa form khi đang xem nháp) — vẫn là nháp, lưu ngược draft, KHÔNG promote.
+  _isDraftEdit: boolean = false;
+  _canEditDraft: boolean = false;   // suy từ quyền ERP DEBITNOTES_UPDATE
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
   @Output() ApproveDraft: EventEmitter<number> = new EventEmitter();
+  @Output() SavedDraft: EventEmitter<number> = new EventEmitter();
   @ViewChild('modalAddEdit', { static: false }) modalDebit: ModalDirective;
   @ViewChild(ModalDispatchorderComponent, { static: false }) modalDispatchOrderAddEdit: ModalDispatchorderComponent
   @ViewChild(ModalDebtDebitnotesComponent, { static: false }) modalAddEdit: ModalDebtDebitnotesComponent
@@ -130,7 +135,8 @@ export class ModalDebitNotesComponent implements OnInit {
     private authService: AuthService, private branchService: BranchService, private employeeService: EmployeeService, private debitNotesService: DebitNotesService,
     private feeService: FeeService, private _notificationService: NotificationService, private paymentCbtService: PaymentCbtService,
     private shipmentService: ShipmentService, private suppliertSerive: SupplierService, private customerService: CustomerService, private paymentsService: PaymentsService,
-    private http: HttpClient, private otherCategoriesService: OtherCategoriesService, permissionCSService: PermissionCSService) {
+    private http: HttpClient, private otherCategoriesService: OtherCategoriesService, permissionCSService: PermissionCSService,
+    private draftService: DraftService) {
     this.userLoged = this.authService.getLoggedInUser();
     this._branchId = Number.parseInt(this.userLoged.branchId);
     this._employeeId = Number.parseInt(this.userLoged.employeeId);
@@ -544,6 +550,8 @@ export class ModalDebitNotesComponent implements OnInit {
     this.entity = (p || {}) as DebitNotes;
     this._draftId = draftId;
     this._isDraftView = true;
+    this._isDraftEdit = false;
+    this._canEditDraft = this.authService.hasPermission('DEBITNOTES_UPDATE');
     this.flagXem = true;
     this.flagLocked = true;
     this.flagSave = false;
@@ -580,6 +588,43 @@ export class ModalDebitNotesComponent implements OnInit {
     this.loadEmployee();
     if (this.entity.type == 1) this.loadSupplier();
     this.modalDebit.show();
+  }
+
+  /** Mở khóa form để SỬA nháp (vẫn nền vàng, chưa promote). */
+  editDraft(): void {
+    if (!this._canEditDraft) return;
+    this.flagXem = false;
+    this.flagLocked = false;   // mở khóa bảng chi tiết phí
+    this._isDraftEdit = true;
+  }
+
+  /** Nút "Lưu nháp" — ghi ngược Payload đã sửa vào draft.DraftEntries (VẪN là nháp). */
+  saveDraft(): void {
+    if (this.flagSave) return;
+    if (this._ngayLamDebit) this.entity.refDate = this._ngayLamDebit;       // dd/MM/yyyy (chuẩn nháp)
+    this.entity.debitDate = this._ngayDoanhThu || null;
+    this.entity.accountingDate = this._ngayHachtoan || null;
+    this.entity.debitNoteDetails = this.listDetail?.filter((x) => x.feeId != undefined && x.feeId != null) ?? [];
+    this.entity.quantityOfGgoods = this._luongHang;
+    this.flagSave = true;
+    this.draftService.updateDraft({
+      id: this._draftId,
+      payload: JSON.stringify(this.entity),
+      customerName: this.entity.customerName || null,
+      totalAmount: this.entity.totalAmount ?? null,
+      refHint: this.entity.debitNo || null,
+    }).subscribe((res: ResponseValue<any>) => {
+      if (res.code == '200') {
+        this._notificationService.printSuccessMessage('Đã lưu nháp.');
+        this.flagXem = true;
+        this.flagLocked = true;
+        this._isDraftEdit = false;
+        this.SavedDraft.emit(this._draftId);
+      } else {
+        this._notificationService.printErrorMessage(res.message || MessageContstants.UPDATED_ERR_MSG);
+      }
+      this.flagSave = false;
+    }, () => { this.flagSave = false; });
   }
 
   /** Nút "Xác nhận chuyển sang ERP" — duyệt nháp thành Debit thật (BE addFromDraft, idempotent). */
@@ -630,6 +675,7 @@ export class ModalDebitNotesComponent implements OnInit {
 
   edit(id: number): void {
     this._isDraftView = false;
+    this._isDraftEdit = false;
     this.debitNotesService.getDetail(id.toString()).subscribe((res: ResponseValue<DebitNotes>) => {
       if (res.code == '200' || res.code == '201') {
         this.flagXem = true;
@@ -689,6 +735,7 @@ export class ModalDebitNotesComponent implements OnInit {
   }
 
   save(frm: NgForm): void {
+    if (this._isDraftView) return;   // đang xem/sửa nháp → KHÔNG lưu thật (dùng saveDraft/approveDraft)
     if (frm.valid && !this.flagSave) {
       this.flagSave = true;
       if (this._ngayLamDebit)

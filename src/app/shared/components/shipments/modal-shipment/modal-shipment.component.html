@@ -548,12 +548,18 @@
             </div>
             <div class="col-md-6 text-right">
               <!-- Bổ sung thêm nút lưu và thêm mới ở đây -->
-              <button *ngIf="!flagXem" type="button" (click)="addAndNew(addEditForm)" class="btn btn-primary btn-sm"
+              <button *ngIf="!flagXem && !_isDraftView" type="button" (click)="addAndNew(addEditForm)" class="btn btn-primary btn-sm"
                 [disabled]="!addEditForm.form.valid || flagSave">
               <i class="fa fa-save"></i> Lưu & Thêm mới</button>
-              <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+              <button *ngIf="!flagXem && !_isDraftView" type="submit" class="btn btn-primary btn-sm"
                 [disabled]="!addEditForm.form.valid || flagSave">
                 <i class="fa fa-save"></i> Lưu</button>
+              <button *ngIf="_isDraftView && !_isDraftEdit && _canEditDraft" type="button" class="btn btn-warning btn-sm"
+                (click)="editDraft()" [disabled]="flagSave" title="Sửa thông tin nháp trước khi chuyển sang ERP">
+                <i class="fa fa-edit"></i> Sửa nháp</button>
+              <button *ngIf="_isDraftView && _isDraftEdit" type="button" class="btn btn-primary btn-sm"
+                (click)="saveDraft()" [disabled]="flagSave" title="Lưu thay đổi vào nháp (chưa chuyển sang ERP)">
+                <i class="fa fa-save"></i> Lưu nháp</button>
               <button *ngIf="_isDraftView" type="button" class="btn btn-success btn-sm"
                 (click)="approveDraft()" [disabled]="flagSave"
                 title="Duyệt nháp này thành Lô hàng thật">

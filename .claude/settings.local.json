@@ -175,13 +175,29 @@
       "Bash(git --no-pager diff tsconfig.json)",
       "Bash(git --no-pager diff CLAUDE.md)",
       "Bash(git --no-pager diff .claude/skills/deltasoft-stack/SKILL.md)",
-      "Bash(git --no-pager status --short)"
+      "Bash(git --no-pager status --short)",
+      "Bash(echo \"TSC_EXIT=$?\")",
+      "Bash(git -C \"d:/Delta/DeltaSoft/NewAPI\" status --short)",
+      "Bash(git -C \"d:/Delta/DeltaSoft/draft-web\" status --short)",
+      "Bash(git -C \"d:/Delta/DeltaSoft/NewAPI\" push origin master)",
+      "WebFetch(domain:claude.ai)",
+      "Bash(rm -rf /c/Users/Dell/AppData/Local/Temp/claude/d--Delta-DeltaSoft-web-app-update/16915257-7843-42d1-94bf-36be3dd4d2ce/scratchpad/delta-newver)",
+      "Bash(mkdir -p /c/Users/Dell/AppData/Local/Temp/claude/d--Delta-DeltaSoft-web-app-update/16915257-7843-42d1-94bf-36be3dd4d2ce/scratchpad/delta-newver)",
+      "Bash(unzip -o /d/Delta/DeltaSoft/NewAPI/Delta-ERP-NewVersion.zip -d /c/Users/Dell/AppData/Local/Temp/claude/d--Delta-DeltaSoft-web-app-update/16915257-7843-42d1-94bf-36be3dd4d2ce/scratchpad/delta-newver)",
+      "Bash(node -e \"const p=require\\('./package.json'\\); const d={...p.dependencies,...p.devDependencies}; ['@angular/core','bootstrap','admin-lte','jquery','ngx-bootstrap','@ng-bootstrap/ng-bootstrap','datatables.net','ng2-daterangepicker','@ng-select/ng-select'].forEach\\(k=>{if\\(d[k]\\)console.log\\(k+': '+d[k]\\)}\\)\")",
+      "Bash(node -e \"const p=require\\('/d/Delta/DeltaSoft/draft-web/package.json'\\); console.log\\('@angular/core: '+\\({...p.dependencies}['@angular/core']\\)\\)\")",
+      "Bash(NG_CLI_ANALYTICS=false npx -y @angular/cli@21 new web-app-v2 --style=scss --ssr=false --routing --defaults --skip-git)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);const d={...p.dependencies,...p.devDependencies};['@angular/core','@angular/cli','typescript','rxjs','zone.js'].forEach\\(k=>d[k]&&console.log\\(k+': '+d[k]\\)\\)\")",
+      "Bash(npm install *)"
     ],
     "additionalDirectories": [
       "d:\\Delta\\DeltaSoft\\web-app-update\\.git",
       "D:\\Delta\\DeltaSoft-v21-plan",
       "\\tmp",
-      "D:\\Delta\\DeltaSoft\\NewAPI"
+      "D:\\Delta\\DeltaSoft\\NewAPI",
+      "d:\\Delta\\DeltaSoft\\web-app-v2\\src\\styles",
+      "d:\\Delta\\DeltaSoft\\web-app-v2\\src",
+      "d:\\Delta\\DeltaSoft\\web-app-v2"
     ]
   }
 }

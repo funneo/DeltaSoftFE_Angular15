@@ -230,7 +230,7 @@
 </div>
 
 <modal-shipment *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()"
-  (ApproveDraft)="onApproveDraft($event)">
+  (ApproveDraft)="onApproveDraft($event)" (SavedDraft)="onSavedDraft()">
 </modal-shipment>
 <modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
 </modal-attachfile>

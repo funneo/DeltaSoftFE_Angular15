@@ -244,7 +244,7 @@
 </modal-debit-note-update-exchange-rate>
 
 <modal-debit-notes *ngIf="viewDebitnote" (SaveSuccess)="saveDebit()" (ApproveDraft)="onConfirmPromote($event)"
-  (CloseModal)="closeDebitnote()">
+  (SavedDraft)="onSavedDraft()" (CloseModal)="closeDebitnote()">
 </modal-debit-notes>
 <modal-update-accounting-date *ngIf="viewUpdateAccountingDate" (SaveSuccess)="saveUpdateAccountingDate($event)"
   (CloseModal)="closeUpdateAccountingDate()">

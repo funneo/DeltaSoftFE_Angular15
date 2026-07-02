@@ -285,7 +285,7 @@
 </modal-attachfile>
 <modal-doc-hoa-don *ngIf="viewDocHoaDon" (CloseModal)="closeDocHoaDon()"></modal-doc-hoa-don>
 <modal-payment-detail *ngIf="viewDraftModal" (ApproveDraft)="onConfirmPromote($event)"
-  (CloseModal)="closeDraftModal()"></modal-payment-detail>
+  (SavedDraft)="onSavedDraft()" (CloseModal)="closeDraftModal()"></modal-payment-detail>
 <!-- <modal-repayment-history *ngIf="viewRepaymentHistory" (CloseModal)="closeRepayment()">
 </modal-repayment-history> -->
 <!-- <div [ngBusy]="busy"></div> -->

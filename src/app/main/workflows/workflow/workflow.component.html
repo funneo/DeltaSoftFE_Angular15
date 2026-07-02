@@ -326,7 +326,7 @@
 </div>
 
 
-<modal-workflow *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()" (ApproveDraft)="onConfirmPromote($event)">
+<modal-workflow *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()" (ApproveDraft)="onConfirmPromote($event)" (SavedDraft)="onSavedDraft()">
 </modal-workflow>
 <modal-grade-workflow *ngIf="viewGrade" (SaveSuccess)="gradeSuccess($event)" (CloseModal)="closeGradeModal()">
 </modal-grade-workflow>

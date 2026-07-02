@@ -45,6 +45,7 @@ import { NgForm } from "@angular/forms";
 import { RateExchange } from "@app/shared/models/categories/rate-exchange.model";
 import { Attachfiles } from "@app/shared/models/attachfiles.models";
 import { ModalDirective } from "ngx-bootstrap/modal";
+import { DraftService } from "@app/shared/services/draft.service";
 
 @Component({
   selector: "modal-payment-detail",
@@ -57,6 +58,9 @@ export class ModalPaymentDetailComponent implements OnInit {
   // Chế độ xem nháp (draft.DraftEntries) — read-only, nền vàng, nút "Xác nhận chuyển sang ERP".
   _isDraftView: boolean = false;
   _draftId: number;
+  // Chế độ SỬA nháp (mở khóa form khi đang xem nháp) — vẫn là nháp, lưu ngược draft, KHÔNG promote.
+  _isDraftEdit: boolean = false;
+  _canEditDraft: boolean = false;   // suy từ quyền ERP PAYMENT_UPDATE
   _type: number;
   _wfId: number;
   _shipmentId: number;
@@ -106,6 +110,7 @@ export class ModalPaymentDetailComponent implements OnInit {
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
   @Output() ApproveDraft: EventEmitter<number> = new EventEmitter();
+  @Output() SavedDraft: EventEmitter<number> = new EventEmitter();
   constructor(
     private _utilityService: UtilityService,
     private _otherCategoryService: OtherCategoriesService,
@@ -119,7 +124,8 @@ export class ModalPaymentDetailComponent implements OnInit {
     private workflowsService: WorkflowsService,
     private rateExchangeService: RateExchangeService,
     private suppliertSerive: SupplierService,
-    private shipmentService: ShipmentService
+    private shipmentService: ShipmentService,
+    private draftService: DraftService
   ) {
     let user = this.authService.getLoggedInUser();
     this._auth = Number.parseInt(user.authorisationLevel);
@@ -260,6 +266,7 @@ export class ModalPaymentDetailComponent implements OnInit {
 
   add(id: number) {
     this._isDraftView = false;
+    this._isDraftEdit = false;
     this._wfId = id;
     this.loadWorkflow();
     this.loadShipment();
@@ -290,6 +297,8 @@ export class ModalPaymentDetailComponent implements OnInit {
     this.entity = (p || {}) as Payments;
     this._draftId = draftId;
     this._isDraftView = true;
+    this._isDraftEdit = false;
+    this._canEditDraft = this.authService.hasPermission("PAYMENT_UPDATE");
     this.flagXem = true;
     this.flagSave = false;
     this._isChuyeduyet = false;
@@ -313,6 +322,38 @@ export class ModalPaymentDetailComponent implements OnInit {
     this.loadEmployee();
     if (this.entity.type == 1) this.loadSupplier();
     this.modalAddEdit.show();
+  }
+
+  /** Mở khóa form để SỬA nháp (vẫn nền vàng, chưa promote). */
+  editDraft(): void {
+    if (!this._canEditDraft) return;
+    this.flagXem = false;
+    this._isDraftEdit = true;
+  }
+
+  /** Nút "Lưu nháp" — ghi ngược Payload đã sửa vào draft.DraftEntries (VẪN là nháp). */
+  saveDraft(): void {
+    if (this.flagSave) return;
+    if (this._ngay) this.entity.refDate = this._ngay;   // đã dd/MM/yyyy (chuẩn nháp)
+    this.entity.paymentDetails = this.listDetail?.filter((x) => x.feeId != undefined && x.feeId != null) ?? [];
+    this.flagSave = true;
+    this.draftService.updateDraft({
+      id: this._draftId,
+      payload: JSON.stringify(this.entity),
+      customerName: this.entity.customerName || null,
+      totalAmount: this.entity.totalAmount ?? null,
+      refHint: this.entity.refNo || null,
+    }).subscribe((res: ResponseValue<any>) => {
+      if (res.code == "200") {
+        this._notificationService.printSuccessMessage("Đã lưu nháp.");
+        this.flagXem = true;
+        this._isDraftEdit = false;
+        this.SavedDraft.emit(this._draftId);
+      } else {
+        this._notificationService.printErrorMessage(res.message || MessageContstants.UPDATED_ERR_MSG);
+      }
+      this.flagSave = false;
+    }, () => { this.flagSave = false; });
   }
 
   /** Nút "Xác nhận chuyển sang ERP" — duyệt nháp thành Thanh toán thật (BE addFromDraft, idempotent). */
@@ -355,6 +396,7 @@ export class ModalPaymentDetailComponent implements OnInit {
 
   edit(id: number, flag: boolean): void {
     this._isDraftView = false;
+    this._isDraftEdit = false;
     this.paymentsService
       .getDetail(id)
       .subscribe((res: ResponseValue<Payments>) => {
@@ -453,6 +495,7 @@ export class ModalPaymentDetailComponent implements OnInit {
   }
 
   save(frm: NgForm): void {
+    if (this._isDraftView) return;   // đang xem/sửa nháp → KHÔNG lưu thật (dùng saveDraft/approveDraft)
     if (frm.valid && !this.flagSave) {
       this.flagSave = true;
       if (this._ngay)

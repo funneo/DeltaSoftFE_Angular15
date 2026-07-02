@@ -392,6 +392,11 @@ export class ShipmentNormalComponent implements OnInit {
     this.loadData();
   }
 
+  // Đã lưu nháp (chưa promote) — refresh list nền, GIỮ modal đang mở để anh tiếp tục sửa/duyệt.
+  onSavedDraft() {
+    this.loadData();
+  }
+
   copyJobConfirm(item: Shipment): void {
     this.notificationService.printConfirmationDialog('Bạn muốn sao chép lô hàng mới?', () => this.copyJob(item.id?.toString()));
   }

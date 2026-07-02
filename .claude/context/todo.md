@@ -1,5 +1,14 @@
 # Pending / In-Progress Work
 
+## ▶ Draft — SỬA nháp trong ERP trước khi promote (5 modal) — code xong, chờ redeploy API + ng build (2026-07-02)
+Chi tiết: done.md section đầu. Người duyệt sửa dữ liệu nháp ngay trong ERP (nút **"Sửa nháp"** mở khóa form vàng → **"Lưu nháp"** ghi ngược draft, chưa promote) rồi mới "Xác nhận chuyển sang ERP". **KHÔNG SQL mới** (dùng `draft.SP_DraftEntries_Update` sẵn có, `@UpdatedBy=NULL`). BE endpoint `POST /api/draft/updateDraft`. Áp cho cả 5 modal: Lô thường/Canon/PCCV(Workflow)/Thanh toán/Debit. Gate nút Sửa theo quyền ERP `*_UPDATE`. Guard `if(_isDraftView)return` chặn Enter-submit tạo phiếu thật.
+1. ⬜ **Tắt API** → `dotnet build`/publish → chạy lại (khóa DLL). BE build đã 0 error.
+2. ⬜ `ng build` + deploy FE (tsc sạch) → test E2E:
+   - Mở nháp từng loại → **Sửa nháp** (form mở khóa, vẫn nền vàng) → đổi field + chi tiết → **Lưu nháp** → toast "Đã lưu nháp", list refresh, mở lại thấy số đã sửa.
+   - Sau khi sửa → **Xác nhận chuyển sang ERP** tạo phiếu thật đúng số liệu đã sửa; idempotent.
+   - User KHÔNG có `*_UPDATE` → KHÔNG thấy nút "Sửa nháp" (chỉ xem + duyệt).
+   - Nhấn Enter khi đang sửa nháp KHÔNG tạo phiếu thật.
+
 ## ▶ Draft view + PROMOTE ERP (Payment / Debit / Workflow) — code xong, chờ redeploy API + ng build (cập nhật 2026-07-01)
 Chi tiết: done.md 2 section đầu. Xem nháp trong ERP = reuse chính modal chi tiết thật + nền vàng, KHÔNG đẻ modal mới. Payment→`modal-payment-detail`, Debit→`modal-debit-notes`, Workflow→`modal-workflow`. Promote = endpoint `AddFromDraft`/`PromoteFromDraft` clone Shipment (idempotent, GetForPromote+MarkPromoted generic, KHÔNG SQL mới).
 1. ⬜ **Redeploy API** (BE mới: `PaymentsController.AddFromDraft` + `DebitNoteController.AddFromDraft`, đều inject `IDraft`) → **tắt API đang chạy** rồi build (khóa DLL). BE build đã 0 error.

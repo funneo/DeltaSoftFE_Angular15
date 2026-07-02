@@ -23,6 +23,16 @@ export interface DraftFilterRequest {
   pageSize?: number;
 }
 
+/** Input sửa nháp từ ERP — POST /api/draft/updateDraft. Chỉ ghi schema draft, KHÔNG promote. */
+export interface DraftUpdateRequest {
+  tokenKey?: string;
+  id: number;                   // Id nháp (draft.DraftEntries.Id)
+  payload: string;              // JSON string entity đã sửa
+  customerName?: string | null; // cột phẳng để list (optional)
+  totalAmount?: number | null;  // cột phẳng (optional)
+  refHint?: string | null;      // cột phẳng (optional)
+}
+
 export interface DraftEntryView {
   id: number;
   draftType: string;
@@ -60,6 +70,14 @@ export class DraftService extends BaseService {
       pageSize: filter.pageSize ?? 99999,
     };
     return this.http.post(`${environment.apiUrl}/api/draft/getPagingForErp`, body).pipe(
+      map((r: any) => { if (r.code == '401') this.authService.logout(); else return r; }),
+      catchError(this.handleError));
+  }
+
+  /** Sửa Payload 1 nháp còn 'Draft' (người duyệt chỉnh trước khi promote). */
+  updateDraft(req: DraftUpdateRequest) {
+    const body: DraftUpdateRequest = { ...req, tokenKey: this.token };
+    return this.http.post(`${environment.apiUrl}/api/draft/updateDraft`, body).pipe(
       map((r: any) => { if (r.code == '401') this.authService.logout(); else return r; }),
       catchError(this.handleError));
   }

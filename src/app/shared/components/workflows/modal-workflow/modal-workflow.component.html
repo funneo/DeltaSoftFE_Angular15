@@ -362,10 +362,10 @@
           </div>
           <!-- /.box-body -->
           <div class="box-footer text-right">
-            <button *ngIf="!flagXem" type="button" class="btn btn-primary btn-sm" (click)="saveAndNew(addEditForm)"
+            <button *ngIf="!flagXem && !_isDraftView" type="button" class="btn btn-primary btn-sm" (click)="saveAndNew(addEditForm)"
             [disabled]="!flagOption|| !addEditForm.form.valid || flagSave || entity!.status>0">
             <i class="fa fa-save"></i> Lưu & Nhập tiếp</button>
-            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+            <button *ngIf="!flagXem && !_isDraftView" type="submit" class="btn btn-primary btn-sm"
               [disabled]="!flagOption|| !addEditForm.form.valid || flagSave || entity!.status>0">
               <i class="fa fa-save"></i> Lưu</button>
               <button *ngIf="isOpMan && entity.status==1 && !entity.jobLocked"  type="button" class="btn btn-primary btn-sm" (click)="viewMultiply()">
@@ -374,6 +374,12 @@
                   <i class="fa fa-eraser"></i> Xóa việc</button>
             <button *ngIf="isOpMan && entity.status<1"  type="button" class="btn btn-warning btn-sm" (click)="nhanviec()">
               <i class="fa fa-edit"></i> Nhận việc</button>
+            <button *ngIf="_isDraftView && !_isDraftEdit && _canEditDraft" type="button" class="btn btn-warning btn-sm"
+              (click)="editDraft()" [disabled]="flagSave" title="Sửa thông tin nháp trước khi chuyển sang ERP">
+              <i class="fa fa-edit"></i> Sửa nháp</button>
+            <button *ngIf="_isDraftView && _isDraftEdit" type="button" class="btn btn-primary btn-sm"
+              (click)="saveDraft()" [disabled]="flagSave" title="Lưu thay đổi vào nháp (chưa chuyển sang ERP)">
+              <i class="fa fa-save"></i> Lưu nháp</button>
             <button *ngIf="_isDraftView" type="button" class="btn btn-success btn-sm" (click)="approveDraft()"
               [disabled]="flagSave" title="Tạo công việc thật từ nháp này">
               <i class="fa fa-check"></i> Xác nhận chuyển sang ERP</button>

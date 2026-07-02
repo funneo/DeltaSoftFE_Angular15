@@ -12,6 +12,7 @@ import { FormatContstants } from '@app/shared/constants/format.constants';
 import { ModalAttachfileComponent } from '../../systems/modal-attachfile/modal-attachfile.component';
 import { Attachfiles } from '@app/shared/models/attachfiles.models';
 import { QuotationCustomerService } from '@app/shared/services/sales-marketing/quotation-customer.service';
+import { DraftService } from '@app/shared/services/draft.service';
 import { ModalContractCustomerComponent } from '../../sales-marketing/modal-contract-customer/modal-contract-customer.component';
 import { ModalQuotationCustomerComponent } from '../../sales-marketing/modal-quotation-customer/modal-quotation-customer.component';
 import { ModalAllAttachFileComponent } from '../../workflows/modal-all-attach-file/modal-all-attach-file.component';
@@ -30,6 +31,9 @@ export class ModalShipmentComponent implements OnInit {
   // Chế độ xem nháp (draft.DraftEntries) — read-only, nền vàng, nút Duyệt/Hủy. KHÔNG ảnh hưởng luồng add/edit thật.
   public _isDraftView: boolean = false;
   public _draftId: number;
+  // Chế độ SỬA nháp (mở khóa form khi đang xem nháp) — vẫn là nháp, lưu ngược draft, KHÔNG promote.
+  public _isDraftEdit: boolean = false;
+  public _canEditDraft: boolean = false;   // suy từ quyền ERP SHIPMENT_UPDATE
   public busy: Subscription;
   listBranch: Branch[];
   // listUser: User[];
@@ -101,13 +105,15 @@ export class ModalShipmentComponent implements OnInit {
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter;
   @Output() ApproveDraft: EventEmitter<number> = new EventEmitter();
+  @Output() SavedDraft: EventEmitter<number> = new EventEmitter();
   @ViewChild('modalAddEdit', { static: false }) modalAddEdit: ModalDirective;
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent;
   @ViewChild(ModalAllDocumentsComponent, { static: false }) modalAllAttackFiles: ModalAllDocumentsComponent;
   constructor(private _notificationService: NotificationService, private shipmentService: ShipmentService,
     private branchService: BranchService, private customerService: CustomerService, private authService: AuthService,
     private _utilityService: UtilityService, private otherCategoriesService: OtherCategoriesService,
-    private contractCustomerService: ContractCustomerService, private quotationCustomerService: QuotationCustomerService) {
+    private contractCustomerService: ContractCustomerService, private quotationCustomerService: QuotationCustomerService,
+    private draftService: DraftService) {
     let user = this.authService.getLoggedInUser();
     this.branchId = Number.parseInt(user.branchId);
     this.userName=user.userName;
@@ -264,11 +270,13 @@ export class ModalShipmentComponent implements OnInit {
     this.flagSave = false;
     this.flagNew=true;
     this._isDraftView = false;
+    this._isDraftEdit = false;
     this.modalAddEdit.show();
   }
 
   edit(id: string, flag: boolean) {
     this._isDraftView = false;
+    this._isDraftEdit = false;
     this.shipmentService.getDetail(id).subscribe((res: ResponseValue<Shipment>) => {
       if (res.code == '200' || res.code == '201') {
         this.entity = res.data;
@@ -387,6 +395,8 @@ export class ModalShipmentComponent implements OnInit {
     this.entity = p || {};
     this._draftId = draftId;
     this._isDraftView = true;
+    this._isDraftEdit = false;
+    this._canEditDraft = this.authService.hasPermission('SHIPMENT_UPDATE');
     this.flagXem = true;
     this.flagNew = false;
     this.flagSave = false;
@@ -438,6 +448,52 @@ export class ModalShipmentComponent implements OnInit {
    * Dựng lại entity y như saveChange (entity đã map sẵn ở viewDraft) rồi gọi
    * addFromDraft — BE tạo job + ghi ngược draft (shipmentId/jobId). Reload list.
    */
+  /** Mở khóa form để SỬA nháp (vẫn nền vàng, chưa promote). */
+  editDraft() {
+    if (!this._canEditDraft) return;
+    this.flagXem = false;
+    this._isDraftEdit = true;
+  }
+
+  /**
+   * Nút "Lưu nháp" — ghi ngược Payload đã sửa vào draft.DraftEntries (VẪN là nháp).
+   * KHÔNG gọi saveChange (luồng thật). Ngày ghi theo chuẩn nháp dd/MM/yyyy (holders _*Date sẵn có).
+   */
+  saveDraft() {
+    if (this.flagSave) return;
+    this.entity.shipmentBranches = [];
+    this.listChinhanhthamgia?.forEach(x => this.entity.shipmentBranches.push({ branchId: x }));
+    this.entity.jobDate = this._jobDate;            // đã dd/MM/yyyy
+    this.entity.cdsDate = this._cdsDate;
+    this.entity.cutoffTime = this._ngayCutOff;      // đã dd/MM/yyyy HH:mm:ss
+    this.entity.pickupTime = this._ngayLayHang;
+    this.entity.deliveryTime = this._ngayGiaoHang;
+    this.entity.emptyContDeadline = this._ngayTraRong;
+    if (this._typePrice == 0) this.entity.quotationId = null; else this.entity.contractId = null;
+    this.entity.shipmentContSeals = this.listConts?.filter(_ => _.contType != null && _.contType != '');
+    this.entity.shipmentPackages = this.listPakages?.filter(_ => _.packageCode != null && _.packageCode != '');
+    this.entity.shipmentServiceDetails = this.listDichVuSoHoa?.filter(z => z.serviceId);
+
+    this.flagSave = true;
+    this.draftService.updateDraft({
+      id: this._draftId,
+      payload: JSON.stringify(this.entity),
+      customerName: this.entity.customerName || null,
+      totalAmount: null,
+      refHint: this.entity.jobId || null,
+    }).subscribe((res: ResponseValue<any>) => {
+      if (res.code == '200') {
+        this._notificationService.printSuccessMessage('Đã lưu nháp.');
+        this.flagXem = true;
+        this._isDraftEdit = false;
+        this.SavedDraft.emit(this._draftId);
+      } else {
+        this._notificationService.printErrorMessage(res.message || MessageContstants.UPDATED_ERR_MSG);
+      }
+      this.flagSave = false;
+    }, () => { this.flagSave = false; });
+  }
+
   approveDraft() {
     if (this.flagSave) return;
     if (!this.entity?.customerId) {
@@ -490,6 +546,7 @@ export class ModalShipmentComponent implements OnInit {
   }
 
   saveChange(form: NgForm) {
+    if (this._isDraftView) return;   // đang xem/sửa nháp → KHÔNG lưu thật (dùng saveDraft/approveDraft)
     if (form.valid) {
       this.entity.shipmentBranches = [];
       this.listChinhanhthamgia?.forEach(x => {
