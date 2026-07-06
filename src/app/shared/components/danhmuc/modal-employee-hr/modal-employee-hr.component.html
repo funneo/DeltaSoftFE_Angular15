@@ -208,6 +208,32 @@
                         placeholder="Ghi chú"></textarea>
                     </div>
                   </div>
+
+                  <div class="sec-title">G. Chế độ chấm công</div>
+                  <div class="row form-row">
+                    <div class="col-sm-4">
+                      <label>&nbsp;</label>
+                      <div class="checkbox" style="margin-top:2px">
+                        <label>
+                          <input type="checkbox" name="isNursingChild" [(ngModel)]="entity.isNursingChild"
+                            (change)="onToggleNursing()" [disabled]="flagXem">
+                          Đang nuôi con nhỏ (+60 phút/ngày)
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-sm-4" *ngIf="entity.isNursingChild">
+                      <label>Ngày sinh của con <span class="error">*</span></label>
+                      <input class="form-control" name="childBirthDate" type="text" daterangepicker [options]="childOptions"
+                        [(ngModel)]="entity.childBirthDate" (selected)="selectedChild($event)" autocomplete="off"
+                        required [disabled]="flagXem">
+                    </div>
+                    <div class="col-sm-4" *ngIf="entity.isNursingChild">
+                      <label>&nbsp;</label>
+                      <p class="text-muted" style="margin-top:6px;font-size:11px">
+                        Tự cộng 60' (muộn/sớm) tới khi con tròn 12 tháng. Hết thì bỏ tick.
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- cột phải: ảnh -->

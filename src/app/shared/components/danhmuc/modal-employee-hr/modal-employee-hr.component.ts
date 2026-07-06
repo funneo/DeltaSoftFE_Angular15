@@ -46,6 +46,7 @@ export class ModalEmployeeHrComponent implements OnInit {
   dobOptions = this._utilityService.dateTimeOptionDays(new Date(), false);
   startOptions = this._utilityService.dateTimeOptionDays(new Date(), false);
   issueOptions = this._utilityService.dateTimeOptionDays(new Date(), false);
+  childOptions = this._utilityService.dateTimeOptionDays(new Date(), false);
   cOpt = this._utilityService.dateTimeOptionDays(new Date(), false);
 
   // ===== Tab 2 — Hợp đồng =====
@@ -127,6 +128,7 @@ export class ModalEmployeeHrComponent implements OnInit {
         this.entity.dateOfBirth = this._toVn(this.entity.dateOfBirth);
         this.entity.startDate = this._toVn(this.entity.startDate);
         this.entity.issueedDate = this._toVn(this.entity.issueedDate);
+        this.entity.childBirthDate = this._toVn(this.entity.childBirthDate);
         this.showContractForm = false;
         this.showSalaryForm = false;
         this.loadContracts();
@@ -180,6 +182,10 @@ export class ModalEmployeeHrComponent implements OnInit {
   selectedDob(e) { this.entity.dateOfBirth = moment(e.start).format('DD/MM/YYYY'); }
   selectedStart(e) { this.entity.startDate = moment(e.start).format('DD/MM/YYYY'); }
   selectedIssue(e) { this.entity.issueedDate = moment(e.start).format('DD/MM/YYYY'); }
+  selectedChild(e) { this.entity.childBirthDate = moment(e.start).format('DD/MM/YYYY'); }
+
+  // bỏ tick nuôi con nhỏ -> xóa ngày sinh con (khỏi gửi lệch)
+  onToggleNursing() { if (!this.entity.isNursingChild) this.entity.childBirthDate = null; }
 
   onFileChanged(event) {
     if (event.target.files.length > 0 && this.entity?.id) {

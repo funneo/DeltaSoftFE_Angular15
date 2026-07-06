@@ -200,11 +200,19 @@ Module tổng hợp công tháng + tiền phạt NV văn phòng (xem done.md). *
 3. ⬜ Deploy API mới + `ng build` FE.
 4. ⬜ Test E2E: relogin → Nhân sự → **Bảng công văn phòng** → **Cấu hình** (nhập ngày lễ + số dư phép/online đầu kỳ nếu cần) → **Import chấm công** (chọn file HN_T4/VT_T4, chọn dòng bắt đầu, import, map tên chưa khớp) → **Tính** → đối chiếu bảng với file tay chị Huệ → **Xuất Excel**.
 
-**Còn để dành (đã chốt hoãn):** quy tắc giải trình ≤5 lần/lần 6+ =30k (cột PenaltyExplain/ExplainCount đã có, chưa tính); phụ cấp giờ đặc biệt (IT phía Nam +60', nữ nuôi con nhỏ +60'); đẩy tiền phạt sang module lương VP. Điểm cần soi khi test: bậc phạt về sớm T7 (so mốc 10:00), nửa ngày phép+công, match tên trùng.
+**Còn để dành (đã chốt hoãn):** quy tắc giải trình ≤5 lần/lần 6+ =30k (cột PenaltyExplain/ExplainCount đã có, chưa tính); phụ cấp giờ đặc biệt IT phía Nam +60'; đẩy tiền phạt sang module lương VP. Điểm cần soi khi test: bậc phạt về sớm T7 (so mốc 10:00), nửa ngày phép+công, match tên trùng.
+
+### ✳ Nữ nuôi con nhỏ +60p — SQL ĐÃ CHẠY + BE/FE XONG (2026-07-03), chờ tắt API build + ng build + test
+Hướng: **thuộc tính hồ sơ NV** (không dùng loại lịch F047 đang hoãn). Chi tiết: done.md section đầu. Chốt pháp lý: chỉ nữ nuôi con <12 tháng +60p; mang thai KHÔNG hưởng.
+1. ✅ ĐÃ CHẠY `NewAPI/Migration_OfficeAttendance_NursingChild_20260703.sql` (ALTER Employee +2 cột + DROP+CREATE engine +quỹ 60p + 3 SP HR mang 2 field).
+2. ✅ BE (Employee.cs/repo AddHRParams) + FE (employee.model + modal-employee-hr section G) — tsc sạch, C# compile sạch (chỉ khóa API.dll do IIS chạy).
+3. ⬜ **Tắt API** → `dotnet build`/publish → chạy lại (khóa DLL); `ng build` + deploy FE.
+4. ⬜ **Test E2E**: Danh mục NV → Hồ sơ HR 1 NV → Tab Thông tin chung mục **G. Chế độ chấm công** → tick "Đang nuôi con nhỏ" + ngày sinh con → Lưu → mở lại giữ đúng; **Tính** tháng có ngày con<12th → NV miễn tối đa 60'/ngày (muộn trước, dư tới sớm); bỏ tick → xóa ngày → tính lại không còn +60p.
+- ⚠ Khi nào mở lại F047 (ca kíp): engine F047 phải GIỮ nhánh đọc Employee nuôi con nhỏ (đừng ghi đè mất); F047 dùng CREATE OR ALTER — SQL 2014 KHÔNG có, phải đổi sang IF EXISTS DROP+CREATE. Loại `NUOICON` trong seed F047 giờ thừa (nguồn đã chuyển sang Employee) — bỏ khi mở lại.
 
 ### ⏸ F044 PHẦN 1 — Lịch đặc biệt + Phân ca điều vận (ĐÃ THIẾT KẾ SQL, HOÃN — làm sau)
 File SQL đề xuất (CHỜ DUYỆT, chưa chạy): `NewAPI/Migration_OfficeAttendance_Schedule_20260623.sql`. Quyết định đã chốt với anh Cường:
-- **Cá nhân → phân theo LOẠI** (không hardcode): `Tbl_OfficeWorkScheduleType` (seed HC default / BAC mode ½ngày mốc 10:30 / XUONG 7:30-17:30 / LY 8:00-16:30 / THAISAN flex 60p chung muộn-sớm) + `Tbl_OfficeEmployeeSchedule` gán NV↔loại có EffectiveFrom/To (thai sản tạm thời).
+- **Cá nhân → phân theo LOẠI** (không hardcode): `Tbl_OfficeWorkScheduleType` (seed HC default / BAC mode ½ngày mốc 10:30 / XUONG 7:30-17:30 / LY 8:00-16:30 / **NUOICON** flex 60p chung muộn-sớm = "Nữ nuôi con < 12 tháng +60p") + `Tbl_OfficeEmployeeSchedule` gán NV↔loại có EffectiveFrom/To (đặt EffectiveTo = ngày con tròn 12 tháng). ⚠ Chốt 2026-07-03: chỉ **nữ nuôi con < 12 tháng** được +60p (luật rõ); **phụ nữ mang thai KHÔNG** mặc nhiên hưởng → đã bỏ chữ "thai sản" khỏi seed (Code cũ THAISAN → **NUOICON**).
 - **Điều vận → phân ca theo CHI NHÁNH**: `Tbl_OfficeShiftType` (BranchId NULL=chung; seed CA1 6-14 / CA2 14-22 / CA3 22-6 overnight / **OFF IsDayOff=1 = nghỉ luân phiên KHÔNG trừ phép**) + `Tbl_OfficeShiftAssignment` (NV/ngày, OpMan phân tuần, `ChangeReason` bắt buộc khi đổi ca, `IsLocked` chốt cuối tháng). Function mới **F047** "Phân ca điều vận" (menu Nhân sự) — grant để file riêng mirror F046, CHƯA soạn.
 - **Engine** `SP_OfficeAttendance_Calculate` đã viết bản CREATE OR ALTER: phân giải ca→loại→mặc định; ngày có ca = làm full (kể cả T7/CN/**Lễ vẫn chấm muộn/sớm theo ca**); NV mặc định kết quả y hệt engine cũ.
 - ⚠️ **Cần đối chiếu khi test**: ca đêm lấy giờ ra từ bản ghi NGÀY HÔM SAU, đang `COALESCE(nx.TimeOut, nx.TimeIn)` — chỉnh nếu máy chấm ghi khác.

@@ -45,6 +45,8 @@ export interface Employee {
   emergencyContactRelation?: string;
   personalEmail?: string;           // Email cá nhân (email = email công ty)
   workLocationId?: number;          // Địa điểm làm việc (WORK_LOCATION)
+  isNursingChild?: boolean;         // Đang nuôi con < 12 tháng -> +60p/ngày (chấm công)
+  childBirthDate?: string;          // Ngày sinh của con (dd/MM/yyyy)
   // tên hiển thị trả từ GetByIdHR
   branchCode?: string;
   branchName?: string;
