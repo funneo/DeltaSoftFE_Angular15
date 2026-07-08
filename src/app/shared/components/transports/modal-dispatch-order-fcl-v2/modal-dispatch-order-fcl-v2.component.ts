@@ -142,6 +142,8 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   public listPod: DispatchOrderAttachfiles[] = [];
   public listAttachFile: DispatchOrderAttachfiles[] = [];
   public listFee: Fee[];
+  // Phí lái xe được chọn ở tab "Chi phí" — lọc gọn từ file JSON tĩnh (assets/config/driver-fcl-fees.json)
+  public listDriverFee: Fee[] = [];
   public listQuotation: Quotationsubcontractors[] = [];
   public selectedItem: Dispatchorderdetailed = {};
   public flagOk: boolean = false;
@@ -389,6 +391,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     //this.loadTollRoute();
     this.loadContType();
     this.loadFee();
+    this.loadDriverFee();
     this.loadMooc();
     // this.loadSurcharge();
     this.loadTollStation();
@@ -685,6 +688,27 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
         ...fee,
         feeName: fee.feeCode + "-" + fee.feeName
       }));
+    });
+  }
+
+  // Đọc danh sách phí lái xe từ file JSON tĩnh; chỉ lấy phí actived, sắp theo displayOrder.
+  // Sửa danh sách / bật-tắt actived tại assets/config/driver-fcl-fees.json rồi ng build lại.
+  loadDriverFee() {
+    this._http.get<any>("assets/config/driver-fcl-fees.json").subscribe({
+      next: (res) => {
+        const fees = (res?.fees || []) as any[];
+        this.listDriverFee = fees
+          .filter((f) => f.actived)
+          .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
+          .map((f) => ({
+            ...f,
+            feeName: f.feeCode + "-" + f.feeName,
+          })) as Fee[];
+      },
+      error: () => {
+        // Lỗi đọc file cấu hình → fallback về catalog đầy đủ để không chặn nhập
+        this.listDriverFee = this.listFee || [];
+      },
     });
   }
 
@@ -2232,7 +2256,9 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       s.etcCost = segEtc;
       totalEtc += segEtc;
     });
-    this.entity.tongKm = totalKm;
+    // [BUG#1] cộng km cung đường phát sinh để tổng hiển thị khớp list (backend tự tính lại khi save)
+    const extraKm = (this.extraSegments || []).reduce((sum, e) => sum + (+e.distanceKm || 0), 0);
+    this.entity.tongKm = totalKm + extraKm;
     this.totalEtcCost = totalEtc;
   }
 
@@ -2587,9 +2613,11 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       s.fuelAmountCalculated = +((s.fuelNorm || 0) * (s.distanceKm || 0) / 100).toFixed(2);
       total += s.fuelAmountCalculated;
     });
-    // Tongdau ở FCL = tổng dầu segments + OilCompensation. Backend tự tính khi save.
+    // [BUG#1] cộng dầu cung đường phát sinh để tổng hiển thị khớp list
+    const extraFuel = (this.extraSegments || []).reduce((sum, e) => sum + (+e.fuelAmountCalculated || 0), 0);
+    // Tongdau ở FCL = tổng dầu segments + cung phát sinh + OilCompensation. Backend tự tính khi save.
     // Ở FE chỉ hiển thị tham khảo:
-    this.entity.tongdau = +total.toFixed(2);
+    this.entity.tongdau = +(total + extraFuel).toFixed(2);
   }
 
   private _rebuildDispatchSummarize() {

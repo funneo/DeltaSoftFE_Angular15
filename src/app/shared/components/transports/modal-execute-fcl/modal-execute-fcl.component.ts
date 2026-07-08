@@ -10,7 +10,8 @@ import { DispatchOrderFcl } from "@app/shared/models/fcl/dispatch-order-fcl";
 import { DispatchOrderAttachfiles } from "@app/shared/models/transports/dispatchorders/dispatch-order-attachfiles";
 import { DispatchOrderFee } from "@app/shared/models/transports/dispatchorders/dispatch-order-fee";
 import { Dispatchorder } from "@app/shared/models/transports/dispatchorders/dispatchorder";
-import { AuthService, NotificationService, UtilityService, FeeService } from "@app/shared/services";
+import { AuthService, NotificationService, UtilityService, FeeService, VihicleService } from "@app/shared/services";
+import { VehicleOilQuota } from "@app/shared/models/danhmuc/vehicle-oil-quota.model";
 import { DispatchOrderFclService } from "@app/shared/services/fcl/dispatch-order-fcl.service";
 import { DispatchordersService } from "@app/shared/services/transports/dispatchorders.service";
 import { HttpParams } from "@angular/common/http";
@@ -44,6 +45,8 @@ export class ModalExecuteFclComponent implements OnInit {
 
   // lookups (chỉ phần thực sự cần — fee cho dropdown chi phí)
   listFee: Fee[] = [];
+  // Định mức dầu của xe — để map payloadWeight (tier id) → tên bậc định mức ("18-20 tấn")
+  listOilQuota: VehicleOilQuota[] = [];
 
   // 2 list ảnh đính kèm — phân biệt qua cờ isPod (TRUE=POD, FALSE=ảnh hiện trường)
   listPod: DispatchOrderAttachfiles[] = [];
@@ -70,6 +73,7 @@ export class ModalExecuteFclComponent implements OnInit {
     private dispatchOrderService: DispatchOrderFclService,
     private dispatchordersService: DispatchordersService, // cho 3 API attach file (chung BE với TO)
     private feeService: FeeService,
+    private _vihicleService: VihicleService, // nạp định mức dầu của xe để hiện tên bậc tải trọng
   ) { }
 
   ngOnInit(): void {
@@ -92,6 +96,24 @@ export class ModalExecuteFclComponent implements OnInit {
     });
   }
 
+  /** Nạp bậc định mức dầu của xe lệnh — để hiển thị TÊN bậc tải trọng thay vì id. */
+  loadOilQuota(): void {
+    this.listOilQuota = [];
+    if (!this.entity.vehicleId) return;
+    this._vihicleService.getDetail(this.entity.vehicleId).subscribe((res: ResponseValue<any>) => {
+      if (res.code === "200" || res.code === "201") {
+        this.listOilQuota = res.data?.listOilQuota || [];
+      }
+    });
+  }
+
+  /** payloadWeight trên segment/cung phát sinh là ID bậc định mức dầu → trả về tên bậc ("18-20 tấn"). */
+  payloadLabel(payloadWeight: any): string {
+    if (payloadWeight == null) return "";
+    const quota = this.listOilQuota.find(x => x.id === payloadWeight);
+    return quota?.oilQuotaName ?? "";
+  }
+
   /** Mở modal — dùng endpoint mới `getDetailWithTo` (FCL mới + segments + extras). */
   edit(refNo: string, flag: boolean): void {
     this.dispatchOrderService.getDetailWithTo(refNo).subscribe((res: ResponseValue<DispatchOrderFcl>) => {
@@ -99,6 +121,7 @@ export class ModalExecuteFclComponent implements OnInit {
         this.entity = res.data;
         this.entity.listEtc = this.entity.listEtc ?? [];
         this.entity.listFee = this.entity.listFee ?? [];
+        this.loadOilQuota();
         this.flagXem = flag;
         if (!this.flagXem) {
           // chỉ chủ lệnh / admin / có quyền accept mới được nhập thực hiện

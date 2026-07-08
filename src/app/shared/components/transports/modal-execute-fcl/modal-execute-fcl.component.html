@@ -226,7 +226,7 @@
                     <td class="text-center">{{ seg.orderIndex ?? (i + 1) }}</td>
                     <td>{{ seg.startLocationName }}</td>
                     <td>{{ seg.endLocationName }}</td>
-                    <td class="text-right">{{ seg.payloadWeight }}</td>
+                    <td class="text-right">{{ payloadLabel(seg.payloadWeight) }}</td>
                     <td class="text-right">{{ seg.distanceKm }}</td>
                     <td class="text-right">{{ seg.fuelAmountCalculated }}</td>
                     <td class="text-right">{{ seg.etcCost }}</td>
@@ -257,7 +257,7 @@
                     <td class="text-center">{{ ex.seqNo }}</td>
                     <td>{{ ex.startLocationName }}</td>
                     <td>{{ ex.endLocationName }}</td>
-                    <td class="text-right">{{ ex.payloadWeight }}</td>
+                    <td class="text-right">{{ payloadLabel(ex.payloadWeight) }}</td>
                     <td class="text-right">{{ ex.distanceKm }}</td>
                     <td class="text-right">{{ ex.fuelAmountCalculated }}</td>
                     <td>{{ ex.note }}</td>

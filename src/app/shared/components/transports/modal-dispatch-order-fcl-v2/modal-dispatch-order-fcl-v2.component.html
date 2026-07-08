@@ -1017,7 +1017,7 @@
                       <tbody>
                         <tr *ngFor="let item of entity.listFee; let i=index;">
                           <td>
-                            <ng-select name="feeId{{i}}" [items]="listFee" bindLabel="feeName" bindValue="id"
+                            <ng-select name="feeId{{i}}" [items]="listDriverFee" bindLabel="feeName" bindValue="id"
                               (change)="feeCode2Changed(item,$event)" [(ngModel)]="item.feeId" required>
                             </ng-select>
                           </td>

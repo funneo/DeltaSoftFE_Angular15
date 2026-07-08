@@ -1,0 +1,14 @@
+{
+  "_note": "Danh sách phí lái xe được chọn khi nhập chi phí vào lệnh FCL v2 (tab Chi phí). Đặt actived=false để tạm ẩn 1 phí khỏi dropdown mà không xóa. displayOrder = thứ tự hiển thị.",
+  "fees": [
+    { "id": 667, "feeCode": "CP02036", "feeName": "Chi phí dầu DO mua ngoài", "actived": true, "displayOrder": 1 },
+    { "id": 627, "feeCode": "CP02034", "feeName": "Phí đặt cọc vỏ container", "actived": true, "displayOrder": 2 },
+    { "id": 1020, "feeCode": "CP03057", "feeName": "Phí cân xe", "actived": true, "displayOrder": 3 },
+    { "id": 665, "feeCode": "CP02044", "feeName": "Phí bến bãi", "actived": true, "displayOrder": 4 },
+    { "id": 677, "feeCode": "CP02039", "feeName": "Chi phí vận tải thuê ngoài", "actived": true, "displayOrder": 5 },
+    { "id": 666, "feeCode": "CP02037", "feeName": "Chi phí dầu cấp phiếu (lít)", "actived": true, "displayOrder": 6 },
+    { "id": 795, "feeCode": "CP02056", "feeName": "Chi phí đường cấm", "actived": true, "displayOrder": 7 },
+    { "id": 801, "feeCode": "CP03014", "feeName": "Phí nâng hạ container tại cảng, depot", "actived": true, "displayOrder": 8 },
+    { "id": 727, "feeCode": "CP01050", "feeName": "Phụ cấp ngoài giờ", "actived": true, "displayOrder": 9 }
+  ]
+}
