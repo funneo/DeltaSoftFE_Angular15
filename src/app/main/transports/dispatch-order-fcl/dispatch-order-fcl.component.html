@@ -169,7 +169,7 @@
           <td>{{item.tongdau}}</td>
           <td>{{item.note}}</td>
           <td>
-            <button *ngIf="account_permission && item.status==5 " type="button" class="btn btn-duyet btn-sm action"
+            <button *ngIf="closing_permission && item.status==5 " type="button" class="btn btn-duyet btn-sm action"
               (click)="chotlenh(item)">
               <i class="fa backward"></i>CHỐT LỆNH</button>
           </td>

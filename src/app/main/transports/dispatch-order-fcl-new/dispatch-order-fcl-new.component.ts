@@ -46,6 +46,8 @@ export class DispatchOrderFclNewComponent implements OnInit {
   listFilter: DispatchOrderFcl[];
   listBranch: Branch[];
   account_permission: boolean = false;
+  //Quyền chốt lệnh (FCL_CLOSING) — nút Chốt lệnh (hàng loạt + theo dòng) khi status==5, khớp modal/list cũ
+  closing_permission: boolean = false;
   listDriver: Employee[] = [];
   userLoged?: Profile;
   branchId?: number;
@@ -105,6 +107,8 @@ export class DispatchOrderFclNewComponent implements OnInit {
     this._accept = this._authService.hasPermission("FCL_ACCEPT");
     this.account_permission =
       this._authService.hasPermission("FCL_ACCOUNT") || this.adminPermission;
+    this.closing_permission =
+      this._authService.hasPermission("FCL_CLOSING") || this.adminPermission;
 
     var p = UtilityService.getLocalParams(this._storageKey);
     localStorage.removeItem(this._storageKey);

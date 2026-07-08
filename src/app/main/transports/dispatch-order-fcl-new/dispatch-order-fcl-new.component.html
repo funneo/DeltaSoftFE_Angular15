@@ -29,6 +29,10 @@
     </div>
 
     <div class="dof-toolbar__actions">
+      <button class="dof-btn dof-btn--chot" (click)="chotlenhMulti()" [disabled]="!flagChecked" appPermission
+        appFunction="FCL" appAction="CLOSING">
+        <i class="fa fa-check-square-o"></i> Chốt lệnh
+      </button>
       <button class="dof-btn dof-btn--primary" (click)="edit(false)" [disabled]="!flagEdit" appPermission
         appFunction="FCL" appAction="UPDATE">
         <i class="fa fa-edit"></i> Sửa
@@ -64,6 +68,7 @@
           <th>Tổng Km</th>
           <th>Tổng dầu</th>
           <th>Ghi chú</th>
+          <th>Tác vụ</th>
         </tr>
         <tr class="dof-table__filter">
           <th></th>
@@ -85,6 +90,7 @@
           <th><input class="dof-finput" [(ngModel)]="filterColumns.tongKm" (input)="filterData()" type="text" /></th>
           <th><input class="dof-finput" [(ngModel)]="filterColumns.tongdau" (input)="filterData()" type="text" /></th>
           <th><input class="dof-finput" [(ngModel)]="filterColumns.note" (input)="filterData()" type="text" /></th>
+          <th></th>
         </tr>
       </thead>
       <tbody>
@@ -119,6 +125,12 @@
           <td class="dof-num">{{item.tongKm}}</td>
           <td class="dof-num">{{item.tongdau}}</td>
           <td>{{item.note}}</td>
+          <td>
+            <button *ngIf="closing_permission && item.status==5" type="button" class="dof-btn dof-btn--chot dof-btn--sm"
+              (click)="chotlenh(item); $event.stopPropagation()">
+              <i class="fa fa-check"></i> Chốt lệnh
+            </button>
+          </td>
         </tr>
         <tr *ngIf="listFilter?.length == 0">
           <td colspan="100%" class="dof-empty">Không có bản ghi nào được tìm thấy!</td>
