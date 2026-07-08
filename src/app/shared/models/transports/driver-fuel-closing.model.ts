@@ -1,7 +1,7 @@
 export interface DriverFuelClosingDetail {
     id?: number;
     driverFuelClosingId?: number;
-    source?: number; // 1=Tạm ứng, 2=DispatchOrder, 3=FCL định mức, 4=Phát sinh, 5=FCL máy phát
+    source?: number; // 1=Tạm ứng(A), 2=DispatchOrder, 3=FCL định mức, 4=Phát sinh, 5=FCL máy phát (2-5=C), 6=Dầu còn thừa Type=2 (B)
     bucket?: number; // 1=Vận hành, 2=Máy phát
     refNo?: string;
     mergeJobId?: string;
@@ -47,6 +47,9 @@ export interface DriverFuelClosing {
     demandGenQty?: number;
     netGenLiters?: number;
     netGenAmount?: number;
+
+    // Dầu còn thừa (B) — Σ (Quantity − QuantityIgas) phiếu cấp theo lệnh Type=2
+    leftoverQty?: number;
 
     netLiters?: number;
     netAmount?: number;

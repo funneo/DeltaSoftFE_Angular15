@@ -108,6 +108,7 @@ export class ModalVehicleFuelClosingComponent implements OnInit {
       oilPrice: 0,
       supplyOperQty: 0, demandOperQty: 0, netOperLiters: 0, netOperAmount: 0,
       supplyGenQty: 0, demandGenQty: 0, netGenLiters: 0, netGenAmount: 0,
+      leftoverQty: 0,
       netLiters: 0,
       netAmount: 0,
       status: 0,
@@ -191,30 +192,36 @@ export class ModalVehicleFuelClosingComponent implements OnInit {
       });
   }
 
-  // ====== Compute summary — 2 BUCKET (net CÓ DẤU) ======
+  // ====== Compute summary — NET = B + C − A (net CÓ DẤU) ======
+  // A = cấp dầu xe nhà (Type=0, source 1) ; B = dầu còn thừa cấp theo lệnh (Type=2, source 6)
+  // C = định mức lệnh (source 2/3/4 vận hành, 5 máy phát). NET<0 → thu tiền lái xe, >0 → chi.
   recalcSummary() {
     const list = (this.entity.detaileds ?? []).filter(x => x.checked !== false);
     const price = +(this.entity.oilPrice ?? 0);
 
-    // Bucket VẬN HÀNH: supply = tạm ứng (source 1, bucket 1) ; demand = source 2/3/4
+    // Bucket VẬN HÀNH: cấp A = source 1 bucket 1 ; định mức C = source 2/3/4
     const supOper = this.sumBy(list, d => d.source === 1 && (d.bucket ?? 1) === 1);
     const demOper = this.sumBy(list, d => d.source === 2 || d.source === 3 || d.source === 4);
     this.entity.supplyOperQty = supOper;
     this.entity.demandOperQty = demOper;
-    this.entity.netOperLiters = +(supOper - demOper).toFixed(3);
+    this.entity.netOperLiters = +(demOper - supOper).toFixed(3); // C − A (re-sign)
     this.entity.netOperAmount = +(this.entity.netOperLiters * price).toFixed(2);
 
-    // Bucket MÁY PHÁT: supply = tạm ứng (source 1, bucket 2) ; demand = source 5
+    // Bucket MÁY PHÁT: cấp A = source 1 bucket 2 ; định mức C = source 5
     const supGen = this.sumBy(list, d => d.source === 1 && d.bucket === 2);
     const demGen = this.sumBy(list, d => d.source === 5);
     this.entity.supplyGenQty = supGen;
     this.entity.demandGenQty = demGen;
-    this.entity.netGenLiters = +(supGen - demGen).toFixed(3);
+    this.entity.netGenLiters = +(demGen - supGen).toFixed(3); // C − A (re-sign)
     this.entity.netGenAmount = +(this.entity.netGenLiters * price).toFixed(2);
 
-    // Tổng (cộng 2 bucket) — net có dấu: >0 trừ lương, <0 trả tiền
-    this.entity.netLiters = +(this.entity.netOperLiters + this.entity.netGenLiters).toFixed(3);
-    this.entity.netAmount = +(this.entity.netOperAmount + this.entity.netGenAmount).toFixed(2);
+    // B = dầu còn thừa cấp theo lệnh (source 6) — chỉ tính tổng, không bucket
+    const leftover = this.sumBy(list, d => d.source === 6);
+    this.entity.leftoverQty = leftover;
+
+    // TỔNG = (C − A) + B = B + C − A. NET<0 → thu tiền lái xe ; >0 → chi cho lái xe.
+    this.entity.netLiters = +(this.entity.netOperLiters + this.entity.netGenLiters + leftover).toFixed(3);
+    this.entity.netAmount = +(this.entity.netLiters * price).toFixed(2);
   }
 
   private sumBy(list: DriverFuelClosingDetail[], pred: (x: DriverFuelClosingDetail) => boolean): number {
@@ -239,18 +246,19 @@ export class ModalVehicleFuelClosingComponent implements OnInit {
 
   directionLabel(): string {
     const n = +(this.entity.netLiters ?? 0);
-    if (n > 0) return 'lái xe trả tiền';
-    if (n < 0) return 'lái xe nhận tiền';
+    if (n < 0) return 'Thu tiền lái xe';
+    if (n > 0) return 'Chi tiền cho lái xe';
     return '';
   }
 
   sourceLabel(s: number): string {
     switch (s) {
-      case 1: return 'Tạm ứng dầu (nhận)';
-      case 2: return 'Lệnh DispatchOrder (định mức)';
-      case 3: return 'Lệnh FCL (định mức)';
-      case 4: return 'Phát sinh';
-      case 5: return 'Dầu máy phát (FCL)';
+      case 1: return 'Cấp dầu xe nhà — tạm ứng (A)';
+      case 2: return 'Định mức lệnh DispatchOrder (C)';
+      case 3: return 'Định mức lệnh FCL (C)';
+      case 4: return 'Phát sinh (C)';
+      case 5: return 'Dầu máy phát FCL (C)';
+      case 6: return 'Dầu còn thừa — cấp theo lệnh (B)';
       default: return '?';
     }
   }
