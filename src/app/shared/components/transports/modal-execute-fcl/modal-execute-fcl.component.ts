@@ -63,6 +63,9 @@ export class ModalExecuteFclComponent implements OnInit {
   viewConfirm = false;
 
   maskNumber = UtilityService.maskNumber;
+  // Options cho daterangepicker (thời gian bắt đầu / kết thúc lệnh) — có time picker.
+  startedDateOption: any;
+  finishedDateOption: any;
 
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
@@ -79,6 +82,7 @@ export class ModalExecuteFclComponent implements OnInit {
     private dispatchordersService: DispatchordersService, // cho 3 API attach file (chung BE với TO)
     private feeService: FeeService,
     private _vihicleService: VihicleService, // nạp định mức dầu của xe để hiện tên bậc tải trọng
+    private _utilityService: UtilityService, // build options cho daterangepicker
   ) { }
 
   ngOnInit(): void {
@@ -148,6 +152,9 @@ export class ModalExecuteFclComponent implements OnInit {
         if (this.entity.inquiryTimeToThePorts) {
           this.entity.inquiryTimeToThePorts = moment(this.entity.inquiryTimeToThePorts, FormatContstants.DATETIMEEN).format(FormatContstants.DATETIMEVN);
         }
+        // Thời gian bắt đầu/kết thúc lệnh: BE ISO → chuỗi VN cho daterangepicker + build option (mốc + time picker)
+        this._initDateOption("startedDate", "startedDateOption");
+        this._initDateOption("finishedDate", "finishedDateOption");
         this.loadPod();
         this.loadAttackFiles();
         this.modalExecuteFcl.show();
@@ -244,6 +251,30 @@ export class ModalExecuteFclComponent implements OnInit {
     window.open(url, "_blank");
   }
 
+  /**
+   * Khởi tạo 1 ô daterangepicker: BE trả ISO → format DATETIMEVN cho ngModel, build option (mốc + time picker).
+   * @param field 'startedDate' | 'finishedDate'  @param optField field option tương ứng
+   */
+  private _initDateOption(field: string, optField: string): void {
+    const raw = this.entity[field];
+    const m = raw ? moment(raw) : null;
+    const seed = m && m.isValid() ? m.toDate() : new Date();
+    this[optField] = this._utilityService.dateTimeOptionDays(seed, true);
+    this.entity[field] = m && m.isValid() ? m.format(FormatContstants.DATETIMEVN) : null;
+  }
+  selectedStartedDate(event: any): void {
+    this.entity.startedDate = moment(event.start).format(FormatContstants.DATETIMEVN) as any;
+  }
+  selectedFinishedDate(event: any): void {
+    this.entity.finishedDate = moment(event.start).format(FormatContstants.DATETIMEVN) as any;
+  }
+  /** DATETIMEVN (dd/MM/yyyy HH:mm:ss) → ISO cho BE (DateTime?). Trống → null. */
+  private _vnToIso(v: any): any {
+    if (!v) return null;
+    const m = moment(v, FormatContstants.DATETIMEVN);
+    return m.isValid() ? m.toISOString() : null;
+  }
+
   // ===== Bảng chi phí (editable) =====
   feeCodeChanged(item: DispatchOrderFee, event: Fee): void { item.feeId = event?.id; }
   changeCost(item: DispatchOrderFee): void { item.totalCost = (item.cost ?? 0) + (item.vat ?? 0); }
@@ -304,6 +335,8 @@ export class ModalExecuteFclComponent implements OnInit {
     if (!this.validateInvoiceInfo()) return;
     const copy = Object.assign({}, this.entity);
     copy.finished = finished;
+    copy.startedDate = this._vnToIso(this.entity.startedDate);
+    copy.finishedDate = this._vnToIso(this.entity.finishedDate);
     this.dispatchOrderService.driverUpdate(copy).subscribe(
       (res: ResponseValue<any>) => {
         if (res.code === "200" || res.code === "201") {
@@ -354,6 +387,8 @@ export class ModalExecuteFclComponent implements OnInit {
     if (!this.validateInvoiceInfo()) return;
     const copy = Object.assign({}, this.entity);
     copy.finished = true;
+    copy.startedDate = this._vnToIso(this.entity.startedDate);
+    copy.finishedDate = this._vnToIso(this.entity.finishedDate);
     this.notificationService.printConfirmationYesNo("Xác nhận HOÀN THÀNH lệnh?", () => {
       this.dispatchOrderService.driverUpdate(copy).subscribe(
         (res: ResponseValue<any>) => {

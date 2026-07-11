@@ -236,7 +236,8 @@
       "Bash(grep -iv \"//\")",
       "Bash(xargs grep -ln \"class DispatchOrderFCLFee\")",
       "Bash(xargs grep -ln \"class DispatchOrderFCLEtc\\\\b\")",
-      "Bash(rm -f src/assets/config/driver-fcl-fees.json)"
+      "Bash(rm -f src/assets/config/driver-fcl-fees.json)",
+      "Bash(grep \"\\\\.ts$\")"
     ],
     "additionalDirectories": [
       "d:\\Delta\\DeltaSoft\\web-app-update\\.git",

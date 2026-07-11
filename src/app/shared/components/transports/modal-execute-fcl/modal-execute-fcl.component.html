@@ -73,6 +73,25 @@
                   [class.readonly-cell]="flagXem || (entity.status ?? 0) > 2" />
               </div>
             </div>
+            <!-- Thời gian bắt đầu/kết thúc lệnh: lái xe nhập tay (daterangepicker), sửa được khi status≤2 -->
+            <div class="form-group">
+              <label class="col-sm-2 control-label">T/g bắt đầu <span class="exec-driver-hint">(lái xe)</span></label>
+              <div class="col-sm-4">
+                <input class="form-control" type="text" name="startedDate" autocomplete="off"
+                  daterangepicker [options]="startedDateOption" [(ngModel)]="entity.startedDate"
+                  (selected)="selectedStartedDate($event)"
+                  [readonly]="flagXem || (entity.status ?? 0) > 2"
+                  [class.readonly-cell]="flagXem || (entity.status ?? 0) > 2" />
+              </div>
+              <label class="col-sm-2 control-label">T/g kết thúc <span class="exec-driver-hint">(lái xe)</span></label>
+              <div class="col-sm-4">
+                <input class="form-control" type="text" name="finishedDate" autocomplete="off"
+                  daterangepicker [options]="finishedDateOption" [(ngModel)]="entity.finishedDate"
+                  (selected)="selectedFinishedDate($event)"
+                  [readonly]="flagXem || (entity.status ?? 0) > 2"
+                  [class.readonly-cell]="flagXem || (entity.status ?? 0) > 2" />
+              </div>
+            </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">Tài xế ghi chú</label>
               <div class="col-sm-10">

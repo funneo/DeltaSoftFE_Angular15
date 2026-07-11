@@ -59,6 +59,8 @@ POST /api/DispatchOrderFcl/driverUpdate
 { "tokenKey":"<JWT>", "item": {
     "refNo":"FCL-...", "startVehicleOdor":<int>, "finishVehicleOdor":<int>,
     "finished":<bool>, "noteFinished":"...",
+    "startedDate": "<ISO 8601 | null>",    // giờ bắt đầu lệnh — xem quy tắc dưới
+    "finishedDate": "<ISO 8601 | null>",   // giờ kết thúc lệnh
     "listFee": [ { "id":<int|null>, "feeId":<int>, "contents":"...", "cost":<num>, "vat":<num>, "totalCost":<num> } ],
     "listEtc": [ { "id":<int>, "isPassed":<bool> } ]      // các field khác của etc giữ nguyên như GetByRefNoWithTO trả về
 } }
@@ -68,8 +70,14 @@ Mỗi dòng `listFee` có thêm **phân loại chứng từ** `invoiceType` (202
 - Khi đổi `invoiceType` về 0/1 → app tự xóa 6 field HĐ.
 - Ví dụ 1 dòng "có hóa đơn": `{ "id":123, "feeId":45, "contents":"...", "cost":100000, "vat":8000, "totalCost":108000, "invoiceType":2, "invoiceNo":"0001234", "invoiceDate":"05/07/2026", "invoicePattern":"1C25TAA", "taxNumber":"0101234567", "web":"tracuuhoadon.gdt.gov.vn", "code":"ABC123" }`.
 
+**Giờ bắt đầu / kết thúc lệnh `startedDate` / `finishedDate`** (2026-07-11) — **APP tự ghi giờ máy** (ERP web chỉ cho nhập tay, `ChangeStatus` KHÔNG tự set):
+- Khi lái xe bấm **Nhận lệnh**: sau `ChangeStatus(actionType:1)` thành công → gọi `driverUpdate` với `startedDate` = **giờ hiện tại của máy (ISO 8601)**.
+- Khi lái xe bấm **Hoàn thành**: trong `driverUpdate(finished:true)` gọi trước `ChangeStatus(actionType:2)` → set luôn `finishedDate` = **giờ máy hiện tại (ISO 8601)**.
+- BE lưu `ISNULL(@x, cột)`: gửi null thì giữ nguyên giá trị cũ (không xóa). Định dạng **ISO 8601** (vd `2026-07-11T08:30:00`) để BE parse `DateTime` chuẩn — KHÔNG gửi `dd/MM/yyyy`.
+
 Quy tắc BE (SP tự xử, chỉ áp cho `isLegacy=0`):
 - **listFee**: MERGE theo `id` — dòng có `id` = sửa; dòng mới (không `id`/`id`=0) = thêm; dòng đã bỏ khỏi mảng = xóa. → App phải gửi **toàn bộ** danh sách phí hiện có (không phải chỉ dòng mới), giữ nguyên `id` của dòng cũ. 6 field HĐ + `invoiceType` lưu kèm mỗi dòng.
+- **startedDate / finishedDate**: `ISNULL(@x, cột)` — chỉ ghi khi gửi giá trị.
 - **listEtc**: chỉ đổi cờ `isPassed` theo `id` (không thêm/xóa trạm). App gửi lại nguyên list ETC (đã lấy từ `GetByRefNoWithTO`), chỉ toggle `isPassed`.
 - km đầu/cuối lưu kiểu **int** (số lẻ bị cắt).
 

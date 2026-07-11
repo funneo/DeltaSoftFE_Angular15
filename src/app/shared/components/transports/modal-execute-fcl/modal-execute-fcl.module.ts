@@ -8,6 +8,7 @@ import { NgSelectModule } from '@ng-select/ng-select';
 import { TabsModule } from 'ngx-bootstrap/tabs';
 import { AccordionModule } from 'ngx-bootstrap/accordion';
 import { NgxMaskModule } from 'ngx-mask';
+import { Daterangepicker } from 'ng2-daterangepicker';
 import { PipeSharedModule } from '@app/shared/pipes/pipe-shared.module';
 import { UtilityService } from '@app/shared/services';
 
@@ -30,6 +31,7 @@ import { ModalExecuteFclComponent } from './modal-execute-fcl.component';
     AccordionModule.forRoot(),
     PipeSharedModule,
     NgxMaskModule.forRoot(UtilityService.maskConfig),
+    Daterangepicker,
     ModalAttachfileModule,
     ModalConfirmDenyClosingFclModule,
     ModalViewShippingTaskModule,

@@ -368,6 +368,7 @@ Each `listFee` row also carries a **document classification** `invoiceType` (202
 Server rules (SP `SP_DispatchOrderFCL_DriverUpdate`, applied **only when `isLegacy=0`**; legacy orders update just the 4 km/note cols):
 - `listFee` → **MERGE by `id`**: existing `id` = update, new (no `id`/0) = insert, omitted-from-array = **delete**. Send the *entire* current fee list, preserving each row's `id`. `invoiceType` + 6 invoice fields saved per row.
 - `listEtc` → only `isPassed` is updated **by `id`** (no add/remove of toll stations; other etc fields untouched server-side).
+- `startedDate` / `finishedDate` (order start/finish time, ISO 8601) → `ISNULL(@x, col)`: only written when a value is sent. **App sets device time**: `startedDate=now` after tapping Nhận (ActionType 1), `finishedDate=now` in the driverUpdate before Hoàn thành (ActionType 2). `ChangeStatus` does NOT auto-set these; ERP web enters them manually.
 - `startVehicleOdor`/`finishVehicleOdor` stored as **int** (decimals truncated).
 
 ---
