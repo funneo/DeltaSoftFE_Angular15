@@ -683,6 +683,19 @@
   }
 }
 
+// Số lần điểm đã nằm trong lộ trình (lệnh nhiều công việc / quay đầu).
+.loc-card-count {
+  display: inline-block;
+  margin-right: 4px;
+  padding: 0 5px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  color: #fff;
+  background: #3498db;
+  border-radius: 8px;
+}
+
 .loc-card-type {
   width: 46px;
   flex-shrink: 0;
@@ -2177,3 +2190,44 @@
   margin-bottom: 10px; text-align: center;
 }
 
+
+/* Cảnh báo xe thiếu loại BOT — khóa các nút chọn cung đường (2026-07-10) */
+.route-bot-warning {
+  margin: 8px 10px 0;
+  padding: 8px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+  border-radius: 4px;
+
+  i.fa-exclamation-triangle { margin-right: 6px; }
+}
+
+/* Lịch sử lệnh (workflow v2) — timeline */
+.fcl-v2-history {
+  padding: 6px 12px;
+  border-top: 1px solid #e0e0e0;
+  max-height: 140px;
+  overflow-y: auto;
+
+  .fcl-v2-history-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: #555;
+    margin-bottom: 4px;
+    i { margin-right: 4px; }
+  }
+  .fcl-v2-timeline {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    li {
+      font-size: 12px;
+      padding: 2px 0;
+      border-bottom: 1px dashed #eee;
+      &.is-reject { color: #c0392b; font-weight: 600; }
+    }
+    .tl-action { font-weight: 600; }
+    .tl-by, .tl-date { color: #777; margin-left: 4px; font-weight: 400; }
+    .tl-reason { margin-left: 4px; font-style: italic; }
+  }
+}

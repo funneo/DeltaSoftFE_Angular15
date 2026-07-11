@@ -180,6 +180,8 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   public listSurcharge: OtherCategories[] = [];
   public vihicleTypeId?;
   public driverId?: string;
+  // Workflow v2: timeline lịch sử chuyển trạng thái (từ GetStatusLog).
+  public statusLog: any[] = [];
   public secondDriverId?: string;
   public vihicleId?: number;
   public moocId?: number;
@@ -499,12 +501,16 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       });
   }
   loadPorts(): void {
+    // Chỉ lấy cảng của chi nhánh đang đăng nhập (+ cảng dùng chung, BranchId NULL/0).
     this.busy = this.portsService
-      .getAll()
+      .getAll(Number.parseInt(this.branchId) || 0)
       .subscribe((res: ResponseValue<GroupPorts[]>) => {
         if (res.code == "200" || res.code == "201") {
           this.listPort = res.data;
           this.listCFS = res.data;
+        } else {
+          this.listPort = [];
+          this.listCFS = [];
         }
       });
   }
@@ -582,9 +588,11 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     if (!id) {
       this.listOilQuota = [];
       this._vehicleBotTypeId = null;
+      this.vehicleLoading = false;
       this._applyTollPrices();
       return;
     }
+    this.vehicleLoading = true;
     this.vehicleService
       .getDetail(id)
       .subscribe((res: ResponseValue<Vihicle>) => {
@@ -595,8 +603,47 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
           this.listOilQuota = [];
           this._vehicleBotTypeId = null;
         }
+        this.vehicleLoading = false;
         this._applyTollPrices();
+        // Xe chưa gán loại BOT, hoặc gán id không còn trong danh mục BOT (dữ liệu mồ côi)
+        // → không tra được giá vé từng trạm. Cảnh báo ngay, đừng để tính ra 0 đồng lặng lẽ.
+        if (this.vehicleBotMissing) {
+          this.notificationService.printErrorMessage(
+            'Phương tiện chưa có thông tin loại BOT — không tính được phí trạm. '
+            + 'Cập nhật tại Danh mục > Phương tiện trước khi chọn cung đường.'
+          );
+        }
       });
+  }
+
+  /** Đang gọi API lấy chi tiết xe — chưa kết luận được thiếu BOT hay không. */
+  public vehicleLoading = false;
+
+  /** Đã chọn xe nhưng không suy ra được loại xe Vietmap (BOT null hoặc id lạ). */
+  public get vehicleBotMissing(): boolean {
+    return !!this.entity?.vehicleId && !this.vehicleLoading && this.vietmapVehicleKey === null;
+  }
+
+  /**
+   * Cho vào tab Cung đường không. Chốt với anh 2026-07-10:
+   * lệnh MỚI thiếu BOT → khóa hẳn; lệnh ĐÃ CÓ refNo → vẫn vào xem lộ trình đã lưu
+   * (19 xe đầu kéo đang mang id BOT mồ côi, không được chặn xem lệnh cũ).
+   */
+  public get canOpenRouteTab(): boolean {
+    if (!this.entity?.vehicleId) return false;
+    return !this.vehicleBotMissing || !!this.entity.refNo;
+  }
+
+  /** Thiếu BOT → cấm chọn/tính lại cung đường ở mọi trường hợp (kể cả lệnh cũ). */
+  public get routeToolsDisabled(): boolean {
+    return this.vehicleBotMissing;
+  }
+
+  /** Nhãn tab Cung đường — nói rõ vì sao mờ. */
+  public get routeTabHeading(): string {
+    if (!this.entity?.vehicleId) return 'Cung đường (chọn xe trước)';
+    if (this.vehicleBotMissing) return 'Cung đường (xe thiếu thông tin BOT)';
+    return 'Cung đường';
   }
 
   loadLocations(listCus: string) {
@@ -1322,6 +1369,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
           }
           this.flagXem = flag;
           this.flagSave = false;
+          this.loadStatusLog(refNo);
           this.modalDispatchOrderFcl.show();
         } else {
           this.notificationService.printErrorMessage(
@@ -1688,25 +1736,65 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   changedSurcharge(item: DispatchOrderSurcharge, event: OtherCategories) {
     item.surchargeName = event?.categoryName;
   }
-  updateState(type: number) {
-    var item = Object.assign({}, this.entity);
-    item.status = type;
-
+  // ===== Workflow v2 (2026-07-11): MỌI chuyển trạng thái đi qua ChangeStatus (SP mới) =====
+  // KHÔNG dùng updateState (SP cũ) cho lệnh v2 — đó là chốt chặn duy nhất ngăn lệnh v2 đi nhầm SP cũ.
+  // ActionType: 1 Nhận · 2 Hoàn thành · 3 Duyệt B1 · 4 Chốt · 5 Từ chối nhận · 6 Từ chối B1 · 7 Từ chối CHỐT.
+  private _changeStatus(actionType: number, reason: string = null) {
+    if (this.flagSave) return;
+    this.flagSave = true;
     this.busy = this.dispatchOrderService
-      .updateState(item, false, 0)
-      .subscribe((res: ResponseValue<DispatchOrderFcl>) => {
-        if (res.code == "200" || res.code == "201") {
-          this.notificationService.printSuccessMessage(
-            MessageContstants.UPDATED_OK_MSG
-          );
-          this.SaveSuccess.emit(res.data);
-          this.modalDispatchOrderFcl.hide();
-        } else {
-          this.notificationService.printErrorMessage(
-            MessageContstants.GETDATA_ERR_MSG + "\n" + res.code
-          );
-        }
-      });
+      .changeStatus(this.entity.refNo, actionType, reason)
+      .subscribe(
+        (res: ResponseValue<any>) => {
+          this.flagSave = false;
+          if (res.code == "200" || res.code == "201") {
+            this.notificationService.printSuccessMessage(MessageContstants.UPDATED_OK_MSG);
+            this.SaveSuccess.emit(res.data);
+            this.modalDispatchOrderFcl.hide();
+          } else {
+            this.notificationService.printErrorMessage(res.message || (MessageContstants.GETDATA_ERR_MSG + "\n" + res.code));
+          }
+        },
+        () => { this.flagSave = false; this.notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG); }
+      );
+  }
+
+  // Từ chối (điều vận/người chốt) — reason BẮT BUỘC (SP chặn ở DB). Lái xe từ chối nhận nằm ở modal thực hiện lệnh.
+  private _rejectWithReason(actionType: number, title: string) {
+    let reason = prompt(title, "");
+    if (reason == null) return;                 // bấm Hủy
+    reason = reason.trim();
+    if (reason.length === 0) {
+      this.notificationService.printErrorMessage("Vui lòng nhập lý do từ chối.");
+      return;
+    }
+    this._changeStatus(actionType, reason);
+  }
+
+  // Nhãn ActionType cho timeline lịch sử lệnh.
+  actionTypeLabel(t: number): string {
+    switch (+t) {
+      case 1: return "Nhận lệnh";
+      case 2: return "Hoàn thành lệnh";
+      case 3: return "Duyệt B1";
+      case 4: return "Chốt lệnh";
+      case 5: return "Từ chối nhận lệnh";
+      case 6: return "Từ chối duyệt B1";
+      case 7: return "Từ chối chốt lệnh";
+      default: return "—";
+    }
+  }
+
+  // Nạp timeline lịch sử trạng thái (v2). Reset rỗng nếu lỗi / không có.
+  loadStatusLog(refNo: string) {
+    this.statusLog = [];
+    if (!refNo) return;
+    this.dispatchOrderService.getStatusLog(refNo).subscribe(
+      (res: ResponseValue<any>) => {
+        if ((res.code == "200" || res.code == "201") && Array.isArray(res.data)) this.statusLog = res.data;
+      },
+      () => { }
+    );
   }
 
   updateEtcFee() {
@@ -1725,6 +1813,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
         }
       });
   }
+  // Điều vận: Duyệt B1 (3→5) — lưu chỉnh sửa (updateWithTo) rồi đổi trạng thái. Quyền FCL_ACCEPT (BE kiểm).
   duyetB1() {
     var item = Object.assign({}, this.entity);
     this.notificationService.printConfirmationYesNo(
@@ -1733,12 +1822,9 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
         //Trước khi duyệt B1 sẽ cập nhật toàn bộ thông tin có trên lệnh đã điều chỉnh
         this.dispatchOrderService.updateWithTo(item).subscribe(
           (res: ResponseValue<any>) => {
-            if (res.code == "200" || res.code == "201") {
-              this.updateState(3);
-            } else {
-              this.notificationService.printErrorMessage(
-                MessageContstants.UPDATED_ERR_MSG + res.code
-              );
+            if (res.code == "200" || res.code == "201") this._changeStatus(3);
+            else {
+              this.notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG + res.code);
               this.flagSave = false;
             }
           },
@@ -1748,90 +1834,19 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       () => { }
     );
   }
-  duyetB2() {
-    this.notificationService.printConfirmationYesNo(
-      "Duyệt B2 lệnh vận chuyển hay không?",
-      () => {
-        this.updateState(4);
-      },
-      () => { }
-    );
-  }
-  tuchoiB1() {
-    let copy = Object.assign({}, this.entity);
-    let _ok = false;
-    let retVal = prompt("Lý do từ chối duyệt B2", "");
-    if (retVal && retVal.length > 0) {
-      _ok = true;
-    }
-    copy.feedback = retVal ?? "";
-    if (_ok) {
-      //Chuyển trạng thái lệnh về là đã nhận lệnh để điều vận điều chỉnh lại thông tin
-      copy.status = 2;
-      this.dispatchOrderService.updateState(copy, true, 0).subscribe(
-        (res: ResponseValue<any>) => {
-          if (res.code == "200" || res.code == "201") {
-            this.notificationService.printSuccessMessage(
-              MessageContstants.UPDATED_OK_MSG
-            );
-            this.SaveSuccess.emit(res.data);
-            this.modalDispatchOrderFcl.hide();
-          } else {
-            this.notificationService.printErrorMessage(
-              MessageContstants.UPDATED_ERR_MSG
-            );
-          }
-        },
-        () => {
-          this.notificationService.printErrorMessage(
-            MessageContstants.UPDATED_ERR_MSG
-          );
-        }
-      );
-    }
-  }
-  tuchoiChot() {
-    let copy = Object.assign({}, this.entity);
-    let _ok = false;
-    let retVal = prompt("Lý do từ chối chốt lệnh", "");
-    if (retVal && retVal.length > 0) {
-      _ok = true;
-    }
-    copy.feedback = retVal ?? "";
-    if (_ok) {
-      //Chuyển trạng thái lệnh về là đã nhận lệnh để điều vận điều chỉnh lại thông tin
-      copy.status = 3;
-      this.dispatchOrderService.updateState(copy, true, 0).subscribe(
-        (res: ResponseValue<any>) => {
-          if (res.code == "200" || res.code == "201") {
-            this.notificationService.printSuccessMessage(
-              MessageContstants.UPDATED_OK_MSG
-            );
-            this.SaveSuccess.emit(res.data);
-            this.modalDispatchOrderFcl.hide();
-          } else {
-            this.notificationService.printErrorMessage(
-              MessageContstants.UPDATED_ERR_MSG
-            );
-          }
-        },
-        () => {
-          this.notificationService.printErrorMessage(
-            MessageContstants.UPDATED_ERR_MSG
-          );
-        }
-      );
-    }
-  }
+  // Điều vận: Từ chối B1 (3→2) — trả lại lái xe. Quyền FCL_ACCEPT.
+  tuchoiB1() { this._rejectWithReason(6, "Lý do từ chối duyệt B1"); }
+
+  // Người chốt: Chốt lệnh (5→6). Quyền FCL_CLOSING (BE kiểm). SP tự chốt dầu.
   chotlenh() {
     this.notificationService.printConfirmationYesNo(
       "Chốt lệnh vận chuyển FCL này hay không?",
-      () => {
-        this.updateState(6);
-      },
+      () => this._changeStatus(4),
       () => { }
     );
   }
+  // Người chốt: Từ chối CHỐT (5→3) — trả lại điều vận. Quyền FCL_CLOSING.
+  tuchoiChot() { this._rejectWithReason(7, "Lý do từ chối chốt lệnh"); }
 
   newFee() {
     let item: DispatchOrderFee = {
@@ -2116,16 +2131,30 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   //   Save FCL+TO atomic giờ qua createWithTo/updateWithTo (đã wire ở save method cũ).
   // =====================================================================
 
-  isLocInRoute(locationId: number, taskId?: number, type?: 'pickup' | 'delivery'): boolean {
-    return this.locations.some(l =>
+  /** Số lần điểm này đã nằm trong lộ trình — 1 lệnh nhiều công việc / quay đầu có thể lặp điểm. */
+  locCountInRoute(locationId: number, taskId?: number, type?: 'pickup' | 'delivery'): number {
+    return this.locations.filter(l =>
       l.locationId === locationId && l.taskId === taskId && l.type === type
-    );
+    ).length;
+  }
+
+  /**
+   * Chỉ chặn lặp LIỀN KỀ (A→A): chặng dài 0 km, Vietmap không tìm được đường.
+   * Lặp cách quãng (A→B→A, hoặc nhiều công việc cùng điểm) là hợp lệ.
+   */
+  private _isSameAsLastLocation(locationId: number, locationType?: number): boolean {
+    const last = this.locations[this.locations.length - 1];
+    if (!last) return false;
+    return last.locationId === locationId && (last.locationType ?? 1) === (locationType ?? 1);
   }
 
   addToRoute(task: ShippingTask, type: 'pickup' | 'delivery') {
     if (this.lastSegmentFinal) return;
     const locationId = type === 'pickup' ? task.pickupLocationId : task.deliveryLocationId;
-    if (this.isLocInRoute(locationId, task.id, type)) return;
+    if (this._isSameAsLastLocation(locationId, 1)) {
+      this.notificationService.printErrorMessage('Điểm này đang là điểm cuối lộ trình — không thể thêm liền kề chính nó.');
+      return;
+    }
     this.locations.push({
       locationId,
       locationName: type === 'pickup' ? task.pickupLocation : task.deliveryLocation,
@@ -2229,8 +2258,8 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       return;
     }
     const loc = this.selectedCustomLocation;
-    if (this.locations.some(l => l.locationId === loc.id && l.locationType === loc.locationType)) {
-      this.notificationService.printErrorMessage('Điểm này đã có trong lộ trình');
+    if (this._isSameAsLastLocation(loc.id, loc.locationType)) {
+      this.notificationService.printErrorMessage('Điểm này đang là điểm cuối lộ trình — không thể thêm liền kề chính nó.');
       return;
     }
     this.locations.push({
@@ -2290,7 +2319,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   editSegmentRoute(segIndex: number) {
     const seg = this.entity.segments?.[segIndex];
-    if (!seg) return;
+    if (!seg || this._blockRouteTools()) return;
     this._routeContext = 'segment';
     this._currentMapSegmentIndex = segIndex;
     this.modalVietmap.show([
@@ -2301,13 +2330,22 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   openCompareModal(segIndex: number) {
     const seg = this.entity.segments?.[segIndex];
-    if (!seg) return;
+    if (!seg || this._blockRouteTools()) return;
     this._routeContext = 'segment';
     this._currentMapSegmentIndex = segIndex;
     this.modalCompare.show([
       { lat: seg.startLat, lng: seg.startLng },
       { lat: seg.endLat, lng: seg.endLng }
     ]);
+  }
+
+  /** Chặn mọi lối tính lộ trình khi xe thiếu loại BOT (nút [disabled] có thể bị bỏ qua). */
+  private _blockRouteTools(): boolean {
+    if (!this.routeToolsDisabled) return false;
+    this.notificationService.printErrorMessage(
+      'Phương tiện chưa có thông tin loại BOT — không thể chọn cung đường.'
+    );
+    return true;
   }
 
   onCompareRouteSelected(event: CompareRouteResult) {
@@ -2395,7 +2433,10 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     if (seg.listWaypoints?.length >= 2) {
       this.modalVietmap.showSaved(
         seg.listWaypoints.map(w => ({ lat: w.lat, lng: w.lng, name: w.name || '', distanceM: w.distanceM || 0 })),
-        seg.routePolyline
+        seg.routePolyline,
+        // Trước đây bỏ trống → modal luôn báo "không có trạm" ở lần mở đầu tiên
+        // (chặng đã có lộ trình lưu/mặc định), dù seg.listStations có dữ liệu.
+        (seg.listStations || []).map(st => ({ stationName: st.stationName, price: +(st.price || 0) }))
       );
     } else {
       this.modalVietmap.show([
@@ -2476,7 +2517,13 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     const existing = this.entity.segments || [];
     this.entity.segments = this.locations.slice(0, -1).map((loc, i) => {
       const next = this.locations[i + 1];
-      const prev = existing.find(s => s.startLocationId === loc.locationId && s.endLocationId === next.locationId);
+      // Một điểm có thể lặp lại (nhiều công việc / quay đầu) ⇒ cặp A→B có thể xuất hiện
+      // nhiều lần. Ưu tiên khớp ĐÚNG VỊ TRÍ cũ, chỉ dò theo cặp điểm khi vị trí đã đổi
+      // (thêm/xóa/kéo thả) — nếu không, mọi chặng A→B sẽ cùng nhận dữ liệu của chặng đầu tiên.
+      const atIndex = existing[i];
+      const prev = (atIndex && atIndex.startLocationId === loc.locationId && atIndex.endLocationId === next.locationId)
+        ? atIndex
+        : existing.find(s => s.startLocationId === loc.locationId && s.endLocationId === next.locationId);
       if (!prev && loc.locationId && next.locationId) {
         this._fetchSegmentHistory(i, loc.locationId, loc.locationType ?? 1, next.locationId, next.locationType ?? 1);
       }
@@ -2557,6 +2604,11 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   private readonly _botTypeMap: Record<number, number> = { 1132: 1, 1133: 2, 1134: 3, 1135: 4, 1136: 5 };
 
+  /** Loại xe Vietmap (1..5) của xe đang chọn — truyền xuống modal chọn lộ trình để hiện đúng giá vé. */
+  public get vietmapVehicleKey(): number | null {
+    return this._vehicleBotTypeId ? (this._botTypeMap[this._vehicleBotTypeId] ?? null) : null;
+  }
+
   private _applyTollPrices() {
     const vietmapKey = this._vehicleBotTypeId ? (this._botTypeMap[this._vehicleBotTypeId] ?? null) : null;
     (this.entity.segments || []).forEach(seg => {
@@ -2579,7 +2631,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     const points = (waypoints?.length >= 2)
       ? waypoints
       : [{ lat: seg.startLat, lng: seg.startLng }, { lat: seg.endLat, lng: seg.endLng }];
-    this._http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, { points })
+    this._http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, { points, vehicleClass: this.vietmapVehicleKey })
       .pipe(catchError(() => of(null))).subscribe(res => {
         // Route mới không có trạm → xóa trạm cũ (tránh giữ stale)
         seg.listStations = res?.toll ? this._parseTollStations(res.toll) : [];
@@ -2589,7 +2641,9 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   }
 
   private _loadAllLocations() {
-    this._transportService.getLocations().subscribe(data => {
+    // Pool điểm dựng cung đường: chỉ cảng của chi nhánh đăng nhập (+ cảng dùng chung).
+    // Nhà máy/kho khách hàng (CustomerLocations) không lọc.
+    this._transportService.getLocations(undefined, Number.parseInt(this.branchId) || 0).subscribe(data => {
       this.listAllLocations = data || [];
     });
   }
@@ -2633,6 +2687,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   // Mở modal "Thêm cung đường phát sinh" (tách riêng — tự chứa Vietmap/So sánh).
   openExtraSegmentPopup() {
     if (!this.canAddExtraSegment) return;
+    if (this._blockRouteTools()) return;
     if (!this.entity.toId) {
       this.notificationService.printErrorMessage('Lệnh chưa link TO — không thể thêm cung đường phát sinh.');
       return;

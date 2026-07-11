@@ -61,16 +61,14 @@ export class DispatchOrderFclNewComponent implements OnInit {
   _isLegacy = 0;
   // Key localStorage riêng để không lẫn bộ lọc với trang FCL cũ
   _storageKey = SystemContstants.DISPATCHORDER + "_NEW";
+  // Workflow v2: 1 Đã giao · 2 Đã nhận · 3 Chờ duyệt · 5 Chờ chốt · 6 Đã chốt (bỏ 0/Gửi lệnh/Duyệt B2)
   array = [
     { value: 0, text: "Tất cả" },
-    { value: 1, text: "Khởi tạo" },
-    { value: 2, text: "Gửi lệnh" },
-    { value: 3, text: "Đã nhận" },
-    { value: 4, text: "Duyệt B1" },
-    { value: 5, text: "Duyệt B2" },
-    { value: 6, text: "Chờ Chốt" },
-    { value: 7, text: "CHỐT" },
-    { value: 8, text: "Từ chối" },
+    { value: 1, text: "Đã giao lái xe" },
+    { value: 2, text: "Lái xe đã nhận" },
+    { value: 3, text: "Chờ duyệt" },
+    { value: 4, text: "Chờ chốt" },
+    { value: 5, text: "Đã chốt" },
   ];
   statusSelected?: number = 0;
   filterColumns: { [key: string]: string } = {};
@@ -254,13 +252,11 @@ export class DispatchOrderFclNewComponent implements OnInit {
     this.cdr.detectChanges();
     if (this.statusSelected > 0) {
       this.listFilter = this.listFilter.filter((data) => {
-        return this.statusSelected == 8 ? data.isDeny == true :
-          this.statusSelected == 1 ? data.status == 0 :
-            this.statusSelected == 2 ? data.status == 1 :
-              this.statusSelected == 3 ? data.status == 2 && data.isDeny == false :
-                this.statusSelected == 4 ? data.status == 3 && data.isDeny == false :
-                  this.statusSelected == 5 ? data.status == 4 :
-                    this.statusSelected == 6 ? data.status == 5 : data.status == 6;
+        return this.statusSelected == 1 ? data.status == 1 :
+          this.statusSelected == 2 ? data.status == 2 :
+            this.statusSelected == 3 ? data.status == 3 :
+              this.statusSelected == 4 ? data.status == 5 :
+                data.status == 6;   // statusSelected == 5 (Đã chốt)
       });
     }
     this.listFilter = this.listFilter.filter((item) => {
@@ -439,14 +435,23 @@ export class DispatchOrderFclNewComponent implements OnInit {
   }
 
   // Class badge trạng thái cho giao diện hiện đại
-  getStatusClass(item: DispatchOrderFcl): string {
-    if (item.isDeny) return 'dof-badge dof-badge--deny';
+  // Workflow v2: nhãn status tính ở FE (không phụ thuộc rStatus của BE — đang lệch legacy).
+  getStatusText(item: DispatchOrderFcl): string {
     switch (item.status) {
-      case 0: return 'dof-badge dof-badge--init';
+      case 1: return 'Đã giao lái xe';
+      case 2: return 'Lái xe đã nhận';
+      case 3: return 'Chờ duyệt';
+      case 5: return 'Chờ chốt';
+      case 6: return 'Đã chốt';
+      default: return item.rStatus || '—';
+    }
+  }
+
+  getStatusClass(item: DispatchOrderFcl): string {
+    switch (item.status) {
       case 1: return 'dof-badge dof-badge--sent';
       case 2: return 'dof-badge dof-badge--received';
       case 3: return 'dof-badge dof-badge--b1';
-      case 4: return 'dof-badge dof-badge--b2';
       case 5: return 'dof-badge dof-badge--waiting';
       case 6: return 'dof-badge dof-badge--closed';
       default: return 'dof-badge dof-badge--init';

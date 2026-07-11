@@ -255,6 +255,30 @@ export class DispatchOrderFclService extends BaseService {
     }), catchError(this.handleError));
   }
 
+  // Workflow v2 (2026-07-11): đổi trạng thái lệnh MỚI qua SP_DispatchOrderFCL_ChangeStatus.
+  //   actionType: 1 Nhận · 2 Hoàn thành · 3 Duyệt B1 · 4 Chốt · 5 Từ chối nhận · 6 Từ chối B1 · 7 Từ chối CHỐT.
+  //   reason bắt buộc khi từ chối (5/6/7) — SP chặn ở DB. KHÔNG dùng updateState (SP cũ) cho lệnh v2.
+  changeStatus(refNo: string, actionType: number, reason: string = null) {
+    let p: any = { item: { refNo, actionType, reason }, tokenKey: this.token };
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/ChangeStatus`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+  // Lịch sử chuyển trạng thái (timeline) của 1 lệnh v2.
+  getStatusLog(refNo: string) {
+    let p: any = { item: { refNo }, tokenKey: this.token };
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/GetStatusLog`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
   // Dầu máy phát (2026-06-17): lưu thông số máy phát + tự tính dầu. Trả về { generatorFuelAmount, generatorFuelCost }.
   updateGenerator(entity: DispatchOrderFcl) {
     let p: FromBodyBase<DispatchOrderFcl> = {};

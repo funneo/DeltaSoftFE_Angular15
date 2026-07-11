@@ -283,37 +283,50 @@ export class ModalExecuteFclComponent implements OnInit {
     );
   }
 
-  updateState(type: number): void {
-    const item = Object.assign({}, this.entity);
-    item.status = type;
-    this.busy = this.dispatchOrderService.updateState(item, false, 0).subscribe((res: ResponseValue<Dispatchorder>) => {
-      if (res.code === "200" || res.code === "201") {
-        this.notificationService.printSuccessMessage(MessageContstants.UPDATED_OK_MSG);
-        this.SaveSuccess.emit(res.data);
-        this.modalExecuteFcl.hide();
-      } else {
-        this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + "\n" + res.code);
-      }
-    });
-  }
-  nhanlenh(): void { this.updateState(2); }
-  tuchoinhanlenh(): void {
-    const reason = prompt("Lý do từ chối nhận lệnh", "");
-    if (!reason) return;
-    const copy = Object.assign({}, this.entity);
-    copy.feedback = reason;
-    this.dispatchOrderService.updateState(copy, true, 0).subscribe(
+  // ===== Workflow v2 (2026-07-11): lái xe thao tác qua ChangeStatus (SP mới), KHÔNG dùng updateState =====
+  //   1 Nhận (1→2) · 2 Hoàn thành (2→3) · 5 Từ chối nhận (1→1 IsDeny). SP tự kiểm @EmployeeId=DriverId.
+  private _changeStatus(actionType: number, reason: string = null): void {
+    this.busy = this.dispatchOrderService.changeStatus(this.entity.refNo, actionType, reason).subscribe(
       (res: ResponseValue<any>) => {
         if (res.code === "200" || res.code === "201") {
           this.notificationService.printSuccessMessage(MessageContstants.UPDATED_OK_MSG);
           this.SaveSuccess.emit(res.data);
           this.modalExecuteFcl.hide();
         } else {
-          this.notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG);
+          this.notificationService.printErrorMessage(res.message || (MessageContstants.GETDATA_ERR_MSG + "\n" + res.code));
         }
       },
       () => this.notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG)
     );
+  }
+  // Nhận lệnh (1→2).
+  nhanlenh(): void { this._changeStatus(1); }
+  // Từ chối nhận lệnh (1→1, IsDeny) — lý do BẮT BUỘC.
+  tuchoinhanlenh(): void {
+    let reason = prompt("Lý do từ chối nhận lệnh", "");
+    if (reason == null) return;
+    reason = reason.trim();
+    if (!reason) { this.notificationService.printErrorMessage("Vui lòng nhập lý do từ chối."); return; }
+    this._changeStatus(5, reason);
+  }
+  // Hoàn thành lệnh (2→3): lưu km/chi phí (driverUpdate) rồi đổi trạng thái.
+  hoanThanhLenh(): void {
+    if (this.entity.startVehicleOdor != null && this.entity.finishVehicleOdor != null
+        && this.entity.startVehicleOdor >= this.entity.finishVehicleOdor) {
+      this.notificationService.printErrorMessage("Số km đầu vào không được lớn hơn hoặc bằng số km đầu ra!");
+      return;
+    }
+    const copy = Object.assign({}, this.entity);
+    copy.finished = true;
+    this.notificationService.printConfirmationYesNo("Xác nhận HOÀN THÀNH lệnh?", () => {
+      this.dispatchOrderService.driverUpdate(copy).subscribe(
+        (res: ResponseValue<any>) => {
+          if (res.code === "200" || res.code === "201") this._changeStatus(2);
+          else this.notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG);
+        },
+        () => this.notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG)
+      );
+    }, () => { });
   }
 
   checkChenhlech(): boolean {
@@ -321,12 +334,8 @@ export class ModalExecuteFclComponent implements OnInit {
     if (this.entity.listEtc?.some(x => x.isPassed && (x.cost ?? 0) > 0)) return true;
     return false;
   }
-  chotdulieu(): void {
-    const isChenhlech = this.checkChenhlech();
-    this.notificationService.printConfirmationDialog(MessageContstants.APPROVE_LENHVC_FCL, () => {
-      this.updateState(isChenhlech ? 5 : 6);
-    });
-  }
+  // chotdulieu()/status-4 đã bỏ ở v2 — Duyệt B1 (3→5) + Chốt (5→6) do điều vận/người chốt làm ở modal tạo lệnh.
+  // tuchoichotdulieu()/saveSuccess() bên dưới là code cũ (status 4), nút đã gỡ khỏi footer → không còn tới được.
   tuchoichotdulieu(): void {
     this.viewConfirm = true;
     setTimeout(() => this.modalConfirm.edit(), 50);

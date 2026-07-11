@@ -368,14 +368,8 @@
         <button *ngIf="entity?.status === 2" type="button" class="btn btn-primary btn-sm" (click)="update(false)" [disabled]="flagXem">
           <i class="fa fa-save"></i> Lưu thông tin
         </button>
-        <button *ngIf="entity?.status === 2" type="button" class="btn btn-danger btn-sm" (click)="update(true)" [disabled]="flagXem">
-          <i class="fa fa-flag-checkered"></i> Kết thúc
-        </button>
-        <button *ngIf="entity?.status === 4" type="button" class="btn btn-success btn-sm" (click)="chotdulieu()">
-          <i class="fa fa-check"></i> Chốt dữ liệu
-        </button>
-        <button *ngIf="entity?.status === 4" type="button" class="btn btn-warning btn-sm" (click)="tuchoichotdulieu()">
-          <i class="fa fa-ban"></i> Từ chối chốt
+        <button *ngIf="entity?.status === 2" type="button" class="btn btn-success btn-sm" (click)="hoanThanhLenh()" [disabled]="flagXem">
+          <i class="fa fa-flag-checkered"></i> Hoàn thành lệnh
         </button>
         <button type="button" (click)="modalExecuteFcl.hide()" class="btn btn-default btn-sm">
           <i class="fa fa-close"></i> Đóng

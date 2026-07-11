@@ -103,7 +103,7 @@
               <input type="checkbox" [checked]="item.checked" />
             </label>
           </td>
-          <td><span [class]="getStatusClass(item)">{{item.rStatus}}</span></td>
+          <td><span [class]="getStatusClass(item)">{{getStatusText(item)}}</span></td>
           <td><a class="dof-link" (click)="edit(true, item.refNo); $event.stopPropagation()">{{item.refNo}}</a></td>
           <td><b>{{item.referCode}}</b></td>
           <td>{{item.createdDate | date:'dd/MM/yyyy'}}</td>

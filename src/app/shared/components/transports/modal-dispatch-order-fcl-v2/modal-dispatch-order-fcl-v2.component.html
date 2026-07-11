@@ -408,7 +408,16 @@
                    Vehicle panel (cột phải TO modal) đã BỎ — modal v2 có tab
                    "Thông tin chung" riêng cho xe/lái xe/dầu.
                    ============================================================ -->
-              <tab heading="Cung đường" *ngIf="!entity.isSubcontractors">
+              <!-- Khóa tab tới khi chọn xe CÓ loại BOT hợp lệ: loại BOT quyết định giá vé
+                   từng trạm. Vào tab khi chưa có xe / xe thiếu BOT → mọi trạm về giá 0.
+                   Lệnh đã có refNo vẫn vào được để XEM lộ trình cũ (nút chọn bị khóa riêng). -->
+              <tab [heading]="routeTabHeading" [disabled]="!canOpenRouteTab" *ngIf="!entity.isSubcontractors">
+                <div class="alert alert-danger route-bot-warning" *ngIf="vehicleBotMissing">
+                  <i class="fa fa-exclamation-triangle"></i>
+                  <b>Phương tiện chưa có thông tin loại BOT.</b>
+                  Không tra được giá vé từng trạm (phí trạm sẽ là 0đ), nên các nút chọn/tính lại
+                  cung đường đã bị khóa. Vào <b>Danh mục &gt; Phương tiện</b> gán loại BOT cho xe rồi mở lại lệnh.
+                </div>
                 <div class="to-body">
         <div class="to-col-pool" [class.to-col-pool--collapsed]="!showPoolPanel" *ngIf="!routeConfirmed">
           <div class="to-col-header pool-col-header">
@@ -440,9 +449,9 @@
               <!-- Card: Nơi nhận hàng (Pickup) -->
               <div class="loc-card loc-card--pickup"
                 *ngIf="task.shippingTaskItem?.pickupLocationId"
-                [class.loc-card--used]="isLocInRoute(task.shippingTaskItem?.pickupLocationId, task.shippingTaskItem?.id, 'pickup') || lastSegmentFinal"
+                [class.loc-card--used]="lastSegmentFinal"
                 (click)="addToRoute(task.shippingTaskItem, 'pickup')"
-                title="Bấm để thêm vào lộ trình">
+                title="Bấm để thêm vào lộ trình (có thể thêm nhiều lần nếu quay lại điểm này)">
                 <div class="loc-card-type loc-type--pickup">
                   <i class="fa fa-arrow-down"></i> Nhận
                 </div>
@@ -458,17 +467,19 @@
                   </div>
                 </div>
                 <div class="loc-card-action">
-                  <i class="fa" [class.fa-check-circle]="isLocInRoute(task.shippingTaskItem?.pickupLocationId, task.shippingTaskItem?.id, 'pickup')"
-                    [class.fa-plus-circle]="!isLocInRoute(task.shippingTaskItem?.pickupLocationId, task.shippingTaskItem?.id, 'pickup')"></i>
+                  <span class="loc-card-count"
+                    *ngIf="locCountInRoute(task.shippingTaskItem?.pickupLocationId, task.shippingTaskItem?.id, 'pickup') as n"
+                    [title]="'Đã có ' + n + ' lần trong lộ trình'">×{{ n }}</span>
+                  <i class="fa fa-plus-circle"></i>
                 </div>
               </div>
 
               <!-- Card: Nơi giao hàng (Delivery) -->
               <div class="loc-card loc-card--delivery"
                 *ngIf="task.shippingTaskItem?.deliveryLocationId"
-                [class.loc-card--used]="isLocInRoute(task.shippingTaskItem?.deliveryLocationId, task.shippingTaskItem?.id, 'delivery') || lastSegmentFinal"
+                [class.loc-card--used]="lastSegmentFinal"
                 (click)="addToRoute(task.shippingTaskItem, 'delivery')"
-                title="Bấm để thêm vào lộ trình">
+                title="Bấm để thêm vào lộ trình (có thể thêm nhiều lần nếu quay lại điểm này)">
                 <div class="loc-card-type loc-type--delivery">
                   <i class="fa fa-arrow-up"></i> Giao
                 </div>
@@ -484,8 +495,10 @@
                   </div>
                 </div>
                 <div class="loc-card-action">
-                  <i class="fa" [class.fa-check-circle]="isLocInRoute(task.shippingTaskItem?.deliveryLocationId, task.shippingTaskItem?.id, 'delivery')"
-                    [class.fa-plus-circle]="!isLocInRoute(task.shippingTaskItem?.deliveryLocationId, task.shippingTaskItem?.id, 'delivery')"></i>
+                  <span class="loc-card-count"
+                    *ngIf="locCountInRoute(task.shippingTaskItem?.deliveryLocationId, task.shippingTaskItem?.id, 'delivery') as n"
+                    [title]="'Đã có ' + n + ' lần trong lộ trình'">×{{ n }}</span>
+                  <i class="fa fa-plus-circle"></i>
                 </div>
               </div>
             </div>
@@ -610,16 +623,20 @@
                       <!-- Tính lại / chọn lộ trình mới (Vietmap) -->
                       <button type="button" class="btn-segment-map btn-segment-recalc"
                         *ngIf="!routeConfirmed"
+                        [disabled]="routeToolsDisabled"
                         (click)="editSegmentRoute(i)"
-                        [title]="getSegment(i)?.listWaypoints?.length ? 'Tính lại lộ trình (Vietmap)' : 'Chọn lộ trình (Vietmap)'">
+                        [title]="routeToolsDisabled ? 'Xe chưa có thông tin loại BOT — không tính được phí trạm'
+                                 : (getSegment(i)?.listWaypoints?.length ? 'Tính lại lộ trình (Vietmap)' : 'Chọn lộ trình (Vietmap)')">
                         <i class="fa fa-refresh text-warning"></i>
                         <span>{{ getSegment(i)?.listWaypoints?.length ? 'Tính lại (Vietmap)' : 'Chọn lộ trình' }}</span>
                       </button>
                       <!-- So sánh Vietmap vs Google -->
                       <button type="button" class="btn-segment-map btn-segment-compare"
                         *ngIf="!routeConfirmed"
+                        [disabled]="routeToolsDisabled"
                         (click)="openCompareModal(i)"
-                        title="So sánh Vietmap và Google Maps">
+                        [title]="routeToolsDisabled ? 'Xe chưa có thông tin loại BOT — không tính được phí trạm'
+                                 : 'So sánh Vietmap và Google Maps'">
                         <i class="fa fa-balance-scale text-primary"></i>
                         <span>So sánh</span>
                       </button>
@@ -995,7 +1012,7 @@
               <tab heading="Chi phí">
                 <div class="form-group">
                   <div class="col-sm-2">
-                    <button [disabled]="entity.status>=4 || job_locked || flagXem" type="button"
+                    <button [disabled]="entity.status>=5 || job_locked || flagXem" type="button"
                       class="btn btn-sm btn-primary" (click)="newFee()">Thêm</button>
                   </div>
                 </div>
@@ -1071,7 +1088,7 @@
                     <input style="display: none" type="file" class="custom-file-input" id="pod" #filePod
                       (change)="onFileChanged($event)" accept=".jpg,.png,.gif,.pdf">
                     <button type="button" class="btn btn-sm btn-primary" (click)="filePod.click()"
-                      [disabled]="entity.status>=4 || job_locked ||flagXem">
+                      [disabled]="entity.status>=5 || job_locked ||flagXem">
                       <i class="fa fa-upload" aria-hidden="true"></i> Tải POD
                     </button>
                   </div>
@@ -1106,7 +1123,7 @@
                     <input style="display: none" type="file" class="custom-file-input" id="attackFile" #fileUpload
                       (change)="onAttachFileChanged($event)" accept=".jpg,.png,.gif,.pdf">
                     <button type="button" class="btn btn-sm btn-primary" (click)="fileUpload.click()"
-                      [disabled]="entity.status>=4 || job_locked ||flagXem">
+                      [disabled]="entity.status>=5 || job_locked ||flagXem">
                       <i class="fa fa-upload" aria-hidden="true"></i> Tải Ảnh hiện trường
                     </button>
                   </div>
@@ -1138,26 +1155,36 @@
           <!-- /.box-body -->
       </div>
       <!-- /.fcl-v2-body -->
+      <!-- Lịch sử lệnh (workflow v2): timeline từ GetStatusLog. Dòng từ chối tô đỏ + lý do. -->
+      <div class="fcl-v2-history" *ngIf="statusLog?.length">
+        <div class="fcl-v2-history-title"><i class="fa fa-history"></i> Lịch sử lệnh</div>
+        <ul class="fcl-v2-timeline">
+          <li *ngFor="let h of statusLog" [class.is-reject]="h.isReject">
+            <span class="tl-action">{{ actionTypeLabel(h.actionType) }}</span>
+            <span class="tl-by" *ngIf="h.actionByName">· {{ h.actionByName }}</span>
+            <span class="tl-date" *ngIf="h.createdDate">· {{ h.createdDate | date:'dd/MM/yyyy HH:mm' }}</span>
+            <span class="tl-reason" *ngIf="h.isReject && h.reason">— {{ h.reason }}</span>
+          </li>
+        </ul>
+      </div>
       <div class="fcl-v2-footer">
-        <button *ngIf="!flagXem && !flagNew && entity.status==0" type="button" class="btn btn-success btn-sm"
-          (click)="updateState(1)">
-          <i class="fa fa-share-square-o"></i> Gửi lệnh</button>
-        <button *ngIf="!flagXem && entity.status ==2" type="button" class="btn btn-danger btn-sm"
-          (click)="duyetB1()">
-          <i class="fa fa-check"></i> Duyệt B1</button>
-        <button *ngIf="account_permission && entity.status==3" type="button" class="btn btn-success btn-sm"
-          (click)="tuchoiB1()">
-          <i class="fa fa-times-circle"></i> Từ chối</button>
-        <button *ngIf="account_permission &&  entity.status===3" type="button" class="btn btn-mau1 btn-sm"
+        <!-- Workflow v2: mọi nút đi qua ChangeStatus (KHÔNG dùng updateState). Trạng thái: 1 Đã giao·2 Đã nhận·3 Chờ duyệt·5 Chờ chốt·6 Đã chốt -->
+        <!-- Lái xe (Nhận/Hoàn thành/Từ chối nhận) nằm ở modal THỰC HIỆN lệnh (modal-execute-fcl), KHÔNG ở đây. -->
+        <!-- Điều vận (FCL_ACCEPT) — status 3 chờ duyệt -->
+        <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-mau1 btn-sm"
           (click)="updateEtcFee()">
           <i class="fa fa-refresh"></i> Cập nhật chi phí</button>
-        <button *ngIf="account_permission && entity.status==3 " type="button" class="btn btn-duyet btn-sm"
-          (click)="duyetB2()">
-          <i class="fa fa-check-circle"></i> Duyệt B2</button>
-        <button *ngIf="closing_permission && entity.status==5" type="button" class="btn btn-warning btn-sm"
+        <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-duyet btn-sm"
+          (click)="duyetB1()">
+          <i class="fa fa-check"></i> Duyệt B1</button>
+        <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-danger btn-sm"
+          (click)="tuchoiB1()">
+          <i class="fa fa-times-circle"></i> Từ chối B1</button>
+        <!-- Người chốt (FCL_CLOSING) — status 5 chờ chốt -->
+        <button *ngIf="closing_permission && entity.status==5" type="button" class="btn btn-danger btn-sm"
           (click)="tuchoiChot()">
           <i class="fa fa-times-circle"></i> Từ chối CHỐT</button>
-        <button *ngIf="closing_permission && entity.status==5 " type="button" class="btn btn-duyet btn-sm"
+        <button *ngIf="closing_permission && entity.status==5" type="button" class="btn btn-duyet btn-sm"
           (click)="chotlenh()">
           <i class="fa fa-lock"></i> CHỐT LỆNH</button>
         <!-- Nút Lưu: khi tạo mới (chưa có refNo) yêu cầu phải chốt chặng cuối trước.
@@ -1185,9 +1212,9 @@
 <modal-view-shipping-task *ngIf="viewModalShippingTask" (CloseModal)="closeModalShippingTask()">
 </modal-view-shipping-task>
 <!-- TO refactor (2026-05-15): 3 modal phụ trợ cho route builder (copy từ modal-transport-order) -->
-<modal-vietmap-routes (RouteSelected)="onRouteSelected($event)"></modal-vietmap-routes>
+<modal-vietmap-routes [vehicleKey]="vietmapVehicleKey" (RouteSelected)="onRouteSelected($event)"></modal-vietmap-routes>
 <modal-map-routes (RouteSelected)="onGoogleRouteSelected($event)"></modal-map-routes>
-<modal-route-compare (RouteSelected)="onCompareRouteSelected($event)"></modal-route-compare>
+<modal-route-compare [vehicleKey]="vietmapVehicleKey" (RouteSelected)="onCompareRouteSelected($event)"></modal-route-compare>
 
 <!-- Modal "Thêm cung đường phát sinh" — tách riêng (tự chứa Vietmap/So sánh) -->
 <modal-add-extra-segment (SaveSuccess)="onExtraSegmentSaved($event)"></modal-add-extra-segment>
