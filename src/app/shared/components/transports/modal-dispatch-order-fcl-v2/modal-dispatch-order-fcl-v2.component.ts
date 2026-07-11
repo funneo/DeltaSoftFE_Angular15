@@ -738,22 +738,16 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     });
   }
 
-  // Đọc danh sách phí lái xe từ file JSON tĩnh; chỉ lấy phí actived, sắp theo displayOrder.
-  // Sửa danh sách / bật-tắt actived tại assets/config/driver-fcl-fees.json rồi ng build lại.
+  // Phụ lục phí lái xe qua API (SP_Fee_GetForDriver, 9 phí fix cứng) — dùng chung web + app.
+  // Sửa danh sách/thứ tự: ALTER SP_Fee_GetForDriver (không cần build lại FE). SP đã sắp theo DisplayOrder.
   loadDriverFee() {
-    this._http.get<any>("assets/config/driver-fcl-fees.json").subscribe({
-      next: (res) => {
-        const fees = (res?.fees || []) as any[];
-        this.listDriverFee = fees
-          .filter((f) => f.actived)
-          .sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0))
-          .map((f) => ({
-            ...f,
-            feeName: f.feeCode + "-" + f.feeName,
-          })) as Fee[];
+    this.feeService.getForDriver().subscribe({
+      next: (res: ResponseValue<Fee[]>) => {
+        const fees = res.data || [];
+        this.listDriverFee = fees.map((f) => ({ ...f, feeName: `${f.feeCode}-${f.feeName}` }));
       },
       error: () => {
-        // Lỗi đọc file cấu hình → fallback về catalog đầy đủ để không chặn nhập
+        // Lỗi gọi API → fallback về catalog đầy đủ để không chặn nhập
         this.listDriverFee = this.listFee || [];
       },
     });

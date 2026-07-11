@@ -117,6 +117,18 @@ export class FeeService extends BaseService {
     return useCache ? this.cacheService.get(cacheKey, request) : request;
   }
 
+  /** Phụ lục phí lái xe (tab Chi phí lệnh FCL v2) — 9 phí fix cứng ở SP_Fee_GetForDriver. Dùng chung web+app. */
+  getForDriver(useCache: boolean = true) {
+    let p: FromBodyBase<Fee> = { tokenKey: this.token, item: {} };
+    const request = this.http.post(`${environment.apiUrl}/api/fee/getfordriver`, p)
+      .pipe(map((response: any) => {
+        if (response.code == '401')
+          this.authService.logout();
+        else return response;
+      }), catchError(this.handleError));
+    return useCache ? this.cacheService.get('fees_driver', request) : request;
+  }
+
   getPaging(params: HttpParams) {
     let p: FromBodyBase<Fee> = {
       tokenKey: this.token,
