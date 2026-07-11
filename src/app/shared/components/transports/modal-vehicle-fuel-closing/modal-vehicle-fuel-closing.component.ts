@@ -238,7 +238,8 @@ export class ModalVehicleFuelClosingComponent implements OnInit {
   }
 
   amountInWords(): string {
-    const amount = Math.round(Math.abs(+(this.entity.netAmount ?? 0)));
+    // Chi cho lái xe (net>0) → đọc theo TIỀN ĐƯỢC HƯỞNG (90%); thu tiền lái xe (net≤0) → NetAmount gộp.
+    const amount = Math.round(this.entitledAmount() ?? Math.abs(+(this.entity.netAmount ?? 0)));
     if (!amount) return '';
     const words = this._utilityService.docso(amount);
     return this._utilityService.capitalizeFirstLetter((words || '').trim()) + ' đồng';
@@ -249,6 +250,17 @@ export class ModalVehicleFuelClosingComponent implements OnInit {
     if (n < 0) return 'Thu tiền lái xe';
     if (n > 0) return 'Chi tiền cho lái xe';
     return '';
+  }
+
+  // Khi PHẢI CHI tiền cho lái xe (net > 0), lái xe chỉ được hưởng 90% (giữ lại 10%).
+  readonly driverEntitledRate = 0.9;
+
+  /** Tiền lái xe THỰC ĐƯỢC HƯỞNG khi net > 0: 90% NetAmount.
+   *  Net ≤ 0 (thu tiền lái xe) → không áp tỷ lệ, trả null để ẩn dòng. */
+  entitledAmount(): number | null {
+    const n = +(this.entity.netLiters ?? 0);
+    if (n <= 0) return null;
+    return +(Math.abs(+(this.entity.netAmount ?? 0)) * this.driverEntitledRate).toFixed(0);
   }
 
   sourceLabel(s: number): string {

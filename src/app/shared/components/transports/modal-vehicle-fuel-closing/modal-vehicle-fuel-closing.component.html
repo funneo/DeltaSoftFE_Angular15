@@ -134,6 +134,11 @@
                       <td class="text-right" [class.text-danger]="entity.netLiters < 0"
                         [class.text-success]="entity.netLiters > 0">{{entity.netAmount | number:'1.0-0'}}</td>
                     </tr>
+                    <!-- Chi cho lái xe (net > 0): lái xe chỉ được hưởng 90% -->
+                    <tr *ngIf="entity.netLiters > 0" style="background:#eaf7ea; font-weight:bold;">
+                      <td colspan="4">Tiền lái xe được hưởng (90% — giữ lại 10%)</td>
+                      <td class="text-right text-success">{{entitledAmount() | number:'1.0-0'}}</td>
+                    </tr>
                   </tbody>
                 </table>
                 <small class="text-muted">
