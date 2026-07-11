@@ -20,6 +20,13 @@ Nháp PCCV (DraftType='Job') lưu ngày lẫn lộn `dd/MM/yyyy`, `YYYYMMDD HH:m
 - **BE** `WorkflowController.cs` (~945): dòng nháp Job set `CreatedDate = d.CreatedAt` (trước bị default 0001-01-01). List (getpaging2) đã có sẵn `DraftDateToIso` cho estimate. compile 0 err.
 - **Anh cần:** ⬜ `ng build` + deploy FE (modal) ⬜ tắt API → build/publish (BE list). Gộp chung nhịp deploy ERP.
 
+### 4) FCL v2 — Màn thực hiện lái xe: mở khóa nhập + lưu chi phí/trốn vé + phân loại hóa đơn + phụ lục phí API — SQL ✅ ĐÃ CHẠY, code xong, CHỜ DEPLOY
+Chi tiết đầy đủ: done.md section đầu. Anh test thật phát hiện lái xe bị khóa nhập + chi phí không lưu.
+- **Đã làm**: (a) mở khóa lái xe nhập khi status≤2 (nhận diện `EmployeeId==driverId`) + `appendTo=body` dropdown; (b) `driverUpdate` lưu batch `listFee`(MERGE)+`listEtc.IsPassed`, gate `IsLegacy=0`; (c) phân loại chứng từ `InvoiceType` 0/1/2, "có hóa đơn" bắt đủ 6 field HĐ (type MỚI `TypeDispatchOrderFCLFeeV2`, chỉ recreate SP DriverUpdate); (d) phụ lục 9 phí → `SP_Fee_GetForDriver` + `POST /api/fee/GetForDriver` dùng chung web+app (bỏ JSON tĩnh).
+- **SQL ✅ đã chạy hết**: `Migration_Fee_GetForDriver` + `Migration_FCL_DriverUpdate_SaveFeeEtc` + `Migration_FCL_DriverFeeInvoice` (supersede SP DriverUpdate + ALTER 7 cột + type V2).
+- **Mobile**: prompt + skill cập nhật đủ (driverUpdate fee/etc/invoiceType + GetForDriver) — đội mobile code được.
+- **Anh cần:** ⬜ tắt IIS Express → redeploy API ⬜ `ng build` FE → test E2E: lái xe status 2 nhập km+chi phí+trốn vé → Lưu → reload còn nguyên; dòng "có hóa đơn" thiếu field bị chặn; xóa dòng phí → Lưu → mất đúng dòng.
+
 ## ★★ BÚT TOÁN ĐỐI ỨNG (P5) — SQL P5.0 soạn xong, CHỜ DUYỆT + CHẠY (2026-07-10)
 Chi tiết + số liệu verify DB: done.md section đầu. File: `NewAPI/Migration_AccountingEntry_P50_20260710.sql` (3 bảng + TVP + 6 SP + seed 19 rule). Đã chốt: bảng mới song song · không hồi tố · bút toán đảo.
 
@@ -90,7 +97,7 @@ Chi tiết đầy đủ (4 phát hiện từ DB, bảng transition, lý do từn
 **Việc phải làm (FE/mobile — chưa code):**
 - **Modal v2** (`modal-dispatch-order-fcl-v2`): bỏ nút **Gửi lệnh** (updateState 1) + **Duyệt B2** (`duyetB2()`); **đổi `duyetB1()` updateState(3)→(5)** + gating nút Duyệt B1 `status==2`→**`status==3`**; thêm nút **Nhận lệnh** (1→2) + **Hoàn thành lệnh** (2→3) cho lái xe; thêm 3 nút lùi (Từ chối nhận@1 · Trả lại lái xe@3→2 · Trả lại@5→3). Khóa nhập: lái xe sửa chi phí/km @status 2, điều vận @status 3, khóa ≥5 (nút Thêm tab Chi phí đang gate `status>=4` → đổi mốc mới). Ref nút hiện tại: html dòng ~1143-1161; ts `duyetB1`@1704 (updateState 3), `duyetB2`@1727 (4), `chotlenh`@1802 (6), `updateState`@1667.
 - **List mới** (`dispatch-order-fcl-new`): viết lại `array` nhãn (ts dòng 64-74 đang lệch: 4=Duyệt B1/5=Duyệt B2) + `getStatusClass`/`rStatus` cho khớp (1 Đã giao·2 Đã nhận·3 Chờ duyệt·5 Chờ chốt·6 Đã chốt). `checkClosing` (status==5) GIỮ.
-- ~~**BE/SP**: verify `SP_DispatchOrderFCL_UpdateState` generic~~ → **ĐÃ VERIFY 2026-07-10: KHÔNG generic**, hardcode transition bằng IIF lồng nhau ⇒ đã làm SP mới. Còn: rà `driverUpdate` (lái xe nhập chi phí/km); nhãn `rStatus` trong SP getPaging.
+- ~~**BE/SP**: verify `SP_DispatchOrderFCL_UpdateState` generic~~ → **ĐÃ VERIFY 2026-07-10: KHÔNG generic**, hardcode transition bằng IIF lồng nhau ⇒ đã làm SP mới. ~~Còn: rà `driverUpdate` (lái xe nhập chi phí/km)~~ → **ĐÃ LÀM 2026-07-11** (mở khóa lái xe + lưu fee/etc + phân loại hóa đơn — xem Phiên 2026-07-11 mục 4). Còn: nhãn `rStatus` trong SP getPaging.
 - **Mobile** (skill `fcl-mobile-api`): cập nhật mục status workflow (nhận 1→2, hoàn thành 2→3, từ chối).
 - **Quyền từng transition (CHỐT 2026-07-06):** Nhận(1→2)/Từ chối nhận(1→lùi)/Hoàn thành(2→3) = **lái xe của lệnh** (driver-scope, không mã ERP riêng). Duyệt B1(3→5) + Trả lại lái xe(3→2) = **`FCL_ACCEPT`**. Chốt(5→6) + Trả lại(5→3) = **`FCL_CLOSING`**. Nguyên tắc: từ chối cùng mã quyền với hành động duyệt của bước đó. ⚠ Lệnh FCL cũ: Duyệt B1 KHÔNG gate quyền; Duyệt B2 = FCL_ACCOUNT; `FCL_ACCEPT` khai trong TS nhưng đang dead → **verify FCL_ACCEPT có trong ActionInFunctions của FCL + grant cho role điều vận chưa**, nếu chưa phải soạn grant SQL.
 
