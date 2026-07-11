@@ -82,18 +82,18 @@
                   </ng-container>
 
                   <ng-container *ngIf="!route.tollLoading && route.tollInfo !== null && route.tollInfo !== undefined">
-                    <ng-container *ngIf="route.tollInfo!.totalCost && route.tollInfo!.totalCost !== '0'">
+                    <ng-container *ngIf="route.tollInfo!.stationCount > 0">
                       <span class="toll-badge">
                         <i class="fa fa-ticket"></i>
-                        {{ route.tollInfo!.stationCount > 0 ? route.tollInfo!.stationCount + ' trạm' : 'Có trạm thu phí' }}
+                        {{ route.tollInfo!.stationCount }} trạm
                       </span>
                       <span class="toll-cost">
                         <i class="fa fa-money"></i>
                         ~{{ formatTollCost(route.tollInfo) }}
-                        <em style="font-size:10px; opacity:.7;">(Vietmap API)</em>
+                        <em style="font-size:10px; opacity:.7;">{{ activeVehicleLabel }}</em>
                       </span>
                     </ng-container>
-                    <ng-container *ngIf="!route.tollInfo!.totalCost && (!route.tollInfo!.vehicleCosts || route.tollInfo!.vehicleCosts.length === 0)">
+                    <ng-container *ngIf="route.tollInfo!.stationCount === 0">
                       <span class="toll-badge toll-badge--none">
                         <i class="fa fa-check-circle"></i> Không có trạm thu phí
                       </span>
@@ -148,9 +148,16 @@
                       </tr>
                     </thead>
                     <tbody>
-                      <tr *ngFor="let vc of route.tollInfo!.vehicleCosts" [class.row-estimated]="vc.isEstimated">
+                      <tr *ngFor="let vc of route.tollInfo!.vehicleCosts"
+                          [class.row-estimated]="vc.isEstimated"
+                          [class.row-active-vehicle]="vc.isActive">
                         <td class="veh-icon-cell"><i class="fa" [ngClass]="vc.icon"></i></td>
-                        <td>{{ vc.label }}</td>
+                        <td>
+                          {{ vc.label }}
+                          <span *ngIf="vc.isActive" class="badge badge-success" style="margin-left:6px; font-size:10px;">
+                            <i class="fa fa-check"></i> Xe của lệnh
+                          </span>
+                        </td>
                         <td class="veh-cost-cell">
                           <ng-container *ngIf="vc.cost !== null">
                             <strong>{{ vc.cost | number:'1.0-0' }} ₫</strong>

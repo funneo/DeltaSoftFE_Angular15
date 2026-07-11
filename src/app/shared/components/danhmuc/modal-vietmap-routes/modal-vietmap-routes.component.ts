@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, NgZone, OnDestroy, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, NgZone, OnDestroy, Output, ViewChild } from '@angular/core';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { NotificationService } from '@app/shared/services';
 import { HttpClient } from '@angular/common/http';
@@ -13,11 +13,13 @@ export interface TollStation {
 }
 
 export interface VehicleCostRow {
+  v: number;
   label: string;
   icon: string;
   cost: number | null;
   costVetc: number | null;
   isEstimated: boolean;
+  isActive?: boolean;
   note?: string;
 }
 
@@ -52,6 +54,11 @@ export interface RouteOption {
 export class ModalVietmapRoutesComponent implements OnDestroy {
   @ViewChild('modalRoutes', { static: false }) modalRoutes: ModalDirective;
   @ViewChild('mapContainer', { static: false }) mapContainer: ElementRef;
+  /**
+   * Loại xe Vietmap (1..5) suy từ loại BOT của xe đang chọn. Quyết định giá vé
+   * hiển thị + giá emit về parent. Không truyền → fallback loại 1 (xe con) như cũ.
+   */
+  @Input() vehicleKey: number | null = null;
   @Output() RouteSelected = new EventEmitter<{
     summary: string;
     km: number;
@@ -219,6 +226,12 @@ export class ModalVietmapRoutesComponent implements OnDestroy {
     this.modalRoutes.hide();
   }
 
+  /** Nhãn nguồn giá hiển thị cạnh tổng phí — cho biết đang tính theo loại xe nào. */
+  get activeVehicleLabel(): string {
+    if (this.isSavedMode) return '(đã lưu)';
+    return this.vehicleKey ? `(Vietmap — loại ${this.vehicleKey})` : '(Vietmap — loại 1, chưa rõ xe)';
+  }
+
   formatTollCost(toll: TollInfo | null | undefined): string {
     if (!toll || toll.totalCost === null) return 'Không có dữ liệu';
     if (toll.totalCost === '0') return 'Miễn phí';
@@ -290,7 +303,11 @@ export class ModalVietmapRoutesComponent implements OnDestroy {
       this._pushHistory();
       // Khong click cho 2 diem dau/cuoi
       this.waypoints.splice(this.waypoints.length - 1, 0, { lat: p.lat, lng: p.lng });
-      this._fetchRoutesAndTolls(); // Re-fetch immediately
+      this._drawMarkers();
+      // Debounce như dragend: mỗi lần fetch = 6 request Vietmap (1 route + 5 toll),
+      // và Vietmap trả 400 khi bị bắn liên tiếp. Click nhanh 5 điểm trước đây = 30 request.
+      if (this.fetchTimer) clearTimeout(this.fetchTimer);
+      this.fetchTimer = setTimeout(() => this._fetchRoutesAndTolls(), 800);
     });
   }
 
@@ -432,13 +449,23 @@ export class ModalVietmapRoutesComponent implements OnDestroy {
 
     this._drawMarkers();
 
-    // Gọi backend Controller do chúng ta tự viết
+    // Gọi backend Controller do chúng ta tự viết.
+    // vehicleClass quyết định PROFILE tìm đường (car/truck/container) ở route v4 — xe
+    // container đi đường khác xe con, nên km/dầu chỉ đúng khi truyền đúng hạng xe.
     this.http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, {
-      points: this.waypoints
+      points: this.waypoints,
+      vehicleClass: this.vehicleKey
     }).subscribe(res => {
       this.flagGettingRoutes = false;
       this.ngZone.run(() => {
         this._processBackendResponse(res);
+        // Đường vẽ (route v4) và đường tính vé (route-tolls) là 2 lần routing độc lập.
+        if (res?.diagnostics?.routeMismatch) {
+          this._notif.printErrorMessage(
+            `Cảnh báo: đường tính phí trạm lệch ${res.diagnostics.mismatchPercent}% so với đường hiển thị. `
+            + 'Phí trạm có thể không khớp tuyến trên bản đồ.'
+          );
+        }
       });
     }, err => {
       this.flagGettingRoutes = false;
@@ -459,12 +486,17 @@ export class ModalVietmapRoutesComponent implements OnDestroy {
     if (res.toll && Array.isArray(res.toll) && res.toll.length > 0) {
       this._lastTollRaw = res.toll; // lưu để selectRoute() build allPrices
 
-      let vehicleCosts = [];
+      // Giá vé phải theo LOẠI XE của lệnh (BOT type), không phải luôn loại 1 (xe con = rẻ nhất).
+      const activeKey = this.vehicleKey ?? 1;
       let allStations: any[] = [];
-      let baseToll1 = res.toll.find((x: any) => x.vehicle === 1)?.data;
-      
-      if (baseToll1 && baseToll1.tolls) {
-        allStations = baseToll1.tolls.map((t: any) => ({
+      // BE chỉ trả về những `vehicle` gọi Vietmap thành công. Nếu riêng hạng xe của lệnh
+      // lỗi thì vẫn lấy trạm từ hạng bất kỳ (giá sẽ được parent áp lại từ allPrices),
+      // thay vì để mất sạch danh sách trạm.
+      const baseToll = res.toll.find((x: any) => x.vehicle === activeKey)?.data
+                    ?? res.toll.find((x: any) => x.data?.tolls?.length)?.data;
+
+      if (baseToll && baseToll.tolls) {
+        allStations = baseToll.tolls.map((t: any) => ({
           id: t.id,
           name: t.name,
           cost: t.price ? `${t.price.toLocaleString('vi-VN')} ₫` : 'Miễn phí',
@@ -480,21 +512,27 @@ export class ModalVietmapRoutesComponent implements OnDestroy {
         { v: 5, label: 'Loại 5 - Tải >18T, 40ft', icon: 'fa-truck' }
       ];
 
-      vehicleCosts = CAT_LABELS.map(cat => {
+      const vehicleCosts: VehicleCostRow[] = CAT_LABELS.map(cat => {
           const match = res.toll.find((x: any) => x.vehicle === cat.v);
-          let cost = null;
+          let cost: number | null = null;
           if (match && match.data && match.data.tolls) {
              cost = match.data.tolls.reduce((acc: number, t: any) => acc + (t.price || 0), 0);
           }
-          return { label: cat.label, icon: cat.icon, cost: cost, costVetc: cost, isEstimated: false };
+          return {
+            v: cat.v, label: cat.label, icon: cat.icon,
+            cost, costVetc: cost, isEstimated: false,
+            isActive: cat.v === activeKey
+          };
       });
 
-      const totalCostV1 = vehicleCosts.find(c => c.v === 1)?.cost || 0;
+      // Trước đây `find(c => c.v === 1)` luôn undefined (object không có field `v`)
+      // → totalCost luôn '0' → hàng badge tổng phí không bao giờ hiện.
+      const activeTotal = vehicleCosts.find(c => c.v === activeKey)?.cost ?? 0;
 
       tollInfo = {
-        totalCost: totalCostV1.toString(),
+        totalCost: activeTotal.toString(),
         currency: 'VND',
-        stationCount: baseToll1?.tolls?.length || 0,
+        stationCount: baseToll?.tolls?.length || 0,
         stations: allStations,
         vehicleCosts: vehicleCosts,
         dataFromApi: true,

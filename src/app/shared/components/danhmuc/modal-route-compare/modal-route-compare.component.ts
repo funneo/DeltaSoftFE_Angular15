@@ -1,4 +1,4 @@
-import { Component, ElementRef, EventEmitter, NgZone, OnDestroy, Output, ViewChild } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, NgZone, OnDestroy, Output, ViewChild } from '@angular/core';
 import { ModalDirective } from 'ngx-bootstrap/modal';
 import { HttpClient } from '@angular/common/http';
 import { NotificationService } from '@app/shared/services';
@@ -33,6 +33,9 @@ export class ModalRouteCompareComponent implements OnDestroy {
   @ViewChild('modalCompare', { static: false }) modalCompare: ModalDirective;
   @ViewChild('vietmapContainer', { static: false }) vietmapContainer: ElementRef;
   @ViewChild('googleContainer', { static: false }) googleContainer: ElementRef;
+
+  /** Hạng xe BOT (1..5) của lệnh — quyết định profile tìm đường v4 + giá vé hiển thị. */
+  @Input() vehicleKey: number | null = null;
 
   @Output() RouteSelected = new EventEmitter<CompareRouteResult>();
 
@@ -203,7 +206,8 @@ export class ModalRouteCompareComponent implements OnDestroy {
   private _fetchVietmapRoute() {
     this.ngZone.run(() => { this.vietmapLoading = true; this.vietmapError = null; });
 
-    this.http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`, { points: this.vietmapWaypoints })
+    this.http.post<any>(`${environment.apiUrl}/api/VietmapApi/GetRouteAndToll`,
+                        { points: this.vietmapWaypoints, vehicleClass: this.vehicleKey })
       .pipe(catchError(() => of(null)))
       .subscribe(res => this.ngZone.run(() => {
         this.vietmapLoading = false;
@@ -216,11 +220,13 @@ export class ModalRouteCompareComponent implements OnDestroy {
           return { lat: c ? c[1] : 0, lng: c ? c[0] : 0, name: s.text || '', distanceM: s.distance || 0 };
         });
 
+        // Phí trạm theo hạng xe của lệnh, không phải luôn hạng 1 (xe con = rẻ nhất).
         let tollText: string | null = null;
         if (res.toll?.length) {
-          const v1 = res.toll.find((x: any) => x.vehicle === 1)?.data;
-          if (v1?.tolls) {
-            const total = v1.tolls.reduce((s: number, t: any) => s + (t.price || 0), 0);
+          const activeKey = this.vehicleKey ?? 1;
+          const mine = res.toll.find((x: any) => x.vehicle === activeKey)?.data;
+          if (mine?.tolls) {
+            const total = mine.tolls.reduce((s: number, t: any) => s + (t.price || 0), 0);
             tollText = total > 0 ? `${total.toLocaleString('vi-VN')} ₫` : 'Không có trạm phí';
           }
         }

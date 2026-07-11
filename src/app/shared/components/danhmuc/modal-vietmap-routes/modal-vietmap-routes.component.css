@@ -171,6 +171,12 @@
 .veh-cost-cell { text-align: right; white-space: nowrap; }
 .veh-cost-cell strong { color: #c62828; font-size: 13px; }
 .row-estimated .veh-cost-cell strong { color: #283593; }
+
+/* Dòng loại xe của lệnh — giá đang được áp cho các trạm */
+.row-active-vehicle { background: #e8f5e9; }
+.row-active-vehicle td { font-weight: 600; }
+.row-active-vehicle .veh-cost-cell strong { color: #1b5e20; }
+
 .est-mark {
   font-size: 10px; font-weight: 700;
   color: #f57f17; margin-left: 2px;
