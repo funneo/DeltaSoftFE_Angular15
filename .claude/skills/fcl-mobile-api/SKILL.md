@@ -255,7 +255,7 @@ unless noted.
 | `getPerformance` | none | Driver performance stats | `DispatchOrderFcl[]` |
 | `GetByJobId` | DISPATCHORDER_VIEW | Orders by shipment JobId | `DispatchOrderFcl[]` |
 | `updatestate` | none | Status transition / reject | echo item |
-| `driverUpdate` | none | Driver: odometer + finish notes | echo item |
+| `driverUpdate` | none | Driver: odometer + notes + listFee + listEtc.isPassed (batch, §4.7) | echo item |
 | `updateEtcFee` | none | Update toll fees post-create | echo item |
 | `delete` | DISPATCHORDER_DELETE | Delete order (by `item.refNo`) | echo item |
 | `getExport` | FCL_EXPORT | Excel export rows | rows |
@@ -351,13 +351,24 @@ POST /api/DispatchOrderFcl/updatestate
   "tValue": 0 }      // typeDeny: rejection type code
 ```
 
-### 4.7 driverUpdate (driver completion)
+### 4.7 driverUpdate (driver completion) — saves km/notes **+ listFee + listEtc.isPassed** (updated 2026-07-11)
+Batch save (one call on "Lưu"/"Hoàn thành", **not** per-row). Send the whole item incl. the full `listFee` + `listEtc`.
 ```jsonc
 POST /api/DispatchOrderFcl/driverUpdate
 { "tokenKey":"<JWT>",
   "item": { "refNo":"FCL-...", "startVehicleOdor":120350, "finishVehicleOdor":120612,
-            "finished":true, "noteFinished":"Giao xong" } }
+            "finished":true, "noteFinished":"Giao xong",
+            "listFee":[ { "id":123, "feeId":45, "contents":"...", "cost":100000, "vat":8000, "totalCost":108000 } ],
+            "listEtc":[ { "id":77, "isPassed":true /* + other etc fields as returned */ } ] } }
 ```
+Each `listFee` row also carries a **document classification** `invoiceType` (2026-07-11):
+- `invoiceType`: **0** = no invoice · **1** = receipt (phiếu thu; nothing extra, put receipt no. in `contents`) · **2** = has VAT invoice → **6 fields REQUIRED**: `invoiceNo`, `invoiceDate` (dd/MM/yyyy), `invoicePattern`, `taxNumber` (seller tax code), `web` (lookup site), `code` (lookup code). App must validate all 6 before sending; clear them when `invoiceType` changes to 0/1.
+- These persist via the extended TVP `TypeDispatchOrderFCLFeeV2` (only `DriverUpdate` uses it; Create/UpdateWithTO keep the old type — dispatcher-created fees leave invoice fields null).
+
+Server rules (SP `SP_DispatchOrderFCL_DriverUpdate`, applied **only when `isLegacy=0`**; legacy orders update just the 4 km/note cols):
+- `listFee` → **MERGE by `id`**: existing `id` = update, new (no `id`/0) = insert, omitted-from-array = **delete**. Send the *entire* current fee list, preserving each row's `id`. `invoiceType` + 6 invoice fields saved per row.
+- `listEtc` → only `isPassed` is updated **by `id`** (no add/remove of toll stations; other etc fields untouched server-side).
+- `startVehicleOdor`/`finishVehicleOdor` stored as **int** (decimals truncated).
 
 ---
 
@@ -511,7 +522,8 @@ Send ≥ 2 points (start, end; intermediate waypoints allowed). The response con
 | **Unified locations** (KH + cảng, normalized) | `/api/TransportOrder/GetAllLocations` | `{ id, locationType (1=KH,2=Cảng), address, latitude, longtitude }` — **use this to populate the route point picker** |
 | Oil quota tiers | `/api/VehicleOilQuota/getpaging` | `id`, `value`, `shortWayValue` (see §5.1) |
 | Latest oil price | `/api/GasManagement/getOldValue` | unit price |
-| Fees | `/api/fee/getall` | `id`, `code`, `name` |
+| Fees (full catalog) | `/api/fee/getall` | `id`, `code`, `name` |
+| **Driver cost fees (phụ lục tab Chi phí)** | `/api/fee/GetForDriver` | `id`, `feeCode`, `feeName`, `displayOrder` — **9 phí fix cứng** trong SP, đã sắp thứ tự. Dùng cho dropdown Chi phí lái xe khi §4.7 driverUpdate. No permission (token only). |
 | Shipping tasks to attach | `/api/ShippingTask/getAllByOpMan` / `/getAllByCs` | task list to pick from (filter unassigned) |
 | Segment history (reuse past route) | `/api/TransportOrder/GetSegmentHistory` | prior `distanceKm/routePolyline/listStations/fuelNorm` between two points |
 

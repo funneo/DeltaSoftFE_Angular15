@@ -232,7 +232,11 @@
       "PowerShell(Invoke-Sqlcmd -ConnectionString $c -Query \"SELECT Id, Name FROM dbo.Branch WHERE ISNULL\\(Deleted,0\\)=0\")",
       "PowerShell($c = \"Server=115.84.178.66;Database=DELTASOFT;User Id=delta.erp;Password=khsd89#`$\\)?h>24;\")",
       "Bash(git checkout *)",
-      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File /tmp/q.ps1)"
+      "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File /tmp/q.ps1)",
+      "Bash(grep -iv \"//\")",
+      "Bash(xargs grep -ln \"class DispatchOrderFCLFee\")",
+      "Bash(xargs grep -ln \"class DispatchOrderFCLEtc\\\\b\")",
+      "Bash(rm -f src/assets/config/driver-fcl-fees.json)"
     ],
     "additionalDirectories": [
       "d:\\Delta\\DeltaSoft\\web-app-update\\.git",
