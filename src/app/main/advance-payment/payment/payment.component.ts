@@ -481,7 +481,9 @@ export class PaymentComponent implements OnInit {
       hbillSearch: this.hbillSearch,
       bookingSearch: this.bookingSearch,
       chungtuSearch: this.chungtuSearch,
-      groupedItem: this.groupedItem,
+      // Chỉ lưu key + trạng thái mở/đóng của từng nhóm (đủ để khôi phục khi back).
+      // KHÔNG lưu cả groupedItem (kèm items) — cả năm dữ liệu sẽ vượt quota localStorage.
+      groupedItem: (this.groupedItem ?? []).map((g: any) => ({ key: g.key, isExpanded: g.isExpanded })),
     }
     UtilityService.setLocalParams(p, this._functionId);
     if (id == null) {
