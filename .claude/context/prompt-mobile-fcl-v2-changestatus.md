@@ -78,6 +78,7 @@ Quy tắc BE (SP tự xử, chỉ áp cho `isLegacy=0`):
 2. Thay MỌI chỗ đang gọi `updatestate` cho lệnh v2 (Nhận/Hoàn thành/Từ chối nhận) bằng `changeStatus` với đúng actionType. **Không gửi `status`.**
 3. "Hoàn thành lệnh": gọi `driverUpdate(finished:true)` (kèm `listFee`+`listEtc` hiện tại) trước, thành công thì `changeStatus(actionType:2)`.
 3b. Màn nhập của lái xe (status 1/2): cho thêm/sửa/xóa dòng **Chi phí** + tick **Trốn vé** trên UI (in-memory), chỉ đẩy lên server khi bấm **Lưu thông tin** hoặc **Hoàn thành** (batch). Gửi TOÀN BỘ `listFee`/`listEtc`, giữ `id` dòng cũ.
+3c. Dropdown **"Loại phí"** ở bảng Chi phí: nạp từ **`POST /api/fee/GetForDriver`** (envelope, chỉ cần `tokenKey`) → trả **9 phí** `{id, feeCode, feeName, displayOrder}` đã sắp thứ tự. KHÔNG hardcode danh sách trong app (ERP có thể đổi 9 phí này qua SP). `listFee[].feeId` = `id` phí chọn.
 4. "Từ chối nhận": bắt buộc nhập lý do (không rỗng) trước khi gọi `changeStatus(5, reason)`.
 5. Bắt lỗi: response `code=="400"` → hiển thị `message` (là văn bản tiếng Việt từ SP), KHÔNG hiển thị "lỗi hệ thống".
 6. (Nếu có) màn "Lịch sử lệnh": nạp từ `getStatusLog`, dòng từ chối tô đậm + hiện lý do.
@@ -88,6 +89,8 @@ Quy tắc BE (SP tự xử, chỉ áp cho `isLegacy=0`):
 - Nhập km + thêm 2 dòng Chi phí + tick 1 Trốn vé → bấm Lưu → đọc lại (`GetByRefNoWithTO`) thấy đủ km + 2 phí + cờ trốn vé đã lưu.
 - Xóa 1 dòng phí rồi Lưu → đọc lại thấy dòng đó biến mất (MERGE xóa đúng).
 - Hoàn thành → status 3; đọc lại thấy km/chi phí/trốn vé đã lưu.
+- Dòng phí chọn "Có hóa đơn" mà thiếu 1 trong 6 field HĐ → app CHẶN Lưu; nhập đủ 6 → lưu OK, đọc lại (`GetByRefNoWithTO`) thấy `invoiceType=2` + 6 field.
+- Dropdown "Loại phí" chỉ hiện đúng 9 phí từ `GetForDriver` (không hardcode).
 - Từ chối nhận không nhập lý do → app chặn; nhập lý do → `IsDeny`, lệnh vẫn status 1, có dòng trong GetStatusLog.
 - Không lái xe của lệnh bấm Nhận → nhận HTTP 400 + message "không phải lái xe…" (SP chặn), app hiển thị message.
 - KHÔNG còn lời gọi `updatestate` nào cho lệnh `isLegacy=0`.
