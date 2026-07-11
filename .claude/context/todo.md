@@ -1,5 +1,47 @@
 # Pending / In-Progress Work
 
+## ▶ Phiên 2026-07-11 — 3 fix nhỏ, chờ chạy SQL / deploy
+
+### 1) Chốt dầu — bỏ Type=0 khỏi nguồn B (dầu còn thừa) — ✅ ĐÃ CHẠY (2026-07-11)
+Bug: `SP_DriverFuelClosing_GetCandidates` đang chạy (deploy) có source 6 (B "dầu còn thừa") lọc `WHERE (a.[Type]=0 OR a.Type=2)` — **gồm cả Type=0** (tạm ứng xe nhà), sai thiết kế (comment + file `LeftoverB_20260707` đều ghi Type=2). Hậu quả: 11.170/43.855 phiếu Type=0 lệch Duyệt≠IGAS bị **cộng ngược** (Quantity−QuantityIgas) vào NET (vd 007262: A=−19.27 + B=+80.73 = +61.46 thay vì −19.27). SP đã bị **sửa tay lệch migration** (thêm Type=0, `ValidTime→CreatedDate`, `>0→<>0`).
+- **Chốt với anh (2026-07-11):** Type=0 tạm ứng CHỈ vào nguồn A (source 1, trừ theo IGAS thực đổ); bỏ khỏi nguồn B. Phiếu Type=0 **IGAS trống** → **không** vào chốt (phương án a, đúng "số tạm ứng = số IGAS thực đổ").
+- **File** `NewAPI/Migration_DriverFuelClosing_FixLeftoverType_20260711.sql` (đã đồng bộ bản đang chạy): DROP+CREATE `_GetCandidates`, (a) source 6 `(Type=0 OR Type=2)→Type=2`; (b) source 1 lọc ngày `ValidTime→CreatedDate` (vì ValidTime lệch 2-4 ngày sau CreatedDate → tạm ứng rớt khỏi phiếu chốt; anh tự đổi khi chạy).
+- ✅ **ĐÃ CHẠY 2026-07-11** — tạm ứng Type=0 hiện đúng ở nguồn A (trừ theo IGAS thực đổ), không còn ở B. KHÔNG deploy API/FE.
+- ⚠ Phiếu chốt **đã lưu** trước đây (dính dòng B Type=0 sai) không tự sửa — cần file dọn riêng nếu muốn tính lại kỳ cũ. ⚠ Phiếu Type=0 **IGAS trống** vẫn không vào chốt (đúng phương án đã chốt).
+
+### 2) F039 Chốt dầu phương tiện — GRANT đủ action (fix 403 Create) — ✅ ĐÃ CHẠY (2026-07-11)
+Tạo phiếu chốt dầu tháng bị **403** tại `POST /api/DriverFuelClosing/Create`. Gốc: `ActionInFunctions` F039 CHỈ có VIEW; Permissions chỉ role `ACC-VT` có VIEW → không role nào có `F039_CREATE`. File grant gốc 2026-06-04 chưa chạy trọn.
+- **File** `NewAPI/Migration_F039_GrantActions_20260711.sql` (idempotent): đăng ký đủ 5 action + cấp CREATE/UPDATE/ACCEPT/DELETE cho mọi role đang có F039_VIEW (=ACC-VT) + Admin đủ 5.
+- ✅ **ĐÃ CHẠY 2026-07-11.** User cần **relogin** (quyền trong JWT) → hết 403. Role khác cần tạo phiếu thì báo em thêm.
+
+### 3) PCCV (Job draft) — sửa hiển thị ngày khi đọc nháp qua ERP — FE+BE code xong, CHỜ DEPLOY
+Nháp PCCV (DraftType='Job') lưu ngày lẫn lộn `dd/MM/yyyy`, `YYYYMMDD HH:mm:ss`, `YYYY-MM-DD HH:mm:ss` (bot ghi thẳng Draft API). ERP hiển thị sai vì bind thẳng chuỗi.
+- **FE** `modal-workflow.viewDraft()`: thêm helper `_draftDate()` parse tolerant → normalize 7 field datetime (estimatedStart/Finish/closing/inquiry×2/pickup/delivery) về `DD/MM/YYYY HH:mm:ss`. tsc sạch.
+- **BE** `WorkflowController.cs` (~945): dòng nháp Job set `CreatedDate = d.CreatedAt` (trước bị default 0001-01-01). List (getpaging2) đã có sẵn `DraftDateToIso` cho estimate. compile 0 err.
+- **Anh cần:** ⬜ `ng build` + deploy FE (modal) ⬜ tắt API → build/publish (BE list). Gộp chung nhịp deploy ERP.
+
+## ★★ BÚT TOÁN ĐỐI ỨNG (P5) — SQL P5.0 soạn xong, CHỜ DUYỆT + CHẠY (2026-07-10)
+Chi tiết + số liệu verify DB: done.md section đầu. File: `NewAPI/Migration_AccountingEntry_P50_20260710.sql` (3 bảng + TVP + 6 SP + seed 19 rule). Đã chốt: bảng mới song song · không hồi tố · bút toán đảo.
+
+**Anh cần (theo thứ tự):**
+1. ⬜ Duyệt + chạy `Migration_AccountingEntry_P50_20260710.sql` (login `delta.erp`). Additive 100%, không đụng object cũ.
+2. ⬜ **Kế toán duyệt bản nháp Phụ lục 6.4** = `SELECT * FROM Tbl_AccountingRule ORDER BY EventCode` → bật `IsActive=1` cho 7 rule đang tắt.
+3. ⬜ **File SQL riêng chưa soạn**: bổ sung danh mục TK (`OtherCategories Type='ACCOUNTING'`) — điền **tên TK** (hiện `CategoryName` = trùng mã) + thêm **TK cấp 2** `1331`, `1388` (rule VAT + phải thu khác đang chờ 2 mã này).
+4. ⬜ Sau khi SQL chạy: em code BE (`IAccountingEntry` + `AccountingEntryRepository` + `AccountingPostingService` + `AccountingEntryController`) + FunctionCode mới → FE màn Sổ cái / Nhật ký chung / Bảng cân đối + danh mục Rule.
+
+**Phase kế tiếp** (chi tiết: [advance-payment-redesign-plan.md](advance-payment-redesign-plan.md) mục P5):
+- **P5.1** post cho Phiếu thu/chi (đã có định khoản tay → copy sang GL, dễ nhất).
+- **P5.2** post cho Tạm ứng (rule 141/111 + 141/112, bằng chứng 20.683 dòng).
+- **P5.3** post cho Thanh toán — ⚠ **BỊ CHẶN**: `Fee` 545 mã chỉ 18 mã có TK Nợ. Kế toán phải điền hết trước.
+- **P5.4** Đặt cọc (244) + Nợ hóa đơn (rổ 2 — theo E1 **không lên sổ**, cần chốt lại: đã chi tiền thật mà không hiện trên sổ?).
+- **P5.5** Sổ cái · Nhật ký chung · Bảng cân đối · xuất Misa (blocker H1: mức tích hợp?).
+
+**Câu hỏi còn treo:** ghi sổ gọi từ BE **sau** khi SP legacy commit ⇒ không cùng transaction. Nếu post lỗi thì chứng từ vẫn tạo → cần màn "chứng từ chưa hạch toán" + nút hạch toán lại. Anh duyệt hướng này hay muốn transaction chung (phải clone SP legacy)?
+
+**Anh nêu 2026-07-10 (chưa khai thác):** Tạm ứng theo quy trình có **1 hoặc 2 bước duyệt** → **ghi nhận đối ứng SAU khi qua hết các bước duyệt** (không phải lúc tạo phiếu). ⇒ điểm hook `SP_AccountingEntry_Post` cho DocType='ADVANCE' nằm ở bước duyệt CUỐI (`AcceptStep` đạt bước cuối), số bước phụ thuộc route theo nhóm phí (P2/G7). Cần chốt: bước cuối là B1 hay B2 tùy nhóm phí → BE phải biết "đã là bước cuối chưa" trước khi post.
+
+⏸ **TẠM DỪNG** (anh chốt 2026-07-10) — quay lại sau.
+
 ## ▶ ĐÁNH GIÁ TRIỂN KHAI FCL v2 — findings từ báo cáo (2026-07-06)
 Báo cáo "Đánh giá triển Lệnh vận chuyển.pdf" (ảnh 3 màn Giám đốc/điều vận/lái xe + đối chiếu quy trình 5.1.2 + 10 khuyến nghị). Đối chiếu với kế hoạch:
 - **ĐÃ nằm trong kế hoạch:** #5 lái xe chưa có nút Lưu/Chốt (5.1.2.2)=nút Hoàn thành lệnh; #6 danh mục phí chưa thu gọn=config JSON allowlist; #7 phân loại có/không/nợ HĐ=3 loại chi phí + InvoiceStatus (đã thêm `InvoiceDueDate` hạn chứng từ); #2 (một phần) B1=FCL_ACCEPT.
@@ -9,7 +51,29 @@ Báo cáo "Đánh giá triển Lệnh vận chuyển.pdf" (ảnh 3 màn Giám đ
 - **✅ BUG ĐÃ FIX (2026-07-07, tách phiếu riêng — xem done.md):** #1 cung phát sinh không vào tổng (SQL `Migration_FCL_Bug1_ExtraSegmentTotals` + FE modal); #3 tải trọng màn lái xe (map payloadWeight→tên bậc định mức); #10 VAT ETC = no-op (bảng đã đúng: trước VAT + VAT nhập tay). **CÒN**: chạy SQL bug#1 + `ng build`.
 - **Cần test:** tạo mới & phê duyệt địa điểm giao nhận khi chưa có trong danh mục (5.2.2.2); màn lái xe cần bổ sung link/tọa độ điểm giao nhận (2.2).
 
-## ▶ THIẾT KẾ — Workflow FCL v2 MỚI (đổi luồng status) — ĐÃ CHỐT, chờ làm FE/mobile (2026-07-06)
+## ▶ Workflow FCL v2 MỚI — **SQL + BE + FE XONG (FE 2026-07-11, ng build 0 lỗi)**, CÒN mobile + owner-items + deploy
+Chi tiết đầy đủ (4 phát hiện từ DB, bảng transition, lý do từng quyết định): **done.md section đầu**.
+- ✅ SQL `Migration_FCLStatusLog_20260710.sql`: `Tbl_DispatchOrderFCLStatusLog` + **`SP_DispatchOrderFCL_ChangeStatus`** (đổi status + ghi log + chốt dầu, 1 transaction; chặn `IsLegacy=1`; `@EmployeeId` khớp `DriverId` cho ActionType 1/2/5) + `SP_DispatchOrderFCLStatusLog_GetByRefNo`.
+- ✅ BE: `POST /api/DispatchOrderFCL/ChangeStatus` + `/GetStatusLog`; `User.HasPermission("FCL_ACCEPT"/"FCL_CLOSING")` kiểm trong thân action; `SqlException` → 400.
+- **ActionType**: 1 Nhận(1→2) · 2 Hoàn thành(2→3) · 3 Duyệt B1(3→5) · 4 Chốt(5→6) · 5 **Từ chối nhận**(1→1, IsDeny=1) · 6 **Từ chối B1**(3→2) · 7 **Từ chối CHỐT**(5→3).
+
+**CÒN PHẢI LÀM:**
+1. ⬜ **Anh chạy lại** `Migration_FCLStatusLog_20260710.sql` (bản mới có `@EmployeeId`; idempotent) — chưa chạy thì Dapper báo *"too many arguments"* ngay khi bấm nút.
+2. ✅ **FE XONG (2026-07-11, ng build 0 lỗi)** — chi tiết done.md section đầu:
+   - **Modal TẠO/SỬA** (modal-dispatch-order-fcl-v2): bỏ Gửi lệnh + Duyệt B2 + mọi updateState; điều vận Duyệt B1(3→5)/Từ chối B1(3→2); người chốt Chốt(5→6)/Từ chối chốt(5→3); khóa fee tab `>=4`→`>=5`.
+   - **★ Lái xe (Nhận/Hoàn thành/Từ chối nhận) ĐẶT Ở modal THỰC HIỆN** `modal-execute-fcl` (anh chốt — KHÔNG ở modal tạo): Nhận(→2)/Từ chối nhận(→1 deny)/Hoàn thành(driverUpdate rồi →2/ActionType 2). Bỏ nút status-4.
+   - ⚠ còn 1 updateState trong `saveSuccess()` code chết (nút đã gỡ) — dọn sau.
+3. ✅ **FE service** — `changeStatus`/`getStatusLog` đã thêm.
+4. ✅ **FE section "Lịch sử lệnh"** — timeline trong modal TẠO (loadStatusLog + actionTypeLabel, dòng từ chối tô đỏ).
+5. ✅ **List mới** — nhãn filter + mapping status mới + `getStatusText()` FE tự tính (không dùng `rStatus`). ⬜ CÒN: nhãn `rStatus` trong SP getPaging (BE) vẫn lệch — nếu chỗ nào khác đọc rStatus thì cần sửa SP.
+6. ⬜ **Quyền** `Migration_FCL_GrantAcceptClosing_20260710.sql` — cấp `FCL_ACCEPT` cho `DV`, `DV-M`. **Anh nói để sau, anh tự bổ sung.** Chưa chạy → điều vận không thấy nút Duyệt B1. Chạy xong user phải **đăng xuất/đăng nhập lại** (permissions nằm trong JWT claim).
+7. ⬜ **Dữ liệu**: 2 lệnh v2 đang ở `Status=0` sẽ **kẹt vĩnh viễn** (không ActionType nào nhận `FromStatus=0`). Anh nói chỉnh sau: `UPDATE DispatchOrderFCL SET Status=1 WHERE IsLegacy=0 AND Status=0 AND Deleted=0`.
+8. ⬜ **Status khởi tạo = 1** (bỏ nháp) trong `SP_DispatchOrderFCL_CreateWithTO` — **ANH tự sửa**, em không đụng.
+9. 🟡 **Mobile** — ✅ skill `fcl-mobile-api` cập nhật (§4.6 ChangeStatus/GetStatusLog, §6 status flow mới) + ✅ **prompt bàn giao** soạn xong `.claude/context/prompt-mobile-fcl-v2-changestatus.md` (self-contained: endpoint, ActionType, luồng lái xe 1/2/5, driverUpdate trước Hoàn thành, xử lý 400, nghiệm thu). ⬜ CÒN: đội mobile code theo prompt.
+10. ⬜ Deploy: tắt API → build/publish → `ng build`.
+
+---
+## ▶ THIẾT KẾ GỐC — Workflow FCL v2 (giữ để tra cứu) — chốt 2026-07-06
 Điều vận lập lệnh giao lái xe luôn → lái xe nhận → lái xe nhập chi phí/km/thông tin + Hoàn thành → điều vận Duyệt B1 (BỎ B2) → chốt. **Nối với thiết kế "3 loại chi phí" bên dưới** (lái xe nhập chi phí ở status 2 = chỗ nhập 3 loại phí).
 
 **Luồng status mới:**
@@ -26,15 +90,15 @@ Báo cáo "Đánh giá triển Lệnh vận chuyển.pdf" (ảnh 3 màn Giám đ
 **Việc phải làm (FE/mobile — chưa code):**
 - **Modal v2** (`modal-dispatch-order-fcl-v2`): bỏ nút **Gửi lệnh** (updateState 1) + **Duyệt B2** (`duyetB2()`); **đổi `duyetB1()` updateState(3)→(5)** + gating nút Duyệt B1 `status==2`→**`status==3`**; thêm nút **Nhận lệnh** (1→2) + **Hoàn thành lệnh** (2→3) cho lái xe; thêm 3 nút lùi (Từ chối nhận@1 · Trả lại lái xe@3→2 · Trả lại@5→3). Khóa nhập: lái xe sửa chi phí/km @status 2, điều vận @status 3, khóa ≥5 (nút Thêm tab Chi phí đang gate `status>=4` → đổi mốc mới). Ref nút hiện tại: html dòng ~1143-1161; ts `duyetB1`@1704 (updateState 3), `duyetB2`@1727 (4), `chotlenh`@1802 (6), `updateState`@1667.
 - **List mới** (`dispatch-order-fcl-new`): viết lại `array` nhãn (ts dòng 64-74 đang lệch: 4=Duyệt B1/5=Duyệt B2) + `getStatusClass`/`rStatus` cho khớp (1 Đã giao·2 Đã nhận·3 Chờ duyệt·5 Chờ chốt·6 Đã chốt). `checkClosing` (status==5) GIỮ.
-- **BE/SP**: verify `SP_DispatchOrderFCL_UpdateState` generic (chỉ set @status, không hardcode transition); rà `driverUpdate` (lái xe nhập chi phí/km); cập nhật nhãn `rStatus` trong SP getPaging.
+- ~~**BE/SP**: verify `SP_DispatchOrderFCL_UpdateState` generic~~ → **ĐÃ VERIFY 2026-07-10: KHÔNG generic**, hardcode transition bằng IIF lồng nhau ⇒ đã làm SP mới. Còn: rà `driverUpdate` (lái xe nhập chi phí/km); nhãn `rStatus` trong SP getPaging.
 - **Mobile** (skill `fcl-mobile-api`): cập nhật mục status workflow (nhận 1→2, hoàn thành 2→3, từ chối).
 - **Quyền từng transition (CHỐT 2026-07-06):** Nhận(1→2)/Từ chối nhận(1→lùi)/Hoàn thành(2→3) = **lái xe của lệnh** (driver-scope, không mã ERP riêng). Duyệt B1(3→5) + Trả lại lái xe(3→2) = **`FCL_ACCEPT`**. Chốt(5→6) + Trả lại(5→3) = **`FCL_CLOSING`**. Nguyên tắc: từ chối cùng mã quyền với hành động duyệt của bước đó. ⚠ Lệnh FCL cũ: Duyệt B1 KHÔNG gate quyền; Duyệt B2 = FCL_ACCOUNT; `FCL_ACCEPT` khai trong TS nhưng đang dead → **verify FCL_ACCEPT có trong ActionInFunctions của FCL + grant cho role điều vận chưa**, nếu chưa phải soạn grant SQL.
 
 **★ LỊCH SỬ TRẠNG THÁI + TỪ CHỐI (chốt 2026-07-06):** hiện chỉ có 1 field `feedback` trên header (ghi đè mỗi lần) + cờ `isDeny` → mất lịch sử, không phân biệt ai từ chối. Chốt với anh: **audit log TOÀN BỘ chuyển trạng thái**, lý do **nhập tự do** (bắt buộc khi từ chối).
 - **Bảng mới `Tbl_DispatchOrderFCLStatusLog`** (append mỗi lần đổi status): `Id, RefNo, ActionType TINYINT (Nhận/Hoàn thành/Duyệt B1/Chốt/TC-lái xe/TC-điều vận/TC-người chốt), FromStatus, ToStatus, IsReject BIT, Reason NVARCHAR(500) (bắt buộc khi IsReject=1), ActionBy UniqueIdentifier, ActionByName NVARCHAR(150), CreatedDate`. Phân biệt điều vận vs người chốt qua ActionType + FromStatus (reject từ 3=điều vận, từ 5=người chốt).
-- **Cách ghi (additive, KHÔNG đụng `updateState` cũ):** endpoint mới `POST /api/DispatchOrderFCL/changeStatus` (RefNo, ActionType, ToStatus, Reason) → SP mới `SP_DispatchOrderFCLStatusLog_Add` (1 transaction: INSERT log + UPDATE status). Modal v2 đổi MỌI nút workflow sang gọi endpoint này (nút từ chối mở modal nhập lý do trước). Old FCL giữ `updateState`. +`SP_DispatchOrderFCLStatusLog_GetByRefNo` cho timeline. Giữ `feedback`=lý do gần nhất để hiển thị nhanh, nguồn chuẩn = bảng log.
+- **Cách ghi (additive, KHÔNG đụng `updateState` cũ):** endpoint mới `POST /api/DispatchOrderFCL/ChangeStatus` (RefNo, ActionType, Reason — **KHÔNG có ToStatus**, SP tự suy từ ActionType) → SP `SP_DispatchOrderFCL_ChangeStatus` (1 transaction: INSERT log + UPDATE status + chốt dầu). Modal v2 đổi MỌI nút workflow sang gọi endpoint này (nút từ chối mở modal nhập lý do trước). Old FCL giữ `updateState`. +`SP_DispatchOrderFCLStatusLog_GetByRefNo` cho timeline. Giữ `feedback`=lý do gần nhất để hiển thị nhanh, nguồn chuẩn = bảng log.
 - **UI:** modal lệnh thêm section **"Lịch sử lệnh"** timeline (dòng từ chối tô đậm + lý do); list badge lần từ chối gần nhất. 3 nút lùi truyền đúng ActionType.
-- **SQL mới cần soạn:** bảng `Tbl_DispatchOrderFCLStatusLog` + `SP_DispatchOrderFCLStatusLog_Add` + `_GetByRefNo` (trình anh duyệt trước khi tạo — [[feedback_no_auto_db_writes]]).
+- ~~**SQL mới cần soạn**~~ → ✅ **XONG 2026-07-10**: `Migration_FCLStatusLog_20260710.sql` (anh đã chạy bản đầu; bản có `@EmployeeId` chờ chạy lại).
 
 ## ▶ THIẾT KẾ — 3 loại chi phí lái xe nhập vào lệnh FCL (v2) + theo dõi hóa đơn — ĐÃ CHỐT HƯỚNG, chờ soạn SQL (2026-07-06)
 Lái xe nhập chi phí vào lệnh FCL, **3 loại** (phí cấu hình qua JSON để rút gọn danh sách phí lái xe phải chọn):
@@ -102,8 +166,16 @@ Chi tiết: done.md section đầu. Bổ sung tab 2 "Lệnh FCL" vào `subcontra
 Thêm `POST /api/Garages/GetEmployees` vào GaragesController (chi tiết done.md). Tái dùng `_employee.GetbyAll()`, lọc Status, **trả full trường Employee** (bỏ projection cắt trường — chốt 2026-06-27). KHÔNG đụng SP/DB.
 - **Anh cần:** ⬜ deploy API → app garage gọi `GetEmployees` (header `Api-Key`) lấy full field NV. Báo nếu cần lấy cả NV nghỉ (bỏ filter Status).
 
+## ★★ Quản lý quỹ & thanh toán (Quy trình July 6 2026) — MỞ RỘNG từ June 25, đang gom yêu cầu → SRS, CHƯA CODE (2026-07-09)
+Tài liệu mới `NewAPI/Quy trình quản lý quỹ và thanh toán_July 6 2026.docx` **mở rộng phạm vi** từ "Tạm ứng/Thanh toán" (June 25) lên "Quản lý quỹ": 8 quy trình, 3 rổ nợ, ghi chép đối ứng (double-entry), 5 mục đích chi + đặt cọc/phiếu thu/phiếu chi. Đặt cọc (N1) = **ContBets** ở PM cũ.
+- **Bộ câu hỏi làm rõ** đã soạn: [quan-ly-quy-clarification-questions.md](quan-ly-quy-clarification-questions.md) (11 mục A–K, phân tích Cũ/Mới + đánh dấu blocker 🔴). Bản .docx trình người ra YC: `NewAPI/Bo cau hoi lam ro - Quan ly quy va thanh toan (July 6).docx`.
+- **✅ Gỡ blocker A2 — Phụ lục JobID** đã nhận: `NewAPI/JOBID.docx` (memory `reference_jobid_appendix`). Phân loại JobID **nghiệp vụ N01–N11** (theo loại hình lô) vs **kế toán K01–K07** (hàng tháng/chi nhánh/nhóm phí cấp 1) + 3 cơ chế thoát **DK05 / Thẻ tài sản / mã nhân viên**.
+- **Phân tích JobId cũ ↔ mới** (đã làm, verify từ DB): JobId ERP hiện = `S+BranchCode+YY+MM+RIGHT(CustomerCode,5)+seq5` (SP `SP_Shipment_CreateNew`), **1 loại/lô, KHÔNG mã hóa loại hình**, sinh mọi chi nhánh (6). GAP lớn: (1) thêm họ **JobID kế toán** hoàn toàn mới; (2) chuẩn hóa `SHIPMENT_T02` (~22 mục lộn xộn) → **N01–N11**; (3) chỉ 3 pháp nhân tạo JobID (HN/HCM=SG/VT) vs 6; (4) quyết định **có nhúng mã N vào chuỗi hay thêm cột `JobIDType`** (tránh đụng SP lõi). Câu hỏi để ngỏ cho người ra YC: bắt buộc nhúng mã N vào chuỗi JobId không.
+- **CÒN thiếu (phụ lục khác chưa có):** phân quyền khởi tạo JobID · hạn mức tạm ứng · ghi chép đối ứng (bút toán Nợ/Có) · phân quyền duyệt chi tiết.
+- **Bước tiếp:** người ra YC trả lời bộ câu hỏi → **viết SRS** (bắt buộc trước khi code) → duyệt → code. Kế hoạch kỹ thuật nền: [advance-payment-redesign-plan.md](advance-payment-redesign-plan.md) (P0→P5, phương án SP mới song song không sửa SP cũ). Memory `project_advance_payment_redesign`.
+
 ## ★ Tái thiết kế Tạm ứng/Thanh toán (Quy trình June 25 2026) — KẾ HOẠCH XONG, CHƯA CODE (2026-06-25)
-Kế hoạch + giải pháp kỹ thuật đầy đủ: [advance-payment-redesign-plan.md](advance-payment-redesign-plan.md) (gap verify từ source + 6 phase P0→P5 + phương án "tiến hóa có kiểm soát"). Memory `project_advance_payment_redesign`. Nguồn: `NewAPI/Quy trình Tạm ứng  Thanh toán_June 25 2026.docx`.
+Kế hoạch + giải pháp kỹ thuật đầy đủ: [advance-payment-redesign-plan.md](advance-payment-redesign-plan.md) (gap verify từ source + 6 phase P0→P5 + phương án "tiến hóa có kiểm soát"). Memory `project_advance_payment_redesign`. Nguồn: `NewAPI/Quy trình Tạm ứng  Thanh toán_June 25 2026.docx`. **← đã được July 6 mở rộng (mục ★★ trên).**
 - **P0** Nhóm phí (GroupFeeCode Lv1) trên Tạm ứng + rule kê khai theo nhóm — nền tảng, làm trước.
 - **P1** Hạn mức enforce + Thời hạn TƯ + khóa quá hạn + gia hạn. **P2** TT đối ứng N tạm ứng + auto phiếu chi/thu + duyệt theo nhóm. **P3** Nợ HĐ đầy đủ rule. **P4** Phiếu chi/thu Thủ quỹ + chặn quỹ thiếu. **P5** Bút toán đối ứng + báo cáo (workshop KT, spec chưa chốt).
 - **Anh cần**: chốt thứ tự ưu tiên + 7 điểm để ngỏ (mục 5 trong plan) → em đọc SP/schema liên quan, soạn SQL trình duyệt cho phase đầu.

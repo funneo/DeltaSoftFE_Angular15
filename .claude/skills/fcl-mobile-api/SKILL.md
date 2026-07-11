@@ -4,7 +4,7 @@ description: >
   Self-contained blueprint for building the NEW FCL dispatch order ("lệnh FCL mới") module
   on a separate mobile app against the DeltaSoft ERP API. Covers auth/JWT, the request/response
   envelope, the TO↔FCL data model, every FCL endpoint (CreateWithTO / UpdateWithTO /
-  GetByRefNoWithTO / getPaging / getByDriver / updatestate / driverUpdate), the full create
+  GetByRefNoWithTO / getPaging / getByDriver / ChangeStatus / GetStatusLog / driverUpdate), the full create
   recipe, fuel formula, ETC toll rules, status workflow + locking, extra segments, Vietmap
   routing, and the lookup endpoints needed to fill the form. Invoke when implementing or
   debugging FCL order create/edit/view/execute on mobile, or wiring the ERP API client.
@@ -311,7 +311,38 @@ POST /api/DispatchOrderFcl/getPaging
 Same envelope as getPaging; returns orders assigned to the driver in range. Use for the mobile
 driver's "my trips" screen.
 
-### 4.6 updatestate (workflow transition / reject)
+### 4.6 ChangeStatus (workflow transition / reject) — **v2 orders (isLegacy=0), USE THIS**
+```jsonc
+POST /api/DispatchOrderFcl/ChangeStatus
+{ "tokenKey":"<JWT>",
+  "item": { "refNo":"FCL-...", "actionType": 1, "reason": null } }
+```
+- `actionType` (1..7 — table below). **Server derives the target status from actionType — do NOT send `status`.**
+- `reason` is **REQUIRED** for reject actions (5/6/7); the SP rejects (RAISERROR → HTTP 400) if empty.
+- Response: `{ code:"200", data:{ fromStatus, toStatus, isReject } }`. On any rule violation the SP RAISERRORs → the controller returns **code `"400"` with the raw message** (show it to the user).
+
+| actionType | Name | From→To | Who (server-enforced) |
+|---|---|---|---|
+| 1 | Nhận lệnh | 1→2 | driver of the order (SP checks `@EmployeeId==DriverId`) |
+| 2 | Hoàn thành lệnh | 2→3 | driver of the order (SP) |
+| 3 | Duyệt B1 | 3→5 | `FCL_ACCEPT` (BE) |
+| 4 | Chốt lệnh | 5→6 | `FCL_CLOSING` (BE) — SP auto-closes fuel |
+| 5 | Từ chối nhận | 1→1 (IsDeny) | driver (SP) |
+| 6 | Từ chối B1 | 3→2 | `FCL_ACCEPT` (BE) |
+| 7 | Từ chối CHỐT | 5→3 | `FCL_CLOSING` (BE) |
+
+- The SP **blocks `IsLegacy=1`** (RAISERROR). v2 (new) orders MUST use `ChangeStatus`, never `updatestate`.
+- **Driver mobile app uses only actionType 1, 2, 5** (Nhận / Hoàn thành / Từ chối nhận). 3/4/6/7 are web (dispatcher/closer) roles.
+- Completion km/fees are saved with `driverUpdate` (§4.7) BEFORE sending actionType 2.
+
+**GetStatusLog** (timeline for the "Lịch sử lệnh" screen):
+```jsonc
+POST /api/DispatchOrderFcl/GetStatusLog
+{ "tokenKey":"<JWT>", "item": { "refNo":"FCL-..." } }
+```
+→ rows `{ actionType, fromStatus, toStatus, isReject, reason, actionByName, createdDate }` (append-only, oldest→newest).
+
+### 4.6-legacy updatestate — **ONLY for isLegacy=1 orders; do NOT use for v2**
 ```jsonc
 POST /api/DispatchOrderFcl/updatestate
 { "tokenKey":"<JWT>",
@@ -319,8 +350,6 @@ POST /api/DispatchOrderFcl/updatestate
   "bValue": false,   // isDeny: true when rejecting
   "tValue": 0 }      // typeDeny: rejection type code
 ```
-Set `item.status` to the target state (see §6); when rejecting, set `bValue=true`,
-`item.feedback="<reason>"`, and `tValue` to the rejection type.
 
 ### 4.7 driverUpdate (driver completion)
 ```jsonc
@@ -382,25 +411,26 @@ Reefer/genset fuel, tracked **independently** of `tongdau` (route fuel). 6 field
 
 ---
 
-## 6. Status workflow & locking
+## 6. Status workflow & locking (v2 orders, isLegacy=0)
 
-| status | Meaning | Who | Notes |
+Order is **created at status 1** (no status 0 or 4 in v2). Transitions via **`ChangeStatus`** (§4.6).
+
+| status | Meaning | Who acts | Action (actionType → next) |
 |---|---|---|---|
-| 0 | Khởi tạo (created) | dispatcher | order exists with `refNo`; route locked |
-| 1 | Gửi lệnh (sent) | dispatcher | sent to driver |
-| 2 | Đã nhận (accepted) | driver | driver acknowledged (or reject → `isDeny`) |
-| 3 | Duyệt B1 | approver | **after this `listDetailed` is also locked** |
-| 4 | Duyệt B2 | approver | second approval |
-| 5 | Chờ chốt | | awaiting close |
-| 6 | Đã chốt (closed) | | immutable |
+| 1 | Đã giao lái xe | **driver** | Nhận lệnh (1 → 2) · Từ chối nhận (5 → 1, IsDeny) |
+| 2 | Lái xe đã nhận | **driver** | nhập km/chi phí (`driverUpdate`) · Hoàn thành lệnh (2 → 3) |
+| 3 | Chờ duyệt | dispatcher `FCL_ACCEPT` | Duyệt B1 (3 → 5) · Từ chối B1 (6 → 2) |
+| 5 | Chờ chốt | closer `FCL_CLOSING` | Chốt (4 → 6) · Từ chối chốt (7 → 3) |
+| 6 | Đã chốt (closed) | — | immutable |
 
-Two lock thresholds (critical for the mobile UI):
-- **Once `refNo` exists** (status ≥ 0): route segments, vehicle, driver, ETC station list are
-  locked. You can still edit fees, toll `isPassed`, notes, oilCompensation. To extend the route,
-  add an **extra segment** (§7).
-- **Once `status ≥ 3`**: `listDetailed` (shipping tasks) is also locked.
+Rejections go **back** a step (6: 3→2 to the driver; 7: 5→3 to the dispatcher) and are recorded in the status log with a mandatory reason.
 
-Transitions are done with `updatestate` (§4.6); driver completion fields via `driverUpdate`.
+Lock thresholds (mobile UI):
+- **Once `refNo` exists**: route segments, vehicle, driver, ETC station list are locked. You can
+  still edit fees, toll `isPassed`, notes, oilCompensation. Extend the route via an **extra segment** (§7).
+- **Driver edits km/fees at status 2 only.** From **status ≥ 5** everything is locked.
+
+Driver completion km/fields via `driverUpdate` (§4.7), then send `ChangeStatus` actionType 2 (Hoàn thành).
 
 ---
 
