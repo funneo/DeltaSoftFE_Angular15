@@ -14,7 +14,6 @@ import { AuthService, NotificationService, UtilityService, FeeService, VihicleSe
 import { VehicleOilQuota } from "@app/shared/models/danhmuc/vehicle-oil-quota.model";
 import { DispatchOrderFclService } from "@app/shared/services/fcl/dispatch-order-fcl.service";
 import { DispatchordersService } from "@app/shared/services/transports/dispatchorders.service";
-import { HttpParams } from "@angular/common/http";
 import * as moment from "moment";
 import { ModalAttachfileComponent } from "../../systems/modal-attachfile/modal-attachfile.component";
 import { ModalConfirmDenyClosingFclComponent } from "../modal-confirm-deny-closing-fcl/modal-confirm-deny-closing-fcl.component";
@@ -45,6 +44,12 @@ export class ModalExecuteFclComponent implements OnInit {
 
   // lookups (chỉ phần thực sự cần — fee cho dropdown chi phí)
   listFee: Fee[] = [];
+  // Phân loại chứng từ mỗi dòng phí: 2 = Có hóa đơn → bắt nhập đủ 6 field HĐ.
+  listInvoiceType: any[] = [
+    { id: 0, text: "Không có hóa đơn" },
+    { id: 1, text: "Có phiếu thu" },
+    { id: 2, text: "Có hóa đơn" },
+  ];
   // Định mức dầu của xe — để map payloadWeight (tier id) → tên bậc định mức ("18-20 tấn")
   listOilQuota: VehicleOilQuota[] = [];
 
@@ -87,12 +92,14 @@ export class ModalExecuteFclComponent implements OnInit {
     this.loadFee();
   }
 
-  /** Tải danh sách phí (CP01/CP02/CP03) cho dropdown ở bảng chi phí. */
+  /**
+   * Tải danh sách phí cho dropdown bảng Chi phí — dùng ĐÚNG phụ lục phí lái xe qua API
+   * (SP_Fee_GetForDriver, 9 phí fix cứng), dùng chung với app mobile. SP đã sắp theo DisplayOrder.
+   */
   loadFee(): void {
-    const params = new HttpParams();
-    this.feeService.getAll(params).subscribe((res: ResponseValue<Fee[]>) => {
-      const filtered = res.data?.filter(f => ["CP01", "CP02", "CP03"].includes(f.groupCode)) || [];
-      this.listFee = filtered.map(f => ({ ...f, feeName: `${f.feeCode}-${f.feeName}` }));
+    this.feeService.getForDriver().subscribe((res: ResponseValue<Fee[]>) => {
+      const fees = res.data || [];
+      this.listFee = fees.map(f => ({ ...f, feeName: `${f.feeCode}-${f.feeName}` }));
     });
   }
 
@@ -124,8 +131,14 @@ export class ModalExecuteFclComponent implements OnInit {
         this.loadOilQuota();
         this.flagXem = flag;
         if (!this.flagXem) {
-          // chỉ chủ lệnh / admin / có quyền accept mới được nhập thực hiện
-          if (!this.userLoged.isAdmin && !this.accept_permission && this.userLoged.id !== this.entity.createdBy) {
+          // v2: người được nhập thực hiện = admin / có quyền accept / chủ lệnh / LÁI XE của lệnh (chỉ khi status ≤ 2).
+          //   EmployeeId trong token (int, dạng string) trùng DispatchOrderFCL.DriverId (int).
+          const myEmpId = this.userLoged.employeeId ? Number.parseInt(this.userLoged.employeeId) : null;
+          const isDriver = myEmpId != null && myEmpId === this.entity.driverId;
+          const status = this.entity.status ?? 0;
+          if (!this.userLoged.isAdmin && !this.accept_permission
+              && this.userLoged.id !== this.entity.createdBy
+              && !(isDriver && status <= 2)) {
             this.flagXem = true;
           }
         }
@@ -236,11 +249,32 @@ export class ModalExecuteFclComponent implements OnInit {
   changeCost(item: DispatchOrderFee): void { item.totalCost = (item.cost ?? 0) + (item.vat ?? 0); }
   addFee(): void {
     this.entity.listFee = this.entity.listFee ?? [];
-    this.entity.listFee.push({ contents: "", cost: 0, vat: 0, totalCost: 0 } as DispatchOrderFee);
+    this.entity.listFee.push({ contents: "", cost: 0, vat: 0, totalCost: 0, invoiceType: 0 } as DispatchOrderFee);
   }
   deleteFee(item: DispatchOrderFee): void {
     const i = this.entity.listFee.indexOf(item);
     if (i !== -1) this.entity.listFee.splice(i, 1);
+  }
+  /** Đổi loại chứng từ: về "Không HĐ"/"Phiếu thu" thì xóa sạch thông tin hóa đơn đã nhập. */
+  invoiceTypeChanged(item: DispatchOrderFee): void {
+    if (item.invoiceType !== 2) {
+      item.invoiceNo = null; item.invoiceDate = null; item.invoicePattern = null;
+      item.taxNumber = null; item.web = null; item.code = null;
+    }
+  }
+  /**
+   * Dòng phí "Có hóa đơn" (invoiceType=2) BẮT nhập đủ 6 field HĐ.
+   * @returns true nếu hợp lệ; false + báo lỗi nếu thiếu.
+   */
+  private validateInvoiceInfo(): boolean {
+    const invalid = (this.entity.listFee ?? []).find(f => f.invoiceType === 2 && (
+      !f.invoiceNo || !f.invoiceDate || !f.invoicePattern || !f.taxNumber || !f.web || !f.code));
+    if (invalid) {
+      this.notificationService.printErrorMessage(
+        "Dòng chi phí 'Có hóa đơn' phải nhập đủ 6 thông tin hóa đơn (Số HĐ, Ngày HĐ, Ký hiệu, MST, Web, Mã tra cứu).");
+      return false;
+    }
+    return true;
   }
 
   // ===== Trốn vé (chỉ toggle isPassed) =====
@@ -267,6 +301,7 @@ export class ModalExecuteFclComponent implements OnInit {
         return;
       }
     }
+    if (!this.validateInvoiceInfo()) return;
     const copy = Object.assign({}, this.entity);
     copy.finished = finished;
     this.dispatchOrderService.driverUpdate(copy).subscribe(
@@ -316,6 +351,7 @@ export class ModalExecuteFclComponent implements OnInit {
       this.notificationService.printErrorMessage("Số km đầu vào không được lớn hơn hoặc bằng số km đầu ra!");
       return;
     }
+    if (!this.validateInvoiceInfo()) return;
     const copy = Object.assign({}, this.entity);
     copy.finished = true;
     this.notificationService.printConfirmationYesNo("Xác nhận HOÀN THÀNH lệnh?", () => {

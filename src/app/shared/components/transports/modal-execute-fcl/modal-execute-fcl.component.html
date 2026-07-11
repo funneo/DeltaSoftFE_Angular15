@@ -310,45 +310,85 @@
               <table class="table table-bordered table-striped exec-table">
                 <thead>
                   <tr>
-                    <th style="width: 220px">Loại phí</th>
+                    <th style="width: 200px">Loại phí</th>
                     <th>Nội dung</th>
-                    <th style="width: 130px" class="text-right">Số tiền</th>
-                    <th style="width: 110px" class="text-right">VAT</th>
-                    <th style="width: 130px" class="text-right">Tổng tiền</th>
+                    <th style="width: 120px" class="text-right">Số tiền</th>
+                    <th style="width: 100px" class="text-right">VAT</th>
+                    <th style="width: 120px" class="text-right">Tổng tiền</th>
+                    <th style="width: 150px">Chứng từ</th>
                     <th style="width: 50px"></th>
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let item of entity.listFee; let i = index">
-                    <td>
-                      <ng-select [items]="listFee" bindLabel="feeName" bindValue="id" [(ngModel)]="item.feeId"
-                        [name]="'feeId' + i" [readonly]="flagXem" (change)="feeCodeChanged(item, $event)"
-                        placeholder="Chọn phí...">
-                      </ng-select>
-                    </td>
-                    <td>
-                      <input class="form-control" [(ngModel)]="item.contents" type="text" [name]="'contents' + i" [readonly]="flagXem" />
-                    </td>
-                    <td>
-                      <input type="text" class="form-control text-right" [name]="'cost' + i" [(ngModel)]="item.cost"
-                        (ngModelChange)="changeCost(item)" [mask]="maskNumber" [readonly]="flagXem" />
-                    </td>
-                    <td>
-                      <input type="text" class="form-control text-right" [name]="'vat' + i" [(ngModel)]="item.vat"
-                        (ngModelChange)="changeCost(item)" [mask]="maskNumber" [readonly]="flagXem" />
-                    </td>
-                    <td>
-                      <input type="text" class="form-control text-right" [name]="'totalCost' + i" [(ngModel)]="item.totalCost"
-                        [mask]="maskNumber" readonly />
-                    </td>
-                    <td class="text-center">
-                      <button type="button" class="btn btn-danger btn-xs" (click)="deleteFee(item)" [disabled]="flagXem">
-                        <i class="fa fa-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
+                  <ng-container *ngFor="let item of entity.listFee; let i = index">
+                    <tr>
+                      <td>
+                        <ng-select [items]="listFee" bindLabel="feeName" bindValue="id" [(ngModel)]="item.feeId"
+                          [name]="'feeId' + i" [readonly]="flagXem" (change)="feeCodeChanged(item, $event)"
+                          appendTo="body" placeholder="Chọn phí...">
+                        </ng-select>
+                      </td>
+                      <td>
+                        <input class="form-control" [(ngModel)]="item.contents" type="text" [name]="'contents' + i" [readonly]="flagXem" />
+                      </td>
+                      <td>
+                        <input type="text" class="form-control text-right" [name]="'cost' + i" [(ngModel)]="item.cost"
+                          (ngModelChange)="changeCost(item)" [mask]="maskNumber" [readonly]="flagXem" />
+                      </td>
+                      <td>
+                        <input type="text" class="form-control text-right" [name]="'vat' + i" [(ngModel)]="item.vat"
+                          (ngModelChange)="changeCost(item)" [mask]="maskNumber" [readonly]="flagXem" />
+                      </td>
+                      <td>
+                        <input type="text" class="form-control text-right" [name]="'totalCost' + i" [(ngModel)]="item.totalCost"
+                          [mask]="maskNumber" readonly />
+                      </td>
+                      <td>
+                        <ng-select [items]="listInvoiceType" bindLabel="text" bindValue="id" [(ngModel)]="item.invoiceType"
+                          [name]="'invoiceType' + i" [readonly]="flagXem" [clearable]="false"
+                          (change)="invoiceTypeChanged(item)" appendTo="body" placeholder="Loại...">
+                        </ng-select>
+                      </td>
+                      <td class="text-center">
+                        <button type="button" class="btn btn-danger btn-xs" (click)="deleteFee(item)" [disabled]="flagXem">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <!-- Có hóa đơn (invoiceType=2): bắt nhập đủ 6 thông tin hóa đơn -->
+                    <tr *ngIf="item.invoiceType === 2" class="exec-invoice-row">
+                      <td colspan="7">
+                        <div class="exec-invoice-grid">
+                          <div class="exec-inv-fld">
+                            <label>Số hóa đơn <span class="exec-req">*</span></label>
+                            <input class="form-control" type="text" [name]="'invNo' + i" [(ngModel)]="item.invoiceNo" [readonly]="flagXem" />
+                          </div>
+                          <div class="exec-inv-fld">
+                            <label>Ngày hóa đơn <span class="exec-req">*</span></label>
+                            <input class="form-control" type="text" placeholder="dd/MM/yyyy" [name]="'invDate' + i" [(ngModel)]="item.invoiceDate" [readonly]="flagXem" />
+                          </div>
+                          <div class="exec-inv-fld">
+                            <label>Ký hiệu <span class="exec-req">*</span></label>
+                            <input class="form-control" type="text" [name]="'invPattern' + i" [(ngModel)]="item.invoicePattern" [readonly]="flagXem" />
+                          </div>
+                          <div class="exec-inv-fld">
+                            <label>MST người bán <span class="exec-req">*</span></label>
+                            <input class="form-control" type="text" [name]="'invTax' + i" [(ngModel)]="item.taxNumber" [readonly]="flagXem" />
+                          </div>
+                          <div class="exec-inv-fld">
+                            <label>Web tra cứu <span class="exec-req">*</span></label>
+                            <input class="form-control" type="text" [name]="'invWeb' + i" [(ngModel)]="item.web" [readonly]="flagXem" />
+                          </div>
+                          <div class="exec-inv-fld">
+                            <label>Mã tra cứu <span class="exec-req">*</span></label>
+                            <input class="form-control" type="text" [name]="'invCode' + i" [(ngModel)]="item.code" [readonly]="flagXem" />
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  </ng-container>
                   <tr *ngIf="!entity.listFee?.length">
-                    <td colspan="6" class="text-center text-muted">Chưa có chi phí. Bấm "Thêm dòng" để thêm.</td>
+                    <td colspan="7" class="text-center text-muted">Chưa có chi phí. Bấm "Thêm dòng" để thêm.</td>
                   </tr>
                 </tbody>
               </table>
