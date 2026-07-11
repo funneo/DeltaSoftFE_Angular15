@@ -271,6 +271,11 @@ export class ModalWorkflowComponent implements OnInit {
     let p: any = payload;
     if (typeof payload === 'string') { try { p = JSON.parse(payload || '{}'); } catch { p = {}; } }
     this.entity = p || {};
+    // Payload có thể ở dd/MM/yyyy HH:mm:ss (form draft-web) HOẶC YYYYMMDD/ISO (bot ghi thẳng Draft API)
+    // → chuẩn hóa hết về DD/MM/YYYY HH:mm:ss cho datepicker hiển thị đúng.
+    ['estimatedStartTime', 'estimatedFinishTime', 'closingTime',
+     'inquiryTimeToTheFactory', 'inquiryTimeToThePorts', 'pickupTime', 'deliveryTime']
+      .forEach(f => { if (this.entity[f]) this.entity[f] = this._draftDate(this.entity[f]); });
     this._draftId = draftId;
     this._isDraftView = true;
     this._isDraftEdit = false;
@@ -286,6 +291,22 @@ export class ModalWorkflowComponent implements OnInit {
     this.isTransport = this.entity.jobGroupId == environment.transportGroupId;
     this.loadJobGroupOption();
     this.modalAddEdit.show();
+  }
+
+  /**
+   * Parse ngày từ payload nháp (đa định dạng) → DD/MM/YYYY HH:mm:ss cho datepicker.
+   * Cùng danh sách format với _draftDate của modal-shipment.
+   */
+  private _draftDate(v: any): string {
+    if (!v) return null;
+    const m = moment(v, [
+      'DD/MM/YYYY HH:mm:ss', 'DD/MM/YYYY',
+      'YYYYMMDD HH:mm:ss', 'YYYYMMDDHHmmss', 'YYYYMMDD',
+      'MM/DD/YYYY HH:mm:ss', 'MM/DD/YYYY',
+      'YYYY-MM-DD HH:mm:ss', 'YYYY-MM-DDTHH:mm:ss', 'YYYY-MM-DD', moment.ISO_8601
+    ], false);
+    if (!m.isValid()) return v;
+    return m.format(FormatContstants.DATETIMEVN);
   }
 
   /** Mở khóa form để SỬA nháp (vẫn nền vàng, chưa promote). */
