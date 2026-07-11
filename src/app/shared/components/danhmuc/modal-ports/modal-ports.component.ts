@@ -46,6 +46,7 @@ export class ModalPortsComponent implements OnInit {
   }
 
   add() {
+    // BranchId do BE tự gán từ token (User.GetBranchId()) — FE không nhập.
     this.entity = { checked: false };
     this.flagXem = false;
     this.flagSave = false;

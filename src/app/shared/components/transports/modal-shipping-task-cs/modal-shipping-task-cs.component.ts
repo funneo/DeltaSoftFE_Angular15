@@ -145,10 +145,12 @@ export class ModalShippingTaskCsComponent implements OnInit {
 
   listPorts: Ports[] = [];
   loadPorts(): void {
-    this.busy = this._portsService.getAll().subscribe((res: ResponseValue<Ports[]>) => {
+    // Chỉ lấy cảng của chi nhánh đang đăng nhập (+ cảng dùng chung, BranchId NULL/0).
+    const branchId = Number.parseInt(this.userLoged.branchId) || 0;
+    this.busy = this._portsService.getAll(branchId).subscribe((res: ResponseValue<Ports[]>) => {
       if (res.code == '200' || res.code == '201') {
         this.listPorts = res.data;
-      }
+      } else this.listPorts = [];
     });
   }
 

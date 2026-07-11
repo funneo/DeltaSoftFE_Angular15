@@ -91,11 +91,19 @@ export class PortsService extends BaseService {
     );
   }
 
-  getAll() {
+  /**
+   * @param branchId null/0 = lấy tất cả cảng; >0 = cảng của chi nhánh đó + cảng dùng chung.
+   * @param useCache false = luôn gọi API. Trang danh mục phải dùng false, nếu không đổi
+   *   chi nhánh lần thứ 2 sẽ ăn cache 60 phút (CacheService) và KHÔNG gọi API nữa.
+   *   Các modal (FCL, lệnh điều xe…) giữ mặc định true — cache tách theo chi nhánh,
+   *   nếu dùng chung 1 key thì màn khác sẽ ăn phải kết quả đã lọc của trang danh mục.
+   */
+  getAll(branchId?: number, useCache: boolean = true) {
     const p: FromBodyBase<Ports> = {
+      item: { branchId: branchId || 0 },
       tokenKey: this.token
     };
-    const cacheKey = `ports_all`;
+    const cacheKey = `ports_all_${branchId || 0}`;
     const request = this.http.post(`${environment.apiUrl}/api/Ports/getall`, p).pipe(
       map((response: any) => {
         if (response.code === '401') this.authService.logout();
@@ -103,7 +111,7 @@ export class PortsService extends BaseService {
       }),
       catchError(this.handleError)
     );
-    return this.cacheService.get(cacheKey, request);
+    return useCache ? this.cacheService.get(cacheKey, request) : request;
   }
 
   getAllGroupPorts() {

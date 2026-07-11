@@ -1,11 +1,21 @@
 <div class="box box-primary box-chieu-cao">
     <div class="row">
       <div class="box-header with-border">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <h3 class="box-title">Danh mục Cảng/bãi/Kho CFS</h3>
         </div>
-        <div class="col-md-1">
-
+        <div class="col-md-2">
+          <ng-select
+            name="chi nhanh"
+            [items]="listBranch"
+            bindLabel="branchCode"
+            bindValue="id"
+            [(ngModel)]="branchId"
+            (change)="changedBranch($event)"
+            [readonly]="!adminPermission"
+            placeholder="Tất cả chi nhánh"
+          >
+          </ng-select>
         </div>
         <div class="col-md-3">
           <div class="input-group">

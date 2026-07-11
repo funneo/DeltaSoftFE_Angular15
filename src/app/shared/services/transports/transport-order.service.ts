@@ -99,10 +99,15 @@ export class TransportOrderService extends BaseService {
       }), catchError(this.handleError));
   }
 
-  getLocations(listCustId?: string) {
+  /**
+   * @param branchId null/0 = lấy tất cả cảng; >0 = cảng của chi nhánh đó + cảng dùng chung.
+   *   Chỉ lọc nhánh Ports; CustomerLocations (nhà máy/kho KH) luôn ra hết.
+   */
+  getLocations(listCustId?: string, branchId?: number) {
     const p: FromBodyBase<TransportOrder> = {
       tokenKey: this.token,
-      keyWord: listCustId ?? null
+      keyWord: listCustId ?? null,
+      branchId: branchId || 0
     };
     return this.http.post<any>(`${environment.apiUrl}/api/TransportOrder/GetAllLocations`, p)
       .pipe(

@@ -10,5 +10,8 @@ export interface Ports {
     km?: number;
     deleted?: boolean;
     groupPort?: string;
+    /** Chi nhánh quản lý. null/0 = dùng chung cho mọi chi nhánh. */
+    branchId?: number;
+    branchCode?: string;
     checked?: boolean;
 }

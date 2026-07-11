@@ -3,6 +3,7 @@ import { ModalPortsComponent } from "@app/shared/components/danhmuc/modal-ports/
 // import { ModalPortsComponent } from "@app/shared/components/danhmuc/modal-ports/modal-ports.component";
 import { MessageContstants } from "@app/shared/constants";
 import {
+  Branch,
   Profile,
   ResponseValue,
   Locations,
@@ -11,6 +12,7 @@ import { Ports } from "@app/shared/models/danhmuc/ports.model";
 import {
   NotificationService,
   AuthService,
+  BranchService,
 } from "@app/shared/services";
 import { PortsService } from "@app/shared/services/danhmuc/ports.service";
 import { ExportService } from "@app/shared/services/export-excel.service";
@@ -40,12 +42,16 @@ export class PortsComponent implements OnInit {
   filterColumns: { [key: string]: string } = {};
   sortKey: string = "";
   sortOrder: "asc" | "desc" = "asc";
+  listBranch: Branch[] = [];
+  /** 0/null = tất cả chi nhánh. Chọn 1 chi nhánh → cảng của chi nhánh đó + cảng dùng chung. */
+  branchId?: number;
   @ViewChild(ModalPortsComponent, { static: false })  modalAddEdit: ModalPortsComponent;
 
   constructor(
     private notificationService: NotificationService,
     private portsService: PortsService,
     private _authService: AuthService,
+    private branchService: BranchService,
     private _export: ExportService
   ) {}
 
@@ -54,26 +60,49 @@ export class PortsComponent implements OnInit {
   ngOnInit(): void {
     this.userLoged = this._authService.getLoggedInUser();
     this.adminPermission = this.userLoged.roles.indexOf("Admin") > -1;
+    this.branchId = Number.parseInt(this.userLoged.branchId) || 0;
+    this.loadBranch();
+    this.loadData();
+  }
+
+  loadBranch(): void {
+    this.branchService.getAll().subscribe((res: ResponseValue<Branch[]>) => {
+      if (res.code == "200" || res.code == "201") this.listBranch = res.data ?? [];
+    });
+  }
+
+  /**
+   * ng-select ghi thẳng `null` vào ngModel khi bấm × (xóa chọn), và $event khi đó là
+   * `undefined` — nên phải quy về 0 = "Tất cả chi nhánh".
+   */
+  changedBranch(event: Branch): void {
+    this.branchId = event?.id ?? 0;
     this.loadData();
   }
 
   loadData(): void {
+    // useCache=false: màn quản trị phải thấy dữ liệu mới nhất, và để việc đổi
+    // chi nhánh lần 2 vẫn gọi API thay vì lấy lại cache 60 phút.
     this.busy = this.portsService
-      .getAll()
+      .getAll(this.branchId, false)
       .subscribe((res: ResponseValue<Ports[]>) => {
         if (res.code == "200" || res.code == "201") {
           this.listData = res.data;
-          this.totalRows = res.data?.length;
-          this.filterData();
+        } else if (res.code == "204") {
+          // Chi nhánh không có cảng nào. Phải xóa cả listData LẪN filteredData —
+          // template lặp trên filteredData, quên gọi filterData() ở đây thì bảng
+          // vẫn hiện nguyên dữ liệu của chi nhánh trước.
+          this.listData = [];
         } else {
-          if (res.code == "204") {
-            this.listData = [];
-            this.totalRows = 0;
-          } else
-            this.notificationService.printErrorMessage(
-              MessageContstants.GETDATA_ERR_MSG + "\n" + res.code
-            );
+          this.notificationService.printErrorMessage(
+            MessageContstants.GETDATA_ERR_MSG + "\n" + res.code
+          );
+          return;
         }
+        this.totalRows = this.listData?.length ?? 0;
+        this.flagEdit = false;
+        this.flagDelete = false;
+        this.filterData();
       });
   }
 
