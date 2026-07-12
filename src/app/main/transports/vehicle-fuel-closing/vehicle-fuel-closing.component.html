@@ -94,11 +94,14 @@
             <td class="text-right">{{h.dispatchOrderQty | number:'1.0-3'}}</td>
             <td class="text-right">{{h.additionalFeeQty | number:'1.0-3'}}</td>
             <td class="text-right">{{h.topUpLiters | number:'1.0-3'}}</td>
-            <td class="text-right" [class.text-danger]="h.netLiters > 0"
-              [class.text-success]="h.netLiters < 0">
+            <td class="text-right" [class.text-danger]="h.netLiters < 0"
+              [class.text-success]="h.netLiters > 0">
               <strong>{{h.netLiters | number:'1.0-3'}}</strong>
             </td>
-            <td class="text-right">{{h.netAmount | number:'1.0-0'}}</td>
+            <td class="text-right" [class.text-danger]="h.netAmount < 0"
+              [class.text-success]="h.netAmount > 0">
+              <strong>{{h.netAmount | number:'1.0-0'}}</strong>
+            </td>
             <td>
               <span *ngIf="h.status === 0" class="badge badge-warning">Nháp</span>
               <span *ngIf="h.status === 1" class="badge badge-success">Đã duyệt</span>
