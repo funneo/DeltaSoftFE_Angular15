@@ -22,4 +22,6 @@ export interface DispatchOrderFee {
     taxNumber?: string;
     web?: string;
     code?: string;
+    // Ảnh chứng từ/hóa đơn gắn theo dòng phí (app chụp/upload hoặc web tải lên). Dạng ~/UploadFiles/xxx
+    pathFile?: string;
 }

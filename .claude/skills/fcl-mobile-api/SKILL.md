@@ -369,6 +369,7 @@ Server rules (SP `SP_DispatchOrderFCL_DriverUpdate`, applied **only when `isLega
 - `listFee` → **MERGE by `id`**: existing `id` = update, new (no `id`/0) = insert, omitted-from-array = **delete**. Send the *entire* current fee list, preserving each row's `id`. `invoiceType` + 6 invoice fields saved per row.
 - `listEtc` → only `isPassed` is updated **by `id`** (no add/remove of toll stations; other etc fields untouched server-side).
 - `startedDate` / `finishedDate` (order start/finish time, ISO 8601) → `ISNULL(@x, col)`: only written when a value is sent. **App sets device time**: `startedDate=now` after tapping Nhận (ActionType 1), `finishedDate=now` in the driverUpdate before Hoàn thành (ActionType 2). `ChangeStatus` does NOT auto-set these; ERP web enters them manually.
+- `pathFile` (per-fee-line invoice/receipt image, 2026-07-12): each `listFee` row may carry `pathFile` (`~/UploadFiles/xxx`). Upload the image first via `POST /api/DispatchOrderAttachfiles/create` (`item:{refNo,isPod:false}`, `Files`=image) → take `data[0].pathFile` → set it on the fee row → send in `listFee`. Round-trips (kept unless the row is removed). Stored via `TypeDispatchOrderFCLFeeV2` (18th column). The image also appears in the order's "Ảnh hiện trường" (isPod=false) list. **`invoiceType=2` (có hóa đơn) → `pathFile` is REQUIRED** (app must block save if a có-hóa-đơn row has no image), same as the 6 invoice fields.
 - `startVehicleOdor`/`finishVehicleOdor` stored as **int** (decimals truncated).
 
 ---

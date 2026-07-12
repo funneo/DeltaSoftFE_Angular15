@@ -335,6 +335,7 @@
                     <th style="width: 100px" class="text-right">VAT</th>
                     <th style="width: 120px" class="text-right">Tổng tiền</th>
                     <th style="width: 150px">Chứng từ</th>
+                    <th style="width: 90px" class="text-center">Ảnh</th>
                     <th style="width: 50px"></th>
                   </tr>
                 </thead>
@@ -368,6 +369,25 @@
                           (change)="invoiceTypeChanged(item)" appendTo="body" placeholder="Loại...">
                         </ng-select>
                       </td>
+                      <!-- Ảnh chứng từ theo dòng: có ảnh → 📎 xem + xóa liên kết; chưa có → nút Tải ảnh -->
+                      <td class="text-center">
+                        <ng-container *ngIf="item.pathFile; else uploadFeeFile">
+                          <a class="exec-fee-img" (click)="openFeeFile(item)" title="Xem ảnh chứng từ">
+                            <i class="fa fa-paperclip"></i>
+                          </a>
+                          <button type="button" class="btn btn-danger btn-xs" (click)="removeFeeFile(item)" [disabled]="flagXem" title="Bỏ ảnh khỏi dòng">
+                            <i class="fa fa-times"></i>
+                          </button>
+                        </ng-container>
+                        <ng-template #uploadFeeFile>
+                          <input style="display:none" type="file" #feeFile (change)="onFeeFileChanged($event, item)" accept="image/*,.pdf" />
+                          <button type="button" class="btn btn-xs" [class.btn-info]="item.invoiceType !== 2" [class.btn-warning]="item.invoiceType === 2"
+                            (click)="feeFile.click()" [disabled]="flagXem || !entity.refNo" title="Tải/chụp ảnh chứng từ">
+                            <i class="fa fa-camera"></i>
+                          </button>
+                          <span *ngIf="item.invoiceType === 2" class="exec-req" title="Có hóa đơn: bắt buộc đính ảnh">&nbsp;*</span>
+                        </ng-template>
+                      </td>
                       <td class="text-center">
                         <button type="button" class="btn btn-danger btn-xs" (click)="deleteFee(item)" [disabled]="flagXem">
                           <i class="fa fa-trash"></i>
@@ -376,7 +396,7 @@
                     </tr>
                     <!-- Có hóa đơn (invoiceType=2): bắt nhập đủ 6 thông tin hóa đơn -->
                     <tr *ngIf="item.invoiceType === 2" class="exec-invoice-row">
-                      <td colspan="7">
+                      <td colspan="8">
                         <div class="exec-invoice-grid">
                           <div class="exec-inv-fld">
                             <label>Số hóa đơn <span class="exec-req">*</span></label>
@@ -407,7 +427,7 @@
                     </tr>
                   </ng-container>
                   <tr *ngIf="!entity.listFee?.length">
-                    <td colspan="7" class="text-center text-muted">Chưa có chi phí. Bấm "Thêm dòng" để thêm.</td>
+                    <td colspan="8" class="text-center text-muted">Chưa có chi phí. Bấm "Thêm dòng" để thêm.</td>
                   </tr>
                 </tbody>
               </table>

@@ -286,6 +286,33 @@ export class ModalExecuteFclComponent implements OnInit {
     const i = this.entity.listFee.indexOf(item);
     if (i !== -1) this.entity.listFee.splice(i, 1);
   }
+
+  // ===== Ảnh chứng từ theo dòng phí =====
+  /** Mở ảnh chứng từ của dòng phí (build URL như attach file khác). */
+  openFeeFile(item: DispatchOrderFee): void {
+    if (!item.pathFile) return;
+    window.open(environment.apiUrl + item.pathFile.replace("~", ""), "_blank");
+  }
+  /** Tải ảnh/pdf cho 1 dòng phí — dùng lại endpoint attach (isPod=false), lấy pathFile gán vào dòng. */
+  onFeeFileChanged(event: any, item: DispatchOrderFee): void {
+    if (!event?.target?.files?.length || !this.entity.refNo) return;
+    const file: File = event.target.files[0];
+    const p: DispatchOrderAttachfiles = { refNo: this.entity.refNo, isPod: false };
+    this.busy = this.dispatchordersService.addAttachFile(p, file).subscribe((res: ResponseValue<DispatchOrderAttachfiles[]>) => {
+      if (res.code === '200' || res.code === '201') {
+        item.pathFile = res.data?.[0]?.pathFile;   // gán ảnh vừa up vào dòng phí
+        this.loadAttackFiles();                    // ảnh cũng vào list "Ảnh hiện trường"
+        this.notificationService.printSuccessMessage(MessageContstants.UPDATED_OK_MSG + " (nhớ bấm Lưu để gắn ảnh vào dòng phí)");
+      } else {
+        this.notificationService.printErrorMessage(MessageContstants.UPLOAD_ERR_MSG + '\n' + res.code);
+      }
+      event.target.value = '';
+    });
+  }
+  /** Bỏ liên kết ảnh khỏi dòng phí (KHÔNG xóa file — ảnh vẫn còn ở "Ảnh hiện trường"). */
+  removeFeeFile(item: DispatchOrderFee): void {
+    item.pathFile = null;
+  }
   /** Đổi loại chứng từ: về "Không HĐ"/"Phiếu thu" thì xóa sạch thông tin hóa đơn đã nhập. */
   invoiceTypeChanged(item: DispatchOrderFee): void {
     if (item.invoiceType !== 2) {
@@ -298,11 +325,18 @@ export class ModalExecuteFclComponent implements OnInit {
    * @returns true nếu hợp lệ; false + báo lỗi nếu thiếu.
    */
   private validateInvoiceInfo(): boolean {
-    const invalid = (this.entity.listFee ?? []).find(f => f.invoiceType === 2 && (
-      !f.invoiceNo || !f.invoiceDate || !f.invoicePattern || !f.taxNumber || !f.web || !f.code));
-    if (invalid) {
+    const list = this.entity.listFee ?? [];
+    // 'Có hóa đơn' bắt đủ 6 thông tin HĐ
+    if (list.find(f => f.invoiceType === 2 && (
+      !f.invoiceNo || !f.invoiceDate || !f.invoicePattern || !f.taxNumber || !f.web || !f.code))) {
       this.notificationService.printErrorMessage(
         "Dòng chi phí 'Có hóa đơn' phải nhập đủ 6 thông tin hóa đơn (Số HĐ, Ngày HĐ, Ký hiệu, MST, Web, Mã tra cứu).");
+      return false;
+    }
+    // 'Có hóa đơn' BẮT BUỘC đính kèm ảnh chứng từ
+    if (list.find(f => f.invoiceType === 2 && !f.pathFile)) {
+      this.notificationService.printErrorMessage(
+        "Dòng chi phí 'Có hóa đơn' phải đính kèm ảnh chứng từ (bấm nút Tải/chụp ảnh ở cột Ảnh).");
       return false;
     }
     return true;
