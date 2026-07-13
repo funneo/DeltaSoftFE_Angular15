@@ -1,5 +1,24 @@
 # Pending / In-Progress Work
 
+## ▶ Phiên 2026-07-13 (chiều) — Chốt dầu phương tiện (F039): sai số liệu sau khi DUYỆT + list dựng lại theo khuôn shipment-normal
+
+### ★ BUG SỐ LIỆU — `SP_DriverFuelClosing_Update` dùng công thức CŨ (chưa chạy SQL)
+Anh báo *"duyệt xong số liệu ở NGOÀI phiếu bị thay đổi"*. Truy: FE bấm Duyệt = `saveChange(andApprove)` ⇒ **gọi Update TRƯỚC** rồi mới Approve. `_Approve` KHÔNG đụng số liệu (chỉ set cờ nguồn + Status=1), nhưng `_Update` **tự tính lại header** bằng công thức cũ:
+- **Ngược dấu**: Update `Sup − Dem` (A−C) trong khi Create/FE là `Dem − Sup` (C−A).
+- **Bỏ quên B**: không cộng dầu còn thừa (source 6) vào `NetLiters`; `NetAmount` cũng thiếu tiền của B.
+⇒ Phiếu tạo-một-lần thì đúng; phiếu bị Update (nhất là lúc duyệt) bị ghi đè sai. Modal tính client-side theo công thức đúng nên **trong phiếu vẫn hiển thị đúng** — chỉ **list** (đọc header đã lưu) mới lộ số lệch.
+- ⬜ **CHẠY** `NewAPI/Migration_DriverFuelClosing_FixUpdateFormula_20260713.sql`: [0] soi phiếu lệch · [1] DROP+CREATE `_Update` với `NET = B + C − A` (khớp Create/FE; chữ ký SP không đổi ⇒ **không cần deploy BE/FE**) · [2] tính lại header 5 phiếu lệch từ bảng chi tiết · [3] verify phải ra 0 dòng.
+- **5 phiếu lệch (rà 2026-07-13)**: Id 8 `DFC-202607-004` (ĐÃ DUYỆT) −19,47 → **+20,75** ⚠ đảo chiều thu↔chi · Id 4 +120,01 → −39,13 ⚠ · Id 3 +161,68 → −92,67 ⚠ · Id 2 +163,41 → +132,47 · Id 1 (ĐÃ DUYỆT) 0 → +9,68. **Nếu số cũ đã dùng trừ/chi lương → báo kế toán đối chiếu.**
+- Không sửa được qua UI: 5 phiếu đều do người khác tạo (`dien.hoang`, `tuyet.nguyen`) + 2 phiếu đã duyệt (SP chặn *"Phiếu đã chốt"*). Gate nút Sửa/Xóa = **chủ tạo + phiếu nháp** — anh chốt **GIỮ NGUYÊN** (Admin không được ưu tiên).
+
+### ★ LIST — dựng lại theo khuôn `shipment-normal` (FE, ng build 0 lỗi)
+- **Không cuộn dọc được** (zoom là mất dữ liệu): list dùng `box box-info` + `box-body` trơn, thiếu `box-chieu-cao` + `table-responsive` ⇒ không có vùng cuộn, mà `.content-wrapper` bị khóa `height: calc(100vh - 2px)`. Nay theo đúng mẫu: `box box-primary box-chieu-cao` + `box-body table-responsive no-padding` (mẹo: `.table-responsive` đặt `overflow-x:auto` ⇒ CSS tự cho `overflow-y:auto`).
+- **thead cố định** 2 hàng sticky nền `#dcefe5f6` (tiêu đề `top:0`, hàng lọc `top:22px`) + **hàng lọc theo cột** (Số phiếu/Biển số/Lái xe/Lý do/Trạng thái/Người tạo — client-side trên TRANG đang tải vì list là server-paging).
+- **Toolbar Thêm/Sửa/Xóa/Xem** ở header + chọn dòng bằng checkbox (`clickRow`+`icheck`), thay cho nút icon từng dòng.
+- **5 cột luôn rỗng đã thay**: `closeReasonName`, `approvalDiffQty`, `dispatchOrderQty`, `additionalFeeQty`, `topUpLiters` là field của thiết kế chốt-theo-LÁI-XE cũ, SP mới không trả. Nay: Lý do chốt map từ enum FE (`closeReasonText`), 4 cột số = **Cấp VH (A) · Định mức VH (C) · Cấp MP (A) · Định mức MP (C)**.
+- ⬜ **CHẠY** `NewAPI/Migration_DriverFuelClosing_GetPaging_CreatedByName_20260713.sql` — SP GetPaging chưa trả `CreatedByName` (cột "Người tạo" luôn rỗng); DROP+CREATE + `LEFT JOIN V_Users`. Non-breaking, **không cần deploy BE** (ViewModel đã có prop).
+- ⬜ `ng build` + deploy FE.
+
 ## ▶ Phiên 2026-07-13 — Draft trong ERP (job-canon / công việc) + cảng theo chi nhánh — FE xong (tsc 0 lỗi mới), CHỜ deploy + 2 SQL
 
 ### ĐÃ SỬA (FE-only, đã commit — chỉ cần `ng build` + deploy, KHÔNG đụng BE/SQL)

@@ -22,8 +22,26 @@ export class VehicleFuelClosingComponent implements OnInit {
   pageSize = 50;
   totalRows = 0;
   keyword = '';
-  list: DriverFuelClosing[] = [];
+  list: DriverFuelClosing[] = [];        // dữ liệu trang hiện tại (server-paging)
+  listFilter: DriverFuelClosing[] = [];  // sau khi áp bộ lọc cột (client-side)
   listBranch: Branch[] = [];
+
+  // Lọc theo cột (hàng filter dưới header) — chỉ lọc trong TRANG đang tải,
+  // vì list dùng server-paging. Muốn tìm xuyên trang thì dùng ô "Từ khóa" ở header.
+  fRefNo = '';
+  fPlate = '';
+  fDriver = '';
+  fReason = '';
+  fStatus = '';
+  fCreator = '';
+
+  // Lý do chốt là enum FE (khớp closeReasons trong modal-vehicle-fuel-closing) — SP chỉ trả số.
+  closeReasons = [
+    { value: 1, text: 'Cuối tháng' },
+    { value: 2, text: 'Tài nghỉ giữa kỳ' },
+    { value: 3, text: 'Đổi xe' },
+    { value: 9, text: 'Khác' }
+  ];
   listVihicle: Vihicle[] = [];
   userLoged?: Profile;
   busy: Subscription;
@@ -40,6 +58,9 @@ export class VehicleFuelClosingComponent implements OnInit {
   ngayKetThuc: Date = this._utilityService.ngayKetThuc;
   dateOptions: any;
   adminPermission = false;
+  flagEdit = false;    // nút Sửa   — bật khi dòng chọn là của mình + còn nháp
+  flagDelete = false;  // nút Xóa   — như trên
+  flagView = false;    // nút Xem   — bật khi có dòng được chọn
 
   @ViewChild(ModalVehicleFuelClosingComponent, { static: false }) modalAddEdit: ModalVehicleFuelClosingComponent;
 
@@ -116,16 +137,42 @@ export class VehicleFuelClosingComponent implements OnInit {
     if (this.status > 0) params = params.set('status', (statusValue + 1).toString()); // tValue dùng 0=null, nên +1
 
     this.busy = this.service.getPaging(params).subscribe((res: ResponseValue<DriverFuelClosing[] | Pagination<DriverFuelClosing>>) => {
+      this.flagEdit = this.flagDelete = this.flagView = false;   // reload → bỏ chọn dòng
       if (res.code == '200' || res.code == '201') {
         const items: any = res.data;
         this.list = Array.isArray(items) ? items : (items?.items ?? []);
         this.totalRows = this.list.length > 0 ? (this.list[0] as any).totalRows ?? this.list.length : 0;
+        this.filter();
       } else if (res.code == '204') {
-        this.list = []; this.totalRows = 0;
+        this.list = []; this.totalRows = 0; this.filter();
       } else {
         this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code);
       }
     });
+  }
+
+  closeReasonText(h: DriverFuelClosing): string {
+    return this.closeReasons.find(x => x.value === h?.closeReason)?.text ?? '';
+  }
+
+  private statusText(h: DriverFuelClosing): string {
+    if (h?.status === 0) return 'Nháp';
+    if (h?.status === 1) return 'Đã duyệt';
+    return '';
+  }
+
+  /** Lọc theo cột — client-side trên trang đang tải. */
+  filter(): void {
+    const has = (v: string) => (v ?? '').trim().length > 0;
+    const like = (val: any, q: string) => (val ?? '').toString().toLowerCase().includes(q.trim().toLowerCase());
+    let rows = this.list ?? [];
+    if (has(this.fRefNo))   rows = rows.filter(h => like(h.refNo, this.fRefNo));
+    if (has(this.fPlate))   rows = rows.filter(h => like(h.vihicleLicensePlate, this.fPlate));
+    if (has(this.fDriver))  rows = rows.filter(h => like(h.driverName, this.fDriver));
+    if (has(this.fReason))  rows = rows.filter(h => like(this.closeReasonText(h), this.fReason));
+    if (has(this.fStatus))  rows = rows.filter(h => like(this.statusText(h), this.fStatus));
+    if (has(this.fCreator)) rows = rows.filter(h => like(h.createdByName, this.fCreator));
+    this.listFilter = rows;
   }
 
   timKiem(): void { this.pageIndex = 1; this.loadData(); }
@@ -145,19 +192,42 @@ export class VehicleFuelClosingComponent implements OnInit {
     return this.isOwner(h) && h?.status === 0;
   }
 
+  /** Chọn 1 dòng (bỏ chọn các dòng khác) — pattern shipment-normal. */
+  clickRow(item: DriverFuelClosing): void {
+    (item as any).checked = !(item as any).checked;
+    (this.list ?? []).forEach(x => { if (x !== item) (x as any).checked = false; });
+    this.icheck();
+  }
+
+  /** Gate nút toolbar theo dòng đang chọn: Sửa/Xóa chỉ cho CHỦ TẠO + phiếu NHÁP. */
+  private icheck(): void {
+    const sel = this.selected();
+    this.flagView = !!sel;
+    this.flagEdit = !!sel && this.canEdit(sel);
+    this.flagDelete = !!sel && this.canDelete(sel);
+  }
+
+  private selected(): DriverFuelClosing | null {
+    return (this.list ?? []).find(x => (x as any).checked) ?? null;
+  }
+
   add(): void {
     this.viewModal = true;
     setTimeout(() => this.modalAddEdit?.add(), 50);
   }
 
-  openEdit(item: DriverFuelClosing, flagXem: boolean): void {
+  /** Sửa (flagXem=false) / Xem (flagXem=true) dòng đang chọn. */
+  edit(flagXem: boolean): void {
+    const item = this.selected();
     if (!item?.id) return;
+    if (!flagXem && !this.canEdit(item)) return;
     this.viewModal = true;
     setTimeout(() => this.modalAddEdit?.edit(item.id, flagXem), 50);
   }
 
-  deleteOne(item: DriverFuelClosing): void {
-    if (!this.canDelete(item)) return;
+  deleteConfirm(): void {
+    const item = this.selected();
+    if (!item || !this.canDelete(item)) return;
     this.notificationService.printConfirmationDialog(
       `Xóa phiếu ${item.refNo}?`,
       () => {
