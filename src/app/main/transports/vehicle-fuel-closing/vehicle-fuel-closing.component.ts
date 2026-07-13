@@ -184,12 +184,14 @@ export class VehicleFuelClosingComponent implements OnInit {
     return (h.createdBy + '').toLowerCase() === (this.userLoged.id + '').toLowerCase();
   }
 
+  // Chủ tạo HOẶC Admin sửa/xóa được — nhưng CHỈ khi phiếu còn nháp
+  // (phiếu đã duyệt bị chặn ở tầng DB: SP_..._Update/_Delete RAISERROR "Phiếu đã chốt").
   canEdit(h: DriverFuelClosing): boolean {
-    return this.isOwner(h) && h?.status === 0;
+    return (this.isOwner(h) || this.adminPermission) && h?.status === 0;
   }
 
   canDelete(h: DriverFuelClosing): boolean {
-    return this.isOwner(h) && h?.status === 0;
+    return (this.isOwner(h) || this.adminPermission) && h?.status === 0;
   }
 
   /** Chọn 1 dòng (bỏ chọn các dòng khác) — pattern shipment-normal. */
