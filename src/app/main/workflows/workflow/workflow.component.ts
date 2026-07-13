@@ -19,7 +19,8 @@ import { NgxSpinnerService } from 'ngx-spinner';
   styleUrls: ['./workflow.component.css']
 })
 export class WorkflowComponent implements OnInit {
-  pageIndex = 1;
+  pageIndex = 1;              // tab "Đang thực hiện" — phân trang CLIENT-SIDE
+  pageIndexFinish = 1;        // tab "Kết thúc" — server-paging, TÁCH RIÊNG (trước dùng chung pageIndex → lệch trang giữa 2 tab)
   pageSize = 20;
   totalRows = 0;
   totalRowsFinish = 0;
@@ -118,13 +119,20 @@ export class WorkflowComponent implements OnInit {
   }
 
 
+  /**
+   * Tải TOÀN BỘ công việc trong dải ngày (pageSize lớn, pageIndex=1) rồi PHÂN TRANG Ở FE.
+   * Lý do: BE chỉ trộn nháp (draft.DraftEntries, DraftType='Job') vào TRANG 1 nhưng lại cộng
+   * số nháp vào TotalRows ⇒ nếu để server-paging thì sinh trang thừa (trang cuối rỗng) và nháp
+   * ghim hết lên đầu, đẩy công việc thật (kể cả cái vừa duyệt) xuống dưới.
+   * Lấy hết + trộn + sort theo ngày tạo mới→cũ ⇒ nháp nằm đúng dòng thời gian của nó.
+   */
   loadData(): void {
     this.spinner.show('spinner1');
     let tuNgay = moment(this.ngayBatDau).format('YYYYMMDD');
     let denNgay = moment(this.ngayKetThuc).format('YYYYMMDD');
     const params = new HttpParams()
-      .set('pageIndex', this.pageIndex.toString())
-      .set('pageSize', this.pageSize.toString())
+      .set('pageIndex', '1')          // luôn 1 → BE trộn nháp vào kết quả
+      .set('pageSize', '99999')       // lấy hết trong dải ngày, FE tự phân trang
       .set('isCs', "1")
       .set('fromDate', tuNgay)
       .set('toDate', denNgay)
@@ -137,8 +145,15 @@ export class WorkflowComponent implements OnInit {
       .set('keyword',this.keyword)
     this.busy = this.workflowService.getPaging(params).subscribe((res: ResponseValue<Pagination<Workflow>>) => {
       if (res.code == '200' || res.code == '201') {
-        this.listWorkflow = res.data?.items;
-        this.totalRows = res.data?.totalRows;
+        const items: Workflow[] = res.data?.items ?? [];
+        // Sort chung 1 dòng thời gian: mới → cũ (nháp lấy createdDate từ envelope draft).
+        this.listWorkflow = items.sort((a, b) => {
+          const ad = a.createdDate ? +new Date(a.createdDate as any) : 0;
+          const bd = b.createdDate ? +new Date(b.createdDate as any) : 0;
+          return bd - ad;
+        });
+        this.totalRows = this.listWorkflow.length;   // KHÔNG dùng res.data.totalRows (BE cộng dư số nháp)
+        this.pageIndex = 1;
         this.spinner.hide('spinner1');
       }
       else {
@@ -153,12 +168,19 @@ export class WorkflowComponent implements OnInit {
     });
   }
 
+  /** Trang đang xem (phân trang client-side trên listWorkflow đã trộn nháp). */
+  get visibleData(): Workflow[] {
+    if (!this.listWorkflow) return [];
+    const start = (this.pageIndex - 1) * this.pageSize;
+    return this.listWorkflow.slice(start, start + this.pageSize);
+  }
+
   loadDataFinish(): void {
     this.spinner.show('spinner2');
     let tuNgay = moment(this.ngayBatDauFinish).format('YYYYMMDD');
     let denNgay = moment(this.ngayKetThucFinish).format('YYYYMMDD');
     const params = new HttpParams()
-      .set('pageIndex', this.pageIndex.toString())
+      .set('pageIndex', this.pageIndexFinish.toString())
       .set('pageSize', this.pageSize.toString())
       .set('isCs', "1")
       .set('fromDate', tuNgay)
@@ -225,17 +247,17 @@ export class WorkflowComponent implements OnInit {
     this.loadData();
   }
   timKiemFinish(): void {
-    this.pageIndex = 1;
+    this.pageIndexFinish = 1;
     this.loadDataFinish();
   }
 
 
+  // Tab "Đang thực hiện": dữ liệu đã tải hết → đổi trang KHÔNG gọi lại API.
   pageChanged(event: PageChangedEvent): void {
     this.pageIndex = event.page;
-    this.loadData();
   }
   pageChangedFinish(event: PageChangedEvent): void {
-    this.pageIndex = event.page;
+    this.pageIndexFinish = event.page;
     this.loadDataFinish();
   }
 

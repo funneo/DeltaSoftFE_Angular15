@@ -33,12 +33,13 @@ Anh báo *"duyệt xong số liệu ở NGOÀI phiếu bị thay đổi"*. Truy:
 2. ⬜ **Chạy `NewAPI/Migration_GetAllLocations_BranchId_20260710.sql`** — BẮT BUỘC: kiểm DB thấy `SP_GetAllLocations` **chỉ có `@ListCust`**, trong khi BE (`TransportOrderRepository:177`) **luôn truyền `@BranchId`** ⇒ nếu API đã deploy bản mới thì pool điểm dựng cung đường (tab Cung đường FCL v2 + trang TO) lỗi *"too many arguments"*. Sau khi chạy, param mặc định NULL = lấy hết (khớp quyết định bỏ lọc).
 3. ⬜ Chạy `NewAPI/Migration_Ports_ResetBranchId_20260713.sql` (không gấp) — 86/86 cảng đang gắn nhầm `BranchId=6`, trả về NULL = dùng chung.
 
-### CÒN LÀM — tách nháp ra TAB RIÊNG ở list Công việc (anh chốt, cần deploy BE)
-Đã code rồi **revert** để deploy cụm promote trước. Nội dung khi làm lại:
-- **BE** `WorkflowController.GetPaging2` (~dòng 921-984): **bỏ khối trộn nháp** vào list. ⚠ **Bug đang có**: `pagedResult.TotalRows += draftRows.Count` — nháp chỉ chèn ở **trang 1** nhưng cộng vào tổng ⇒ FE vẽ dư trang, **trang cuối rỗng** (OFFSET của SP chạy trên bảng công việc THẬT). Đo thực tế: 70 dòng nháp (admin, chi nhánh 4, dải 06→31/07).
-- **Sort không sai**: SP `SP_Workflow_GetPagingByCs_New` đã `ORDER BY m.Id DESC` (mới→cũ). Công việc vừa promote bị **70 dòng nháp ghim trên đầu** che mất ⇒ cảm giác "chui xuống dưới".
-- **FE** thêm tab **"Nháp chờ duyệt (N)"**: gọi thẳng `DraftService.getPagingForErp({draftType:'Job'})`, map payload client-side (nhớ parse ngày → `Date`), nút "Xem nháp" → `modalAddEdit.viewDraft(payload, draftId)`. Bỏ markup `item.isDraft` khỏi bảng chính.
-- Tiện thể: 2 `<pagination>` của 2 tab đang **dùng chung `pageIndex`** (và `loadDataFinish()` cũng đọc biến đó) → tách `pageIndexFinish`.
+### ✅ XONG — list Công việc: lấy hết theo dải ngày + phân trang FE (anh chốt: KHÔNG tách BE/FE cho đơn giản)
+Bỏ phương án "tách tab nháp + sửa BE". Cách đã làm (FE-only, `ng build` 0 lỗi, **KHÔNG đụng BE**):
+- `loadData()` gọi API với `pageIndex=1` + `pageSize=99999` → lấy **toàn bộ** trong dải ngày. Giữ `pageIndex=1` nên **BE vẫn tự trộn nháp** (`DraftType='Job'`) như cũ ⇒ không phải sửa `WorkflowController`.
+- **Sort chung theo `createdDate` mới→cũ** sau khi trộn ⇒ nháp nằm đúng dòng thời gian, không còn ghim cứng lên đầu che công việc vừa promote.
+- **Phân trang client-side** (`visibleData` getter); `totalRows = listWorkflow.length`, **KHÔNG dùng `res.data.totalRows`** — BE cộng dư số nháp vào đó (`TotalRows += draftRows.Count` trong khi nháp chỉ chèn ở trang 1) ⇒ chính là thứ đẻ ra **trang cuối rỗng**. Đổi trang không gọi lại API.
+- Tách `pageIndexFinish` cho tab "Kết thúc" (vẫn server-paging) — trước 2 `<pagination>` dùng chung `pageIndex` và `loadDataFinish()` cũng đọc biến đó → lệch trang giữa 2 tab.
+- ⚠ Đánh đổi: dải ngày rộng (vài tháng) sẽ tải nặng hơn. Nếu chậm → cân nhắc giới hạn dải ngày hoặc quay lại server-paging + tab nháp riêng (bug `TotalRows` bên BE vẫn còn nguyên, chỉ là FE không dùng tới nữa).
 
 ## ▶ Phiên 2026-07-11 — 3 fix nhỏ, chờ chạy SQL / deploy
 

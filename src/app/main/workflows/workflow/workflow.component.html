@@ -79,7 +79,7 @@
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let item of listWorkflow" (click)="clickRow(item)" [style.background-color]="item.isDraft ? '#fff8e1' : (item.status>0 ? '#DFF6FF' : 'white')" [style.font-style]="item.isDraft ? 'italic' : 'normal'">
+              <tr *ngFor="let item of visibleData" (click)="clickRow(item)" [style.background-color]="item.isDraft ? '#fff8e1' : (item.status>0 ? '#DFF6FF' : 'white')" [style.font-style]="item.isDraft ? 'italic' : 'normal'">
                 <td class="table-checkbox">
                   <label class="custom-checkbox">
                     <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
@@ -310,7 +310,7 @@
               </div>
               <div class="col-md-7 text-right">
                 <div class="page">
-                  <pagination [totalItems]="totalRowsFinish" [(ngModel)]="pageIndex" [maxSize]="5"
+                  <pagination [totalItems]="totalRowsFinish" [(ngModel)]="pageIndexFinish" [maxSize]="5"
                     (pageChanged)="pageChangedFinish($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;"
                     nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
                   </pagination>
