@@ -1,5 +1,26 @@
 # Pending / In-Progress Work
 
+## ▶ Phiên 2026-07-13 — Draft trong ERP (job-canon / công việc) + cảng theo chi nhánh — FE xong (tsc 0 lỗi mới), CHỜ deploy + 2 SQL
+
+### ĐÃ SỬA (FE-only, đã commit — chỉ cần `ng build` + deploy, KHÔNG đụng BE/SQL)
+1. **List Job Canon trắng bảng khi có nháp**: `DatePipe` throw với chuỗi `13/07/2026` (payload nháp lưu `dd/MM/yyyy`) → **vỡ cả `*ngFor`**, không dòng nào hiện (kể cả dòng ERP thật). Fix `mapDraftToShipmentRow` parse ngày → `Date` (`parseDraftDate`), cột Ngày đổi `dd-MMM-yy` → **`dd/MM/yyyy`**. ⚠ Bẫy chung: **mọi cột date-pipe bind field lấy thẳng từ payload nháp đều dính** — luôn parse trước.
+2. **Promote công việc nháp lỗi 400** (`POST /api/Workflow/PromoteFromDraft`): payload nháp có `"status": true` (bool) mà BE `Workflow.Status` là **int** ⇒ ASP.NET chặn ở **model-binding**, chưa vào thân action (nên không có message — action luôn `Ok(...)`). Fix FE `_toPromoteItem()` ép kiểu số (`status`/`jobToughness`/`customerId`/`shipmentId`/`branchId`/`jobGroupId`/`handlingGroupId`/`listHandlingGroupId`). + thêm nhánh error cho `subscribe` (trước đó lỗi HTTP không reset `flagSave` → nút "Xác nhận chuyển sang ERP" **kẹt vĩnh viễn**).
+3. **Dropdown Khách hàng trống khi xem nháp CV**: `SP_Customer_GetAll` chỉ trả TẤT CẢ KH khi `AuthorisationLevel<=1`; cấp cao hơn chỉ thấy KH trong `PermissionCS` (BranchId lấy từ token ở `CustomerController:63`). Nháp do bot/NV khác tạo trỏ tới KH ngoài phạm vi ⇒ ng-select không map được. Fix `_ensureDraftCustomer()` bơm KH từ payload vào `listCustomer` (gọi ở `viewDraft()` **và** cuối `loadCustomer()` vì list về sau sẽ gán lại mảng).
+4. **Ô "Thời gian bắt đầu" (+ Cut-off) không sửa được**: handler `selectedNgaybatdau()` có guard `if (== null)` → ô đã có giá trị thì chọn ngày mới bị bỏ qua. Widget đặt **`autoUpdateInput: false`** ⇒ ô CHỈ đổi khi handler gán vào `entity`. Đã bỏ guard (áp cho cả công việc thật). ⚠ **CÒN**: thư viện `daterangepicker` **tự tắt `autoApply` khi `timePicker: true`** ([daterangepicker.js:374]) ⇒ phải bấm nút **"Đồng ý"** callback mới chạy; đóng lịch bằng click ra ngoài chỉ bắn `hide` → rơi vào `closedNgaybatdau()` **vẫn còn guard `== null`** → không gán. Muốn "chọn ngày là ăn ngay" thì bỏ nốt guard ở các handler `closed*`. (Anh đã né bằng cách sửa bên site nháp.)
+5. **Cảng/bãi — BỎ lọc chi nhánh ở màn nghiệp vụ** (anh chốt): lô chi nhánh này vẫn đi cảng chi nhánh khác (HN → cảng Hải Phòng). `modal-shipping-task-cs.loadPorts()` + `modal-dispatch-order-fcl-v2.loadPorts()/_loadAllLocations()` quay về `getAll()` / `getLocations()` không truyền chi nhánh. **Trang Danh mục Cảng/Bãi GIỮ** dropdown lọc + cột chi nhánh (chỉ để phân loại).
+
+### ANH CẦN
+1. ⬜ `ng build` + deploy FE.
+2. ⬜ **Chạy `NewAPI/Migration_GetAllLocations_BranchId_20260710.sql`** — BẮT BUỘC: kiểm DB thấy `SP_GetAllLocations` **chỉ có `@ListCust`**, trong khi BE (`TransportOrderRepository:177`) **luôn truyền `@BranchId`** ⇒ nếu API đã deploy bản mới thì pool điểm dựng cung đường (tab Cung đường FCL v2 + trang TO) lỗi *"too many arguments"*. Sau khi chạy, param mặc định NULL = lấy hết (khớp quyết định bỏ lọc).
+3. ⬜ Chạy `NewAPI/Migration_Ports_ResetBranchId_20260713.sql` (không gấp) — 86/86 cảng đang gắn nhầm `BranchId=6`, trả về NULL = dùng chung.
+
+### CÒN LÀM — tách nháp ra TAB RIÊNG ở list Công việc (anh chốt, cần deploy BE)
+Đã code rồi **revert** để deploy cụm promote trước. Nội dung khi làm lại:
+- **BE** `WorkflowController.GetPaging2` (~dòng 921-984): **bỏ khối trộn nháp** vào list. ⚠ **Bug đang có**: `pagedResult.TotalRows += draftRows.Count` — nháp chỉ chèn ở **trang 1** nhưng cộng vào tổng ⇒ FE vẽ dư trang, **trang cuối rỗng** (OFFSET của SP chạy trên bảng công việc THẬT). Đo thực tế: 70 dòng nháp (admin, chi nhánh 4, dải 06→31/07).
+- **Sort không sai**: SP `SP_Workflow_GetPagingByCs_New` đã `ORDER BY m.Id DESC` (mới→cũ). Công việc vừa promote bị **70 dòng nháp ghim trên đầu** che mất ⇒ cảm giác "chui xuống dưới".
+- **FE** thêm tab **"Nháp chờ duyệt (N)"**: gọi thẳng `DraftService.getPagingForErp({draftType:'Job'})`, map payload client-side (nhớ parse ngày → `Date`), nút "Xem nháp" → `modalAddEdit.viewDraft(payload, draftId)`. Bỏ markup `item.isDraft` khỏi bảng chính.
+- Tiện thể: 2 `<pagination>` của 2 tab đang **dùng chung `pageIndex`** (và `loadDataFinish()` cũng đọc biến đó) → tách `pageIndexFinish`.
+
 ## ▶ Phiên 2026-07-11 — 3 fix nhỏ, chờ chạy SQL / deploy
 
 ### 1) Chốt dầu — bỏ Type=0 khỏi nguồn B (dầu còn thừa) — ✅ ĐÃ CHẠY (2026-07-11)

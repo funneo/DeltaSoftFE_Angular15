@@ -132,8 +132,28 @@ export class ModalWorkflowComponent implements OnInit {
     this.busy = this.customerService.getAll(params).subscribe((res: ResponseValue<Customer[]>) => {
       if (res.code == '200' || res.code == '201') {
         this.listCustomer = res.data.filter(x => x.locked === false);
+        this._ensureDraftCustomer();   // list về sau viewDraft → bơm lại KH của nháp
       }
     });
+  }
+
+  /**
+   * Dropdown KH chỉ chứa khách hàng người đăng nhập được quyền (SP_Customer_GetAll lọc theo
+   * PermissionCS khi AuthorisationLevel > 1). Nháp do bot/NV khác tạo có thể trỏ tới KH ngoài
+   * phạm vi đó ⇒ ng-select không tìm thấy item → ô trống dù entity.customerId vẫn đúng.
+   * Bơm 1 item từ chính payload để hiển thị (chỉ ở chế độ xem nháp).
+   */
+  private _ensureDraftCustomer(): void {
+    const id = this.entity?.customerId;
+    if (!this._isDraftView || !id) return;
+    this.listCustomer = this.listCustomer || [];
+    if (this.listCustomer.findIndex(x => x.id == id) === -1) {
+      this.listCustomer = [...this.listCustomer, {
+        id: id,
+        customerCode: this.entity.customerCode,
+        customerName: this.entity.customerName,
+      } as Customer];
+    }
   }
 
   loadToughness(): void {
@@ -288,6 +308,7 @@ export class ModalWorkflowComponent implements OnInit {
     this.customerId = this.entity.customerId;
     this.customerCode = this.entity.customerCode;
     this.customerName = this.entity.customerName;
+    this._ensureDraftCustomer();
     this.isTransport = this.entity.jobGroupId == environment.transportGroupId;
     this.loadJobGroupOption();
     this.modalAddEdit.show();
@@ -345,6 +366,29 @@ export class ModalWorkflowComponent implements OnInit {
     }, () => { this.flagSave = false; });
   }
 
+  /**
+   * Payload nháp do bot/site nháp ghi có thể lệch KIỂU so với model BE (vd `status: true`
+   * trong khi `Workflow.Status` là int, `jobToughness` là chuỗi nhãn). Gửi thẳng sẽ bị
+   * ASP.NET trả 400 ngay ở model-binding (chưa vào thân action nên không có message).
+   * → ép kiểu số cho các field số trước khi promote.
+   */
+  private _toPromoteItem(): Workflow {
+    const num = (v: any, d: number = 0): number => {
+      const n = typeof v === 'boolean' ? d : Number(v);
+      return Number.isFinite(n) ? n : d;
+    };
+    const item: any = { ...this.entity };
+    item.status = num(item.status, 0);                 // nháp ghi bool → công việc mới = 0
+    item.jobToughness = num(item.jobToughness, 0);     // có payload ghi nhãn chữ
+    item.customerId = num(item.customerId, 0);
+    item.shipmentId = num(item.shipmentId, 0);
+    item.branchId = num(item.branchId, 0);
+    item.jobGroupId = num(item.jobGroupId, 0);
+    item.handlingGroupId = num(item.handlingGroupId, 0);
+    item.listHandlingGroupId = (item.listHandlingGroupId || []).map((g: any) => num(g, 0)).filter((g: number) => g > 0);
+    return item as Workflow;
+  }
+
   /** Nút "Xác nhận chuyển sang ERP" — tạo công việc THẬT từ nháp + ghi ngược draft. */
   approveDraft() {
     if (this.flagSave) return;
@@ -353,7 +397,7 @@ export class ModalWorkflowComponent implements OnInit {
       this.entity.listHandlingGroupId = this.entity.handlingGroupId ? [this.entity.handlingGroupId] : [];
     }
     this.flagSave = true;
-    this.workflowService.promoteFromDraft(this.entity, this._draftId).subscribe((res: ResponseValue<any>) => {
+    this.workflowService.promoteFromDraft(this._toPromoteItem(), this._draftId).subscribe((res: ResponseValue<any>) => {
       if (res.code == '200' || res.code == '201') {
         this.notificationService.printSuccessMessage(
           res.data?.alreadyPromoted
@@ -365,6 +409,10 @@ export class ModalWorkflowComponent implements OnInit {
         this.notificationService.printErrorMessage(res.message || MessageContstants.UPDATED_ERR_MSG);
         this.flagSave = false;
       }
+    }, () => {
+      // Lỗi HTTP (vd 400 model-binding) — không reset thì nút "Xác nhận" kẹt vĩnh viễn.
+      this.notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG);
+      this.flagSave = false;
     });
   }
 
@@ -700,8 +748,9 @@ export class ModalWorkflowComponent implements OnInit {
   }
 
   selectedNgaybatdau(event) {
-    if (this.entity.estimatedStartTime == null)
-      this.entity.estimatedStartTime = moment(event.start).format('DD/MM/YYYY HH:mm:ss');
+    // Người dùng vừa CHỌN ngày → luôn gán. (Trước đây chỉ gán khi ô đang null ⇒ phiếu/nháp đã có
+    // giờ bắt đầu thì không sửa được nữa. Các ô ngày khác vốn đã gán thẳng, không guard.)
+    this.entity.estimatedStartTime = moment(event.start).format('DD/MM/YYYY HH:mm:ss');
   }
   closedNgaybatdau(event) {
     if (this.entity.estimatedStartTime == null)
@@ -716,8 +765,8 @@ export class ModalWorkflowComponent implements OnInit {
       this.entity.estimatedFinishTime = moment(event.oldStartDate).format('DD/MM/YYYY HH:mm:ss');
   }
   selectedngayCutOff(event) {
-    if (this.entity.closingTime == null)
-      this.entity.closingTime = moment(event.start).format('DD/MM/YYYY HH:mm:ss');
+    // Cùng bug với "Thời gian bắt đầu": guard `== null` chặn sửa khi ô đã có giá trị.
+    this.entity.closingTime = moment(event.start).format('DD/MM/YYYY HH:mm:ss');
   }
   closedngayCutOff(event) {
     if (this.entity.closingTime == null)

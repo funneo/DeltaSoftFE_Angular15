@@ -102,7 +102,7 @@
             <a *ngIf="!item._isDraft" [routerLink]="[]" (click)="showModal(item)">{{item.jobId}}</a>
           </td>
           <td>{{item.cdsNumber}}</td>
-          <td>{{item.cdsDate|date :'dd-MMM-yy'}}</td>
+          <td>{{item.cdsDate|date :'dd/MM/yyyy'}}</td>
           <td>{{item.hawB_HBL}}</td>
           <td>{{item.mawB_MBL}}</td>
           <td>{{item.pallets}}</td>

@@ -501,9 +501,10 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       });
   }
   loadPorts(): void {
-    // Chỉ lấy cảng của chi nhánh đang đăng nhập (+ cảng dùng chung, BranchId NULL/0).
+    // Lấy TẤT CẢ cảng — KHÔNG lọc chi nhánh: lô của chi nhánh này vẫn đi cảng của
+    // chi nhánh khác (vd HN đi cảng Hải Phòng). Chi nhánh chỉ để phân loại ở Danh mục.
     this.busy = this.portsService
-      .getAll(Number.parseInt(this.branchId) || 0)
+      .getAll()
       .subscribe((res: ResponseValue<GroupPorts[]>) => {
         if (res.code == "200" || res.code == "201") {
           this.listPort = res.data;
@@ -2635,9 +2636,9 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   }
 
   private _loadAllLocations() {
-    // Pool điểm dựng cung đường: chỉ cảng của chi nhánh đăng nhập (+ cảng dùng chung).
-    // Nhà máy/kho khách hàng (CustomerLocations) không lọc.
-    this._transportService.getLocations(undefined, Number.parseInt(this.branchId) || 0).subscribe(data => {
+    // Pool điểm dựng cung đường: lấy TẤT CẢ (cảng + nhà máy/kho KH), KHÔNG lọc chi nhánh —
+    // lệnh của chi nhánh này vẫn chạy cung đường qua điểm của chi nhánh khác.
+    this._transportService.getLocations().subscribe(data => {
       this.listAllLocations = data || [];
     });
   }

@@ -145,9 +145,9 @@ export class ModalShippingTaskCsComponent implements OnInit {
 
   listPorts: Ports[] = [];
   loadPorts(): void {
-    // Chỉ lấy cảng của chi nhánh đang đăng nhập (+ cảng dùng chung, BranchId NULL/0).
-    const branchId = Number.parseInt(this.userLoged.branchId) || 0;
-    this.busy = this._portsService.getAll(branchId).subscribe((res: ResponseValue<Ports[]>) => {
+    // Lấy TẤT CẢ cảng — KHÔNG lọc chi nhánh: công việc của chi nhánh này vẫn lấy/trả hàng
+    // ở cảng của chi nhánh khác. Chi nhánh chỉ để phân loại trong Danh mục Cảng/Bãi.
+    this.busy = this._portsService.getAll().subscribe((res: ResponseValue<Ports[]>) => {
       if (res.code == '200' || res.code == '201') {
         this.listPorts = res.data;
       } else this.listPorts = [];

@@ -203,7 +203,7 @@ export class JobCanonComponent implements OnInit {
       customerName: d.customerName ?? p.customerName,
       shipmentType: p.shipmentType,
       cdsNumber: p.cdsNumber,         // Xe vận chuyển
-      cdsDate: p.cdsDate,             // Ngày
+      cdsDate: this.parseDraftDate(p.cdsDate),  // Ngày
       hawB_HBL: p.hawB_HBL,           // LOT
       mawB_MBL: p.mawB_MBL,           // Cung đường
       pallets: p.pallets,
@@ -217,6 +217,21 @@ export class JobCanonComponent implements OnInit {
       _draftPayload: d.payload,
     };
     return row as Shipment;
+  }
+
+  /**
+   * Ngày trong Payload nháp là CHUỖI đa định dạng ('13/07/2026', 'YYYYMMDD', ISO...).
+   * DatePipe chỉ nhận Date/ISO — chuỗi 'dd/MM/yyyy' làm pipe THROW và vỡ cả bảng.
+   */
+  private parseDraftDate(v: any): Date {
+    if (!v) return null;
+    const m = moment(v, [
+      'DD/MM/YYYY HH:mm:ss', 'DD/MM/YYYY',
+      'YYYYMMDD HH:mm:ss', 'YYYYMMDDHHmmss', 'YYYYMMDD',
+      'MM/DD/YYYY HH:mm:ss', 'MM/DD/YYYY',
+      'YYYY-MM-DDTHH:mm:ss', 'YYYY-MM-DD', moment.ISO_8601
+    ], false);
+    return m.isValid() ? m.toDate() : null;
   }
 
   clickRow(item: Shipment): void {
