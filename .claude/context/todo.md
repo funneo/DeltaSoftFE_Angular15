@@ -30,8 +30,8 @@ Anh báo *"duyệt xong số liệu ở NGOÀI phiếu bị thay đổi"*. Truy:
 
 ### ANH CẦN
 1. ⬜ `ng build` + deploy FE.
-2. ⬜ **Chạy `NewAPI/Migration_GetAllLocations_BranchId_20260710.sql`** — BẮT BUỘC: kiểm DB thấy `SP_GetAllLocations` **chỉ có `@ListCust`**, trong khi BE (`TransportOrderRepository:177`) **luôn truyền `@BranchId`** ⇒ nếu API đã deploy bản mới thì pool điểm dựng cung đường (tab Cung đường FCL v2 + trang TO) lỗi *"too many arguments"*. Sau khi chạy, param mặc định NULL = lấy hết (khớp quyết định bỏ lọc).
-3. ⬜ Chạy `NewAPI/Migration_Ports_ResetBranchId_20260713.sql` (không gấp) — 86/86 cảng đang gắn nhầm `BranchId=6`, trả về NULL = dùng chung.
+2. ✅ **ĐÃ CHẠY (2026-07-14)** `NewAPI/Migration_GetAllLocations_BranchId_20260710.sql`. **Đây chính là thủ phạm** anh báo *"thêm location cảng/bãi ở FCL v2 không lên dữ liệu"*: `SP_GetAllLocations` trên DB chỉ có `@ListCust`, trong khi BE ([TransportOrderRepository.cs:177](../../../NewAPI/API/Repositories/Transports/TransportOrderRepository.cs#L177)) **luôn** `Add("@BranchId", branchId)` ⇒ SQL ném *"too many arguments specified"* ⇒ API 500 ⇒ `listAllLocations = []` → **rỗng SẠCH** cả 86 cảng lẫn kho/nhà máy KH (không phải "thiếu cảng chi nhánh"). Verify sau khi chạy: SP có 2 param, `EXEC SP_GetAllLocations` → 678 điểm (86 cảng). Không cần deploy BE.
+3. ✅ **ĐÃ CHẠY** `Migration_Ports_ResetBranchId_20260713.sql` — DB hiện: **88 cảng `BranchId = NULL`** (dùng chung) + **4 cảng `BranchId = 5`** (HCM: Cát Lái, SINOVNL Tân Vạn, Bãi Delta Bình Thung, Ga Trảng Bom). FE truyền `branchId = 0` (đã bỏ lọc) ⇒ ra hết, gồm cả 4 cảng CN5.
 
 ### ✅ XONG — list Công việc: lấy hết theo dải ngày + phân trang FE (anh chốt: KHÔNG tách BE/FE cho đơn giản)
 Bỏ phương án "tách tab nháp + sửa BE". Cách đã làm (FE-only, `ng build` 0 lỗi, **KHÔNG đụng BE**):
