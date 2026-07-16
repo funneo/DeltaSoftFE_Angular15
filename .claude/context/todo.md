@@ -1,14 +1,9 @@
 # Pending / In-Progress Work
 
-## ▶ Cấp dầu theo lệnh — Hủy phiếu ĐÃ XUẤT + nhả lệnh về GetForSummary (2026-07-16, SQL ✅ ĐÃ CHẠY, BE+FE build 0 lỗi, CHỜ DEPLOY)
-Anh yêu cầu: phiếu cấp dầu theo lệnh (Type=2) đã xuất thì Hủy được → status âm + lệnh trong phiếu hủy hiện lại khi tạo phiếu mới.
-- **Gốc rễ**: `SP_DispatchOrder_GetForSummary` loại lệnh bằng 2 lớp AND — (a) cờ `IsSummarized/IsGeneratorSummarized`, (b) `n.Status>-1`. Xuất phiếu (`_Update @Status=1`) set cờ (a)=1; hủy cũ (-1/-2) KHÔNG reset cờ → lệnh ẩn vĩnh viễn dù (b) đã nhả.
-- **Anh chốt**: hủy thường → **-1** (giữ -2 riêng cho `cancelExpired` IGAS quá hạn) · áp cả IGAS lẫn NCC thường · **chặn khi đã đổ** (`QuantityIgas>0`) · bắt lý do + quyền `DRIVERFUELAPPROVAL_ACCEPT`.
-- ✅ **SQL ĐÃ CHẠY** `NewAPI/Migration_DriverFuelApproval_Cancel_20260716.sql` — SP MỚI `SP_DriverFuelApproval_Cancel` (validate + reset 4 nhóm cờ, có guard "không nhả lệnh đang bị phiếu khác giữ" + Status=-1). Không đụng SP cũ.
-- ✅ **BE**: `POST /api/DriverFuelApproval/Cancel` (repo `Cancel` + interface), quyền ACCEPT, `SqlException`→400. Build 0 lỗi.
-- ✅ **FE** `modal-fuel-summary`: `huyPhieu()` gọi `cancel()` (bắt lý do, success set -1 + reload); nút "Hủy phiếu" hiện `apprved_permission && status==1 && !quantityIgas`. Bỏ đường update→-1 cũ (không reset cờ + bug success gán =1). ng build 0 lỗi.
-- ⬜ **Anh cần**: tắt API → build/publish (BE có endpoint mới) + `ng build` deploy FE. Rồi test E2E: tạo phiếu theo lệnh → xuất → Hủy (nhập lý do) → tạo phiếu mới cùng xe: **lệnh vừa hủy phải hiện lại**. Phiếu đã đổ/đã chốt → không hủy được.
-- ✅ **UX 2 nút loại trừ nhau theo hạn đổ** (anh chốt 2026-07-16): helper `isIgasExpired()` (isLocal + igasCode + qua mốc `validTime`=Hạn đổ). NCC thường (isLocal=false) không có IGAS → luôn "Hủy phiếu". IGAS còn hạn → "Hủy phiếu" (-1); quá hạn → ẩn, hiện "Hủy IGAS hết hạn" (-2). ng build 0 lỗi (Hash 14799b48).
+## ▶ CHỜ DEPLOY (2026-07-16, đã COMMIT+PUSH — FE main 81f6f2b · BE master 740bdf4) — chi tiết ở done.md
+2 tính năng phần dầu, SQL đã chạy, BE+FE build 0 lỗi, chỉ còn deploy:
+1. **Cấp dầu theo lệnh — Hủy phiếu ĐÃ XUẤT + nhả lệnh về GetForSummary**: SP `SP_DriverFuelApproval_Cancel` (Status=-1 + reset 4 nhóm cờ) + endpoint `POST /api/DriverFuelApproval/Cancel` (quyền ACCEPT) + FE `modal-fuel-summary` (2 nút Hủy phiếu(-1)/Hủy IGAS hết hạn(-2) loại trừ theo hạn đổ `isIgasExpired()`). ⬜ tắt API → build/publish + deploy FE → test E2E.
+2. **Chốt dầu phương tiện — Sửa phiếu nháp**: hiện lại nút Tải/xóa dòng + khóa đổi xe + "Tải dữ liệu" chạy MERGE (giữ dòng cũ). FE-only. ⬜ deploy FE. **SP `GetCandidatesForUpdate` DEFERRED** (chỉ làm nếu phát hiện dòng nguồn vô hiệu lọt phiếu).
 
 ## ▶ Danh mục Máy phát điện (Generator Catalog) — Phương án A, KHÔNG khấu hao (2026-07-16, CHỜ ANH CHỐT 5 điểm — CHƯA CODE, CHƯA SQL)
 Thay file Excel `NewAPI\Danh sách máy phát điện chuẩn.xlsx` (29 máy) bằng màn Danh mục trong nhóm `danhmuc/`. Chỉ quản lý **lý lịch máy** (thêm/sửa/xóa/xem/tìm/xuất Excel) — bỏ toàn bộ khấu hao (anh chốt). Bảng `Tbl_Generator` MỚI song song; "Số xe" chỉ text tham chiếu (không link Vihicle, không nối dầu FCL). FunctionCode dự kiến **F046**.
