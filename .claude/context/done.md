@@ -1,5 +1,11 @@
 # Completed Features
 
+## Cảng/bãi + pool điểm cung đường — SP_GetAllLocations nhận @BranchId (SQL ĐÃ CHẠY) — 2026-07-14
+Anh báo *"thêm location cảng/bãi ở FCL v2 không lên dữ liệu"* (chi nhánh 5). **Không phải FE lọc chi nhánh** — FE đã bỏ lọc từ 07-13, truyền `branchId=0`.
+- **Nguyên nhân**: `SP_GetAllLocations` trên DB **chỉ có `@ListCust`**, trong khi BE ([TransportOrderRepository.cs:177](../../../NewAPI/API/Repositories/Transports/TransportOrderRepository.cs#L177)) **luôn** `Add("@BranchId", branchId)` ⇒ SQL *"too many arguments specified"* ⇒ API 500 ⇒ `listAllLocations = []` → **rỗng sạch** cả cảng lẫn kho/nhà máy KH (không phải "thiếu cảng chi nhánh"). ⚠ **Bẫy chung**: BE deploy trước, SQL quên chạy ⇒ dropdown rỗng chứ không báo lỗi gì trên UI — gặp "danh sách trống" thì soi **chữ ký SP vs param BE truyền** trước tiên.
+- **Đã chạy** [Migration_GetAllLocations_BranchId_20260710.sql](../../../NewAPI/Migration_GetAllLocations_BranchId_20260710.sql) (DROP+CREATE, body verbatim + `@BranchId INT = NULL`, chỉ lọc nhánh Ports; `NULL/0` = lấy hết). Verify: SP có 2 param · `EXEC SP_GetAllLocations` → **678 điểm (86 cảng)**. Không cần deploy BE.
+- **Dữ liệu Ports sau khi chạy `Migration_Ports_ResetBranchId`**: 88 cảng `BranchId = NULL` (dùng chung) + 4 cảng `BranchId = 5` (HCM: Cát Lái, SINOVNL Tân Vạn, Bãi Delta Bình Thung, Ga Trảng Bom). Chi nhánh trên Ports **chỉ để phân loại ở màn Danh mục**; màn nghiệp vụ không lọc.
+
 ## FCL v2 — Thời gian bắt đầu/kết thúc + ảnh chứng từ theo dòng phí + vá SP thiếu + màu list chốt dầu — SQL đã chạy, BE/FE deploy xong, đã push — 2026-07-11→12
 Nối tiếp màn thực hiện lái xe. Gồm 3 mảng + 1 phát hiện quan trọng:
 - **Thời gian bắt đầu/kết thúc lệnh** (`StartedDate`/`FinishedDate` — cột + model đã có sẵn, luồng v2 chưa set). Anh chốt: **auto-ghi-theo-nút CHỈ ở app**, web chỉ 2 ô edit/view. FE modal thực hiện +2 ô **daterangepicker** (`ng2-daterangepicker`, cùng widget modal tạo lệnh), convert ISO↔`dd/MM/yyyy HH:mm:ss` 2 chiều (tránh bug locale), lưu qua `driverUpdate`. SP `DriverUpdate` +`@StartedDate/@FinishedDate` (`ISNULL(@x,col)` giữ nguyên khi trống, nhánh IsLegacy=0). `ChangeStatus` **KHÔNG** auto set (app tự gửi giờ máy ISO qua driverUpdate). SQL [Migration_FCL_OrderStartFinishTime_20260711.sql](../../../NewAPI/Migration_FCL_OrderStartFinishTime_20260711.sql).

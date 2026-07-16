@@ -24,7 +24,7 @@
                 <ng-select name="vihicleId" [items]="listVihicle" bindLabel="licensePlates"
                   [(ngModel)]="entity.vihicleId" bindValue="id" required
                   (change)="vihicleChanged($event)"
-                  [disabled]="flagXem || (!flagNew && entity.status === 1)"
+                  [disabled]="flagXem || !flagNew"
                   placeholder="Chọn xe">
                 </ng-select>
               </div>
@@ -61,12 +61,13 @@
             <div class="form-group">
               <label class="col-sm-2 control-label"></label>
               <div class="col-sm-6">
-                <button *ngIf="flagNew && !flagXem" type="button" class="btn btn-info btn-sm"
+                <button *ngIf="!flagXem && entity?.status !== 1" type="button" class="btn btn-info btn-sm"
                   (click)="loadCandidates()">
-                  <i class="fa fa-refresh"></i> Tải dữ liệu chưa tổng kết
+                  <i class="fa fa-refresh"></i> {{ flagNew ? 'Tải dữ liệu chưa tổng kết' : 'Bổ sung dữ liệu mới' }}
                 </button>
-                <span *ngIf="flagNew && !flagXem" class="text-muted" style="margin-left:8px;">
-                  Lấy phiếu chưa tổng kết của xe trong kỳ đã chọn.
+                <span *ngIf="!flagXem && entity?.status !== 1" class="text-muted" style="margin-left:8px;">
+                  {{ flagNew ? 'Lấy phiếu chưa tổng kết của xe trong kỳ đã chọn.'
+                             : 'Chỉ THÊM dòng mới phát sinh; giữ nguyên các dòng đã có trong phiếu.' }}
                 </span>
               </div>
               <label class="col-sm-2 control-label text-right">Đơn giá dầu</label>
@@ -186,7 +187,7 @@
                           <th>Ngày</th>
                           <th *ngIf="s === 1">Lý do</th>
                           <th class="text-right">Lít</th>
-                          <th *ngIf="flagNew && !flagXem" style="width:36px;"></th>
+                          <th *ngIf="!flagXem && entity?.status !== 1" style="width:36px;"></th>
                         </tr>
                       </thead>
                       <tbody>
@@ -203,7 +204,7 @@
                           <td>{{d.date | date:'dd/MM/yyyy'}}</td>
                           <td *ngIf="s === 1">{{d.reasonName}}</td>
                           <td class="text-right"><strong>{{d.quantity | number:'1.0-3'}}</strong></td>
-                          <td *ngIf="flagNew && !flagXem">
+                          <td *ngIf="!flagXem && entity?.status !== 1">
                             <button type="button" class="btn btn-xs btn-danger" (click)="removeRow(d)">
                               <i class="fa fa-trash"></i>
                             </button>

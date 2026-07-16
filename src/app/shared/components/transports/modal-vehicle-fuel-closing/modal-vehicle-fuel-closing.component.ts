@@ -180,11 +180,26 @@ export class ModalVehicleFuelClosingComponent implements OnInit {
       )
       .subscribe((res: ResponseValue<DriverFuelClosingDetail[]>) => {
         if (res.code == '200' || res.code == '201') {
-          const rows = (res.data ?? []).map(x => ({ ...x, checked: true }));
-          this.entity.detaileds = rows;
-          this.recalcSummary();
-          if (rows.length === 0) {
-            this._notificationService.printSuccessMessage('Không có dữ liệu trong kỳ.');
+          const incoming = (res.data ?? []).map(x => ({ ...x, checked: true }));
+          if (this.flagNew) {
+            // Tạo mới: thay toàn bộ chi tiết.
+            this.entity.detaileds = incoming;
+            this.recalcSummary();
+            if (incoming.length === 0) {
+              this._notificationService.printSuccessMessage('Không có dữ liệu trong kỳ.');
+            }
+          } else {
+            // Sửa phiếu cũ: SP đã loại các RefNo đã nằm trong phiếu chốt (kể cả phiếu này),
+            // nên chỉ nhận về dòng MỚI. GIỮ nguyên dòng đã có, chỉ BỔ SUNG dòng mới
+            // (dedupe theo Source+RefNo — đúng khóa UI coi là duy nhất).
+            const keyOf = (d: DriverFuelClosingDetail) => `${d.source}__${d.refNo ?? ''}`;
+            const existed = new Set((this.entity.detaileds ?? []).map(keyOf));
+            const toAdd = incoming.filter(x => !existed.has(keyOf(x)));
+            this.entity.detaileds = [...(this.entity.detaileds ?? []), ...toAdd];
+            this.recalcSummary();
+            this._notificationService.printSuccessMessage(
+              toAdd.length > 0 ? `Đã bổ sung ${toAdd.length} dòng mới vào chi tiết.` : 'Không có dữ liệu mới để bổ sung.'
+            );
           }
         } else {
           this._notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG);

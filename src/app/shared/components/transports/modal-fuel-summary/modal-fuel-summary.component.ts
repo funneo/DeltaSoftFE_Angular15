@@ -432,29 +432,44 @@ export class ModalFuelSummaryComponent implements OnInit {
       }
     );
   }
+  /**
+   * IGAS đã QUÁ HẠN đổ: phiếu cây dầu nhà (isLocal) có IgasCode + đã qua mốc validTime (Hạn đổ).
+   * NCC thường (không IGAS) luôn = false. Dùng để chọn hiển thị nút Hủy phiếu (còn hạn) vs Hủy IGAS hết hạn.
+   */
+  isIgasExpired(): boolean {
+    if (!this.entity?.isLocal || !this.entity?.igasCode || !this.entity?.validTime) return false;
+    const deadline = moment(this.entity.validTime);
+    return deadline.isValid() && moment().isAfter(deadline);
+  }
+
+  /**
+   * Hủy phiếu cấp dầu theo lệnh ĐÃ XUẤT (NCC thường, hoặc IGAS còn hạn).
+   * Sau khi hủy: status=-1, BE reset cờ tổng kết -> lệnh quay lại GetForSummary.
+   * Bắt buộc nhập lý do. BE chặn nếu đã đổ (quantityIgas>0) / đã chốt / đã hủy.
+   */
   huyPhieu() {
-    this._notificationService.printConfirmationDialog("Bạn muốn hủy phiếu dầu này?", () => {
-      let copy = Object.assign({}, this.entity);
-      copy.status = -1;
-      this.driverFuelApprovalService.update(copy).subscribe(
-        (res: ResponseValue<any>) => {
-          if (res.code == '200' || res.code == '201') {
-            this.entity.status = 1;
-            this._notificationService.printSuccessMessage(
-              MessageContstants.UPDATED_OK_MSG
-            );
-          } else {
-            this._notificationService.printErrorMessage(
-              MessageContstants.UPDATED_ERR_MSG + res.code
-            );
-            this.flagSave = false;
+    const reason = (window.prompt('Lý do hủy phiếu (bắt buộc):') || '').trim();
+    if (!reason) {
+      this._notificationService.printErrorMessage('Lý do hủy không được để trống.');
+      return;
+    }
+    this._notificationService.printConfirmationDialog(
+      `Hủy phiếu ${this.entity.refNo} với lý do:\n"${reason}" ?`,
+      () => {
+        this.driverFuelApprovalService.cancel(this.entity.id, reason).subscribe(
+          (res: ResponseValue<any>) => {
+            if (res.code == '200' || res.code == '201') {
+              this.entity.status = -1;
+              this._notificationService.printSuccessMessage('Đã hủy phiếu.');
+              this.modalAddEdit.hide();
+              this.SaveSuccess.emit(true);
+            } else {
+              this._notificationService.printErrorMessage(res.message || (MessageContstants.UPDATED_ERR_MSG + res.code));
+            }
           }
-        },
-        () => {
-          this.flagSave = false;
-        }
-      );
-    });
+        );
+      }
+    );
   }
 
   /**

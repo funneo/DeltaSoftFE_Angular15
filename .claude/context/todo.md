@@ -1,5 +1,68 @@
 # Pending / In-Progress Work
 
+## ▶ Cấp dầu theo lệnh — Hủy phiếu ĐÃ XUẤT + nhả lệnh về GetForSummary (2026-07-16, SQL ✅ ĐÃ CHẠY, BE+FE build 0 lỗi, CHỜ DEPLOY)
+Anh yêu cầu: phiếu cấp dầu theo lệnh (Type=2) đã xuất thì Hủy được → status âm + lệnh trong phiếu hủy hiện lại khi tạo phiếu mới.
+- **Gốc rễ**: `SP_DispatchOrder_GetForSummary` loại lệnh bằng 2 lớp AND — (a) cờ `IsSummarized/IsGeneratorSummarized`, (b) `n.Status>-1`. Xuất phiếu (`_Update @Status=1`) set cờ (a)=1; hủy cũ (-1/-2) KHÔNG reset cờ → lệnh ẩn vĩnh viễn dù (b) đã nhả.
+- **Anh chốt**: hủy thường → **-1** (giữ -2 riêng cho `cancelExpired` IGAS quá hạn) · áp cả IGAS lẫn NCC thường · **chặn khi đã đổ** (`QuantityIgas>0`) · bắt lý do + quyền `DRIVERFUELAPPROVAL_ACCEPT`.
+- ✅ **SQL ĐÃ CHẠY** `NewAPI/Migration_DriverFuelApproval_Cancel_20260716.sql` — SP MỚI `SP_DriverFuelApproval_Cancel` (validate + reset 4 nhóm cờ, có guard "không nhả lệnh đang bị phiếu khác giữ" + Status=-1). Không đụng SP cũ.
+- ✅ **BE**: `POST /api/DriverFuelApproval/Cancel` (repo `Cancel` + interface), quyền ACCEPT, `SqlException`→400. Build 0 lỗi.
+- ✅ **FE** `modal-fuel-summary`: `huyPhieu()` gọi `cancel()` (bắt lý do, success set -1 + reload); nút "Hủy phiếu" hiện `apprved_permission && status==1 && !quantityIgas`. Bỏ đường update→-1 cũ (không reset cờ + bug success gán =1). ng build 0 lỗi.
+- ⬜ **Anh cần**: tắt API → build/publish (BE có endpoint mới) + `ng build` deploy FE. Rồi test E2E: tạo phiếu theo lệnh → xuất → Hủy (nhập lý do) → tạo phiếu mới cùng xe: **lệnh vừa hủy phải hiện lại**. Phiếu đã đổ/đã chốt → không hủy được.
+- ✅ **UX 2 nút loại trừ nhau theo hạn đổ** (anh chốt 2026-07-16): helper `isIgasExpired()` (isLocal + igasCode + qua mốc `validTime`=Hạn đổ). NCC thường (isLocal=false) không có IGAS → luôn "Hủy phiếu". IGAS còn hạn → "Hủy phiếu" (-1); quá hạn → ẩn, hiện "Hủy IGAS hết hạn" (-2). ng build 0 lỗi (Hash 14799b48).
+
+## ▶ Danh mục Máy phát điện (Generator Catalog) — Phương án A, KHÔNG khấu hao (2026-07-16, CHỜ ANH CHỐT 5 điểm — CHƯA CODE, CHƯA SQL)
+Thay file Excel `NewAPI\Danh sách máy phát điện chuẩn.xlsx` (29 máy) bằng màn Danh mục trong nhóm `danhmuc/`. Chỉ quản lý **lý lịch máy** (thêm/sửa/xóa/xem/tìm/xuất Excel) — bỏ toàn bộ khấu hao (anh chốt). Bảng `Tbl_Generator` MỚI song song; "Số xe" chỉ text tham chiếu (không link Vihicle, không nối dầu FCL). FunctionCode dự kiến **F046**.
+- **Kế hoạch đầy đủ + 5 câu hỏi chờ chốt**: [generator-catalog-plan.md](generator-catalog-plan.md).
+- Chốt xong 5 điểm (mô tả tách/gộp · giữ/bỏ nguyên giá+ngày SD · hãng nvarchar/OtherCategories · xác nhận F046 · seed 29 dòng) → soạn `Migration_Generator_Schema` trình duyệt → BE → FE.
+
+## ▶ JobID nghiệp vụ N01–N11 — phân tích dữ liệu + thiết kế đề xuất (2026-07-14, CHỜ ANH CHỐT — CHƯA CODE, CHƯA SQL)
+
+Nguồn: `D:\Delta\DeltaSoft\NewAPI\JOBID.docx` (26/6/2026) — xem [[reference_jobid_appendix]] trong memory. Yêu cầu của anh: **xây chức năng quản lý thông tin định danh Job nghiệp vụ + thêm 1 trường mới vào `Shipment`**, sao cho vừa test được job mới vừa **không đụng job cũ đang chạy**.
+
+### Thống kê dữ liệu thật (12 tháng: 76.072 lô, `Shipment`, Deleted=0)
+| Loại (`OtherCategories.SHIPMENT_T02`) | Số lô | Booking | HBL/MBL | Tờ khai | Cont | Kiện | CBM | GW |
+|---|---|---|---|---|---|---|---|---|
+| TR Inland Trucking | 42.977 | 1.020 | 39.310 | 38.623 | 46 | 96 | 4 | 24 |
+| SI Sea Import | 7.776 | 99 | 7.330 | 6.734 | 2.992 | 2.538 | 1.401 | 3.259 |
+| SE Sea Export | 7.497 | 6.152 | 4.556 | 6.608 | 1.634 | 1.562 | 222 | 2.433 |
+| AI Air Import | 5.163 | 152 | 4.492 | 4.721 | 7 | 3.472 | 65 | 3.736 |
+| DS Domestic | 4.011 | 190 | 1.381 | 3.668 | 32 | 2.554 | 14 | 2.754 |
+| AE Air Export | 2.017 | 732 | 1.156 | 1.904 | 6 | 1.521 | 62 | 1.834 |
+| CBT | 805 | 6 | 665 | 713 | 0 | 655 | 1 | 657 |
+- **TR = 56% và là sọt chung** (vẫn ghi vận đơn/tờ khai nhưng gần như không có cont/kiện/CBM). **Milkrun, xe thuê bao, đường sắt hiện lẫn trong TR/DS — không có mã riêng.**
+- `Shipment.Services` free-text, **99% NULL** → không dùng để phân loại dịch vụ được. `JobType` gần như luôn 0; `ShippingType` (0/1 ≈ FCL/LCL) chỉ có ở ~15k lô.
+- Chỉ **7.774/76.072 lô (10%)** có `ShippingTask`. Nhưng **"Số lệnh vận tải" đã có sẵn**: `DispatchOrderDetailed.JobId` = 326.755 dòng, **100% có JobId**.
+- Mã **`IV` (Investment) / `RP` (sửa xe) / `THIR` (HĐ bên thứ 3) không phải lô hàng** — đang mượn lô để gánh chi phí (đúng thứ tài liệu xếp vào **JobID kế toán K04…**).
+- **Format `JobId` hiện tại**: `S + <HN|SG|VT> + yyMM + 5 số cuối CustomerCode + seq5` (vd `SSG2607`+`01194`+`00001` với KH `DK0501194`). ⇒ **KHÔNG nhúng mã N01… vào chuỗi JobId** (đang in/tham chiếu ở hàng chục bảng) — phân loại để ở **cột riêng**.
+
+### 3 lỗ hổng xuyên suốt (không riêng loại nào)
+1. **Không có cột "tên hàng"** trên `Shipment` (N09/N10/N11 đều bắt buộc). Cũng không có: tuyến vận tải, loại xe thuê bao, km đầu/cuối, ga nhận vỏ/ga hạ hàng, địa chỉ đóng/trả, giờ xe có mặt, số DS, biển số xe.
+2. **Chứng từ KHÔNG có danh mục loại**: 128.493 file lô hàng (`AttachFiles`, `FunctionName='SHIPMENT'`, `RefNo = Shipment.Id`) có `AttachFileTypeId = 0` **hết**, `Title` gõ tay (`tk`, `BK`, `1`). Bảng `AttachFileType` (8 dòng) là **hồ sơ nhân sự**, không mượn được ⇒ hiện **không thể biết lô đã có Booking Note / tờ khai / EIR hay chưa**.
+3. **Không có khái niệm "bắt buộc theo loại"** và không có trạng thái hoàn thiện (chỉ `IsFinish` bit gạt tay).
+
+### ⚠ Ràng buộc lớn nhất — vì sao KHÔNG làm bảng lô mới
+`Shipment` bị **12 bảng nghiệp vụ trỏ vào**: `Advances`, `AdvancesTransfer`, `Payments`, `PaymentsCBT`, `DebitNotes`, `tbDebt`, `Workflow`, `ShippingTask`, `Tbl_PendingInvoice`, `DispatchOrderCBT`, `ShippingCanon`, `OpenShipment`. Làm bảng lô mới ⇒ phải clone cả tạm ứng/thanh toán/debit/workflow mới test được chuỗi thật.
+
+### Thiết kế đề xuất (anh đã đồng ý hướng: **1 cột + chức năng danh mục cấu hình**)
+| Đối tượng | Vai trò |
+|---|---|
+| `Shipment.JobCode VARCHAR(3) NULL` | N01…N11. **NULL = lô cũ** ⇒ SP/màn cũ không thấy gì khác (khuôn `IsLegacy` của TO↔FCL) |
+| `Tbl_JobType` | 11 loại job nghiệp vụ (mã, tên, dịch vụ, map sang ShipmentType/ImportExport hiện có) |
+| `Tbl_JobField` | Danh mục trường: FieldCode, tên, kiểu, **nguồn** = trỏ cột `Shipment` có sẵn **hay** trường mới |
+| `Tbl_JobTypeField` | Loại job ↔ trường: **Phase 1 = định danh (bắt buộc lúc tạo) · 2 = hoàn thiện (bắt buộc trước kết thúc/debit) · 3 = nghiệp vụ**, IsRequired, thứ tự |
+| `Tbl_JobFieldValue` | Giá trị các **trường mới** dạng key–value theo ShipmentId ⇒ thêm trường KHÔNG cần `ALTER`/build lại. Đổi lại khó report thẳng bằng SQL (chấp nhận: toàn trường mô tả, không phải trường tính tiền) |
+| `Tbl_JobDocType` + `Tbl_JobTypeDoc` | Danh mục loại chứng từ + chứng từ nào bắt buộc cho loại job nào, phase nào |
+| `AttachFiles.DocTypeCode VARCHAR(20) NULL` | Gắn loại cho file; **file cũ NULL** = không phân loại |
+- **Trường đã có cột** thì cấu hình chỉ **trỏ tới tên cột**, KHÔNG lưu lại giá trị (tránh dữ liệu 2 nơi).
+- Form tạo Job **tự sinh theo cấu hình** (chọn N01 → hiện đúng bộ trường N01) + thanh **"% hoàn thiện"** liệt kê trường/chứng từ còn thiếu.
+- Màn hình/SP/endpoint **MỚI hoàn toàn** (`SP_Job_*`, `JobController`, list lọc `JobCode IS NOT NULL`), quyền riêng để chỉ nhóm test thấy menu. **Màn lô cũ không sửa 1 dòng.** Rollback = set `JobCode = NULL` / `Deleted = 1`.
+
+### ⬜ CHỜ ANH CHỐT (rồi em mới soạn file SQL thiết kế trình duyệt)
+1. **N02/N05 (CFS)**: tách **mã loại riêng** hay giữ SE/SI + cờ LCL?
+2. **42.977 lô TR cũ**: có **map ngược** về N07–N10 không, hay chỉ áp từ lô mới trở đi?
+3. **N08 xe thuê bao = 1 JobID / 1 ngày / 1 xe**: phần mềm **tự sinh hàng ngày** hay người dùng tạo tay?
+4. **`IV` / `RP` / `THIR`**: chuyển hẳn sang **JobID kế toán (K01–K07)** hay tạm để yên?
+
 ## ▶ Phiên 2026-07-13 (chiều) — Chốt dầu phương tiện (F039): sai số liệu sau khi DUYỆT + list dựng lại theo khuôn shipment-normal
 
 ### ★ BUG SỐ LIỆU — `SP_DriverFuelClosing_Update` dùng công thức CŨ (chưa chạy SQL)

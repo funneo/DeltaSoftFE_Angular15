@@ -86,6 +86,20 @@ export class DriverFuelApprovalService  extends BaseService{
     }), catchError(this.handleError));
    }
 
+   /** Hủy phiếu cấp dầu theo lệnh ĐÃ XUẤT (cả IGAS lẫn NCC thường). Status sau: -1.
+    *  BE reset cờ tổng kết -> lệnh quay lại GetForSummary. Lý do truyền qua `note`. */
+   cancel(id: number, reason: string){
+    let p: FromBodyBase<DriverFuelApproval> = {};
+    p.item = { id, note: reason };
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DriverFuelApproval/Cancel`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authService.logout();
+      else return response;
+    }), catchError(this.handleError));
+   }
+
    approved(entity:DriverFuelApproval){
     let p: FromBodyBase<DriverFuelApproval> = {};
     p.item =entity;
