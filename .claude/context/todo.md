@@ -9,10 +9,12 @@ Anh xác nhận: **toàn bộ file `.sql` đang treo trong tài liệu này đã
 - ⏸ `Migration_AccountingEntry_P50_20260710.sql` (bút toán đối ứng P5.0) — **chưa chạy**, đúng quyết định TẠM DỪNG.
 - ⬜ `Migration_FCL_GrantAcceptClosing_20260710.sql` — **`FCL_ACCEPT` vẫn thiếu role `DV` + `DV-M`** (verify 2026-07-24: ACCEPT mới có ở CSVT-M, DV-CBT, DV-HCM, DVM-HCM, GĐ, IT, QL, TQ-TC) ⇒ **điều vận chưa thấy nút Duyệt B1**. Anh nói tự bổ sung; cấp xong phải đăng xuất/đăng nhập lại (quyền nằm trong JWT).
 
-## ▶ Nháp ShippingTask — P4 View+Sửa+Promote màn CS (2026-07-25, BE+FE build 0 lỗi, ĐÃ COMMIT+PUSH, chờ deploy + test E2E) — chi tiết ở done.md
-Host = màn CS `shipping-task-cs` (KHÔNG opman). CS mở nháp SỬA ĐƯỢC + tự tick "Chuyển việc cho Điều vận" (status 0/1) → "Xác nhận chuyển sang ERP". `MarkPromoted`: PromotedRefNo=JobId lô, PromotedShipmentId=ShipmentId lô. BE `ShippingTaskController.AddFromDraft` (clone Shipment, KHÔNG SQL mới); FE service+modal+list+model.
-1. ⬜ Tắt API → build/publish (endpoint mới) + `ng build` deploy FE.
-2. ⬜ Test E2E: tạo nháp draft-web → màn CS dòng vàng → sửa field → tick giao Điều vận → Xác nhận → chuyến thật status=1 + OpMan noti; nháp biến mất; draft-web hiện JobId/ShipmentId lô; bấm 2 lần không trùng.
+## ▶ Nháp ShippingTask — P4 View+Sửa+Promote màn CS + duyệt nhiều (2026-07-25, BE+FE build 0 lỗi, ĐÃ COMMIT+PUSH, chờ deploy + test E2E) — chi tiết ở done.md
+Host = màn CS `shipping-task-cs` (KHÔNG opman). CS mở nháp SỬA ĐƯỢC + tự tick "Chuyển việc cho Điều vận" (status 0/1) → "Xác nhận chuyển sang ERP". BE `ShippingTaskController.AddFromDraft` (clone Shipment, KHÔNG SQL mới); FE service+modal+list+model.
+- **⚠ HÔM NAY CÓ ĐỔI BE** (2 commit, chỉ file `ShippingTaskController.cs`): `600fdd5` endpoint MỚI `AddFromDraft` · `ec27708` fix `MarkPromoted` = **PromotedShipmentId = Id CHUYẾN vừa tạo** (KHÔNG phải ShipmentId lô — sửa vì draft hiển thị sai), `PromotedRefNo = ReferCode` (fallback JobId lô). ⇒ **PHẢI redeploy API**, nếu chỉ deploy FE thì nút Xác nhận 404 + giá trị ghi ngược vẫn sai.
+- Chuỗi fix FE promote lẻ: ngày invalid (`803a8c0`), cột Nhóm thực hiện rỗng (`9b30c82`), 400 operatorId null (`ac32550`).
+1. ⬜ **Tắt API → build/publish** (endpoint AddFromDraft + fix MarkPromoted) + `ng build` deploy FE. **draft-web/DraftAPI KHÔNG đổi.**
+2. ⬜ Test E2E: tạo nháp draft-web → màn CS dòng vàng → sửa field → tick giao Điều vận → Xác nhận → chuyến thật status=1 + OpMan noti; nháp biến mất; draft-web hiện **Id chuyến vừa tạo** + ReferCode; bấm 2 lần không trùng.
 3. **P5 duyệt hàng loạt (bulk approve) — kế hoạch chốt: cả 6 loại draft** (FE lặp endpoint cũ · tiếp tục+tổng kết khi lỗi · ShippingTask status=0). Khuôn: mỗi modal +`viewDraft(...,silent)` +`approveDraftSilent()` (tái dùng transform, không show/confirm/toast); list +checkbox chọn nhiều dòng nháp +nút "Duyệt nhiều (N)" chạy `concatMap` tuần tự.
    - ✅ **XONG 3/6 loại (2026-07-25, ng build 0 lỗi, chờ deploy+test)**: **ShippingTask** + **Lô thường** (FE main 52ee608) + **Lô Canon** (FE main 1863044, `job-canon`/`modal-job-canon`, cùng endpoint `/api/shipment/addFromDraft`, tách `_buildPromoteEntity`).
    - ⬜ **Nhân rộng 3 loại còn lại**: Thanh toán (`payment`/`modal-payment-detail`), Debit (`debit-note`/`modal-debit-notes`), Công việc/PCCV (`workflow`/`modal-workflow`, dùng `promoteFromDraft`, dòng nháp từ BE `item.isDraft`).

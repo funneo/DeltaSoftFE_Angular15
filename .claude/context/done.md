@@ -1,5 +1,23 @@
 # Completed Features
 
+## Draft — DUYỆT NHIỀU (bulk approve) 3/6 loại + chuỗi fix promote ShippingTask — FE (+BE ShippingTask), chờ deploy — 2026-07-25
+Ngày làm việc 2026-07-25. **BE chỉ đụng 1 file `ShippingTaskController.cs` (2 commit)**; còn lại FE.
+
+### BE (NewAPI master — CẦN redeploy API)
+- `600fdd5` — **endpoint MỚI `POST /api/ShippingTask/AddFromDraft`** (clone `ShipmentController.AddFromDraft`, gate `WORKFLOW/CREATE`, inject `IDraft`, guard idempotent, `BranchId`/`Status` từ payload, `Status==1`→Firebase). Ngày KHÔNG reformat (payload VN = đúng `CreateAsync` ParseExact).
+- `ec27708` — **fix `MarkPromoted`**: `PromotedShipmentId = Id CHUYẾN vừa tạo` (giống khuôn Shipment), `PromotedRefNo = ReferCode` (fallback JobId lô). Trước ghi `ShipmentId lô` (298005) ⇒ draft hiển thị sai (verify DB: draft #2869 tạo task 39174).
+
+### FE (web-app-update main) — chuỗi fix promote ShippingTask (đơn lẻ)
+- `803a8c0` **ngày invalid**: `viewDraft` gọi `formatAndSetDateTime` (parse EN MM/DD) trên payload VN → Invalid/đảo ngày. Thay `_setupDraftDate` parse khoan dung ưu tiên VN, giữ `DD/MM/YYYY HH:mm:ss` (cả 7 field ngày).
+- `9b30c82` **cột "Nhóm thực hiện" rỗng**: payload chỉ có `handlingGroupId`; list nạp `HandlinggroupService` → map id→tên trong `mapDraftToRow`.
+- `ac32550` **400 operatorId null**: BE `OperatorId` int non-nullable; `addFromDraft` service thêm xóa key null (giống `add()`).
+
+### FE — DUYỆT NHIỀU (bulk approve) — khuôn dùng chung, FE-only
+Kế hoạch: cả 6 loại (FE lặp endpoint cũ · tiếp tục+tổng kết khi lỗi · ShippingTask status=0). **Khuôn**: mỗi modal +`viewDraft(payload,draftId,silent)` (silent=dựng entity, không show/load dropdown) +`approveDraftSilent()` (build entity đúng như duyệt lẻ, trả Observable, không confirm/toast); Shipment/Canon tách `_buildPromoteEntity()` dùng chung. List +checkbox chọn nhiều dòng nháp +nút **"Duyệt nhiều (N)"** → `concatMap` TUẦN TỰ qua endpoint sẵn có, `catchError`→tiếp tục, toast "Đã duyệt X/N, lỗi Y" → reload. Idempotent guard chống trùng.
+- ✅ **3/6 XONG**: **ShippingTask** (`shipping-task-cs`/`modal-shipping-task-cs`, `52ee608`) · **Lô thường** (`shipment-normal`/`modal-shipment`, `52ee608`) · **Lô Canon** (`job-canon`/`modal-job-canon`, chung `/api/shipment/addFromDraft`, `1863044`).
+- ⬜ **CÒN 3/6**: Thanh toán (`payment`/`modal-payment-detail`), Debit (`debit-note`/`modal-debit-notes`), Công việc/PCCV (`workflow`/`modal-workflow`, dùng `promoteFromDraft`, dòng nháp từ BE `item.isDraft`).
+- **Verify**: `ng build` 0 lỗi (Hash cuối `4a56585c`). **Deploy**: ⬜ tắt API → publish (endpoint AddFromDraft + fix MarkPromoted) ⬜ `ng build` FE. draft-web/DraftAPI KHÔNG đổi hôm nay.
+
 > ## ★★ MỐC DEPLOY 2026-07-24
 > Anh xác nhận **toàn bộ SQL đã chạy** và **ERP API + ERP FE + draft-web + DraftAPI đã deploy xong**.
 > ⇒ Mọi section bên dưới ghi *"chờ deploy" / "chờ chạy SQL" / "chờ ng build"* đều **đã được thực thi** tính đến mốc này; phần còn lại của chúng chỉ là **test E2E**.
