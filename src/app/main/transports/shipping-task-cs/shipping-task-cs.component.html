@@ -45,6 +45,10 @@
             appAction="CREATE">
             <i class="fa fa-plus"></i> Thêm
           </button>
+          <button class="btn btn-warning btn-sm" (click)="duyetNhieu()"
+            [disabled]="selectedDrafts.length==0 || bulkBusy" appPermission appFunction="WORKFLOW" appAction="CREATE">
+            <i class="fa fa-check-double"></i> Duyệt nhiều ({{ selectedDrafts.length }})
+          </button>
           <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
             appFunction="WORKFLOW" appAction="UPDATE">
             <i class="fa fa-edit"></i> Sửa
@@ -130,8 +134,12 @@
                 <span class="helping-el"></span>
                 <span><b> {{ item.id }}</b></span>
               </label>
-              <a *ngIf="item._isDraft" href="javascript:void(0)" (click)="showDraft(item); $event.stopPropagation()"
-                 class="label" style="background:#FFC107;color:#333;">NHÁP #{{ item.id }}</a>
+              <ng-container *ngIf="item._isDraft">
+                <input type="checkbox" [(ngModel)]="item._draftChecked" (click)="$event.stopPropagation()"
+                       title="Chọn để duyệt nhiều" style="margin-right:4px;vertical-align:middle;" />
+                <a href="javascript:void(0)" (click)="showDraft(item); $event.stopPropagation()"
+                   class="label" style="background:#FFC107;color:#333;">NHÁP #{{ item.id }}</a>
+              </ng-container>
             </td>
             <td>
               <span>

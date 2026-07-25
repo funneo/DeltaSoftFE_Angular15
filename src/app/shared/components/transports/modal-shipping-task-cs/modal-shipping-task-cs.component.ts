@@ -240,7 +240,8 @@ export class ModalShippingTaskCsComponent implements OnInit {
 
 
   // ===== NHÁP: mở nháp ở chế độ SỬA ĐƯỢC (CS chỉnh trước khi duyệt) — nền vàng =====
-  viewDraft(payload: string, draftId: number) {
+  // silent=true: dựng entity từ payload cho DUYỆT HÀNG LOẠT (không show modal, không load dropdown).
+  viewDraft(payload: string, draftId: number, silent: boolean = false) {
     this._isDraftView = true;
     this._draftId = draftId;
     let p: any = {};
@@ -251,8 +252,6 @@ export class ModalShippingTaskCsComponent implements OnInit {
     this.customerId = this.entity.customerId;
     this.customerCode = this.entity.customerCode;
     this.customerName = this.entity.customerName;
-    this._ensureDraftCustomer();
-    if (this.customerId) this.loadLocations(this.customerId);
     this.isEport = this.entity.shipmentType == 1174;
     this.checked = this.entity.status > 0; // "Chuyển việc cho Điều vận" — nháp mặc định chưa giao
     // ⚠ KHÔNG dùng formatAndSetDateTime (parse EN MM/DD) — payload nháp là VN DD/MM/YYYY HH:mm:ss.
@@ -261,7 +260,17 @@ export class ModalShippingTaskCsComponent implements OnInit {
     this.flagNew = false;
     this.flagXem = false;   // cho sửa
     this.flagSave = false;
-    this.modalAddEdit.show();
+    if (!silent) {
+      this._ensureDraftCustomer();
+      if (this.customerId) this.loadLocations(this.customerId);
+      this.modalAddEdit.show();
+    }
+  }
+
+  /** Duyệt nháp KHÔNG confirm/toast — trả Observable cho DUYỆT HÀNG LOẠT. Bulk luôn status=0 (chưa giao Điều vận). */
+  approveDraftSilent() {
+    this.entity.status = this.checked ? 1 : 0;
+    return this.service.addFromDraft(this.entity, this._draftId, this.entity.jobId);
   }
 
   /**
@@ -299,9 +308,8 @@ export class ModalShippingTaskCsComponent implements OnInit {
     this.notificationService.printConfirmationDialog(
       'Xác nhận chuyển nháp này thành chuyến thật trên ERP?',
       () => {
-        this.entity.status = this.checked ? 1 : 0;
         this.flagSave = true;
-        this.service.addFromDraft(this.entity, this._draftId, this.entity.jobId).subscribe((res: ResponseValue<any>) => {
+        this.approveDraftSilent().subscribe((res: ResponseValue<any>) => {
           if (res.code == '200' || res.code == '201') {
             this.notificationService.printSuccessMessage(
               res.data?.alreadyPromoted ? 'Nháp này đã được duyệt trước đó.' : MessageContstants.CREATED_OK_MSG

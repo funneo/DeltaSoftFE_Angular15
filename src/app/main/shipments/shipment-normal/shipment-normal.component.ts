@@ -13,8 +13,8 @@ import { DraftService, DraftEntryView } from '@app/shared/services/draft.service
 import * as moment from 'moment';
 import { PageChangedEvent } from 'ngx-bootstrap/pagination';
 import { NgxSpinnerService } from 'ngx-spinner';
-import { Subscription, forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Subscription, forkJoin, of, from } from 'rxjs';
+import { catchError, concatMap, map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-shipment-normal',
@@ -395,6 +395,44 @@ export class ShipmentNormalComponent implements OnInit {
   // Đã lưu nháp (chưa promote) — refresh list nền, GIỮ modal đang mở để anh tiếp tục sửa/duyệt.
   onSavedDraft() {
     this.loadData();
+  }
+
+  // ===== DUYỆT NHIỀU (bulk) =====
+  bulkBusy = false;
+  get selectedDrafts(): Shipment[] {
+    return (this.listShipment || []).filter((x: any) => x._isDraft && x._draftChecked);
+  }
+
+  duyetNhieu(): void {
+    const sel = this.selectedDrafts;
+    if (!sel.length || this.bulkBusy) return;
+    this.notificationService.printConfirmationDialog(
+      `Xác nhận duyệt ${sel.length} nháp thành Lô hàng thật?`,
+      () => {
+        this.viewModal = true;   // mount modal để tái dùng transform (viewDraft/approveDraftSilent)
+        this.bulkBusy = true;
+        setTimeout(() => {
+          let ok = 0, fail = 0;
+          from(sel).pipe(
+            concatMap((d: any) => {
+              this.modalAddEdit.viewDraft(d._draftPayload, d._draftId, true); // silent
+              return this.modalAddEdit.approveDraftSilent().pipe(
+                map((r: any) => r?.code == '200' || r?.code == '201'),
+                catchError(() => of(false))
+              );
+            })
+          ).subscribe({
+            next: (good: boolean) => good ? ok++ : fail++,
+            complete: () => {
+              this.bulkBusy = false;
+              this.viewModal = false;
+              this.notificationService.printSuccessMessage(`Đã duyệt ${ok}/${sel.length}` + (fail ? `, lỗi ${fail}` : ''));
+              this.loadData();
+            }
+          });
+        }, 80);
+      }
+    );
   }
 
   copyJobConfirm(item: Shipment): void {

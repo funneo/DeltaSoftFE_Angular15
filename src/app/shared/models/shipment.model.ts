@@ -70,7 +70,11 @@ export interface Shipment{
   createdBy?:string;
   employeeId?:number;
   //Thêm biến này đế lấy số lượng cont phân biệt theo loại cont
-
+  // Cờ dòng nháp (draft.DraftEntries) khi trộn vào list
+  _isDraft?: boolean;
+  _draftId?: number;
+  _draftPayload?: string;
+  _draftChecked?: boolean;   // tick chọn để duyệt nhiều
 }
 
 export interface ShipmentServiceDetail {

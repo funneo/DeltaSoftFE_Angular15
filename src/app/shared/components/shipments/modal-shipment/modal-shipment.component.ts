@@ -387,7 +387,8 @@ export class ModalShipmentComponent implements OnInit {
    * Reuse y nguyên form modal-shipment (flagXem=true) + nền vàng + nút Duyệt/Hủy.
    * Payload là DTO tạo-thật do site nháp gửi → shape giống Shipment. KHÔNG gọi BE lưu.
    */
-  viewDraft(payload: any, draftId: number) {
+  // silent=true: dựng entity từ payload cho DUYỆT HÀNG LOẠT (không show modal, không load HĐ/báo giá).
+  viewDraft(payload: any, draftId: number, silent: boolean = false) {
     let p: any = payload;
     if (typeof payload === 'string') {
       try { p = JSON.parse(payload || '{}'); } catch { p = {}; }
@@ -424,11 +425,13 @@ export class ModalShipmentComponent implements OnInit {
 
     this._typePrice = this.entity.contractId ? 0 : 1;
     this._isBaoGiaSoHoa = !!this.entity.jobDig;
-    if (this.entity.jobType == 0 && this._customerId) {
-      this.loadHopDong();
-      this.loadBaoGia();
+    if (!silent) {
+      if (this.entity.jobType == 0 && this._customerId) {
+        this.loadHopDong();
+        this.loadBaoGia();
+      }
+      this.modalAddEdit.show();
     }
-    this.modalAddEdit.show();
   }
 
   private _draftDate(v: any, withTime: boolean): string {
@@ -505,8 +508,8 @@ export class ModalShipmentComponent implements OnInit {
       'Duyệt nháp này thành Lô hàng thật?', () => this._doApproveDraft());
   }
 
-  private _doApproveDraft() {
-    // Dựng entity giống saveChange (KHÔNG đụng saveChange để tránh ảnh hưởng luồng thật)
+  /** Dựng entity promote từ payload/holders (giống saveChange, KHÔNG đụng saveChange) — dùng chung duyệt lẻ + bulk. */
+  private _buildPromoteEntity() {
     this.entity.shipmentBranches = [];
     this.listChinhanhthamgia?.forEach(x => this.entity.shipmentBranches.push({ branchId: x }));
     if (this._cdsDate)
@@ -527,9 +530,17 @@ export class ModalShipmentComponent implements OnInit {
     this.entity.shipmentServiceDetails = this.listDichVuSoHoa?.filter(z => z.serviceId);
     this.entity.id = undefined;        // ép tạo mới
     this.entity.jobStaff = this.userName;
+  }
 
+  /** Duyệt nháp KHÔNG confirm/toast — trả Observable cho DUYỆT HÀNG LOẠT. */
+  approveDraftSilent() {
+    this._buildPromoteEntity();
+    return this.shipmentService.addFromDraft(this.entity, this._draftId);
+  }
+
+  private _doApproveDraft() {
     this.flagSave = true;
-    this.shipmentService.addFromDraft(this.entity, this._draftId).subscribe((res: ResponseValue<any>) => {
+    this.approveDraftSilent().subscribe((res: ResponseValue<any>) => {
       if (res.code == '200' || res.code == '201') {
         const jobId = res.data?.jobId;
         this._notificationService.printSuccessMessage(

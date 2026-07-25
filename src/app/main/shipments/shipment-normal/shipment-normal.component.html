@@ -16,6 +16,10 @@
         <button class="btn btn-success btn-sm" (click)="add()" appPermission appFunction="SHIPMENT" appAction="CREATE">
           <i class="fa fa-plus"></i> Thêm
         </button>
+        <button class="btn btn-warning btn-sm" (click)="duyetNhieu()"
+          [disabled]="selectedDrafts.length==0 || bulkBusy" appPermission appFunction="SHIPMENT" appAction="CREATE">
+          <i class="fa fa-check-double"></i> Duyệt nhiều ({{ selectedDrafts.length }})
+        </button>
         <button class="btn btn-primary btn-sm" (click)="edit(false)" [disabled]="!flagEdit" appPermission
           appFunction="SHIPMENT" appAction="UPDATE">
           <i class="fa fa-edit"></i> Sửa
@@ -135,8 +139,12 @@
           <td>{{item.customerCode}}</td>
           <td class="col-enter">{{item.customerName}}</td>
           <td>
-            <span *ngIf="item._isDraft" class="badge-draft" title="Xem chi tiết nháp" style="cursor:pointer"
-              (click)="showDraft(item)"><i class="fa fa-edit"></i> {{item.jobId}}</span>
+            <ng-container *ngIf="item._isDraft">
+              <input type="checkbox" [(ngModel)]="item._draftChecked" (click)="$event.stopPropagation()"
+                     title="Chọn để duyệt nhiều" style="margin-right:4px;vertical-align:middle;" />
+              <span class="badge-draft" title="Xem chi tiết nháp" style="cursor:pointer"
+                (click)="showDraft(item)"><i class="fa fa-edit"></i> {{item.jobId}}</span>
+            </ng-container>
             <a *ngIf="!item._isDraft" [routerLink]="[]" (click)="showModal(item)">{{item.jobId}}</a>
           </td>
           <td>{{item.shipmentType?.toString()|List:listShipmentType}}</td>

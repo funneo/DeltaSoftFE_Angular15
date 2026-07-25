@@ -90,4 +90,5 @@ export interface ShippingTask {
     _isDraft?: boolean;
     _draftId?: number;
     _draftPayload?: string;
+    _draftChecked?: boolean;   // tick chọn để duyệt nhiều
 }
