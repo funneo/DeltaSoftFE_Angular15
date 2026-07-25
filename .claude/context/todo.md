@@ -13,7 +13,9 @@ Anh xác nhận: **toàn bộ file `.sql` đang treo trong tài liệu này đã
 Host = màn CS `shipping-task-cs` (KHÔNG opman). CS mở nháp SỬA ĐƯỢC + tự tick "Chuyển việc cho Điều vận" (status 0/1) → "Xác nhận chuyển sang ERP". `MarkPromoted`: PromotedRefNo=JobId lô, PromotedShipmentId=ShipmentId lô. BE `ShippingTaskController.AddFromDraft` (clone Shipment, KHÔNG SQL mới); FE service+modal+list+model.
 1. ⬜ Tắt API → build/publish (endpoint mới) + `ng build` deploy FE.
 2. ⬜ Test E2E: tạo nháp draft-web → màn CS dòng vàng → sửa field → tick giao Điều vận → Xác nhận → chuyến thật status=1 + OpMan noti; nháp biến mất; draft-web hiện JobId/ShipmentId lô; bấm 2 lần không trùng.
-3. ⬜ **P5 duyệt hàng loạt** (checkbox chọn nhiều + lặp AddFromDraft) — CHƯA làm, để sau khi test P4 ổn.
+3. **P5 duyệt hàng loạt (bulk approve) — kế hoạch chốt: cả 6 loại draft** (FE lặp endpoint cũ · tiếp tục+tổng kết khi lỗi · ShippingTask status=0). Khuôn: mỗi modal +`viewDraft(...,silent)` +`approveDraftSilent()` (tái dùng transform, không show/confirm/toast); list +checkbox chọn nhiều dòng nháp +nút "Duyệt nhiều (N)" chạy `concatMap` tuần tự.
+   - ✅ **PILOT XONG (2026-07-25, FE main 52ee608, ng build 0 lỗi, chờ deploy+test)**: **ShippingTask** (`shipping-task-cs` + `modal-shipping-task-cs`) + **Lô thường** (`shipment-normal` + `modal-shipment`, tách `_buildPromoteEntity`).
+   - ⬜ **Nhân rộng 4 loại còn lại** sau khi anh test pilot OK: Lô Canon (`job-canon`/`modal-job-canon`, cùng endpoint shipment), Thanh toán (`payment`/`modal-payment-detail`), Debit (`debit-note`/`modal-debit-notes`), Công việc/PCCV (`workflow`/`modal-workflow`, dùng `promoteFromDraft`, dòng nháp từ BE `item.isDraft`).
 
 ## ✅ ĐÃ DEPLOY 2026-07-24 (trước đó: CHỜ DEPLOY 2026-07-16 — FE main 81f6f2b · BE master 740bdf4) — chi tiết ở done.md
 2 tính năng phần dầu, SQL đã chạy, BE+FE build 0 lỗi, **đã deploy**:
