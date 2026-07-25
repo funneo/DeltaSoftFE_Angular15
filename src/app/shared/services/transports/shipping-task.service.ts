@@ -46,6 +46,8 @@ export class ShippingTaskService extends BaseService {
   /** Duyệt nháp ShippingTask → tạo chuyến thật (BE AddFromDraft). jobId (lô) đi qua keyWord để ghi ngược PromotedRefNo. */
   addFromDraft(entity: ShippingTask, draftId: number, jobId: string) {
     let p: FromBodyBase<ShippingTask> = {};
+    // Xóa key null (giống add()) — payload nháp có field int NULL (operatorId/…) mà BE là int non-nullable ⇒ 400 khi model-binding.
+    Object.keys(entity).forEach(key => entity[key] === null ? delete entity[key] : '');
     p.item = entity;
     p.id = draftId?.toString();
     p.keyWord = jobId ?? '';
