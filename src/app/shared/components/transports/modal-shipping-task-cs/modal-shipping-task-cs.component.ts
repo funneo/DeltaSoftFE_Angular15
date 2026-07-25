@@ -255,13 +255,27 @@ export class ModalShippingTaskCsComponent implements OnInit {
     if (this.customerId) this.loadLocations(this.customerId);
     this.isEport = this.entity.shipmentType == 1174;
     this.checked = this.entity.status > 0; // "Chuyển việc cho Điều vận" — nháp mặc định chưa giao
-    this.dateFields.forEach(({ field, optionField }) => {
-      this._utilityService.formatAndSetDateTime(this.entity, field, optionField);
-    });
+    // ⚠ KHÔNG dùng formatAndSetDateTime (parse EN MM/DD) — payload nháp là VN DD/MM/YYYY HH:mm:ss.
+    // Parse khoan dung, GIỮ chuỗi VN (đúng định dạng CreateAsync ParseExact) + dựng option picker.
+    this.dateFields.forEach(({ field, optionField }) => this._setupDraftDate(field, optionField));
     this.flagNew = false;
     this.flagXem = false;   // cho sửa
     this.flagSave = false;
     this.modalAddEdit.show();
+  }
+
+  /**
+   * Ngày nháp: parse khoan dung (ƯU TIÊN VN dd/MM/yyyy), chuẩn hóa về `DD/MM/YYYY HH:mm:ss`
+   * (đúng định dạng BE `CreateAsync` ParseExact) + dựng option cho daterangepicker.
+   * Thay cho `formatAndSetDateTime` (chỉ parse EN MM/DD → làm hỏng chuỗi VN của payload).
+   */
+  private _setupDraftDate(field: string, optionField: string) {
+    const raw = (this.entity as any)[field];
+    if (!raw) { (this.entity as any)[field] = null; return; }
+    const m = moment(raw, ['DD/MM/YYYY HH:mm:ss', 'DD/MM/YYYY', moment.ISO_8601, 'MM/DD/YYYY HH:mm:ss'], true);
+    if (!m.isValid()) { (this.entity as any)[field] = null; return; }
+    (this.entity as any)[field] = m.format('DD/MM/YYYY HH:mm:ss');
+    (this as any)[optionField] = this._utilityService.dateTimeOptionDays(m.toDate(), true);
   }
 
   /** Bơm KH của nháp vào listCustomer nếu ngoài phạm vi người duyệt (giống các modal draft khác). */
