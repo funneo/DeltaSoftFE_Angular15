@@ -402,7 +402,8 @@ export class ModalJobCanonComponent implements OnInit {
    * Xem chi tiết 1 lô hàng Canon NHÁP (draft.DraftEntries.Payload) ở chế độ read-only.
    * Reuse y nguyên form modal-job-canon (flagXem=true) + nền vàng + nút Duyệt/Hủy. KHÔNG gọi BE lưu.
    */
-  viewDraft(payload: any, draftId: number) {
+  // silent=true: dựng entity từ payload cho DUYỆT HÀNG LOẠT (không show modal, không load HĐ/báo giá/road).
+  viewDraft(payload: any, draftId: number, silent: boolean = false) {
     let p: any = payload;
     if (typeof payload === 'string') {
       try { p = JSON.parse(payload || '{}'); } catch { p = {}; }
@@ -438,12 +439,14 @@ export class ModalJobCanonComponent implements OnInit {
 
     this._typePrice = this.entity.contractId ? 0 : 1;
     this._isBaoGiaSoHoa = !!this.entity.jobDig;
-    if (this.entity.jobType == 0 && this._customerId) {
-      this.loadHopDong();
-      this.loadBaoGia();
-      this.loadRoad();
+    if (!silent) {
+      if (this.entity.jobType == 0 && this._customerId) {
+        this.loadHopDong();
+        this.loadBaoGia();
+        this.loadRoad();
+      }
+      this.modalAddEdit.show();
     }
-    this.modalAddEdit.show();
   }
 
   private _draftDate(v: any, withTime: boolean): string {
@@ -517,7 +520,8 @@ export class ModalJobCanonComponent implements OnInit {
       'Duyệt nháp này thành Job Canon thật?', () => this._doApproveDraft());
   }
 
-  private _doApproveDraft() {
+  /** Dựng entity promote từ payload/holders (giống saveChange) — dùng chung duyệt lẻ + bulk. */
+  private _buildPromoteEntity() {
     this.entity.shipmentBranches = [];
     this.listChinhanhthamgia?.forEach(x => this.entity.shipmentBranches.push({ branchId: x }));
     if (this._cdsDate)
@@ -538,9 +542,17 @@ export class ModalJobCanonComponent implements OnInit {
     this.entity.shipmentServiceDetails = this.listDichVuSoHoa?.filter(z => z.serviceId);
     this.entity.id = undefined;        // ép tạo mới
     this.entity.jobStaff = this.userName;
+  }
 
+  /** Duyệt nháp KHÔNG confirm/toast — trả Observable cho DUYỆT HÀNG LOẠT. */
+  approveDraftSilent() {
+    this._buildPromoteEntity();
+    return this.shipmentService.addFromDraft(this.entity, this._draftId);
+  }
+
+  private _doApproveDraft() {
     this.flagSave = true;
-    this.shipmentService.addFromDraft(this.entity, this._draftId).subscribe((res: ResponseValue<any>) => {
+    this.approveDraftSilent().subscribe((res: ResponseValue<any>) => {
       if (res.code == '200' || res.code == '201') {
         const jobId = res.data?.jobId;
         this._notificationService.printSuccessMessage(
