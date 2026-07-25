@@ -1,9 +1,11 @@
 <div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalAddEdit="bs-modal" [config]="{backdrop: 'static'}"
   tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
   <div class="modal-dialog modal-lg">
-    <div class="modal-content">
+    <div class="modal-content" [class.draft-view]="_isDraftView">
       <div #myHandle class="modal-header">
-        <h4 class="modal-title pull-left">Công việc Giao nhận vận chuyển</h4>
+        <h4 class="modal-title pull-left">Công việc Giao nhận vận chuyển
+          <span *ngIf="_isDraftView" class="label" style="background:#FFC107;color:#333;">NHÁP #{{ _draftId }}</span>
+        </h4>
         <button type="button" class="close pull-right" aria-label="Close" (click)="modalAddEdit.hide()">
           <span aria-hidden="true">&times;</span>
         </button>
@@ -276,12 +278,15 @@
           </div>
           <!-- /.box-body -->
           <div class="box-footer text-right">
-            <button *ngIf="!flagXem " type="button" class="btn btn-primary btn-sm" (click)="saveAndNew(addEditForm)"
+            <button *ngIf="!flagXem && !_isDraftView" type="button" class="btn btn-primary btn-sm" (click)="saveAndNew(addEditForm)"
               [disabled]="!addEditForm.form.valid || flagSave ">
               <i class="fa fa-save"></i> Lưu & Nhập tiếp</button>
-            <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
+            <button *ngIf="!flagXem && !_isDraftView" type="submit" class="btn btn-primary btn-sm"
               [disabled]="!addEditForm.form.valid || flagSave">
               <i class="fa fa-save"></i> Lưu</button>
+            <button *ngIf="_isDraftView" type="button" class="btn btn-success btn-sm" (click)="approveDraft()"
+              [disabled]="!addEditForm.form.valid || flagSave">
+              <i class="fa fa-check"></i> Xác nhận chuyển sang ERP</button>
             <button type="button" (click)="modalAddEdit.hide()" class="btn btn-danger btn-sm">
               <i class="fa fa-close"></i> Hủy</button>
           </div>

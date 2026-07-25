@@ -29,7 +29,9 @@ import { ShippingTaskService } from "@app/shared/services/transports/shipping-ta
 import * as moment from "moment";
 import { PageChangedEvent } from "ngx-bootstrap/pagination";
 import { NgxSpinnerService } from "ngx-spinner";
-import { interval, Subscription } from "rxjs";
+import { interval, Subscription, forkJoin, of } from "rxjs";
+import { catchError } from "rxjs/operators";
+import { DraftService, DraftEntryView } from "@app/shared/services/draft.service";
 
 @Component({
   selector: "app-shipping-task-cs",
@@ -85,7 +87,8 @@ export class ShippingTaskCsComponent implements OnInit {
     private _authService: AuthService,
     private branchService: BranchService,
     private dayService: GetDayService, private datePipe:DatePipe,
-    private otherCategoriesService: OtherCategoriesService
+    private otherCategoriesService: OtherCategoriesService,
+    private draftService: DraftService
   ) {}
 
   ngOnInit(): void {
@@ -141,20 +144,81 @@ export class ShippingTaskCsComponent implements OnInit {
       .set('toDate', denNgay)
       .set("branchId", this.branchId ? this.branchId.toString() : "0")
       .set("keyword", this.keyword);
-    this.busy = this.service
-      .getAllByCs(params)
-      .subscribe((res: ResponseValue<ShippingTask[]>) => {
-        if (res.code == "200" || res.code == "201" || res.code == "204") {
-          this.listWorkflow = res.data;
-          this.spinner.hide("spinner1");
-          this.filterData();
-        } else {
-            this.notificationService.printErrorMessage(
-              MessageContstants.GETDATA_ERR_MSG + "\n" + res.code
-            );
-          }
-          this.spinner.hide("spinner1");
-      });
+    // Trộn nháp ShippingTask (draft.DraftEntries) vào list CS — clone khuôn debit/payment.
+    const draftFilter = {
+      draftType: 'ShippingTask',
+      keyword: this.keyword,
+      fromDate: moment(this.ngayBatDau).format('YYYY-MM-DD'),
+      toDate: moment(this.ngayKetThuc).format('YYYY-MM-DD'),
+      branchId: this.branchId ?? null,
+    };
+    this.busy = forkJoin({
+      erp: this.service.getAllByCs(params),
+      draft: this.draftService.getPagingForErp(draftFilter).pipe(catchError(() => of({ code: '200', data: [] } as any))),
+    }).subscribe((res: any) => {
+      const erpOk = res.erp?.code == "200" || res.erp?.code == "201" || res.erp?.code == "204";
+      if (erpOk) {
+        const erpItems: ShippingTask[] = res.erp?.data ?? [];
+        // Defensive: BE nháp có thể trả 500/204/null → chỉ dùng khi 200/201 + isArray.
+        const draftOk = res.draft?.code == '200' || res.draft?.code == '201';
+        const draftItems: DraftEntryView[] = (draftOk && Array.isArray(res.draft?.data)) ? res.draft.data : [];
+        const draftRows: ShippingTask[] = draftItems
+          .filter(d => d.draftType === 'ShippingTask')
+          .map(d => this.mapDraftToRow(d));
+        this.listWorkflow = [...draftRows, ...erpItems];
+        this.spinner.hide("spinner1");
+        this.filterData();
+      } else {
+        this.notificationService.printErrorMessage(
+          MessageContstants.GETDATA_ERR_MSG + "\n" + res.erp?.code
+        );
+      }
+      this.spinner.hide("spinner1");
+    });
+  }
+
+  /** dd/MM/yyyy(+HH:mm:ss) | ISO → Date (để DatePipe không vỡ *ngFor với chuỗi nháp). */
+  private parseDraftDate(s: any): Date | null {
+    if (!s) return null;
+    const m = moment(s, ['DD/MM/YYYY HH:mm:ss', 'DD/MM/YYYY', moment.ISO_8601], true);
+    return m.isValid() ? m.toDate() : null;
+  }
+
+  /** Parse draft.Payload JSON → row shape ShippingTask để hiện chung 1 list (cờ _isDraft). */
+  private mapDraftToRow(d: DraftEntryView): ShippingTask {
+    let p: any = {};
+    try { p = JSON.parse(d.payload ?? '{}'); } catch {}
+    const row: any = {
+      id: d.id,
+      customerName: d.customerName ?? p.customerName,
+      jobId: p.jobId,
+      shipmentId: p.shipmentId,
+      hawB_HBL: p.hawB_HBL,
+      mawB_MBL: p.mawB_MBL,
+      bookingNo: p.billBooking ?? p.bookingNo,
+      handlingGroupName: p.handlingGroupName,
+      referCode: p.referCode,
+      shipmentType: p.shipmentType,
+      taskType: p.taskType ?? 0,
+      contTypeName: p.contTypeName,
+      containerNumber: p.containerNumber,
+      createdByName: d.createdByName,
+      createdByTel: '',
+      pickupTime: this.parseDraftDate(p.pickupTime),
+      deliveryTime: this.parseDraftDate(p.deliveryTime),
+      pickupLocation: p.pickupLocation,
+      deliveryLocation: p.deliveryLocation,
+      weight: p.weight,
+      cutOffTime: p.cutOffTime,
+      demurageTime: p.demurageTime,
+      refNo: '',
+      status: 0,
+      checked: false,
+      _isDraft: true,
+      _draftId: d.id,
+      _draftPayload: d.payload,
+    };
+    return row as ShippingTask;
   }
   filterData(): void {
     this.filteredData = this.listWorkflow?.filter((item) => {
@@ -183,11 +247,26 @@ export class ShippingTaskCsComponent implements OnInit {
   }
 
   clickRow(item: ShippingTask): void {
+    if ((item as any)._isDraft) return;   // dòng nháp chọn qua badge "Nháp #" → mở modal, không tick
     item.checked = !item.checked;
     this.listWorkflow.forEach((it) => {
       if (it.id != item.id) it.checked = false;
     });
     this.icheck();
+  }
+
+  // ===== NHÁP: xem/sửa/duyệt bằng CHÍNH modal-shipping-task-cs =====
+  showDraft(item: any): void {
+    this.viewModal = true;
+    setTimeout(() => {
+      this.modalAddEdit.viewDraft(item._draftPayload, item._draftId);
+    }, 50);
+  }
+
+  // Modal đã gọi BE addFromDraft + báo kết quả → parent đóng modal + reload (nháp biến mất, chuyến thật hiện lên).
+  onConfirmPromote(): void {
+    this.viewModal = false;
+    this.loadData();
   }
 
   timKiem(): void {

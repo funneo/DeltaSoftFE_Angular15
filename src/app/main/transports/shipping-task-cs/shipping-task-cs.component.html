@@ -123,13 +123,15 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let item of filteredData" (click)="clickRow(item)" [style.background-color]="item.status==0 ? 'white': item.refNo?.length>0? '#E2AEF4':'#DFF6FF' ">
+          <tr *ngFor="let item of filteredData" (click)="clickRow(item)" [style.background-color]="item._isDraft ? '#FFF8E1' : (item.status==0 ? 'white': item.refNo?.length>0? '#E2AEF4':'#DFF6FF') ">
             <td class="table-checkbox">
-              <label class="custom-checkbox">
+              <label class="custom-checkbox" *ngIf="!item._isDraft">
                 <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
                 <span class="helping-el"></span>
                 <span><b> {{ item.id }}</b></span>
               </label>
+              <a *ngIf="item._isDraft" href="javascript:void(0)" (click)="showDraft(item); $event.stopPropagation()"
+                 class="label" style="background:#FFC107;color:#333;">NHÁP #{{ item.id }}</a>
             </td>
             <td>
               <span>
@@ -172,15 +174,20 @@
             <td>{{ (item.driverName || '') + (item.driverName?.length > 0 ? '/' : '') + (item.driverTel || '') }}</td>
             <td>{{item.vehiclelLicensePlates}}</td>
             <td>
-              <button class="btn btn-success btn-sm"
-              (click)="copy(item)">Copy
-            </button>
-              <button class="btn btn-warning btn-sm" *ngIf="(!item.refNo || item.refNo?.length==0) && item.status==1 &&(item.createdBy==userLoged.id || userLoged.isAdmin)"
-              (click)="huyviec(item)">Hủy việc
+              <ng-container *ngIf="!item._isDraft">
+                <button class="btn btn-success btn-sm"
+                (click)="copy(item)">Copy
               </button>
+                <button class="btn btn-warning btn-sm" *ngIf="(!item.refNo || item.refNo?.length==0) && item.status==1 &&(item.createdBy==userLoged.id || userLoged.isAdmin)"
+                (click)="huyviec(item)">Hủy việc
+                </button>
 
-              <button class="btn btn-primary btn-sm" (click)="viewModalAttachFile(item)">
-                <i class="fas fa-image"></i> Đính kèm
+                <button class="btn btn-primary btn-sm" (click)="viewModalAttachFile(item)">
+                  <i class="fas fa-image"></i> Đính kèm
+                </button>
+              </ng-container>
+              <button *ngIf="item._isDraft" class="btn btn-warning btn-sm" (click)="showDraft(item); $event.stopPropagation()">
+                <i class="fa fa-check"></i> Xem / Duyệt
               </button>
             </td>
           </tr>
@@ -209,7 +216,7 @@
     </div>
     <!-- /.box -->
   </div>
-  <modal-shipping-task-cs *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
+  <modal-shipping-task-cs *ngIf="viewModal" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()" (ApproveDraft)="onConfirmPromote()">
   </modal-shipping-task-cs>
   <!-- <modal-grade-workflow *ngIf="viewGrade" (SaveSuccess)="gradeSuccess($event)" (CloseModal)="closeGradeModal()">
   </modal-grade-workflow> -->

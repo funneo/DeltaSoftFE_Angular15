@@ -93,8 +93,12 @@ export class ModalShippingTaskCsComponent implements OnInit {
     { field: 'detentionTime', optionField: 'ngaybatdauOption' },
     { field: 'cutOffTime', optionField: 'ngaybatdauOption' }
   ];
+  // ===== Chế độ xem/sửa/duyệt NHÁP (draft.DraftEntries) =====
+  public _isDraftView: boolean = false;
+  public _draftId?: number;
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter;
+  @Output() ApproveDraft: EventEmitter<any> = new EventEmitter();
   @ViewChild('modalAddEdit', { static: false }) modalAddEdit: ModalDirective;
   // @ViewChild(ModalWorkflowAttackFilesComponent, { static: false }) modalAttachFiles: ModalWorkflowAttackFilesComponent
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent
@@ -187,6 +191,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
 
 
   add(item: ShippingTask, flag: boolean) {
+    this._isDraftView = false;
     this.entity = item;
     this.entity.status = 0;
     if (!flag) {
@@ -209,6 +214,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
   }
 
   edit(id: string, flag: boolean) {
+    this._isDraftView = false;
     this.service.getDetail(id).subscribe((res: ResponseValue<ShippingTask>) => {
       if (res.code == '200' || res.code == '201') {
         this.entity = res.data;
@@ -233,7 +239,72 @@ export class ModalShippingTaskCsComponent implements OnInit {
   }
 
 
+  // ===== NHÁP: mở nháp ở chế độ SỬA ĐƯỢC (CS chỉnh trước khi duyệt) — nền vàng =====
+  viewDraft(payload: string, draftId: number) {
+    this._isDraftView = true;
+    this._draftId = draftId;
+    let p: any = {};
+    try { p = JSON.parse(payload ?? '{}'); } catch { }
+    this.entity = p as ShippingTask;
+    this.entity.id = undefined;          // ép promote tạo mới (BE cũng set Id=0)
+    if (this.entity.status == null) this.entity.status = 0;
+    this.customerId = this.entity.customerId;
+    this.customerCode = this.entity.customerCode;
+    this.customerName = this.entity.customerName;
+    this._ensureDraftCustomer();
+    if (this.customerId) this.loadLocations(this.customerId);
+    this.isEport = this.entity.shipmentType == 1174;
+    this.checked = this.entity.status > 0; // "Chuyển việc cho Điều vận" — nháp mặc định chưa giao
+    this.dateFields.forEach(({ field, optionField }) => {
+      this._utilityService.formatAndSetDateTime(this.entity, field, optionField);
+    });
+    this.flagNew = false;
+    this.flagXem = false;   // cho sửa
+    this.flagSave = false;
+    this.modalAddEdit.show();
+  }
+
+  /** Bơm KH của nháp vào listCustomer nếu ngoài phạm vi người duyệt (giống các modal draft khác). */
+  private _ensureDraftCustomer() {
+    if (!this.customerId) return;
+    const exists = (this.listCustomer || []).some(c => c.id === this.customerId);
+    if (!exists) {
+      this.listCustomer = [
+        { id: this.customerId, customerCode: this.customerCode, customerName: this.customerName || '(KH của nháp)', locked: false } as Customer,
+        ...(this.listCustomer || [])
+      ];
+    }
+  }
+
+  /** Duyệt nháp → tạo chuyến thật. entity.status = checked?1:0 (CS tự quyết giao Điều vận). */
+  approveDraft() {
+    if (!this.entity?.shipmentId) {
+      this.notificationService.printErrorMessage('Nháp thiếu Lô hàng — không thể duyệt.');
+      return;
+    }
+    this.notificationService.printConfirmationDialog(
+      'Xác nhận chuyển nháp này thành chuyến thật trên ERP?',
+      () => {
+        this.entity.status = this.checked ? 1 : 0;
+        this.flagSave = true;
+        this.service.addFromDraft(this.entity, this._draftId, this.entity.jobId).subscribe((res: ResponseValue<any>) => {
+          if (res.code == '200' || res.code == '201') {
+            this.notificationService.printSuccessMessage(
+              res.data?.alreadyPromoted ? 'Nháp này đã được duyệt trước đó.' : MessageContstants.CREATED_OK_MSG
+            );
+            this.modalAddEdit.hide();
+            this.ApproveDraft.emit(this._draftId);
+          } else {
+            this.notificationService.printErrorMessage(MessageContstants.CREATED_ERR_MSG + '\n' + res.code + '\n' + res.message);
+            this.flagSave = false;
+          }
+        }, () => { this.flagSave = false; });
+      }
+    );
+  }
+
   saveChange(form: NgForm) {
+    if (this._isDraftView) return;   // xem/sửa nháp → dùng nút "Xác nhận chuyển sang ERP", chặn Enter tạo thật
     if (form.valid) {
       if (this.endTime < this.startTime) {
         this.notificationService.printErrorMessage(MessageContstants.ENDTIME_NOT_LARGER_THAN_STARTTIME);
@@ -279,6 +350,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
   }
 
   saveAndNew(form: NgForm) {
+    if (this._isDraftView) return;   // chặn Enter/lưu-thêm khi đang xem/sửa nháp
     if (form.valid) {
       if (this.endTime < this.startTime) {
         this.notificationService.printErrorMessage(MessageContstants.ENDTIME_NOT_LARGER_THAN_STARTTIME);

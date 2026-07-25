@@ -1,16 +1,31 @@
 # Pending / In-Progress Work
 
-## ▶ CHỜ DEPLOY (2026-07-16, đã COMMIT+PUSH — FE main 81f6f2b · BE master 740bdf4) — chi tiết ở done.md
-2 tính năng phần dầu, SQL đã chạy, BE+FE build 0 lỗi, chỉ còn deploy:
-1. **Cấp dầu theo lệnh — Hủy phiếu ĐÃ XUẤT + nhả lệnh về GetForSummary**: SP `SP_DriverFuelApproval_Cancel` (Status=-1 + reset 4 nhóm cờ) + endpoint `POST /api/DriverFuelApproval/Cancel` (quyền ACCEPT) + FE `modal-fuel-summary` (2 nút Hủy phiếu(-1)/Hủy IGAS hết hạn(-2) loại trừ theo hạn đổ `isIgasExpired()`). ⬜ tắt API → build/publish + deploy FE → test E2E.
-2. **Chốt dầu phương tiện — Sửa phiếu nháp**: hiện lại nút Tải/xóa dòng + khóa đổi xe + "Tải dữ liệu" chạy MERGE (giữ dòng cũ). FE-only. ⬜ deploy FE. **SP `GetCandidatesForUpdate` DEFERRED** (chỉ làm nếu phát hiện dòng nguồn vô hiệu lọt phiếu).
+## ★★ MỐC 2026-07-24 — SQL ĐÃ CHẠY HẾT + BE/FE ĐÃ DEPLOY HẾT
+Anh xác nhận: **toàn bộ file `.sql` đang treo trong tài liệu này đã chạy** và **ERP API + ERP FE + draft-web + DraftAPI đã deploy xong**.
+- **SQL verify read-only cùng ngày** (`sys.objects`/`sys.parameters`/`OBJECT_DEFINITION`): `SP_DriverFuelClosing_Update` (công thức `B+C−A`, query kiểm lệch = **0 dòng**) · `_GetPaging` (+`CreatedByName`) · `SP_DriverFuelApproval_Cancel` · `SP_DispatchOrderFCL_ChangeStatus` (+`@EmployeeId`) + `..._StatusLog_GetByRefNo` + bảng log · `SP_DispatchOrderFCL_GetAll` (+`@IsLegacy/@IsSubcontractors/@SupplierId`) · `SP_DispatchOrderFCL_CreateWithTO` (+`RecomputeTotals`, status khởi tạo = 1) · `SP_GetAllLocations` (+`@BranchId`) · `Ports.BranchId` · `SP_Fee_GetForDriver` · `draft.SP_DraftEntries_Insert` (+`ShippingTask`). Lệnh FCL v2 kẹt `Status=0`: còn **0**.
+- ⇒ **Mọi dòng `⬜ deploy` / `⬜ ng build` / `⬜ chạy SQL` nằm ở các section bên dưới coi như XONG tính đến mốc này.** Việc còn lại của các section đó chỉ còn **test E2E** (đã liệt kê sẵn trong từng mục) và các quyết định nghiệp vụ chờ anh chốt.
 
-## ▶ Danh mục Máy phát điện (Generator Catalog) — Phương án A, KHÔNG khấu hao (2026-07-16, CHỜ ANH CHỐT 5 điểm — CHƯA CODE, CHƯA SQL)
+**2 ngoại lệ CÓ CHỦ ĐÍCH (không phải sót):**
+- ⏸ `Migration_AccountingEntry_P50_20260710.sql` (bút toán đối ứng P5.0) — **chưa chạy**, đúng quyết định TẠM DỪNG.
+- ⬜ `Migration_FCL_GrantAcceptClosing_20260710.sql` — **`FCL_ACCEPT` vẫn thiếu role `DV` + `DV-M`** (verify 2026-07-24: ACCEPT mới có ở CSVT-M, DV-CBT, DV-HCM, DVM-HCM, GĐ, IT, QL, TQ-TC) ⇒ **điều vận chưa thấy nút Duyệt B1**. Anh nói tự bổ sung; cấp xong phải đăng xuất/đăng nhập lại (quyền nằm trong JWT).
+
+## ▶ Nháp ShippingTask — P4 View+Sửa+Promote màn CS (2026-07-25, BE+FE build 0 lỗi, ĐÃ COMMIT+PUSH, chờ deploy + test E2E) — chi tiết ở done.md
+Host = màn CS `shipping-task-cs` (KHÔNG opman). CS mở nháp SỬA ĐƯỢC + tự tick "Chuyển việc cho Điều vận" (status 0/1) → "Xác nhận chuyển sang ERP". `MarkPromoted`: PromotedRefNo=JobId lô, PromotedShipmentId=ShipmentId lô. BE `ShippingTaskController.AddFromDraft` (clone Shipment, KHÔNG SQL mới); FE service+modal+list+model.
+1. ⬜ Tắt API → build/publish (endpoint mới) + `ng build` deploy FE.
+2. ⬜ Test E2E: tạo nháp draft-web → màn CS dòng vàng → sửa field → tick giao Điều vận → Xác nhận → chuyến thật status=1 + OpMan noti; nháp biến mất; draft-web hiện JobId/ShipmentId lô; bấm 2 lần không trùng.
+3. ⬜ **P5 duyệt hàng loạt** (checkbox chọn nhiều + lặp AddFromDraft) — CHƯA làm, để sau khi test P4 ổn.
+
+## ✅ ĐÃ DEPLOY 2026-07-24 (trước đó: CHỜ DEPLOY 2026-07-16 — FE main 81f6f2b · BE master 740bdf4) — chi tiết ở done.md
+2 tính năng phần dầu, SQL đã chạy, BE+FE build 0 lỗi, **đã deploy**:
+1. **Cấp dầu theo lệnh — Hủy phiếu ĐÃ XUẤT + nhả lệnh về GetForSummary**: SP `SP_DriverFuelApproval_Cancel` (Status=-1 + reset 4 nhóm cờ) + endpoint `POST /api/DriverFuelApproval/Cancel` (quyền ACCEPT) + FE `modal-fuel-summary` (2 nút Hủy phiếu(-1)/Hủy IGAS hết hạn(-2) loại trừ theo hạn đổ `isIgasExpired()`). ⬜ CÒN: **test E2E** — xuất phiếu → Hủy + nhập lý do → tạo phiếu mới cùng xe thì lệnh hiện lại; phiếu đã đổ (`QuantityIgas>0`)/đã chốt phải bị SP chặn.
+2. **Chốt dầu phương tiện — Sửa phiếu nháp**: hiện lại nút Tải/xóa dòng + khóa đổi xe + "Tải dữ liệu" chạy MERGE (giữ dòng cũ). FE-only. ⬜ CÒN: **test** mở phiếu nháp → "Bổ sung dữ liệu mới" không mất dòng cũ. **SP `GetCandidatesForUpdate` DEFERRED** (chỉ làm nếu phát hiện dòng nguồn vô hiệu lọt phiếu).
+
+## ⏸ Danh mục Máy phát điện (Generator Catalog) — Phương án A, KHÔNG khấu hao (2026-07-16, TẠM GÁC — CHỜ ANH GỌI; chưa chốt 5 điểm, CHƯA CODE, CHƯA SQL)
 Thay file Excel `NewAPI\Danh sách máy phát điện chuẩn.xlsx` (29 máy) bằng màn Danh mục trong nhóm `danhmuc/`. Chỉ quản lý **lý lịch máy** (thêm/sửa/xóa/xem/tìm/xuất Excel) — bỏ toàn bộ khấu hao (anh chốt). Bảng `Tbl_Generator` MỚI song song; "Số xe" chỉ text tham chiếu (không link Vihicle, không nối dầu FCL). FunctionCode dự kiến **F046**.
 - **Kế hoạch đầy đủ + 5 câu hỏi chờ chốt**: [generator-catalog-plan.md](generator-catalog-plan.md).
 - Chốt xong 5 điểm (mô tả tách/gộp · giữ/bỏ nguyên giá+ngày SD · hãng nvarchar/OtherCategories · xác nhận F046 · seed 29 dòng) → soạn `Migration_Generator_Schema` trình duyệt → BE → FE.
 
-## ▶ JobID nghiệp vụ N01–N11 — phân tích dữ liệu + thiết kế đề xuất (2026-07-14, CHỜ ANH CHỐT — CHƯA CODE, CHƯA SQL)
+## ⏸ JobID nghiệp vụ N01–N11 — phân tích dữ liệu + thiết kế đề xuất (2026-07-14, TẠM GÁC — CHỜ ANH GỌI; chưa chốt 4 câu, CHƯA CODE, CHƯA SQL)
 
 Nguồn: `D:\Delta\DeltaSoft\NewAPI\JOBID.docx` (26/6/2026) — xem [[reference_jobid_appendix]] trong memory. Yêu cầu của anh: **xây chức năng quản lý thông tin định danh Job nghiệp vụ + thêm 1 trường mới vào `Shipment`**, sao cho vừa test được job mới vừa **không đụng job cũ đang chạy**.
 
@@ -65,7 +80,7 @@ Anh báo *"duyệt xong số liệu ở NGOÀI phiếu bị thay đổi"*. Truy:
 - **Ngược dấu**: Update `Sup − Dem` (A−C) trong khi Create/FE là `Dem − Sup` (C−A).
 - **Bỏ quên B**: không cộng dầu còn thừa (source 6) vào `NetLiters`; `NetAmount` cũng thiếu tiền của B.
 ⇒ Phiếu tạo-một-lần thì đúng; phiếu bị Update (nhất là lúc duyệt) bị ghi đè sai. Modal tính client-side theo công thức đúng nên **trong phiếu vẫn hiển thị đúng** — chỉ **list** (đọc header đã lưu) mới lộ số lệch.
-- ⬜ **CHẠY** `NewAPI/Migration_DriverFuelClosing_FixUpdateFormula_20260713.sql`: [0] soi phiếu lệch · [1] DROP+CREATE `_Update` với `NET = B + C − A` (khớp Create/FE; chữ ký SP không đổi ⇒ **không cần deploy BE/FE**) · [2] tính lại header 5 phiếu lệch từ bảng chi tiết · [3] verify phải ra 0 dòng.
+- ✅ **ĐÃ CHẠY** `NewAPI/Migration_DriverFuelClosing_FixUpdateFormula_20260713.sql` (verify read-only 2026-07-24: `_Update` modify 07-13 15:50, thân có `@Leftover` + `NET = B + C − A`; query [3] trả **0 dòng** ⇒ 5 phiếu lệch đã tính lại đúng). Không cần deploy BE/FE (chữ ký SP không đổi).
 - **5 phiếu lệch (rà 2026-07-13)**: Id 8 `DFC-202607-004` (ĐÃ DUYỆT) −19,47 → **+20,75** ⚠ đảo chiều thu↔chi · Id 4 +120,01 → −39,13 ⚠ · Id 3 +161,68 → −92,67 ⚠ · Id 2 +163,41 → +132,47 · Id 1 (ĐÃ DUYỆT) 0 → +9,68. **Nếu số cũ đã dùng trừ/chi lương → báo kế toán đối chiếu.**
 - Không sửa được qua UI: 5 phiếu đều do người khác tạo (`dien.hoang`, `tuyet.nguyen`) + 2 phiếu đã duyệt (SP chặn *"Phiếu đã chốt"*). Gate nút Sửa/Xóa = **chủ tạo + phiếu nháp** — anh chốt **GIỮ NGUYÊN** (Admin không được ưu tiên).
 
@@ -74,7 +89,7 @@ Anh báo *"duyệt xong số liệu ở NGOÀI phiếu bị thay đổi"*. Truy:
 - **thead cố định** 2 hàng sticky nền `#dcefe5f6` (tiêu đề `top:0`, hàng lọc `top:22px`) + **hàng lọc theo cột** (Số phiếu/Biển số/Lái xe/Lý do/Trạng thái/Người tạo — client-side trên TRANG đang tải vì list là server-paging).
 - **Toolbar Thêm/Sửa/Xóa/Xem** ở header + chọn dòng bằng checkbox (`clickRow`+`icheck`), thay cho nút icon từng dòng.
 - **5 cột luôn rỗng đã thay**: `closeReasonName`, `approvalDiffQty`, `dispatchOrderQty`, `additionalFeeQty`, `topUpLiters` là field của thiết kế chốt-theo-LÁI-XE cũ, SP mới không trả. Nay: Lý do chốt map từ enum FE (`closeReasonText`), 4 cột số = **Cấp VH (A) · Định mức VH (C) · Cấp MP (A) · Định mức MP (C)**.
-- ⬜ **CHẠY** `NewAPI/Migration_DriverFuelClosing_GetPaging_CreatedByName_20260713.sql` — SP GetPaging chưa trả `CreatedByName` (cột "Người tạo" luôn rỗng); DROP+CREATE + `LEFT JOIN V_Users`. Non-breaking, **không cần deploy BE** (ViewModel đã có prop).
+- ✅ **ĐÃ CHẠY** `NewAPI/Migration_DriverFuelClosing_GetPaging_CreatedByName_20260713.sql` (verify 2026-07-24: SP modify 07-13 21:50, thân có `CreatedByName`). Không cần deploy BE.
 - ⬜ `ng build` + deploy FE.
 
 ## ▶ Phiên 2026-07-13 — Draft trong ERP (job-canon / công việc) + cảng theo chi nhánh — FE xong (tsc 0 lỗi mới), CHỜ deploy + 2 SQL
@@ -135,7 +150,7 @@ Chi tiết: done.md section đầu. Gồm: (a) `StartedDate/FinishedDate` (web d
 Chi tiết + số liệu verify DB: done.md section đầu. File: `NewAPI/Migration_AccountingEntry_P50_20260710.sql` (3 bảng + TVP + 6 SP + seed 19 rule). Đã chốt: bảng mới song song · không hồi tố · bút toán đảo.
 
 **Anh cần (theo thứ tự):**
-1. ⬜ Duyệt + chạy `Migration_AccountingEntry_P50_20260710.sql` (login `delta.erp`). Additive 100%, không đụng object cũ.
+1. ⬜ Duyệt + chạy `Migration_AccountingEntry_P50_20260710.sql` (login `delta.erp`). Additive 100%, không đụng object cũ. ⚠ **Verify 2026-07-24: CHƯA CHẠY** (`Tbl_AccountingRule`/`Tbl_AccountingEntry` chưa tồn tại) — đúng với quyết định ⏸ TẠM DỪNG bên dưới, không phải sót.
 2. ⬜ **Kế toán duyệt bản nháp Phụ lục 6.4** = `SELECT * FROM Tbl_AccountingRule ORDER BY EventCode` → bật `IsActive=1` cho 7 rule đang tắt.
 3. ⬜ **File SQL riêng chưa soạn**: bổ sung danh mục TK (`OtherCategories Type='ACCOUNTING'`) — điền **tên TK** (hiện `CategoryName` = trùng mã) + thêm **TK cấp 2** `1331`, `1388` (rule VAT + phải thu khác đang chờ 2 mã này).
 4. ⬜ Sau khi SQL chạy: em code BE (`IAccountingEntry` + `AccountingEntryRepository` + `AccountingPostingService` + `AccountingEntryController`) + FunctionCode mới → FE màn Sổ cái / Nhật ký chung / Bảng cân đối + danh mục Rule.
@@ -159,7 +174,7 @@ Báo cáo "Đánh giá triển Lệnh vận chuyển.pdf" (ảnh 3 màn Giám đ
 - **✅ ĐÃ CHỐT (2026-07-07):** cấp duyệt **B1→5→chốt** (BỎ B2); **người chốt (FCL_CLOSING) = CBQL/cấp 2** (khớp báo cáo #2). Duyệt B1=FCL_ACCEPT, chốt=FCL_CLOSING, từ chối các bước dùng quyền tương ứng.
 - **✅ ĐÃ CHỐT (2026-07-07):** phí lái xe **tạm giữ list fee cũ**, CHƯA làm 3 loại config (Cách C hoãn). Module **lương lái xe** tạm dừng.
 - **MỚI cần bổ sung (tính năng/nhãn):** #3 đổi nhãn cột "Trốn vé"→"Đã tránh trạm"; #8 màn lái xe chưa có bản đồ lộ trình (Map API); #9 dầu máy phát cont lạnh cắm điện (không tính khi cắm điện; giờ×định mức khi không) + bù dầu đặc biệt (đã có [[project_fuel_redesign_reason_generator]]/[[project_fuel_grant_summary_flow]]); 5.1.2.6 lập báo cáo & chuyển quy trình tự động (chưa rõ scope — hỏi lại).
-- **✅ BUG ĐÃ FIX (2026-07-07, tách phiếu riêng — xem done.md):** #1 cung phát sinh không vào tổng (SQL `Migration_FCL_Bug1_ExtraSegmentTotals` + FE modal); #3 tải trọng màn lái xe (map payloadWeight→tên bậc định mức); #10 VAT ETC = no-op (bảng đã đúng: trước VAT + VAT nhập tay). **CÒN**: chạy SQL bug#1 + `ng build`.
+- **✅ BUG ĐÃ FIX (2026-07-07, tách phiếu riêng — xem done.md):** #1 cung phát sinh không vào tổng (SQL `Migration_FCL_Bug1_ExtraSegmentTotals` + FE modal); #3 tải trọng màn lái xe (map payloadWeight→tên bậc định mức); #10 VAT ETC = no-op (bảng đã đúng: trước VAT + VAT nhập tay). ✅ **SQL bug#1 ĐÃ CHẠY** (verify 2026-07-24: `SP_DispatchOrderFCL_CreateWithTO` có `EXEC SP_TransportOrder_RecomputeTotals`). **CÒN**: `ng build`.
 - **Cần test:** tạo mới & phê duyệt địa điểm giao nhận khi chưa có trong danh mục (5.2.2.2); màn lái xe cần bổ sung link/tọa độ điểm giao nhận (2.2).
 
 ## ▶ Workflow FCL v2 MỚI — **SQL + BE + FE XONG (FE 2026-07-11, ng build 0 lỗi)**, CÒN mobile + owner-items + deploy
@@ -169,7 +184,7 @@ Chi tiết đầy đủ (4 phát hiện từ DB, bảng transition, lý do từn
 - **ActionType**: 1 Nhận(1→2) · 2 Hoàn thành(2→3) · 3 Duyệt B1(3→5) · 4 Chốt(5→6) · 5 **Từ chối nhận**(1→1, IsDeny=1) · 6 **Từ chối B1**(3→2) · 7 **Từ chối CHỐT**(5→3).
 
 **CÒN PHẢI LÀM:**
-1. ⬜ **Anh chạy lại** `Migration_FCLStatusLog_20260710.sql` (bản mới có `@EmployeeId`; idempotent) — chưa chạy thì Dapper báo *"too many arguments"* ngay khi bấm nút.
+1. ✅ **ĐÃ CHẠY** `Migration_FCLStatusLog_20260710.sql` (verify 2026-07-24: `SP_DispatchOrderFCL_ChangeStatus` modify 07-11 22:27, đủ 6 param gồm **`@EmployeeId INT`**; `SP_DispatchOrderFCLStatusLog_GetByRefNo` + bảng `Tbl_DispatchOrderFCLStatusLog` đều có).
 2. ✅ **FE XONG (2026-07-11, ng build 0 lỗi)** — chi tiết done.md section đầu:
    - **Modal TẠO/SỬA** (modal-dispatch-order-fcl-v2): bỏ Gửi lệnh + Duyệt B2 + mọi updateState; điều vận Duyệt B1(3→5)/Từ chối B1(3→2); người chốt Chốt(5→6)/Từ chối chốt(5→3); khóa fee tab `>=4`→`>=5`.
    - **★ Lái xe (Nhận/Hoàn thành/Từ chối nhận) ĐẶT Ở modal THỰC HIỆN** `modal-execute-fcl` (anh chốt — KHÔNG ở modal tạo): Nhận(→2)/Từ chối nhận(→1 deny)/Hoàn thành(driverUpdate rồi →2/ActionType 2). Bỏ nút status-4.
@@ -177,9 +192,9 @@ Chi tiết đầy đủ (4 phát hiện từ DB, bảng transition, lý do từn
 3. ✅ **FE service** — `changeStatus`/`getStatusLog` đã thêm.
 4. ✅ **FE section "Lịch sử lệnh"** — timeline trong modal TẠO (loadStatusLog + actionTypeLabel, dòng từ chối tô đỏ).
 5. ✅ **List mới** — nhãn filter + mapping status mới + `getStatusText()` FE tự tính (không dùng `rStatus`). ⬜ CÒN: nhãn `rStatus` trong SP getPaging (BE) vẫn lệch — nếu chỗ nào khác đọc rStatus thì cần sửa SP.
-6. ⬜ **Quyền** `Migration_FCL_GrantAcceptClosing_20260710.sql` — cấp `FCL_ACCEPT` cho `DV`, `DV-M`. **Anh nói để sau, anh tự bổ sung.** Chưa chạy → điều vận không thấy nút Duyệt B1. Chạy xong user phải **đăng xuất/đăng nhập lại** (permissions nằm trong JWT claim).
-7. ⬜ **Dữ liệu**: 2 lệnh v2 đang ở `Status=0` sẽ **kẹt vĩnh viễn** (không ActionType nào nhận `FromStatus=0`). Anh nói chỉnh sau: `UPDATE DispatchOrderFCL SET Status=1 WHERE IsLegacy=0 AND Status=0 AND Deleted=0`.
-8. ⬜ **Status khởi tạo = 1** (bỏ nháp) trong `SP_DispatchOrderFCL_CreateWithTO` — **ANH tự sửa**, em không đụng.
+6. ⬜ **Quyền** `Migration_FCL_GrantAcceptClosing_20260710.sql` — cấp `FCL_ACCEPT` cho `DV`, `DV-M`. **Anh nói để sau, anh tự bổ sung.** ⚠ **Verify 2026-07-24: VẪN CHƯA CẤP** — `Permissions` FunctionId='FCL' hiện có ACCEPT ở 8 role (CSVT-M, DV-CBT, DV-HCM, DVM-HCM, GĐ, IT, QL, TQ-TC) và CLOSING ở 7 role (như trên trừ GĐ); **thiếu `DV` + `DV-M`** ⇒ điều vận không thấy nút Duyệt B1. Cấp xong user phải **đăng xuất/đăng nhập lại** (permissions nằm trong JWT claim).
+7. ✅ **Dữ liệu XONG** (verify 2026-07-24: `COUNT(*) WHERE IsLegacy=0 AND Status=0 AND Deleted=0` = **0**) — không còn lệnh v2 kẹt.
+8. ✅ **Status khởi tạo XONG** — anh đã sửa `SP_DispatchOrderFCL_CreateWithTO`: `[Status] = CASE WHEN @IsSubcontractors = 1 THEN 2 ELSE 1 END` (lệnh thường vào thẳng status 1 "Đã giao lái xe", thầu phụ = 2).
 9. 🟡 **Mobile** — ✅ skill `fcl-mobile-api` cập nhật (§4.6 ChangeStatus/GetStatusLog, §6 status flow mới) + ✅ **prompt bàn giao** soạn xong `.claude/context/prompt-mobile-fcl-v2-changestatus.md` (self-contained: endpoint, ActionType, luồng lái xe 1/2/5, driverUpdate trước Hoàn thành, xử lý 400, nghiệm thu). ⬜ CÒN: đội mobile code theo prompt.
 10. ⬜ Deploy: tắt API → build/publish → `ng build`.
 
@@ -269,7 +284,7 @@ Chi tiết: done.md section đầu. Bổ sung tab 2 "Lệnh FCL" vào `subcontra
 - FE: tabset 2 tab, **bộ lọc tách riêng** (`*Fcl` + `listSupplierFcl`); tab thường load trong `ngOnInit`, tab FCL load qua `(selectTab)`. Modal chung `modal-perform-fcl` + `@Input() subcontractorMode` → chỉ hiện nút "Nhận lệnh" (status==1).
 
 **Anh cần:**
-1. ⬜ Chạy SP `SP_DispatchOrderFCL_GetAll` đã thêm 2 param **`@IsSubcontractors`** + **`@SupplierId`** (đều `DEFAULT NULL`). ⚠️ Tên đúng chính xác — lệch là Dapper "too many arguments" hỏng cả list FCL công ty.
+1. ✅ **XONG** — verify 2026-07-24: `SP_DispatchOrderFCL_GetAll` có đủ 9 param, gồm `@IsLegacy BIT`, **`@IsSubcontractors BIT`**, **`@SupplierId INT`** (modify 07-07 22:31).
 2. ⬜ Deploy API + build FE.
 3. ⬜ Test: tab "Lệnh FCL" thầu phụ ra đúng list (FCL legacy + thầu phụ), lọc NCC/ngày độc lập tab thường; mở lệnh status Gửi lệnh chỉ có nút "Nhận lệnh"; **list FCL công ty vẫn chạy bình thường**.
 

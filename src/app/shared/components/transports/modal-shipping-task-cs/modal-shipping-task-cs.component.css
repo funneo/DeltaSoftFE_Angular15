@@ -1,3 +1,11 @@
 .modal-lg {
     width: 70%;
 }
+/* Chế độ xem/sửa/duyệt NHÁP — nền vàng, đồng bộ modal-shipment/debit/payment */
+.modal-content.draft-view {
+    background: #FFFDF5;
+    border: 1px solid #FFC107;
+}
+.modal-content.draft-view .modal-header {
+    background: #FFF8E1;
+}

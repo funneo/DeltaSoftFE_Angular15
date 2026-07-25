@@ -42,6 +42,21 @@ export class ShippingTaskService extends BaseService {
       else return response;
     }), catchError(this.handleError));
   }
+
+  /** Duyệt nháp ShippingTask → tạo chuyến thật (BE AddFromDraft). jobId (lô) đi qua keyWord để ghi ngược PromotedRefNo. */
+  addFromDraft(entity: ShippingTask, draftId: number, jobId: string) {
+    let p: FromBodyBase<ShippingTask> = {};
+    p.item = entity;
+    p.id = draftId?.toString();
+    p.keyWord = jobId ?? '';
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/ShippingTask/addFromDraft`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
   cancel(entity: ShippingTask) {
     let p: FromBodyBase<ShippingTask> = {};
     p.item = entity;

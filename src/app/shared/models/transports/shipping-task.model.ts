@@ -86,4 +86,8 @@ export interface ShippingTask {
     hasOrders?: boolean;
     opManNote?: string;
     listFee?: DispatchOrderFee[];
+    // Cờ dòng nháp (draft.DraftEntries) khi trộn vào list CS
+    _isDraft?: boolean;
+    _draftId?: number;
+    _draftPayload?: string;
 }
