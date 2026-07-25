@@ -10,6 +10,7 @@ import { listContants } from "@app/shared/constants/list-type.constants";
 import {
   Branch,
   Customer,
+  Handlinggroup,
   OtherCategories,
   Profile,
   ResponseValue,
@@ -19,6 +20,7 @@ import {
   AuthService,
   BranchService,
   CustomerService,
+  HandlinggroupService,
   NotificationService,
   OtherCategoriesService,
   UtilityService,
@@ -88,13 +90,17 @@ export class ShippingTaskCsComponent implements OnInit {
     private branchService: BranchService,
     private dayService: GetDayService, private datePipe:DatePipe,
     private otherCategoriesService: OtherCategoriesService,
-    private draftService: DraftService
+    private draftService: DraftService,
+    private handlingGroupService: HandlinggroupService
   ) {}
+
+  // Map handlingGroupId → tên, để resolve nhóm thực hiện cho dòng NHÁP (payload chỉ có id).
+  private handlingGroupMap = new Map<number, string>();
 
   ngOnInit(): void {
     this.userLoged = this._authService.getLoggedInUser();
     this.branchId = Number.parseInt(this.userLoged.branchId);
-    this.loadData();
+    this.loadHandlingGroup();   // nạp nhóm TH trước → loadData() bên trong callback (map sẵn khi map dòng nháp)
     this.loadBranch();
     this.loadOtherCategory();
     this.refreshSubscription = interval(5 * 60 * 1000).subscribe(() => {
@@ -113,6 +119,14 @@ export class ShippingTaskCsComponent implements OnInit {
     this.branchService.getAll().subscribe((res: ResponseValue<Branch[]>) => {
       this.listBranch = res.data;
     });
+  }
+
+  loadHandlingGroup() {
+    this.handlingGroupService.getAll().subscribe((res: ResponseValue<Handlinggroup[]>) => {
+      this.handlingGroupMap.clear();
+      (res?.data || []).forEach(g => this.handlingGroupMap.set(g.id, g.handlingGroupName));
+      this.loadData();
+    }, () => this.loadData());   // lỗi nạp nhóm vẫn phải load list
   }
   changedBranch(event: Branch) {
     this.branchId = event?.id;
@@ -196,7 +210,7 @@ export class ShippingTaskCsComponent implements OnInit {
       hawB_HBL: p.hawB_HBL,
       mawB_MBL: p.mawB_MBL,
       bookingNo: p.billBooking ?? p.bookingNo,
-      handlingGroupName: p.handlingGroupName,
+      handlingGroupName: this.handlingGroupMap.get(p.handlingGroupId) ?? p.handlingGroupName,
       referCode: p.referCode,
       shipmentType: p.shipmentType,
       taskType: p.taskType ?? 0,
