@@ -1,5 +1,26 @@
 # Completed Features
 
+## EUP API v3 (Garage/Innvie) + Duyệt nhiều Workflow (4/6) — ĐÃ COMMIT + PUSH, chờ deploy/publish — 2026-07-27
+
+### BE — Kết nối EUP sang API v3.0.2, trả định dạng Innvie (NewAPI master `b525a19`, ĐÃ PUSH — CẦN redeploy API)
+Adapter: Innvie gọi `GaragesController` (header `Api-Key` == `AppSettings:ApiKey`) → BE gọi EUP v3 (header `X-Eupfin-Api-Key` + `Consumer-Id`) → map về envelope Innvie `ResponseGarageAPI {isAcknowledged, errors, result}` (Newtonsoft camelCase toàn cục). Tài liệu: `NewAPI/Tai lieu ket noi Eupfin_v3.0.2.pdf`.
+- **`GetRealtimeByCars`** (giữ route/hợp đồng Innvie): chuyển sang `GET {base}/gps/realtime?vehicleNo=` (thay `realtimeByCars` cũ), map v3→`RealTimeCarItem` giữ nguyên field Innvie đang đọc (+ additive `driverName`/`instantFuel`/`totalMile`). ⚠ v3 chỉ nhận **1 xe/lần** (CSV nhiều xe → status 5).
+- **`GetCars`** (mới) → `GET {base}/cars` → list `{plateNumber}`.
+- **`GetHistory`** (mới, `FromBodyBase<GarageEupHistoryRequest>`) → `GET {base}/gps/history?vehicleNo=&startTime=&endTime=` (ISO-8601, ≤7 ngày). **Bắt buộc encode `+07:00`→`%2B07%3A00`** (space/`%20` → EUP lỗi) → dùng `Uri.EscapeDataString(...) + AddQueryParameter(...,false)`. Validate thiếu tham số → 400.
+- **`VehicleGetDistance`** (odometer): đọc key/password/host từ **config** (`EupfinV3*`), **BỎ hardcode** key `00646395…`/password `aiG1km6…` + **BỎ host cũ `EupUrlPath`**; GIỮ endpoint `distanceDeviceByCars` (body `{account,password,carNumberList}`) vì v3 không có odometer tích lũy (`/distance` header-auth chỉ trả km theo khoảng thời gian — khác nghĩa). Host v3 phục vụ luôn endpoint này.
+- **`EupClass.cs`**: thêm DTO EUP v3 (realtime/cars/history) + `instantFuel` trong history detail (API thật trả kèm).
+- **Bảo mật git**: `appsettings.json` (tracked) để **3 key EUP rỗng** `""`; giá trị thật ở `appsettings.Development.json` + `appsettings.Production.json` (**gitignore**, ASP.NET override theo môi trường). `git grep` xác nhận 0 secret EUP trong file tracked.
+- **Đã test THẬT end-to-end** (build 0 err + chạy API local Production): lấy biển từ DB `Vihicle.LicensePlates` (format `29H-802.70`) → chuẩn hóa `.Replace("-","").Replace(".","")` → `29H80270` (khớp key EUP) → cả 4 endpoint trả giá trị thật (realtime landmark/fuel/status, odometer 1.491.169, history totalMile 100.45); sai Api-Key→401; thiếu tham số history→400.
+- **⚠ Deploy**: server phải có `appsettings.Production.json` chứa 3 key EUP (gitignore → **copy tay**, giống Gemini/Vietmap); tắt API mới build (khóa DLL). Nếu server kén DNS: thêm `gps-api.eup.net.vn` vào hosts (`178.128.119.83`).
+
+### FE — DUYỆT NHIỀU (bulk approve) loại nháp thứ **4/6: Workflow (phân công công việc)** (web-app-update main `b46d854`, ĐÃ PUSH — thuần FE, chỉ `ng build`)
+Clone khuôn ShippingTask. `promoteFromDraft` đã có sẵn ⇒ **không đụng BE**.
+- `modal-workflow`: +`viewDraft(payload,draftId,silent)` (silent bỏ show/`loadJobGroupOption`/`_ensureDraftCustomer`) +`approveDraftSilent()` (tái dùng `_toPromoteItem`+`promoteFromDraft`, không toast/hide/emit).
+- `workflow.component`: +`duyetNhieu()` (`concatMap` tuần tự, `catchError→of(false)` tiếp tục, toast "Đã duyệt X/N, lỗi Y", reload) +`selectedDrafts` +`bulkBusy`.
+- **Khác tiền lệ**: list workflow chọn dòng thật là **single-select** + dùng `getPaging` (BE trộn nháp `DraftType='Job'` vào trang 1) ⇒ dùng cờ **`draftChecked` riêng** cho dòng nháp (không đụng `checked` thật); `workflow.model` +`draftChecked`; HTML +checkbox enabled cho dòng nháp +nút "Duyệt nhiều (N)" gate `WORKFLOW_CREATE`.
+- **Verify**: `tsc --noEmit` 0 lỗi mới (6 lỗi còn lại đều pre-existing: spec sai tên service + driver-fuel-closing + app.component.spec).
+- **Bulk approve giờ 4/6**; còn Payment + Debit (để sau — cần kiểm tra kỹ hơn).
+
 ## Draft — DUYỆT NHIỀU (bulk approve) 3/6 loại + chuỗi fix promote ShippingTask — FE (+BE ShippingTask), chờ deploy — 2026-07-25
 Ngày làm việc 2026-07-25. **BE chỉ đụng 1 file `ShippingTaskController.cs` (2 commit)**; còn lại FE.
 
@@ -15,7 +36,8 @@ Ngày làm việc 2026-07-25. **BE chỉ đụng 1 file `ShippingTaskController.
 ### FE — DUYỆT NHIỀU (bulk approve) — khuôn dùng chung, FE-only
 Kế hoạch: cả 6 loại (FE lặp endpoint cũ · tiếp tục+tổng kết khi lỗi · ShippingTask status=0). **Khuôn**: mỗi modal +`viewDraft(payload,draftId,silent)` (silent=dựng entity, không show/load dropdown) +`approveDraftSilent()` (build entity đúng như duyệt lẻ, trả Observable, không confirm/toast); Shipment/Canon tách `_buildPromoteEntity()` dùng chung. List +checkbox chọn nhiều dòng nháp +nút **"Duyệt nhiều (N)"** → `concatMap` TUẦN TỰ qua endpoint sẵn có, `catchError`→tiếp tục, toast "Đã duyệt X/N, lỗi Y" → reload. Idempotent guard chống trùng.
 - ✅ **3/6 XONG**: **ShippingTask** (`shipping-task-cs`/`modal-shipping-task-cs`, `52ee608`) · **Lô thường** (`shipment-normal`/`modal-shipment`, `52ee608`) · **Lô Canon** (`job-canon`/`modal-job-canon`, chung `/api/shipment/addFromDraft`, `1863044`).
-- ⬜ **CÒN 3/6**: Thanh toán (`payment`/`modal-payment-detail`), Debit (`debit-note`/`modal-debit-notes`), Công việc/PCCV (`workflow`/`modal-workflow`, dùng `promoteFromDraft`, dòng nháp từ BE `item.isDraft`).
+- ✅ **+1 (2026-07-27)**: Công việc/PCCV Workflow (`workflow`/`modal-workflow`, `b46d854`) — xem section đầu. ⇒ **4/6**.
+- ⬜ **CÒN 2/6**: Thanh toán (`payment`/`modal-payment-detail`), Debit (`debit-note`/`modal-debit-notes`) — để sau, cần kiểm tra kỹ hơn.
 - **Verify**: `ng build` 0 lỗi (Hash cuối `4a56585c`). **Deploy**: ⬜ tắt API → publish (endpoint AddFromDraft + fix MarkPromoted) ⬜ `ng build` FE. draft-web/DraftAPI KHÔNG đổi hôm nay.
 
 > ## ★★ MỐC DEPLOY 2026-07-24

@@ -9,6 +9,17 @@ Anh xác nhận: **toàn bộ file `.sql` đang treo trong tài liệu này đã
 - ⏸ `Migration_AccountingEntry_P50_20260710.sql` (bút toán đối ứng P5.0) — **chưa chạy**, đúng quyết định TẠM DỪNG.
 - ⬜ `Migration_FCL_GrantAcceptClosing_20260710.sql` — **`FCL_ACCEPT` vẫn thiếu role `DV` + `DV-M`** (verify 2026-07-24: ACCEPT mới có ở CSVT-M, DV-CBT, DV-HCM, DVM-HCM, GĐ, IT, QL, TQ-TC) ⇒ **điều vận chưa thấy nút Duyệt B1**. Anh nói tự bổ sung; cấp xong phải đăng xuất/đăng nhập lại (quyền nằm trong JWT).
 
+## ▶ Phiên 2026-07-27 — EUP API v3 (BE) + Duyệt nhiều Workflow (FE) — ĐÃ COMMIT+PUSH, chờ deploy/publish tối nay — chi tiết ở done.md
+**1. EUP v3 (BE NewAPI master `b525a19`, ĐÃ PUSH)** — adapter Innvie↔EUP v3.0.2. `GetRealtimeByCars` sang `/gps/realtime` (thay realtimeByCars); thêm `GetCars` (`/cars`) + `GetHistory` (`/gps/history`, encode `+`→`%2B`); `VehicleGetDistance` đọc creds từ config (bỏ hardcode + host cũ `EupUrlPath`). Đã test THẬT 4 endpoint với biển DB `Vihicle`.
+- ⬜ **Redeploy API**: tắt API (khóa DLL) → build/publish.
+- ⚠ ⬜ **Server phải có `appsettings.Production.json` chứa 3 key EUP** (`EupfinV3BaseUrl=https://gps-api.eup.net.vn/gateway2/delta`, `EupfinV3ApiKey`, `EupfinV3ConsumerId`) — file **gitignore**, copy tay (giống Gemini/Vietmap). Thiếu → 4 endpoint EUP lỗi.
+- ⬜ Nếu server kén DNS: thêm hosts `gps-api.eup.net.vn 178.128.119.83`.
+- ⬜ Test E2E qua Innvie thật (hoặc confirm Innvie có cần tên field trong `result` của cars/history khác không — hiện trả field thô EUP; envelope `{isAcknowledged,errors,result}` đã đồng nhất).
+
+**2. Duyệt nhiều Workflow (FE main `b46d854`, ĐÃ PUSH)** — loại nháp 4/6. Thuần FE (`promoteFromDraft` có sẵn).
+- ⬜ `ng build` deploy FE (KHÔNG redeploy BE cho phần này).
+- ⬜ Test: list workflow tick nhiều dòng nháp (checkbox riêng `draftChecked`) → "Duyệt nhiều (N)" → tuần tự promote, toast "Đã duyệt X/N".
+
 ## ▶ Nháp ShippingTask — P4 View+Sửa+Promote màn CS + duyệt nhiều (2026-07-25, BE+FE build 0 lỗi, ĐÃ COMMIT+PUSH, chờ deploy + test E2E) — chi tiết ở done.md
 Host = màn CS `shipping-task-cs` (KHÔNG opman). CS mở nháp SỬA ĐƯỢC + tự tick "Chuyển việc cho Điều vận" (status 0/1) → "Xác nhận chuyển sang ERP". BE `ShippingTaskController.AddFromDraft` (clone Shipment, KHÔNG SQL mới); FE service+modal+list+model.
 - **⚠ HÔM NAY CÓ ĐỔI BE** (2 commit, chỉ file `ShippingTaskController.cs`): `600fdd5` endpoint MỚI `AddFromDraft` · `ec27708` fix `MarkPromoted` = **PromotedShipmentId = Id CHUYẾN vừa tạo** (KHÔNG phải ShipmentId lô — sửa vì draft hiển thị sai), `PromotedRefNo = ReferCode` (fallback JobId lô). ⇒ **PHẢI redeploy API**, nếu chỉ deploy FE thì nút Xác nhận 404 + giá trị ghi ngược vẫn sai.
@@ -16,8 +27,8 @@ Host = màn CS `shipping-task-cs` (KHÔNG opman). CS mở nháp SỬA ĐƯỢC +
 1. ⬜ **Tắt API → build/publish** (endpoint AddFromDraft + fix MarkPromoted) + `ng build` deploy FE. **draft-web/DraftAPI KHÔNG đổi.**
 2. ⬜ Test E2E: tạo nháp draft-web → màn CS dòng vàng → sửa field → tick giao Điều vận → Xác nhận → chuyến thật status=1 + OpMan noti; nháp biến mất; draft-web hiện **Id chuyến vừa tạo** + ReferCode; bấm 2 lần không trùng.
 3. **P5 duyệt hàng loạt (bulk approve) — kế hoạch chốt: cả 6 loại draft** (FE lặp endpoint cũ · tiếp tục+tổng kết khi lỗi · ShippingTask status=0). Khuôn: mỗi modal +`viewDraft(...,silent)` +`approveDraftSilent()` (tái dùng transform, không show/confirm/toast); list +checkbox chọn nhiều dòng nháp +nút "Duyệt nhiều (N)" chạy `concatMap` tuần tự.
-   - ✅ **XONG 3/6 loại (2026-07-25, ng build 0 lỗi, chờ deploy+test)**: **ShippingTask** + **Lô thường** (FE main 52ee608) + **Lô Canon** (FE main 1863044, `job-canon`/`modal-job-canon`, cùng endpoint `/api/shipment/addFromDraft`, tách `_buildPromoteEntity`).
-   - ⬜ **Nhân rộng 3 loại còn lại**: Thanh toán (`payment`/`modal-payment-detail`), Debit (`debit-note`/`modal-debit-notes`), Công việc/PCCV (`workflow`/`modal-workflow`, dùng `promoteFromDraft`, dòng nháp từ BE `item.isDraft`).
+   - ✅ **XONG 4/6 loại**: **ShippingTask** + **Lô thường** (FE main 52ee608) + **Lô Canon** (FE main 1863044) + **Workflow/PCCV** (FE main `b46d854`, 2026-07-27 — xem section 2026-07-27). Tất cả ng build/tsc 0 lỗi mới, chờ ng build deploy.
+   - ⬜ **CÒN 2/6 (để sau — cần kiểm tra kỹ hơn, anh chốt 2026-07-27)**: Thanh toán (`payment`/`modal-payment-detail`), Debit (`debit-note`/`modal-debit-notes`).
 
 ## ✅ ĐÃ DEPLOY 2026-07-24 (trước đó: CHỜ DEPLOY 2026-07-16 — FE main 81f6f2b · BE master 740bdf4) — chi tiết ở done.md
 2 tính năng phần dầu, SQL đã chạy, BE+FE build 0 lỗi, **đã deploy**:
