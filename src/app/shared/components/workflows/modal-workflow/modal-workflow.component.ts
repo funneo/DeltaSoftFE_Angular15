@@ -287,7 +287,7 @@ export class ModalWorkflowComponent implements OnInit {
    * flagXem=true (khóa nhập) + nền vàng + nút "Xác nhận chuyển sang ERP". KHÔNG gọi BE lưu.
    * Payload là DTO tạo-thật site nháp gửi (date đã dạng VN dd/MM/yyyy HH:mm:ss).
    */
-  viewDraft(payload: any, draftId: number) {
+  viewDraft(payload: any, draftId: number, silent: boolean = false) {
     let p: any = payload;
     if (typeof payload === 'string') { try { p = JSON.parse(payload || '{}'); } catch { p = {}; } }
     this.entity = p || {};
@@ -308,10 +308,13 @@ export class ModalWorkflowComponent implements OnInit {
     this.customerId = this.entity.customerId;
     this.customerCode = this.entity.customerCode;
     this.customerName = this.entity.customerName;
-    this._ensureDraftCustomer();
     this.isTransport = this.entity.jobGroupId == environment.transportGroupId;
-    this.loadJobGroupOption();
-    this.modalAddEdit.show();
+    // silent=true (DUYỆT HÀNG LOẠT): chỉ dựng entity để promote, không show modal / không load dropdown.
+    if (!silent) {
+      this._ensureDraftCustomer();
+      this.loadJobGroupOption();
+      this.modalAddEdit.show();
+    }
   }
 
   /**
@@ -414,6 +417,14 @@ export class ModalWorkflowComponent implements OnInit {
       this.notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG);
       this.flagSave = false;
     });
+  }
+
+  /** Duyệt nháp KHÔNG confirm/toast/hide — trả Observable cho DUYỆT HÀNG LOẠT (dùng chung _toPromoteItem). */
+  approveDraftSilent() {
+    if (!this.entity.listHandlingGroupId || this.entity.listHandlingGroupId.length === 0) {
+      this.entity.listHandlingGroupId = this.entity.handlingGroupId ? [this.entity.handlingGroupId] : [];
+    }
+    return this.workflowService.promoteFromDraft(this._toPromoteItem(), this._draftId);
   }
 
   edit(id: string, flag: boolean, isOpMan: boolean) {

@@ -92,6 +92,7 @@ export interface  Workflow {
     isDraft?: boolean;
     draftId?: number;
     draftPayload?: string;   // JSON gốc — mở modal xem
+    draftChecked?: boolean;  // tick chọn cho DUYỆT NHIỀU (chỉ dòng nháp)
     item?:Shipment;
     workflowJobOptions?: WorkflowJobOption[];
     workflowJobOptionProcedures?: WorkflowJobOptionProcedure[];

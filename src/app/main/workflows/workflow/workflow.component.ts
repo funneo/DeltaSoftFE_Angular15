@@ -1,6 +1,7 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { Branch, Customer, Pagination, Profile, Shipment, Workflow } from '@app/shared/models';
-import { Subscription } from 'rxjs';
+import { Subscription, from, of } from 'rxjs';
+import { concatMap, map, catchError } from 'rxjs/operators';
 import * as moment from 'moment';
 import { MessageContstants } from '@app/shared/constants';
 import { CustomerService, NotificationService, ShipmentService, UtilityService, WorkflowsService, AuthService, BranchService } from '@app/shared/services';
@@ -235,6 +236,44 @@ export class WorkflowComponent implements OnInit {
   // Duyệt nháp xong → reload: dòng nháp biến mất, công việc thật hiện lên.
   onConfirmPromote(_draftId: number): void {
     this.loadData();
+  }
+
+  // ===== DUYỆT NHIỀU (bulk) — chỉ áp cho dòng nháp, tick riêng draftChecked =====
+  bulkBusy = false;
+  get selectedDrafts(): Workflow[] {
+    return (this.listWorkflow || []).filter(x => x.isDraft && x.draftChecked);
+  }
+
+  duyetNhieu(): void {
+    const sel = this.selectedDrafts;
+    if (!sel.length || this.bulkBusy) return;
+    this.notificationService.printConfirmationDialog(
+      `Xác nhận duyệt ${sel.length} nháp thành công việc thật trên ERP?`,
+      () => {
+        this.viewModal = true;   // mount modal để tái dùng transform (viewDraft/approveDraftSilent)
+        this.bulkBusy = true;
+        setTimeout(() => {
+          let ok = 0, fail = 0;
+          from(sel).pipe(
+            concatMap((d: Workflow) => {
+              this.modalAddEdit.viewDraft(d.draftPayload, d.draftId, true); // silent: dựng entity, không show
+              return this.modalAddEdit.approveDraftSilent().pipe(
+                map((r: ResponseValue<any>) => r?.code == '200' || r?.code == '201'),
+                catchError(() => of(false))
+              );
+            })
+          ).subscribe({
+            next: (good: boolean) => good ? ok++ : fail++,
+            complete: () => {
+              this.bulkBusy = false;
+              this.viewModal = false;
+              this.notificationService.printSuccessMessage(`Đã duyệt ${ok}/${sel.length}` + (fail ? `, lỗi ${fail}` : ''));
+              this.loadData();
+            }
+          });
+        }, 80);
+      }
+    );
   }
 
   // Đã lưu nháp (chưa promote) — refresh list nền, GIỮ modal đang mở.
