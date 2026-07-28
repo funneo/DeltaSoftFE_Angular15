@@ -15,6 +15,7 @@ Anh xác nhận: **toàn bộ file `.sql` đang treo trong tài liệu này đã
 - ⚠ ⬜ **Server phải có `appsettings.Production.json` chứa 3 key EUP** (`EupfinV3BaseUrl=https://gps-api.eup.net.vn/gateway2/delta`, `EupfinV3ApiKey`, `EupfinV3ConsumerId`) — file **gitignore**, copy tay (giống Gemini/Vietmap). Thiếu → 4 endpoint EUP lỗi.
 - ⬜ Nếu server kén DNS: thêm hosts `gps-api.eup.net.vn 178.128.119.83`.
 - ⬜ Test E2E qua Innvie thật (hoặc confirm Innvie có cần tên field trong `result` của cars/history khác không — hiện trả field thô EUP; envelope `{isAcknowledged,errors,result}` đã đồng nhất).
+- ✅ **Tài liệu API mới cho Innvie (2026-07-28)**: `NewAPI/Garage_API_Documentation_APImoi_2026-07-27.docx` — mục 9–12 (VehicleGetDistance/GetRealtimeByCars/GetCars/GetHistory). ⬜ **Gửi Innvie** sau khi deploy API (điền base URL host thật vào tài liệu).
 
 **2. Duyệt nhiều Workflow (FE main `b46d854`, ĐÃ PUSH)** — loại nháp 4/6. Thuần FE (`promoteFromDraft` có sẵn).
 - ⬜ `ng build` deploy FE (KHÔNG redeploy BE cho phần này).
