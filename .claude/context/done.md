@@ -1,6 +1,6 @@
 # Completed Features
 
-## EUP API v3 (Garage/Innvie) + Duyệt nhiều Workflow (4/6) — ĐÃ COMMIT + PUSH, chờ deploy/publish — 2026-07-27
+## EUP API v3 (Garage/Innvie) + Duyệt nhiều Workflow (4/6) — ✅ ĐÃ DEPLOY + TEST OK (2026-07-28) — 2026-07-27
 
 ### BE — Kết nối EUP sang API v3.0.2, trả định dạng Innvie (NewAPI master `b525a19`, ĐÃ PUSH — CẦN redeploy API)
 Adapter: Innvie gọi `GaragesController` (header `Api-Key` == `AppSettings:ApiKey`) → BE gọi EUP v3 (header `X-Eupfin-Api-Key` + `Consumer-Id`) → map về envelope Innvie `ResponseGarageAPI {isAcknowledged, errors, result}` (Newtonsoft camelCase toàn cục). Tài liệu: `NewAPI/Tai lieu ket noi Eupfin_v3.0.2.pdf`.

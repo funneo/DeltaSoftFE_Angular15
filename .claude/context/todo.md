@@ -9,17 +9,13 @@ Anh xác nhận: **toàn bộ file `.sql` đang treo trong tài liệu này đã
 - ⏸ `Migration_AccountingEntry_P50_20260710.sql` (bút toán đối ứng P5.0) — **chưa chạy**, đúng quyết định TẠM DỪNG.
 - ⬜ `Migration_FCL_GrantAcceptClosing_20260710.sql` — **`FCL_ACCEPT` vẫn thiếu role `DV` + `DV-M`** (verify 2026-07-24: ACCEPT mới có ở CSVT-M, DV-CBT, DV-HCM, DVM-HCM, GĐ, IT, QL, TQ-TC) ⇒ **điều vận chưa thấy nút Duyệt B1**. Anh nói tự bổ sung; cấp xong phải đăng xuất/đăng nhập lại (quyền nằm trong JWT).
 
-## ▶ Phiên 2026-07-27 — EUP API v3 (BE) + Duyệt nhiều Workflow (FE) — ĐÃ COMMIT+PUSH, chờ deploy/publish tối nay — chi tiết ở done.md
-**1. EUP v3 (BE NewAPI master `b525a19`, ĐÃ PUSH)** — adapter Innvie↔EUP v3.0.2. `GetRealtimeByCars` sang `/gps/realtime` (thay realtimeByCars); thêm `GetCars` (`/cars`) + `GetHistory` (`/gps/history`, encode `+`→`%2B`); `VehicleGetDistance` đọc creds từ config (bỏ hardcode + host cũ `EupUrlPath`). Đã test THẬT 4 endpoint với biển DB `Vihicle`.
-- ⬜ **Redeploy API**: tắt API (khóa DLL) → build/publish.
-- ⚠ ⬜ **Server phải có `appsettings.Production.json` chứa 3 key EUP** (`EupfinV3BaseUrl=https://gps-api.eup.net.vn/gateway2/delta`, `EupfinV3ApiKey`, `EupfinV3ConsumerId`) — file **gitignore**, copy tay (giống Gemini/Vietmap). Thiếu → 4 endpoint EUP lỗi.
-- ⬜ Nếu server kén DNS: thêm hosts `gps-api.eup.net.vn 178.128.119.83`.
-- ⬜ Test E2E qua Innvie thật (hoặc confirm Innvie có cần tên field trong `result` của cars/history khác không — hiện trả field thô EUP; envelope `{isAcknowledged,errors,result}` đã đồng nhất).
-- ✅ **Tài liệu API mới cho Innvie (2026-07-28)**: `NewAPI/Garage_API_Documentation_APImoi_2026-07-27.docx` — mục 9–12 (VehicleGetDistance/GetRealtimeByCars/GetCars/GetHistory). ⬜ **Gửi Innvie** sau khi deploy API (điền base URL host thật vào tài liệu).
+## ✅ Phiên 2026-07-27 — EUP API v3 (BE) + Duyệt nhiều Workflow (FE) — ĐÃ DEPLOY + TEST OK (2026-07-28) — chi tiết ở done.md
+**1. EUP v3 (BE NewAPI master `b525a19`)** — adapter Innvie↔EUP v3.0.2. `GetRealtimeByCars` sang `/gps/realtime`; thêm `GetCars` + `GetHistory`; `VehicleGetDistance` đọc creds từ config (bỏ hardcode + host cũ). **✅ Đã deploy + test OK** (server đã có `appsettings.Production.json` 3 key EUP).
+- ✅ **Tài liệu API cho Innvie**: `NewAPI/Garage_API_Documentation_APImoi_2026-07-27.docx` (mục 9–12). ⬜ **Gửi Innvie** (điền base URL host thật vào tài liệu nếu cần).
 
-**2. Duyệt nhiều Workflow (FE main `b46d854`, ĐÃ PUSH)** — loại nháp 4/6. Thuần FE (`promoteFromDraft` có sẵn).
-- ⬜ `ng build` deploy FE (KHÔNG redeploy BE cho phần này).
-- ⬜ Test: list workflow tick nhiều dòng nháp (checkbox riêng `draftChecked`) → "Duyệt nhiều (N)" → tuần tự promote, toast "Đã duyệt X/N".
+**2. Duyệt nhiều Workflow (FE main `b46d854`)** — loại nháp 4/6. Thuần FE. **✅ Đã deploy + test OK.**
+
+**Bulk approve còn 2/6**: Payment + Debit (để sau — cần kiểm tra kỹ hơn).
 
 ## ▶ Nháp ShippingTask — P4 View+Sửa+Promote màn CS + duyệt nhiều (2026-07-25, BE+FE build 0 lỗi, ĐÃ COMMIT+PUSH, chờ deploy + test E2E) — chi tiết ở done.md
 Host = màn CS `shipping-task-cs` (KHÔNG opman). CS mở nháp SỬA ĐƯỢC + tự tick "Chuyển việc cho Điều vận" (status 0/1) → "Xác nhận chuyển sang ERP". BE `ShippingTaskController.AddFromDraft` (clone Shipment, KHÔNG SQL mới); FE service+modal+list+model.
