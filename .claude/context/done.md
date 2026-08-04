@@ -1,5 +1,40 @@
 # Completed Features
 
+## Vietmap lấy cung đường bằng XE CON + Gemini đọc hóa đơn đúng số/field — BE-only NewAPI (build 0 err, CHỜ REDEPLOY) — 2026-08-04
+Hai fix BE độc lập trong phiên; đều **chỉ sửa BE, cần tắt API → publish** mới có tác dụng (đang khóa DLL). SQL/DB KHÔNG đụng.
+
+### 1. Vietmap Route v4 — ép profile `car` (thay `container`/`truck`) [VietmapApiController.cs](../../../NewAPI/API/Controllers/Commons/VietmapApiController.cs)
+Anh yêu cầu: lấy dữ liệu cung đường theo **xe con** để **tránh Vietmap né đường cấm tải** (nhiều lệnh cấm theo GIỜ — lx thực tế vẫn đi được), nhưng **giá phí (toll) vẫn phải đúng theo hạng xe**.
+- Route v4: thay `var (vehicleProfile, capacity) = MapVehicleProfile(request.VehicleClass);` (+capacity trên URL) bằng cứng **`vehicleProfile="car"; capacity=null;`** (kèm comment lý do). **Xóa hàm `MapVehicleProfile`** (VehicleClass giờ chỉ còn để chẩn đoán/log).
+- **KHÔNG đụng route-tolls** (API tính phí 5 hạng BOT) ⇒ giá phí vẫn chuẩn theo hạng xe; chỉ HÌNH DẠNG tuyến đường đổi sang xe con.
+- Verify: `dotnet build -t:Compile` → **0 Error**. Cập nhật [[reference_vietmap_api_params_locked]].
+
+### 2. Gemini đọc hóa đơn — sửa prompt số VN + `mediaResolution` MEDIUM [GeminiAIRepository.cs](../../../NewAPI/API/Repositories/CustomerCommunicate/GoogleServices/GeminiAIRepository.cs)
+Anh đưa 2 ảnh hóa đơn ITC #186050 (SP-ITC), AI đọc sai. **2 fix** (verify bằng test gọi Gemini trực tiếp, script scratchpad `test-gemini-invoice.ps1`, KHÔNG in key ra):
+- **Prompt** (rule #4–6): dấu `.` = phân cách **nghìn** không phải thập phân (`"758.333"→758333`, `"819.000"→819000`); bắt buộc kiểm `net+thuế=tổng` + đối chiếu "Số tiền viết bằng chữ"; ánh xạ đúng `netAmount="Cộng tiền hàng"` / `taxAmount="Tiền thuế GTGT"` / `totalAmount="Tổng cộng thanh toán"`; giữ **nguyên đuôi MST** `-008`.
+- **`mediaResolution` LOW→MEDIUM**: LOW nén ảnh dày chữ ⇒ **bịa field** (tên KH/ký hiệu/ngày/tiền thuế) dù giá đã đúng; MEDIUM đọc chuẩn. Chi phí chỉ +~190 promptToken/ảnh (1453→1645) — không đáng kể.
+- **Kết quả test thật (hoadon2 render sạch @ MEDIUM)**: đúng hết — tên KH, ký hiệu `1C26TSP`, ngày `14/07/2026`, `758333 / 60667 / 819000`. hoadon1 (ảnh **chụp nghiêng**) vẫn có thể nhầm tên KH (bắt nhầm ô "Nơi xuất HĐ") ⇒ khuyến nghị dùng **scan/PDF sạch**.
+- Verify: `dotnet build -t:Compile` → **0 Error**.
+- **⬜ CÒN**: tắt API → `dotnet publish` (BE-only) rồi đọc lại hóa đơn trong app; (tùy chọn) thử `HIGH` cho ảnh chụp nghiêng.
+
+## Quy trình Đề xuất & Duyệt Danh mục (Master Data Change Approval) — SRS + SOP (thiết kế, CHỜ ANH DUYỆT → P1 SQL) — 2026-08-01
+Anh yêu cầu xây quy trình **đề xuất tạo mới / cập nhật / xóa danh mục**; **duyệt xong** hệ thống mới thực sự tạo/sửa/xóa 1 bản ghi. Đây là **THIẾT KẾ (CHƯA CODE)** — soạn SRS + SOP cho anh duyệt trước (nguyên tắc #1).
+- **Kiến trúc chốt = PA-A** (hàng chờ đề xuất song song): 1 bảng generic `Tbl_CategoryApproval` (CategoryType/Action/TargetId/PayloadJson/Status 0chờ-1duyệt-(-1)từchối-(-2)hủy/reviewer/AppliedRefId). KHÔNG ALTER bảng danh mục, KHÔNG đụng SP cũ. Duyệt xong BE gọi ĐÚNG SP `_Create/_Update/_Delete` thật qua dictionary `CategoryType→applier`. Khớp khuôn draft-site (envelope JSON).
+- **Đã chốt (sau 1 lần em hiểu sai rồi anh chỉnh):** MỌI thao tác đều qua đề xuất→duyệt, **KHÔNG ai áp thẳng** (kể cả người có `_ACCEPT`); **áp chung MỌI loại danh mục** ngay (không pilot, không dính Locked của Customer); người duyệt = `{CODE}_ACCEPT`; **người duyệt ĐƯỢC tự duyệt đề xuất của mình** (GĐ-3).
+- **6 SP dự kiến** (chưa soạn): `SP_CategoryApproval_Submit/GetPaging/GetById/Approve/Reject/Cancel` — Approve idempotent (guard Status=0, chỉ mark sau khi SP thật OK).
+- **Tài liệu** [docs/category-approval/](../../docs/category-approval/): `SRS-Duyet-Danh-Muc.md/.docx` (SRS-CATAPP-001) + `SOP-Duyet-Danh-Muc.md/.docx` (SOP-CATAPP-001). Dựng .docx bằng Word COM (script scratchpad `md2docx.ps1`; máy KHÔNG có pandoc/python thật). **Workflow render bằng Mermaid MCP** (flowchart + stateDiagram + sequence). **Google Docs trên Drive** (bản mới nhất): SRS `1s95hD0pnsTZcpKwb0teFaPIo1NEDz_vQ4qOe7Neiedw` · SOP `1wKdKd6Mw6a7_1T_O_WX9EdKQWqPgrhN09SETp38wBZY` (⚠ Drive MCP không update-in-place/delete → có bản trùng tên cũ, anh xóa tay).
+- **⬜ CÒN**: anh duyệt SRS/SOP (P0) → em soạn `.sql` (P1) → BE (P2) → FE màn duyệt chung + chuyển modal Submit (P3) → nhân rộng applier từng loại (P4). 4 vấn đề mở KHÔNG chặn P1 (thứ tự loại · trùng 1 bản ghi · noti · giữ CRUD Admin).
+
+## Báo giá DK04 + DK05 + Hợp đồng — Sort "đã duyệt xuống dưới" + Phân trang FE có chọn size — FE-only (web-app-update main, CHƯA COMMIT) — 2026-08-01
+Anh muốn báo giá/hợp đồng **đã duyệt (`step=3`) tụt xuống dưới**, còn đang chờ duyệt/đang làm/mới **lên trên**. Dữ liệu SQL anh tự chỉnh; FE chỉ lo sắp xếp + phân trang. Thuần FE, KHÔNG đụng BE/SP.
+- **Cơ chế** (áp giống nhau cho cả 3 màn): load-all từ server (`pageSize=fetchSize=9999`) → sort client (`step===3` → nhóm dưới; trong nhóm `Id` giảm dần = mới nhất trước) → **phân trang client-side** cắt bằng getter, đổi trang KHÔNG gọi lại API.
+- **Chọn số dòng/trang**: dropdown `pageSizeOptions=[10,20,50,100]`, mặc định **20**, đặt cạnh "Tổng số bản ghi" ở footer; đổi size / lọc / tải lại → về trang 1.
+- **DK04** [quotation-dk04.component.ts](../../src/app/main/sales-marketing/quotation-dk04/quotation-dk04.component.ts): sort + `this.pageIndex=1` cuối `filter()`; getter `pagedFilter` (slice `listFilter`); `pageChanged` chỉ set `pageIndex`; `onPageSizeChange`. HTML: ngFor `listFilter`→`pagedFilter`, **bật lại** pager (trước bị comment) + ô chọn size.
+- **DK05** [quotation-customer.component.ts](../../src/app/main/sales-marketing/quotation-customer/quotation-customer.component.ts): cùng model `QuotationCustomer` có `step` (khác `customer-dk05` dùng `SalesCustomer` không có step). Áp y hệt DK04: `fetchSize=9999`, sort cuối `filter()` + `pageIndex=1`, getter `pagedFilter`, `onPageSizeChange`, `pageChanged` chỉ set `pageIndex`. HTML: ngFor→`pagedFilter` + bật lại pager (trước comment) + ô chọn size.
+- **Hợp đồng** [contract-customer.component.ts](../../src/app/main/sales-marketing/contract-customer/contract-customer.component.ts): sort sau khi gán `listDatas` + `totalRows=listDatas.length` + `pageIndex=1`; getter `pagedDatas`; `pageChanged` chỉ set `pageIndex`; `onPageSizeChange`. HTML: ngFor `listDatas`→`pagedDatas` + ô chọn size (pager vốn đã active).
+- **Verify**: `tsc --noEmit` — 0 lỗi mới ở cả 3 file (6 lỗi tổng đều pre-existing: 5 spec sai tên service + driver-fuel-closing). **Bonus**: DK04 load-all ⇒ vụ báo giá #7376 "nằm trang 2 không thấy" tự khỏi.
+- **⬜ CÒN**: `ng build` production + anh review/commit. Module `customer-dk05` (khác — `SalesCustomer` không có `step`) hiện KHÔNG trong phạm vi.
+
 ## EUP API v3 (Garage/Innvie) + Duyệt nhiều Workflow (4/6) — ✅ ĐÃ DEPLOY + TEST OK (2026-07-28) — 2026-07-27
 
 ### BE — Kết nối EUP sang API v3.0.2, trả định dạng Innvie (NewAPI master `b525a19`, ĐÃ PUSH — CẦN redeploy API)

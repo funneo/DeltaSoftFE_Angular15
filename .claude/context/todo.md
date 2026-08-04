@@ -9,6 +9,33 @@ Anh xác nhận: **toàn bộ file `.sql` đang treo trong tài liệu này đã
 - ⏸ `Migration_AccountingEntry_P50_20260710.sql` (bút toán đối ứng P5.0) — **chưa chạy**, đúng quyết định TẠM DỪNG.
 - ⬜ `Migration_FCL_GrantAcceptClosing_20260710.sql` — **`FCL_ACCEPT` vẫn thiếu role `DV` + `DV-M`** (verify 2026-07-24: ACCEPT mới có ở CSVT-M, DV-CBT, DV-HCM, DVM-HCM, GĐ, IT, QL, TQ-TC) ⇒ **điều vận chưa thấy nút Duyệt B1**. Anh nói tự bổ sung; cấp xong phải đăng xuất/đăng nhập lại (quyền nằm trong JWT).
 
+## ▶ Vietmap XE CON + Gemini đọc hóa đơn — 2 fix BE, build 0 err, CHỜ REDEPLOY API (2026-08-04) — chi tiết ở done.md
+Hai fix BE độc lập, **chỉ BE, cần tắt API → `dotnet publish`** mới có tác dụng. DB KHÔNG đụng.
+1. ⬜ **Vietmap** [VietmapApiController.cs](../../../NewAPI/API/Controllers/Commons/VietmapApiController.cs): Route v4 ép `profile=car` (tránh né đường cấm theo giờ), **route-tolls giữ nguyên 5 hạng** (giá phí vẫn đúng hạng xe). Xóa hàm `MapVehicleProfile`.
+2. ⬜ **Gemini** [GeminiAIRepository.cs](../../../NewAPI/API/Repositories/CustomerCommunicate/GoogleServices/GeminiAIRepository.cs): prompt số VN (`.`=nghìn) + kiểm `net+thuế=tổng` + giữ đuôi MST; `mediaResolution` LOW→MEDIUM (chống bịa field). Test thật hoadon2 @ MEDIUM đúng hết. ⚠ Ảnh chụp nghiêng vẫn có thể nhầm → khuyến nghị scan/PDF sạch.
+- ⬜ Sau deploy: đọc lại hóa đơn trong app xác nhận. (tùy chọn) thử `HIGH` cho ảnh chụp nghiêng.
+
+## ⏸ Vé tháng trạm thu phí (Monthly Toll Pass) — THIẾT KẾ xong, CHỜ ANH DUYỆT rồi soạn .sql (2026-08-04, CHƯA CODE, CHƯA SQL)
+Xe mua **vé tháng** một trạm ⇒ **KHÔNG ghi phí/lượt tại thời điểm lập lệnh** (giá trị Vietmap sai bản chất), mà là **chi phí tháng phân bổ** cho các chuyến. Anh chốt: **ghi cờ vé tháng** trên dòng ETC; phân bổ **vé/lượt = vé_tháng / N** (N = số chuyến qua trạm trong tháng); nếu **N>30 thì chia 30** (vé = vé_tháng/30, mẫu số = `MIN(N,30)`, hằng 30 cố định); **đồng bộ tên trạm**.
+- **Thiết kế đã trình** (chờ duyệt → mới soạn SQL, nguyên tắc #1): bảng MỚI `Tbl_TollMonthlyPass` + `Tbl_TollMonthlyPass_Allocation` (phân bổ ra bảng riêng, **không phá** số gốc); ALTER `DispatchOrderFCLEtc +IsMonthlyPass BIT` + TVP **type V3** + recreate `SP_..._CreateWithTO`/`DriverUpdate`; danh mục Trạm +`VietmapName` (alias đồng bộ tên); SP `GetPaging/GetById/Create/Update/Delete/GetActiveByVehicle/RunAllocation`.
+- **Đã chốt**: có cờ · bảng chi phí riêng · hiệu lực theo khoảng ngày · phát hiện cả auto+thủ công · N=số lượt qua trạm · mẫu số `MIN(N,30)` · phân bổ ghi bảng riêng (idempotent, không hồi tố phá dữ liệu).
+- ⬜ **CÒN**: anh duyệt thiết kế → em soạn `.sql` trình duyệt → BE/FE.
+
+## ▶ Báo giá DK04 + DK05 + Hợp đồng — Sort đã-duyệt-xuống-dưới + Phân trang FE chọn size (2026-08-01, FE-only, tsc 0 lỗi, CHƯA COMMIT) — chi tiết ở done.md
+Thuần FE, KHÔNG đụng BE/SP. Các màn: load-all (`fetchSize=9999`) → sort `step=3` xuống dưới (trong nhóm `Id` giảm dần) → phân trang client-side (getter `pagedFilter`/`pagedDatas`, `pageChanged` chỉ set `pageIndex`, không call API) + dropdown chọn size `[10,20,50,100]` mặc định 20.
+- ✅ **XONG 3 màn**: DK04 (`quotation-dk04`), Hợp đồng (`contract-customer`), **DK05 (`quotation-customer`)** — cùng model `QuotationCustomer` có `step`, "đã duyệt" = `step===3`.
+1. ⬜ Anh `ng serve` xem 3 màn → ổn thì **`ng build` production + commit/push**.
+2. ⚠ Lưu ý: module `customer-dk05` (khác, model `SalesCustomer` KHÔNG có `step`) — nếu sau này cần sort thì phải chốt map "đã duyệt" theo `accept`/`ok`. Hiện KHÔNG trong phạm vi.
+
+## ▶ Quy trình Đề xuất & Duyệt Danh mục (Master Data Change Approval) — SRS+SOP xong, CHỜ ANH DUYỆT THIẾT KẾ rồi P1 SQL (2026-08-01, CHƯA CODE) — chi tiết ở done.md
+Kiến trúc **PA-A hàng chờ đề xuất song song**: 1 bảng generic `Tbl_CategoryApproval` (CategoryType/Action/TargetId/PayloadJson/Status 0chờ-1duyệt-(-1)từchối-(-2)hủy). MỌI thao tác Tạo/Sửa/Xóa danh mục (mọi loại, KHÔNG ai áp thẳng kể cả người có `_ACCEPT`) → tạo đề xuất → duyệt xong BE mới gọi ĐÚNG SP `_Create/_Update/_Delete` thật (dispatch qua dictionary `CategoryType→applier`). KHÔNG ALTER bảng danh mục, KHÔNG đụng SP cũ.
+- **Đã chốt:** duyệt cả 3 thao tác · áp chung mọi loại (không pilot) · người duyệt = `{CODE}_ACCEPT` · **người duyệt ĐƯỢC tự duyệt đề xuất của mình** (GĐ-3).
+- **Tài liệu:** `docs/category-approval/` (SRS-CATAPP-001 + SOP-CATAPP-001, có .md + .docx). Google Docs trên Drive (bản mới nhất): SRS `1s95hD0pnsTZcpKwb0teFaPIo1NEDz_vQ4qOe7Neiedw` · SOP `1wKdKd6Mw6a7_1T_O_WX9EdKQWqPgrhN09SETp38wBZY`.
+1. ⬜ **Anh duyệt SRS/SOP** (P0). 4 vấn đề mở còn lại KHÔNG chặn P1: thứ tự nối loại · chính sách nhiều đề xuất trùng 1 bản ghi · noti SignalR/FCM · có giữ CRUD trực tiếp cho Admin/khởi tạo không.
+2. ⬜ **P1** soạn `.sql`: bảng `Tbl_CategoryApproval` + 6 SP (`_Submit/_GetPaging/_GetById/_Approve/_Reject/_Cancel`) — trình anh duyệt rồi anh tự chạy.
+3. ⬜ **P2** BE: `CategoryApprovalController` + repo + interface + cơ chế applier (dictionary DI). **P3** FE: màn "Duyệt Danh mục" chung + chuyển modal danh mục sang Submit. **P4** nhân rộng applier từng loại + test E2E.
+- ⚠ Drive MCP KHÔNG có update-in-place/delete → mỗi lần sửa docs = tạo file trùng tên; anh xóa tay bản cũ.
+
 ## ✅ Phiên 2026-07-27 — EUP API v3 (BE) + Duyệt nhiều Workflow (FE) — ĐÃ DEPLOY + TEST OK (2026-07-28) — chi tiết ở done.md
 **1. EUP v3 (BE NewAPI master `b525a19`)** — adapter Innvie↔EUP v3.0.2. `GetRealtimeByCars` sang `/gps/realtime`; thêm `GetCars` + `GetHistory`; `VehicleGetDistance` đọc creds từ config (bỏ hardcode + host cũ). **✅ Đã deploy + test OK** (server đã có `appsettings.Production.json` 3 key EUP).
 - ✅ **Tài liệu API cho Innvie**: `NewAPI/Garage_API_Documentation_APImoi_2026-07-27.docx` (mục 9–12). ⬜ **Gửi Innvie** (điền base URL host thật vào tài liệu nếu cần).
