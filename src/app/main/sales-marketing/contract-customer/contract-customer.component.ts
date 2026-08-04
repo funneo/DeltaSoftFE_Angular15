@@ -18,7 +18,9 @@ import { Subscription } from 'rxjs';
 export class ContractCustomerComponent implements OnInit {
 
   pageIndex = 1;
-  pageSize = SystemContstants.PAGESIZE;
+  pageSize = 20;            // số dòng/trang (phân trang client-side)
+  fetchSize = 9999;         // load-all từ server: tải hết để sort + phân trang FE
+  pageSizeOptions = [10, 20, 50, 100];
   totalRows = 0;
   flagEdit = false;
   flagDelete = false;
@@ -81,14 +83,21 @@ export class ContractCustomerComponent implements OnInit {
   loadData(): void {
     const params = new HttpParams()
       .set('pageIndex', this.pageIndex.toString())
-      .set('pageSize', this.pageSize.toString())
+      .set('pageSize', this.fetchSize.toString())   // load-all: tải hết để sort + phân trang FE
       .set('keyword', this.keyword)
       .set('branchId', this._branchId?.toString())
       .set('customerId', this._customerId?.toString());
       this.busy = this.contractCustomerService.getPaging(params).subscribe((res: ResponseValue<Pagination<ContractCustomer>>) => {
         if (res.code == '200' || res.code == '201') {
           this.listDatas = res.data?.items;
-          this.totalRows = res.data?.totalRows;
+          // Sắp xếp: đã duyệt (step=3) xuống dưới, chờ duyệt/đang làm/mới lên trên; trong nhóm giữ mới nhất trước.
+          this.listDatas?.sort((a, b) => {
+            const ra = a.step === 3 ? 1 : 0;
+            const rb = b.step === 3 ? 1 : 0;
+            return ra !== rb ? ra - rb : (b.id || 0) - (a.id || 0);
+          });
+          this.totalRows = this.listDatas?.length || 0;   // đã tải hết → tổng = số dòng thực
+          this.pageIndex = 1;                             // tải lại → về trang đầu
         }
         else {
           this.notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG + '\n' + res.code)
@@ -107,8 +116,18 @@ export class ContractCustomerComponent implements OnInit {
   }
 
   pageChanged(event: PageChangedEvent): void {
-    this.pageIndex = event.page;
-    this.loadData();
+    this.pageIndex = event.page;   // chỉ đổi trang FE, không gọi lại API
+  }
+
+  // Cắt trang phía FE (client-side paging) trên danh sách đã sort.
+  get pagedDatas(): ContractCustomer[] {
+    if (!this.listDatas) return [];
+    const start = (this.pageIndex - 1) * this.pageSize;
+    return this.listDatas.slice(start, start + this.pageSize);
+  }
+
+  onPageSizeChange(): void {
+    this.pageIndex = 1;
   }
 
   add(): void {

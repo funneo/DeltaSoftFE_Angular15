@@ -20,7 +20,9 @@ import { Subscription } from 'rxjs';
 })
 export class QuotationDk04Component implements OnInit {
   pageIndex = 1;
-  pageSize = SystemContstants.PAGESIZE;
+  pageSize = 20;            // số dòng/trang (phân trang client-side)
+  fetchSize = 9999;         // load-all từ server: tải hết để sort + phân trang FE
+  pageSizeOptions = [10, 20, 50, 100];
   totalRows = 0;
   flagEdit = false;
   flagDelete = false;
@@ -99,7 +101,7 @@ export class QuotationDk04Component implements OnInit {
   loadData(): void {
     const params = new HttpParams()
       .set('pageIndex', this.pageIndex.toString())
-      .set('pageSize', this.pageSize.toString())
+      .set('pageSize', this.fetchSize.toString())   // load-all: tải hết để sort + phân trang FE
       .set('keyword', this.keyword)
       .set('branchId', this._branchId?.toString())
       .set('type', this._type?.toString())
@@ -161,7 +163,25 @@ export class QuotationDk04Component implements OnInit {
       this.listFilter=this.listFilter.filter((data)=>{
       return data.notes.toString().toLowerCase().includes(this.ghichuSearch.trim().toLocaleLowerCase());
     });
+    // Sắp xếp: đã duyệt (step=3) xuống dưới, chờ duyệt/đang làm/mới lên trên; trong nhóm giữ mới nhất trước (Id giảm dần).
+    this.listFilter.sort((a, b) => {
+      const ra = a.step === 3 ? 1 : 0;
+      const rb = b.step === 3 ? 1 : 0;
+      return ra !== rb ? ra - rb : (b.id || 0) - (a.id || 0);
+    });
     this.totalRows = this.listFilter?.length;
+    this.pageIndex = 1;   // mỗi lần lọc/tải lại quay về trang đầu
+  }
+
+  // Cắt trang phía FE (client-side paging) trên danh sách đã lọc + đã sort.
+  get pagedFilter(): QuotationCustomer[] {
+    if (!this.listFilter) return [];
+    const start = (this.pageIndex - 1) * this.pageSize;
+    return this.listFilter.slice(start, start + this.pageSize);
+  }
+
+  onPageSizeChange(): void {
+    this.pageIndex = 1;
   }
 
   clickRow(item: Customer): void {
@@ -178,8 +198,7 @@ export class QuotationDk04Component implements OnInit {
   }
 
   pageChanged(event: PageChangedEvent): void {
-    this.pageIndex = event.page;
-    this.loadData();
+    this.pageIndex = event.page;   // chỉ đổi trang FE, không gọi lại API
   }
 
   add(type:number): void {

@@ -77,7 +77,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of listDatas" (click)="clickRow(item)">
+        <tr *ngFor="let item of pagedDatas" (click)="clickRow(item)">
           <td class="table-checkbox">
             <label class="custom-checkbox">
               <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
@@ -138,6 +138,12 @@
         <div class="col-md-5">
           <div class="dataTables_info">
             <span>Tổng số bản ghi: {{ totalRows }}</span>
+            <span style="margin-left: 12px;">Số dòng/trang:
+              <select class="form-control input-sm" style="width: auto; display: inline-block;"
+                [(ngModel)]="pageSize" (ngModelChange)="onPageSizeChange()">
+                <option *ngFor="let s of pageSizeOptions" [ngValue]="s">{{ s }}</option>
+              </select>
+            </span>
           </div>
         </div>
         <div class="col-md-7 text-right">
