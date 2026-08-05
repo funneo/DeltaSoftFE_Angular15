@@ -1,5 +1,16 @@
 # Pending / In-Progress Work
 
+## ▶ Shipment: trường phân biệt loại hình KH `ShipmentFormType` — CHỐT THIẾT KẾ, anh tự làm tối/cuối tuần (2026-08-05, CHƯA CODE)
+**Vấn đề**: Lô thường & Canon **dùng chung bảng `Shipment`**, mỗi loại KH map field khác nhau + hiển thị khác, NHƯNG **không có trường phân biệt**. Hiện dò Canon bằng `shipmentType===1176 && pallets>0` — SAI bản chất (`1176`=TR Inland Trucking generic, 154k lô; định nghĩa Canon thật của hệ thống = KH có trong `CanonRoad` AND `Pallets>0`, xem nhánh `@ShipmentType=0` trong `SP_Shipment_GetPagingNormal`).
+**Chốt trường**: `Shipment.ShipmentFormType INT NOT NULL DEFAULT 0` — `0`=lô thường · `1`=Canon · `2,3…`=loại KH đặc thù mới (thêm feature = thêm 1 giá trị, KHÔNG đổi schema). KH **dùng chung** (1 KH có thể nhiều loại hình ⇒ profile ở Shipment, KHÔNG ở Customer). Độc lập với `JobCode` N01–N11 (làm sau nếu chuyển JobId mới). **Anh tự**: cập nhật CSDL + sửa SP + BE + truyền param FE (ERP + DraftWeb).
+
+**Checklist (thứ tự an toàn: SQL → BE → deploy API → FE → backfill):**
+1. **DB/SQL**: `ALTER TABLE Shipment ADD ShipmentFormType INT NOT NULL DEFAULT 0`; seed danh mục `OtherCategories Type='SHIPMENT_FORM_TYPE'` (`1=Canon`); **backfill** `UPDATE Shipment SET ShipmentFormType=1 WHERE Pallets>0 AND CustomerId IN (<KH Canon>)` — nguồn KH Canon: `SELECT DISTINCT CustomerId FROM CanonRoad WHERE Deleted=0 AND Status=1` (chuẩn hơn search tên; hiện = 576/589/726, ~74.131 lô); SP `CreateNew`/`UpdateNew` +param `@ShipmentFormType INT=0` (cuối signature, ghi vào INSERT/UPDATE); SP đọc `GetAll`/`GetPaging`/`GetPagingNormal` +`s.ShipmentFormType` vào SELECT + đổi nhánh Canon từ `@ShipmentType=0 AND Pallets>0` → `ShipmentFormType=1`.
+2. **BE**: model `Shipment`+`ShipmentViewModel`(+DTO promote nháp) +field; `enum ShipmentFormType{Normal=0,Canon=1}`; repo `CreateNew`/`UpdateNew` truyền param; endpoint list Canon lọc `=1`.
+3. **ERP FE**: `modal-job-canon` set `=1` / `modal-shipment` để `0`; `job-canon` list lọc `===1` (thay `1176`); `shipment-normal` list loại `===1`; model FE +field.
+4. **DraftWeb+DraftAPI**: `ShipmentDraftPayload` +field; `canon-job-form` set `=1` / `shipment-form` `0`; **thay `isCanonPayload`** (helper phiên 2026-08-05) → `shipmentFormType===1` ở 2 list (canon-job-list/shipment-list); promote `AddFromDraft` map field.
+- ⚠ Param SP mới đặt CUỐI + `=0` default (tránh "too many arguments"). Deploy FE Canon đồng nhịp, hoặc BE tự set 1 cho path Canon, để lô Canon mới không rớt về 0.
+
 ## ▶ FCL v2 — per-line fee (CreateFeeV2/UpdateFeeV2/DeleteFeeV2 + @SkipFeeMerge) — SQL soạn xong + BE 0 err ✅ ĐÃ COMMIT+PUSH, CHỜ chạy SQL + redeploy API + mobile (2026-08-05) — chi tiết done.md
 Mobile lưu từng dòng chi phí ngay khi lái xe thêm/sửa/xóa. Phương án A (SP+endpoint V2 riêng, không đụng cũ). Nguồn: `NewAPI/PROMPT_BE_FCL_V2_FEE_PER_LINE_API.md`. Anh đã chốt: **DeleteV2 riêng** (phí nhiều hơn 659/665) + **CreateFeeV2/UpdateFeeV2 multipart** (PDA POST 1 lần kèm ảnh). **Push**: BE NewAPI master `4f683cc` · docs+skill main `7d56bf2`.
 1. ⬜ Anh chạy `NewAPI/Migration_FCL_FeePerLineV2_20260805.sql` (login delta.erp) — ⚠ **TRƯỚC khi deploy BE** (BE truyền `@SkipFeeMerge` + gọi 3 SP V2 mới, chưa có = "too many arguments").
