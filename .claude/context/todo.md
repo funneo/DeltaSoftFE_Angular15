@@ -1,7 +1,7 @@
 # Pending / In-Progress Work
 
-## ▶ FCL v2 — per-line fee (CreateFeeV2/UpdateFeeV2/DeleteFeeV2 + @SkipFeeMerge) — SQL soạn xong (anh duyệt) + BE 0 err, CHỜ chạy SQL + redeploy API + mobile (2026-08-05) — chi tiết done.md
-Mobile lưu từng dòng chi phí ngay khi lái xe thêm/sửa/xóa. Phương án A (SP+endpoint V2 riêng, không đụng cũ). Nguồn: `NewAPI/PROMPT_BE_FCL_V2_FEE_PER_LINE_API.md`. Anh đã chốt: **DeleteV2 riêng** (phí nhiều hơn 659/665).
+## ▶ FCL v2 — per-line fee (CreateFeeV2/UpdateFeeV2/DeleteFeeV2 + @SkipFeeMerge) — SQL soạn xong + BE 0 err ✅ ĐÃ COMMIT+PUSH, CHỜ chạy SQL + redeploy API + mobile (2026-08-05) — chi tiết done.md
+Mobile lưu từng dòng chi phí ngay khi lái xe thêm/sửa/xóa. Phương án A (SP+endpoint V2 riêng, không đụng cũ). Nguồn: `NewAPI/PROMPT_BE_FCL_V2_FEE_PER_LINE_API.md`. Anh đã chốt: **DeleteV2 riêng** (phí nhiều hơn 659/665) + **CreateFeeV2/UpdateFeeV2 multipart** (PDA POST 1 lần kèm ảnh). **Push**: BE NewAPI master `4f683cc` · docs+skill main `7d56bf2`.
 1. ⬜ Anh chạy `NewAPI/Migration_FCL_FeePerLineV2_20260805.sql` (login delta.erp) — ⚠ **TRƯỚC khi deploy BE** (BE truyền `@SkipFeeMerge` + gọi 3 SP V2 mới, chưa có = "too many arguments").
 2. ⬜ Tắt API → `dotnet publish` (BE build 0 err, chưa commit). Web KHÔNG đổi (SkipFeeMerge mặc định false).
 3. ⬜ Mobile đổi handler: **POST multipart** tới CreateFeeV2/UpdateFeeV2 kèm form `Item`(JSON, không PathFile)+`File`(tùy chọn)+`TokenKey` (đọc `data.Id`+`data.PathFile`); DeleteFeeV2 (FromBody); driverUpdate KM/giờ truyền `skipFeeMerge=1` (bỏ listFee khỏi payload). **KHÔNG cần gọi endpoint upload riêng** — CreateFeeV2 tự lưu file.
