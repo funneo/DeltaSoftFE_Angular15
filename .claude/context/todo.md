@@ -1,5 +1,12 @@
 # Pending / In-Progress Work
 
+## ▶ FCL v2 — per-line fee (CreateFeeV2/UpdateFeeV2/DeleteFeeV2 + @SkipFeeMerge) — SQL soạn xong (anh duyệt) + BE 0 err, CHỜ chạy SQL + redeploy API + mobile (2026-08-05) — chi tiết done.md
+Mobile lưu từng dòng chi phí ngay khi lái xe thêm/sửa/xóa. Phương án A (SP+endpoint V2 riêng, không đụng cũ). Nguồn: `NewAPI/PROMPT_BE_FCL_V2_FEE_PER_LINE_API.md`. Anh đã chốt: **DeleteV2 riêng** (phí nhiều hơn 659/665).
+1. ⬜ Anh chạy `NewAPI/Migration_FCL_FeePerLineV2_20260805.sql` (login delta.erp) — ⚠ **TRƯỚC khi deploy BE** (BE truyền `@SkipFeeMerge` + gọi 3 SP V2 mới, chưa có = "too many arguments").
+2. ⬜ Tắt API → `dotnet publish` (BE build 0 err, chưa commit). Web KHÔNG đổi (SkipFeeMerge mặc định false).
+3. ⬜ Mobile đổi handler: **POST multipart** tới CreateFeeV2/UpdateFeeV2 kèm form `Item`(JSON, không PathFile)+`File`(tùy chọn)+`TokenKey` (đọc `data.Id`+`data.PathFile`); DeleteFeeV2 (FromBody); driverUpdate KM/giờ truyền `skipFeeMerge=1` (bỏ listFee khỏi payload). **KHÔNG cần gọi endpoint upload riêng** — CreateFeeV2 tự lưu file.
+4. ⬜ Test E2E: lái xe thêm dòng phí có hóa đơn + chọn ảnh → 1 POST CreateFeeV2 → trả Id+PathFile, ảnh vào "Ảnh hiện trường"; UpdateFeeV2 không gửi file → giữ ảnh cũ, có gửi → thay ảnh; driverUpdate skipFeeMerge=1 KHÔNG xóa phí per-line; web v2 batch listFee vẫn chạy (skip=0).
+
 ## ★★ MỐC 2026-07-24 — SQL ĐÃ CHẠY HẾT + BE/FE ĐÃ DEPLOY HẾT
 Anh xác nhận: **toàn bộ file `.sql` đang treo trong tài liệu này đã chạy** và **ERP API + ERP FE + draft-web + DraftAPI đã deploy xong**.
 - **SQL verify read-only cùng ngày** (`sys.objects`/`sys.parameters`/`OBJECT_DEFINITION`): `SP_DriverFuelClosing_Update` (công thức `B+C−A`, query kiểm lệch = **0 dòng**) · `_GetPaging` (+`CreatedByName`) · `SP_DriverFuelApproval_Cancel` · `SP_DispatchOrderFCL_ChangeStatus` (+`@EmployeeId`) + `..._StatusLog_GetByRefNo` + bảng log · `SP_DispatchOrderFCL_GetAll` (+`@IsLegacy/@IsSubcontractors/@SupplierId`) · `SP_DispatchOrderFCL_CreateWithTO` (+`RecomputeTotals`, status khởi tạo = 1) · `SP_GetAllLocations` (+`@BranchId`) · `Ports.BranchId` · `SP_Fee_GetForDriver` · `draft.SP_DraftEntries_Insert` (+`ShippingTask`). Lệnh FCL v2 kẹt `Status=0`: còn **0**.

@@ -1,5 +1,16 @@
 # Completed Features
 
+## FCL v2 — API lưu TỪNG dòng chi phí (per-line CreateFeeV2/UpdateFeeV2/DeleteFeeV2) — SQL soạn xong (anh DUYỆT) + BE build 0 err, CHỜ chạy SQL + redeploy API — 2026-08-05
+Mục tiêu: mobile lưu **từng dòng chi phí phụ ngay khi lái xe thêm/sửa/xóa** (điều vận soát sớm), thay vì gộp cả `listFee` trong `driverUpdate`. Chỉ nhánh FCL v2 (`IsLegacy=0`). Nguồn YC: `NewAPI/PROMPT_BE_FCL_V2_FEE_PER_LINE_API.md`. Phương án A: SP + endpoint V2 riêng, KHÔNG đụng SP/endpoint cũ (zero regression web/v1).
+- **SQL** [Migration_FCL_FeePerLineV2_20260805.sql](../../../NewAPI/Migration_FCL_FeePerLineV2_20260805.sql) (đã trình + anh duyệt, ⬜ chờ anh chạy):
+  - `SP_DispatchOrderFclFee_CreateV2` MỚI — 16 param đủ 7 field HĐ + PathFile, INSERT 17 cột **có RefNo** (SP `_Create` cũ QUÊN RefNo — cột NOT NULL — nên đang hỏng insert), `TotalCost=Cost+Vat`, cuối `SELECT @NewId AS Id`.
+  - `SP_DispatchOrderFclFee_UpdateV2` MỚI — sửa 1 dòng theo `@Id`, ghi đè field; **`PathFile = ISNULL(@PathFile, PathFile)`** (PDA không gửi file mới ⇒ giữ ảnh cũ).
+  - `SP_DispatchOrderFclFee_DeleteV2` MỚI — xóa theo `@Id`, scope `IsLegacy=0`. **KHÁC prompt** (prompt bảo dùng lại DeleteFee cũ): SP Delete cũ bị `WHERE FeeId IN(659,665)` (cầu đường/bến bãi) ⇒ không xóa được phí khác (v2 thật đã có FeeId 1020,677). Anh chốt **DeleteV2 riêng** vì phí nhiều hơn 659/665.
+  - `SP_DispatchOrderFCL_DriverUpdate` ALTER — +`@SkipFeeMerge BIT=0` ở cuối; =1 bỏ block MERGE `@ListFee` (vẫn chạy KM/giờ/note + `@ListEtc`). Thân verbatim bản live, chỉ bọc `IF @SkipFeeMerge=0`. Web mặc định 0 ⇒ hành vi cũ nguyên vẹn.
+- **★ CreateFeeV2/UpdateFeeV2 = MULTIPART `[FromForm]`** (anh chốt — PDA POST 1 LẦN kèm cả data lẫn ảnh): form `Item`(JSON dòng phí, **KHÔNG** có PathFile) + `File`(IFormFile tùy chọn) + `TokenKey`. BE tự: có File → `SaveFeeFileAsync` (lưu local + S3 + tạo record `DispatchOrderAttachFiles` IsPod=false y hệt `DispatchOrderAttachFilesController.Create`, để ảnh cũng vào "Ảnh hiện trường") → gán `PathFile` vào dòng phí → INSERT/UPDATE; không File → CreateV2 PathFile NULL / UpdateV2 giữ ảnh cũ. Trả `data.Id` + `data.PathFile`. Model mới `FromBodies/FCL/FromFormFclFeeV2.cs`.
+- **BE (build 0 err, chưa commit)**: `IDispatchOrderFclFee` +`CreateV2/UpdateV2/DeleteV2`; `DispatchOrderFCLFeeRepository` +3 method (CreateV2 dùng `ExecuteScalarAsync<int>` lấy Id; helper `FeeV2Params`); `DispatchOrderFCLController` +`CreateFeeV2`/`UpdateFeeV2` (multipart) +`DeleteFeeV2` (FromBody) + DI `IConfiguration`/`IS3StorageService`/`IDispatchOrderAttachFiles` + helper `SaveFeeFileAsync`/`RandomString`; `DispatchOrderFCLRepository.DriverUpdate` +truyền `@SkipFeeMerge`; model `DispatchOrderFCL` +`bool? SkipFeeMerge`.
+- **⬜ CÒN**: anh chạy SQL (⚠ TRƯỚC khi deploy) → tắt API → `dotnet publish` → mobile đổi handler (POST multipart CreateFeeV2/UpdateFeeV2 kèm ảnh; DeleteFeeV2; driverUpdate `skipFeeMerge=1`; đọc `data.Id`). Web KHÔNG đổi.
+
 ## Vietmap lấy cung đường bằng XE CON + Gemini đọc hóa đơn đúng số/field — BE-only NewAPI (build 0 err, CHỜ REDEPLOY) — 2026-08-04
 Hai fix BE độc lập trong phiên; đều **chỉ sửa BE, cần tắt API → publish** mới có tác dụng (đang khóa DLL). SQL/DB KHÔNG đụng.
 

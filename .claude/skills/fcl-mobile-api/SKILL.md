@@ -256,6 +256,9 @@ unless noted.
 | `GetByJobId` | DISPATCHORDER_VIEW | Orders by shipment JobId | `DispatchOrderFcl[]` |
 | `updatestate` | none | Status transition / reject | echo item |
 | `driverUpdate` | none | Driver: odometer + notes + listFee + listEtc.isPassed (batch, §4.7) | echo item |
+| `CreateFeeV2` | none | **PDA per-line**: 1 multipart POST = data + ảnh → tạo 1 dòng phí (§4.8) | `{ id, pathFile }` |
+| `UpdateFeeV2` | none | **PDA per-line**: sửa 1 dòng phí (ảnh tùy chọn, §4.8) | `{ id, pathFile }` |
+| `DeleteFeeV2` | none | **PDA per-line**: xóa 1 dòng phí theo `item.id` (§4.8) | echo item |
 | `updateEtcFee` | none | Update toll fees post-create | echo item |
 | `delete` | DISPATCHORDER_DELETE | Delete order (by `item.refNo`) | echo item |
 | `getExport` | FCL_EXPORT | Excel export rows | rows |
@@ -371,6 +374,33 @@ Server rules (SP `SP_DispatchOrderFCL_DriverUpdate`, applied **only when `isLega
 - `startedDate` / `finishedDate` (order start/finish time, ISO 8601) → `ISNULL(@x, col)`: only written when a value is sent. **App sets device time**: `startedDate=now` after tapping Nhận (ActionType 1), `finishedDate=now` in the driverUpdate before Hoàn thành (ActionType 2). `ChangeStatus` does NOT auto-set these; ERP web enters them manually.
 - `pathFile` (per-fee-line invoice/receipt image, 2026-07-12): each `listFee` row may carry `pathFile` (`~/UploadFiles/xxx`). Upload the image first via `POST /api/DispatchOrderAttachfiles/create` (`item:{refNo,isPod:false}`, `Files`=image) → take `data[0].pathFile` → set it on the fee row → send in `listFee`. Round-trips (kept unless the row is removed). Stored via `TypeDispatchOrderFCLFeeV2` (18th column). The image also appears in the order's "Ảnh hiện trường" (isPod=false) list. **`invoiceType=2` (có hóa đơn) → `pathFile` is REQUIRED** (app must block save if a có-hóa-đơn row has no image), same as the 6 invoice fields.
 - `startVehicleOdor`/`finishVehicleOdor` stored as **int** (decimals truncated).
+- **`skipFeeMerge` (2026-08-05)**: send `"skipFeeMerge": true` **when the app saves fees per-line via §4.8** and this `driverUpdate` is only for km/time/notes. `true` → the SP **skips the `listFee` MERGE entirely** (so it won't delete fees the app added through `CreateFeeV2`). `listEtc` (toll) + km/time still apply. Omit/`false` = old batch behavior (send the whole `listFee`). **Never mix**: either batch fees through `driverUpdate` (skipFeeMerge false, full listFee) OR per-line through §4.8 (skipFeeMerge=true, no listFee in driverUpdate).
+
+### 4.8 Per-line fees — CreateFeeV2 / UpdateFeeV2 / DeleteFeeV2 (PDA, 2026-08-05) — **preferred for mobile**
+Save **one fee row at a time, the moment the driver adds/edits/deletes it** (dispatcher soát sớm), instead of batching the whole `listFee` in `driverUpdate`. v2 orders only (`isLegacy=0`). When you use these, send `driverUpdate` with **`skipFeeMerge:true`** and **no `listFee`** (see §4.7).
+
+**CreateFeeV2 / UpdateFeeV2 are `multipart/form-data`** (NOT the JSON envelope) — one POST carries **both the fee data and the image**. Three form fields:
+| form field | value |
+|---|---|
+| `Item` | JSON of the fee row (feeId, contentsId, contents, quantity, cost, vat, note, invoiceType, invoiceNo, invoiceDate, invoicePattern, taxNumber, web, code, **refNo**; for Update also **id**). **Do NOT put pathFile in Item** — the server derives it from `File`. |
+| `File` | the image/PDF — **optional**. Omit for a no-invoice row. |
+| `TokenKey` | the JWT string (plain — NOT a JSON envelope like the attach endpoint). |
+
+```
+POST /api/DispatchOrderFcl/CreateFeeV2      (multipart)
+  Item     = {"refNo":"FCL-...","feeId":665,"contents":"Phí bến bãi","cost":100000,"vat":8000,
+              "invoiceType":2,"invoiceNo":"...","invoiceDate":"14/07/2026","invoicePattern":"1C26TSP",
+              "taxNumber":"...","web":"...","code":"..."}
+  File     = <ảnh chứng từ>            // bỏ trống nếu invoiceType 0/1
+  TokenKey = <JWT>
+→ { "code":"200", "data": { "id": 9123, "pathFile": "~/UploadFiles/xxx.jpg" } }
+```
+Server (one request): if `File` present → saves it (local + S3) **and creates a `DispatchOrderAttachFiles` record** (isPod=false — so the image also shows in "Ảnh hiện trường", exactly like the old attach endpoint) → sets `pathFile` on the row → INSERTs the fee → returns **`data.id`** (SCOPE_IDENTITY) + `data.pathFile`. No `File` → INSERTs with `pathFile=NULL`. **You do NOT call `/api/DispatchOrderAttachfiles/create` yourself** — CreateFeeV2 does it.
+
+- **Keep `data.id`** on the row so you can edit/delete it without re-fetching the order.
+- **UpdateFeeV2**: same multipart shape + `id` in `Item`. `File` present → replaces the image; **`File` omitted → keeps the existing image** (server does `PathFile = ISNULL(@PathFile, PathFile)`). Sends the full fee row (all other fields overwrite).
+- **DeleteFeeV2** is the plain **JSON envelope** (not multipart): `{ "tokenKey":"<JWT>", "item": { "id": 9123 } }`. Deletes by `id`, scoped to v2 orders. (Unlike the legacy `deleteFee`, it is **not** restricted to feeId 659/665.)
+- Validation still applies: `invoiceType=2` → the 6 invoice fields **and** an image are required (block the save client-side).
 
 ---
 
