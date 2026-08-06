@@ -18,6 +18,7 @@ import { ModalListShippingTaskModule } from '../modal-list-shipping-task/modal-l
 import { ModalShippingTaskCsModule } from '../modal-shipping-task-cs/modal-shipping-task-cs.module';
 import { ModalViewShippingTaskModule } from '../modal-view-shipping-task/modal-view-shipping-task.module';
 import { ModalShippingTaskAttachFileModule } from '../modal-shipping-task-attach-file/modal-shipping-task-attach-file.module';
+import { ModalFclHistoryModule } from '../modal-fcl-history/modal-fcl-history.module';
 
 @NgModule({
   declarations: [ModalDispatchOrderFclComponent],
@@ -38,7 +39,8 @@ import { ModalShippingTaskAttachFileModule } from '../modal-shipping-task-attach
     ModalListShippingTaskModule,
     ModalShippingTaskCsModule,
     ModalViewShippingTaskModule,
-    ModalShippingTaskAttachFileModule
+    ModalShippingTaskAttachFileModule,
+    ModalFclHistoryModule
   ],
   exports:[ModalDispatchOrderFclComponent]
 })

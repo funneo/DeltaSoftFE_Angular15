@@ -56,6 +56,7 @@ import * as moment from "moment";
 import { ModalDirective } from "ngx-bootstrap/modal";
 import { Subscription } from "rxjs";
 import { ModalAttachfileComponent } from "../../systems/modal-attachfile/modal-attachfile.component";
+import { ModalFclHistoryComponent } from "../modal-fcl-history/modal-fcl-history.component";
 import { ModalDispatchorderTicketComponent } from "../modal-dispatchorder-ticket/modal-dispatchorder-ticket.component";
 type AOA = any[][];
 import * as XLSX from "xlsx";
@@ -184,6 +185,9 @@ export class ModalDispatchOrderFclComponent implements OnInit {
   flagManualChange: boolean = false;
   @ViewChild(ModalAttachfileComponent, { static: false })
   modalAttackFiles: ModalAttachfileComponent;
+  public viewFclHistory: boolean = false;
+  @ViewChild(ModalFclHistoryComponent, { static: false })
+  modalFclHistory: ModalFclHistoryComponent;
   @ViewChild(ModalDispatchorderTicketComponent, { static: false })
   modalTicket: ModalDispatchorderTicketComponent;
   @ViewChild(ModalCustomerRoutesComponent, { static: false })
@@ -1288,6 +1292,16 @@ export class ModalDispatchOrderFclComponent implements OnInit {
     setTimeout(() => {
       this.modalAttackFiles.edit(item, false);
     }, 50);
+  }
+
+  viewHistory() {
+    this.viewFclHistory = true;
+    setTimeout(() => {
+      this.modalFclHistory.show(this.entity.refNo);
+    }, 50);
+  }
+  closeModalFclHistory(): void {
+    this.viewFclHistory = false;
   }
   newTicket() {
     this.viewTicket = true;

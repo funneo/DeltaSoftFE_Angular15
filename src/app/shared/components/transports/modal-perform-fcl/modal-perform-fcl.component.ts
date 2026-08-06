@@ -70,6 +70,7 @@ import { ModalDirective } from "ngx-bootstrap/modal";
 import { Subscription } from "rxjs";
 import { ModalCustomerRoutesComponent } from "../../danhmuc/modal-customer-routes/modal-customer-routes.component";
 import { ModalAttachfileComponent } from "../../systems/modal-attachfile/modal-attachfile.component";
+import { ModalFclHistoryComponent } from "../modal-fcl-history/modal-fcl-history.component";
 import { ModalConfirmDenyClosingFclComponent } from "../modal-confirm-deny-closing-fcl/modal-confirm-deny-closing-fcl.component";
 import { ModalViewShippingTaskComponent } from "../modal-view-shipping-task/modal-view-shipping-task.component";
 
@@ -165,6 +166,8 @@ export class ModalPerformFclComponent implements OnInit {
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
   @ViewChild("modalDispatchOrderFcl", { static: false }) modalDispatchOrderFcl: ModalDirective;
   @ViewChild(ModalAttachfileComponent, { static: false }) modalAttackFiles: ModalAttachfileComponent;
+  public viewFclHistory: boolean = false;
+  @ViewChild(ModalFclHistoryComponent, { static: false }) modalFclHistory: ModalFclHistoryComponent;
   @ViewChild(ModalConfirmDenyClosingFclComponent, { static: false }) modalConfirm: ModalConfirmDenyClosingFclComponent;
   @ViewChild(ModalCustomerRoutesComponent, { static: false }) modalCustomerRoutes: ModalCustomerRoutesComponent;
   constructor(
@@ -647,6 +650,16 @@ export class ModalPerformFclComponent implements OnInit {
     setTimeout(() => {
       this.modalAttackFiles.edit(item, false);
     }, 50);
+  }
+
+  viewHistory() {
+    this.viewFclHistory = true;
+    setTimeout(() => {
+      this.modalFclHistory.show(this.entity.refNo);
+    }, 50);
+  }
+  closeModalFclHistory(): void {
+    this.viewFclHistory = false;
   }
 
 

@@ -182,6 +182,18 @@ export interface DispatchOrderFcl {
     // Cung đường phát sinh — populate trong getDetailWithTo; quản lý qua endpoint riêng
     // (TransportOrderService.addExtraSegment/updateExtraSegment/deleteExtraSegment).
     extraSegments?: TransportOrderExtraSegment[];
+    // Lịch sử đổi trạng thái (kể cả từ chối) — BE trả sẵn trong getbyrefno/GetByRefNoWithTO
+    // (bảng DispatchOrderFCLHistory), FE trước giờ chưa map/hiển thị (2026-08-06 bổ sung modal-fcl-history).
+    listHistory?: DispatchOrderFclHistory[];
+}
+
+export interface DispatchOrderFclHistory {
+    id?: number;
+    refNo?: string;
+    employeeId?: number;
+    employeeFullName?: string;
+    notes?: string;
+    createdDate?: string;
 }
 
 export interface DispatchOrderFclDetail {

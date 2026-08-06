@@ -16,6 +16,7 @@ import { NgxMaskModule } from 'ngx-mask';
 import { ModalConfirmDenyClosingFclModule } from '../modal-confirm-deny-closing-fcl/modal-confirm-deny-closing-fcl.module';
 import { ModalShippingTaskCsModule } from '../modal-shipping-task-cs/modal-shipping-task-cs.module';
 import { ModalViewShippingTaskModule } from '../modal-view-shipping-task/modal-view-shipping-task.module';
+import { ModalFclHistoryModule } from '../modal-fcl-history/modal-fcl-history.module';
 
 
 
@@ -37,7 +38,8 @@ import { ModalViewShippingTaskModule } from '../modal-view-shipping-task/modal-v
     ModalConfirmDenyClosingFclModule,
     ModalShippingTaskCsModule,
     ModalViewShippingTaskModule,
-    ModalViewShippingTaskModule
+    ModalViewShippingTaskModule,
+    ModalFclHistoryModule
   ],exports: [ModalPerformFclComponent]
 })
 export class ModalPerformFclModule {}

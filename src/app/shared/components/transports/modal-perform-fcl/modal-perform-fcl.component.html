@@ -27,6 +27,9 @@
                 <button type="button" class="btn btn-sm btn-primary" (click)="attachFile()">
                   <i class="fa fa-upload" aria-hidden="true"></i> Đính kèm
                 </button>
+                <button type="button" class="btn btn-sm btn-default" (click)="viewHistory()">
+                  <i class="fa fa-history" aria-hidden="true"></i> Lịch sử
+                </button>
               </div>
             </div>
             <div class="form-group">
@@ -539,6 +542,8 @@
 </div>
 <modal-attachfile *ngIf="viewAttachFiles" (CloseModal)="closeModalAttachFiles()">
 </modal-attachfile>
+<modal-fcl-history *ngIf="viewFclHistory" (CloseModal)="closeModalFclHistory()">
+</modal-fcl-history>
 <modal-confirm-deny-closing-fcl *ngIf="viewConfirm" (CloseModal)="closeModalConfirm()"
   (SaveSuccess)="saveSuccess($event)">
 </modal-confirm-deny-closing-fcl>

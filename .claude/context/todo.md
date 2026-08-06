@@ -1,5 +1,15 @@
 # Pending / In-Progress Work
 
+## ▶ FCL legacy — modal "Lịch sử lệnh" mới — FE-only, ng build 0 err, CHƯA COMMIT (2026-08-06) — chi tiết done.md
+Modal mới `modal-fcl-history` hiện lịch sử đổi trạng thái (kể cả lý do từ chối, bảng `DispatchOrderFCLHistory` — vốn đã ghi từ trước nhưng FE chưa từng hiển thị). Nút "Lịch sử" gắn vào `modal-dispatch-order-fcl` + `modal-perform-fcl`. Không cần SQL/BE mới.
+1. ⬜ Anh review diff → commit+push → `ng build` production deploy.
+
+## ▶ EupfinController (proxy EUP cho ERP + GetTollFee mới) — build 0 err, test thật OK, CHƯA COMMIT (2026-08-06) — chi tiết done.md
+Controller MỚI `api/Eupfin` dồn 5 API EUP cho ERP tự dùng (JWT thường, không đụng `GaragesController`/Innvie): GetRealtimeByCars/GetCars/GetHistory/GetDistance (port lại) + `GetTollFee` MỚI (path `/road/cost`, có cơ chế tự dò lại biển qua `/cars` khi EUP báo INVALID_DEVICE do biển đăng ký kèm hậu tố thiết bị vd `(CAM)`). Test thật xe `29E10562` → tự dò ra `29E10562(CAM)` → 9 lượt qua trạm, cost=0.
+1. ⬜ Anh review diff (`EupfinController.cs` mới + `EupClass.cs` +3 model + `appsettings.Development/Production.json` +`EupfinTollFeePath`) → commit+push.
+2. ⬜ Tắt API → `dotnet publish`.
+3. ⚠ Lưu ý: `cost=0` toàn bộ lượt test — nếu dùng dữ liệu này cho nghiệp vụ (đối chiếu ETC, Vé tháng...) cần xác nhận với EUP/thực tế xem trạm 484/485 có thật sự miễn phí xe này hay dữ liệu thiếu.
+
 ## ▶ Shipment: trường phân biệt loại hình KH `ShipmentFormType` — CHỐT THIẾT KẾ, anh tự làm tối/cuối tuần (2026-08-05, CHƯA CODE)
 **Vấn đề**: Lô thường & Canon **dùng chung bảng `Shipment`**, mỗi loại KH map field khác nhau + hiển thị khác, NHƯNG **không có trường phân biệt**. Hiện dò Canon bằng `shipmentType===1176 && pallets>0` — SAI bản chất (`1176`=TR Inland Trucking generic, 154k lô; định nghĩa Canon thật của hệ thống = KH có trong `CanonRoad` AND `Pallets>0`, xem nhánh `@ShipmentType=0` trong `SP_Shipment_GetPagingNormal`).
 **Chốt trường**: `Shipment.ShipmentFormType INT NOT NULL DEFAULT 0` — `0`=lô thường · `1`=Canon · `2,3…`=loại KH đặc thù mới (thêm feature = thêm 1 giá trị, KHÔNG đổi schema). KH **dùng chung** (1 KH có thể nhiều loại hình ⇒ profile ở Shipment, KHÔNG ở Customer). Độc lập với `JobCode` N01–N11 (làm sau nếu chuyển JobId mới). **Anh tự**: cập nhật CSDL + sửa SP + BE + truyền param FE (ERP + DraftWeb).
