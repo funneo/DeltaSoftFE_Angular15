@@ -395,7 +395,7 @@ POST /api/DispatchOrderFcl/CreateFeeV2      (multipart)
   TokenKey = <JWT>
 → { "code":"200", "data": { "id": 9123, "pathFile": "~/UploadFiles/xxx.jpg" } }
 ```
-Server (one request): if `File` present → saves it (local + S3) **and creates a `DispatchOrderAttachFiles` record** (isPod=false — so the image also shows in "Ảnh hiện trường", exactly like the old attach endpoint) → sets `pathFile` on the row → INSERTs the fee → returns **`data.id`** (SCOPE_IDENTITY) + `data.pathFile`. No `File` → INSERTs with `pathFile=NULL`. **You do NOT call `/api/DispatchOrderAttachfiles/create` yourself** — CreateFeeV2 does it.
+Server (one request): if `File` present → saves it (local + S3) **and creates an `AttachFiles` record** (the SAME generic "Đính kèm hồ sơ" system as the order's own attach button — `frmName='FCL', functionName='FCL', refNo=<order refNo>`, `jobId=<this fee row's id>`, `title=<contents>` — **NOT** `DispatchOrderAttachFiles`/"Ảnh hiện trường"/POD, that was a bug fixed 2026-08-06) → sets `pathFile` on the row → returns **`data.id`** (SCOPE_IDENTITY) + `data.pathFile`. No `File` → `pathFile=NULL`. **You do NOT call any attach endpoint yourself** — CreateFeeV2/UpdateFeeV2 do it. Request/response shape for mobile is unchanged by this fix — nothing to change in app code.
 
 - **Keep `data.id`** on the row so you can edit/delete it without re-fetching the order.
 - **UpdateFeeV2**: same multipart shape + `id` in `Item`. `File` present → replaces the image; **`File` omitted → keeps the existing image** (server does `PathFile = ISNULL(@PathFile, PathFile)`). Sends the full fee row (all other fields overwrite).
