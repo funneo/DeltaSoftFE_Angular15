@@ -17,6 +17,7 @@
             <thead>
               <tr>
                 <th style="width: 160px;">Thời gian</th>
+                <th style="width: 150px;">Bước</th>
                 <th style="width: 180px;">Người thực hiện</th>
                 <th>Nội dung / Lý do</th>
               </tr>
@@ -24,11 +25,12 @@
             <tbody>
               <tr *ngFor="let item of listHistory">
                 <td>{{item.createdDate | date:'dd/MM/yyyy HH:mm:ss'}}</td>
+                <td>{{item.step}}</td>
                 <td>{{item.employeeFullName}}</td>
                 <td>{{item.notes}}</td>
               </tr>
               <tr *ngIf="!listHistory || listHistory.length === 0">
-                <td colspan="3" class="text-center">Chưa có lịch sử</td>
+                <td colspan="4" class="text-center">Chưa có lịch sử</td>
               </tr>
             </tbody>
           </table>

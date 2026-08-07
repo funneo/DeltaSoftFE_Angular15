@@ -190,6 +190,7 @@ export interface DispatchOrderFcl {
 export interface DispatchOrderFclHistory {
     id?: number;
     refNo?: string;
+    step?: string;
     employeeId?: number;
     employeeFullName?: string;
     notes?: string;
