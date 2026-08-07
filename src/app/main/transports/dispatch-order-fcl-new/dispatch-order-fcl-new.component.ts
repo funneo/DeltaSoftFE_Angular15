@@ -3,6 +3,7 @@ import { HttpParams } from "@angular/common/http";
 import { ChangeDetectorRef, Component, OnInit, ViewChild } from "@angular/core";
 import { ModalClosingFclProcessComponent } from "@app/shared/components/transports/modal-closing-fcl-process/modal-closing-fcl-process.component";
 import { ModalDispatchOrderFclV2Component } from "@app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component";
+import { ModalEupTollCheckComponent } from "@app/shared/components/transports/modal-eup-toll-check/modal-eup-toll-check.component";
 import { MessageContstants } from "@app/shared/constants";
 import { SystemContstants } from "@app/shared/constants/SystemConstants";
 import {
@@ -81,9 +82,11 @@ export class DispatchOrderFclNewComponent implements OnInit {
   viewModalProgress = false;
   viewModalV2 = false;
   viewModalPayment = false;
+  viewModalEupTollCheck = false;
   @ViewChild(ModalDispatchOrderFclV2Component, { static: false }) modalDispatchOrderFclV2AddEdit: ModalDispatchOrderFclV2Component;
   @ViewChild(ModalClosingFclProcessComponent, { static: false }) modalChotMulti: ModalClosingFclProcessComponent;
   @ViewChild(ModalPhieuChiLenhComponent, { static: false }) modalPayment: ModalPhieuChiLenhComponent;
+  @ViewChild(ModalEupTollCheckComponent, { static: false }) modalEupTollCheck: ModalEupTollCheckComponent;
 
   constructor(
     private _service: DispatchOrderFclService,
@@ -372,6 +375,17 @@ export class DispatchOrderFclNewComponent implements OnInit {
         );
       }
     }
+  }
+
+  checkEup(item: DispatchOrderFcl) {
+    this.viewModalEupTollCheck = true;
+    setTimeout(() => {
+      this.modalEupTollCheck.show(item.vehiclelLicensePlates, item.startedDate, item.finishedDate);
+    }, 50);
+  }
+
+  closeModalEupTollCheck(): void {
+    this.viewModalEupTollCheck = false;
   }
 
   chotlenh(event: DispatchOrderFcl) {

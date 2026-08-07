@@ -1,0 +1,56 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalEupTollCheck="bs-modal"
+  [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" aria-labelledby="dialog-static-name"
+  (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" [ngBusy]="busy">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left"><i class="fa fa-road text-warning"></i> Check EUP — Phí cầu đường
+          <a style="font-size: 14px;">{{vehiclePlate}}</a>
+        </h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalEupTollCheck.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:10px;">
+          <b>Thời gian đối chiếu:</b>
+          {{startedDate | date:'dd/MM/yyyy HH:mm'}} &rarr; {{finishedDate | date:'dd/MM/yyyy HH:mm'}}
+        </div>
+        <div class="alert alert-warning" *ngIf="loaded && errorMsg">
+          <i class="fa fa-exclamation-triangle"></i> {{errorMsg}}
+        </div>
+        <div class="box-body table-responsive no-padding" *ngIf="listDetails?.length">
+          <table class="table table-bordered table-condensed">
+            <thead>
+              <tr>
+                <th>Trạm</th>
+                <th style="width: 220px;">Thời gian qua trạm</th>
+                <th class="text-right" style="width: 140px;">Số tiền</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of listDetails">
+                <td>{{item.startName}}<span *ngIf="item.endName && item.endName !== item.startName"> &rarr; {{item.endName}}</span></td>
+                <td>{{item.startTime}}<span *ngIf="item.endTime && item.endTime !== item.startTime"> &rarr; {{item.endTime}}</span></td>
+                <td class="text-right">{{item.cost | number:'1.0-0'}}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2" class="text-right"><b>Tổng cộng</b></td>
+                <td class="text-right"><b>{{totalCost | number:'1.0-0'}}</b></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="text-muted" *ngIf="loaded && !errorMsg && !listDetails?.length">
+          Không có lượt qua trạm nào trong khoảng thời gian đã chọn.
+        </div>
+      </div>
+      <div class="modal-footer text-right">
+        <button type="button" class="btn btn-danger btn-sm" (click)="modalEupTollCheck.hide()">
+          <i class="fa fa-close"></i> Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>

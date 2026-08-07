@@ -1,0 +1,6 @@
+/* CSS global busy.css để .ng-busy margin-top:260px — hợp lý cho modal to (form dài),
+   nhưng modal Check EUP rất ngắn (chỉ 1 dòng header + bảng) nên icon loading bị trôi
+   xuống giữa/dưới màn hình thay vì nằm ngay đầu nội dung. Ghi đè riêng cho modal này. */
+:host ::ng-deep .ng-busy {
+  margin-top: 0 !important;
+}

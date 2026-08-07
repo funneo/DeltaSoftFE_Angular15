@@ -18,6 +18,7 @@ import {
 } from "@app/shared/models/transports/dispatchorders/transport-order.model";
 import { TransportOrderService } from "@app/shared/services/transports/transport-order.service";
 import { ModalVietmapRoutesComponent } from "../../danhmuc/modal-vietmap-routes/modal-vietmap-routes.component";
+import { ModalEupTollCheckComponent } from "../modal-eup-toll-check/modal-eup-toll-check.component";
 import { ModalMapRoutesComponent } from "../../danhmuc/modal-map-routes/modal-map-routes.component";
 import { ModalRouteCompareComponent, CompareRouteResult } from "../../danhmuc/modal-route-compare/modal-route-compare.component";
 import { ModalAddExtraSegmentComponent, ExtraSegmentSavedResult } from "../modal-add-extra-segment/modal-add-extra-segment.component";
@@ -131,6 +132,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   public viewWorkflow: boolean = false;
   public viewRoute: boolean = false;
   public viewAttachFiles: boolean = false;
+  public viewEupTollCheck: boolean = false;
   public viewTicket: boolean = false;
   public viewModalWorkflows: boolean = false;
   public viewJobModal: boolean = false;
@@ -344,6 +346,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   @ViewChild(ModalVietmapRoutesComponent, { static: false }) modalVietmap: ModalVietmapRoutesComponent;
   @ViewChild(ModalMapRoutesComponent, { static: false }) modalGoogle: ModalMapRoutesComponent;
+  @ViewChild(ModalEupTollCheckComponent, { static: false }) modalEupTollCheck: ModalEupTollCheckComponent;
   @ViewChild(ModalRouteCompareComponent, { static: false }) modalCompare: ModalRouteCompareComponent;
   @ViewChild(ModalAddExtraSegmentComponent, { static: false }) modalAddExtra: ModalAddExtraSegmentComponent;
 
@@ -1572,6 +1575,17 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     this.loadQuotationDetailed();
   }
   viewRoutes = false;
+
+  checkEup() {
+    this.viewEupTollCheck = true;
+    setTimeout(() => {
+      this.modalEupTollCheck.show(this.entity.vehiclelLicensePlates, this.entity.startedDate, this.entity.finishedDate);
+    }, 50);
+  }
+
+  closeModalEupTollCheck(): void {
+    this.viewEupTollCheck = false;
+  }
 
   attachFile() {
     this.viewAttachFiles = true;

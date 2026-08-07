@@ -17,6 +17,7 @@ import { NgxSpinnerModule } from 'ngx-spinner';
 import { ModalDispatchOrderFclV2Module } from '@app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.module';
 import { ModalClosingFclProcessModule } from '@app/shared/components/transports/modal-closing-fcl-process/modal-closing-fcl-process.module';
 import { ModalPhieuChiLenhModule } from '@app/shared/components/accounting/modal-phieu-chi-lenh/modal-phieu-chi-lenh.module';
+import { ModalEupTollCheckModule } from '@app/shared/components/transports/modal-eup-toll-check/modal-eup-toll-check.module';
 
 @NgModule({
   declarations: [DispatchOrderFclNewComponent],
@@ -33,7 +34,8 @@ import { ModalPhieuChiLenhModule } from '@app/shared/components/accounting/modal
     NgxSpinnerModule,
     ModalDispatchOrderFclV2Module,
     ModalClosingFclProcessModule,
-    ModalPhieuChiLenhModule
+    ModalPhieuChiLenhModule,
+    ModalEupTollCheckModule
   ],
   providers: [DatePipe]
 })

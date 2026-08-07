@@ -159,6 +159,20 @@ $bg: #f5f6fa;
     white-space: nowrap;
   }
 
+  // .dof-col-lg/.dof-col-note (1 class) đặc thù THẤP hơN ".dof-table td" (class+element) ở trên
+  // => nowrap gốc luôn thắng nếu khai riêng ngoài block này. Khai LỒNG ở đây để thắng specificity,
+  // chữ mới thực sự xuống dòng trong đúng cột thay vì tràn ngang đè sang cột số bên cạnh.
+  td.dof-col-lg, td.dof-col-note {
+    white-space: normal;
+  }
+
+  // Điểm giao nhận hàng xuống dòng nhiều dòng (.dof-col-lg) làm cả hàng cao lên; căn middle khiến
+  // các ô 1 dòng khác (Tổng Km/Tổng dầu/Ghi chú...) trôi lơ lửng giữa hàng, nhìn như đè lên hàng kế.
+  // Căn top cho toàn bộ nội dung trong tbody để mọi ô bắt đầu cùng 1 mức, tránh cảm giác lệch dòng.
+  tbody td {
+    vertical-align: top;
+  }
+
   &__head th {
     position: sticky;
     top: 0;
@@ -205,6 +219,7 @@ $bg: #f5f6fa;
 .dof-col-check { width: 38px; text-align: center; }
 .dof-col-md { min-width: 120px; }
 .dof-col-lg { min-width: 240px; max-width: 420px; white-space: normal; }
+.dof-col-note { min-width: 120px; max-width: 200px; white-space: normal; word-break: break-word; }
 .dof-col-act { width: 90px; }
 .dof-num { text-align: right; font-variant-numeric: tabular-nums; }
 

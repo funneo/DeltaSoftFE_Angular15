@@ -1,8 +1,16 @@
 # Pending / In-Progress Work
 
-## ▶ FCL legacy — modal "Lịch sử lệnh" mới — FE-only, ng build 0 err, CHƯA COMMIT (2026-08-06) — chi tiết done.md
-Modal mới `modal-fcl-history` hiện lịch sử đổi trạng thái (kể cả lý do từ chối, bảng `DispatchOrderFCLHistory` — vốn đã ghi từ trước nhưng FE chưa từng hiển thị). Nút "Lịch sử" gắn vào `modal-dispatch-order-fcl` + `modal-perform-fcl`. Không cần SQL/BE mới.
-1. ⬜ Anh review diff → commit+push → `ng build` production deploy.
+## ▶ FCL v2 — "Check EUP" đối chiếu phí cầu đường (list + modal ETC) — FE-only, build 0 err, ĐÃ COMMIT+PUSH (2026-08-07) — chi tiết done.md
+Modal mới `modal-eup-toll-check` gọi `EupfinController.GetTollFee` có sẵn, gắn nút ở list `dispatch-order-fcl-new` + phần ETC trong `modal-dispatch-order-fcl-v2` khi lệnh có đủ T/g bắt đầu/kết thúc. Kèm 2 fix CSS list (căn top hàng + bug specificity làm cột Ghi chú/Điểm giao nhận hàng không xuống dòng, tràn sang cột số bên cạnh).
+1. ⬜ Anh `ng serve` xem lại → `ng build` production + deploy.
+2. ⬜ Test: lệnh đủ 2 mốc t/g → Check EUP ở list & modal ra đúng bảng trạm/tiền; địa chỉ dài + ghi chú dài xuống dòng gọn trong cột, không tràn.
+3. ⚠ Nhánh CÓ keyword của `SP_DispatchOrderFCL_GetAll` còn thiếu `StartedDate/FinishedDate` — lọc theo từ khóa sẽ tạm mất nút Check EUP ở list (modal không ảnh hưởng). Anh bổ sung khi rảnh (đối chiếu dòng `m.Tongdau, m.Chiphidau, m.IsSummarized,` trong nhánh có keyword).
+
+## ▶ FCL legacy — modal "Lịch sử lệnh" mới — BE+FE, build 0 err, FE ĐÃ COMMIT+PUSH — BE (NewAPI) còn 1 file CHƯA COMMIT (2026-08-06/07) — chi tiết done.md
+Modal mới `modal-fcl-history` hiện lịch sử đổi trạng thái (kể cả lý do từ chối, bảng `DispatchOrderFCLHistory` — vốn đã ghi từ trước nhưng FE chưa từng hiển thị). Nút "Lịch sử" gắn vào `modal-dispatch-order-fcl` + `modal-perform-fcl`. Anh đã tự sửa `SP_DispatchOrderFCL_GetByRefNo` (JOIN `V_Users` lấy `EmployeeFullName`) + đang tự bổ sung nhánh `@CurrentStatus=5` trong `SP_DispatchOrderFCL_UpdateState` để `@Step` hiện đúng "Từ chối chốt lệnh". Em đồng bộ Model BE (`DispatchOrderFCLHistory.cs` +`Step`) + FE (model +`step`, HTML +cột "Bước").
+1. ⬜ **Anh tự commit+push repo NewAPI** (`API/Models/FCL/DispatchOrderFCLHistory.cs` — repo BE riêng, ngoài phạm vi commit vừa rồi ở web-app-update).
+2. ⬜ **Tắt API + `dotnet publish`** (Model C# đổi lần này, không chỉ FE-only như trước) → `ng build` production deploy FE (FE đã commit+push).
+3. ⬜ Test: mở lịch sử 1 lệnh từng bị từ chối ở bước chốt lệnh → cột "Bước" phải hiện "Từ chối chốt lệnh", "Người thực hiện" phải có tên.
 
 ## ▶ EupfinController (proxy EUP cho ERP + GetTollFee mới) — build 0 err, test thật OK, CHƯA COMMIT (2026-08-06) — chi tiết done.md
 Controller MỚI `api/Eupfin` dồn 5 API EUP cho ERP tự dùng (JWT thường, không đụng `GaragesController`/Innvie): GetRealtimeByCars/GetCars/GetHistory/GetDistance (port lại) + `GetTollFee` MỚI (path `/road/cost`, có cơ chế tự dò lại biển qua `/cars` khi EUP báo INVALID_DEVICE do biển đăng ký kèm hậu tố thiết bị vd `(CAM)`). Test thật xe `29E10562` → tự dò ra `29E10562(CAM)` → 9 lượt qua trạm, cost=0.

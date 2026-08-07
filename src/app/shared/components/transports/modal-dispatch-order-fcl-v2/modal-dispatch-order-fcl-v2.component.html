@@ -300,6 +300,14 @@
                       [readonly]="flagXem"></textarea>
                   </div>
                 </div>
+                <div class="form-group" *ngIf="entity.startedDate">
+                  <label class="col-sm-2 control-label">T/g bắt đầu lệnh</label>
+                  <div class="col-sm-3">
+                    <span class="form-control">
+                      {{entity.startedDate}}
+                    </span>
+                  </div>
+                </div>
                 <div class="form-group" *ngIf="entity.finished">
                   <label class="col-sm-2 control-label">T/g hoàn thành lệnh</label>
                   <div class="col-sm-3">
@@ -857,6 +865,11 @@
               <!-- Trạm thu phí (ETC) — gộp từ tab ETC cũ, dùng TÊN trạm; tự thêm từ Vietmap -->
               <div class="dsg-etc-header">
                 <span class="dsg-etc-title"><i class="fa fa-money text-warning"></i> Trạm thu phí (ETC)</span>
+                <button type="button" class="btn btn-xs btn-warning dsg-etc-add"
+                  *ngIf="entity.startedDate && entity.finishedDate"
+                  (click)="checkEup()">
+                  <i class="fa fa-road"></i> Check EUP
+                </button>
                 <button type="button" class="btn btn-xs btn-primary dsg-etc-add"
                   *ngIf="!routeConfirmed && !entity.isSubcontractors"
                   (click)="newEtc()">
@@ -1215,6 +1228,7 @@
 <modal-vietmap-routes [vehicleKey]="vietmapVehicleKey" (RouteSelected)="onRouteSelected($event)"></modal-vietmap-routes>
 <modal-map-routes (RouteSelected)="onGoogleRouteSelected($event)"></modal-map-routes>
 <modal-route-compare [vehicleKey]="vietmapVehicleKey" (RouteSelected)="onCompareRouteSelected($event)"></modal-route-compare>
+<modal-eup-toll-check *ngIf="viewEupTollCheck" (CloseModal)="closeModalEupTollCheck()"></modal-eup-toll-check>
 
 <!-- Modal "Thêm cung đường phát sinh" — tách riêng (tự chứa Vietmap/So sánh) -->
 <modal-add-extra-segment (SaveSuccess)="onExtraSegmentSaved($event)"></modal-add-extra-segment>
