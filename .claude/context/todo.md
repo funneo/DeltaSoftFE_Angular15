@@ -1,21 +1,17 @@
 # Pending / In-Progress Work
 
-## ▶ FCL v2 — "Check EUP" đối chiếu phí cầu đường (list + modal ETC) — FE-only, build 0 err, ĐÃ COMMIT+PUSH (2026-08-07) — chi tiết done.md
-Modal mới `modal-eup-toll-check` gọi `EupfinController.GetTollFee` có sẵn, gắn nút ở list `dispatch-order-fcl-new` + phần ETC trong `modal-dispatch-order-fcl-v2` khi lệnh có đủ T/g bắt đầu/kết thúc. Kèm 2 fix CSS list (căn top hàng + bug specificity làm cột Ghi chú/Điểm giao nhận hàng không xuống dòng, tràn sang cột số bên cạnh).
+## ▶ FCL v2 — Duyệt B1 gate + khóa toàn bộ sau B1 (postB1Locked) — FE-only, tsc 0 lỗi mới, CHỜ build/deploy (2026-08-10) — chi tiết done.md
+Chuyển gate "chặng cuối" từ Lưu sang Duyệt B1; khóa cứng dầu/phí/tóm tắt/ghi chú/route sau khi Duyệt B1 (status≥5) bất kể xem/sửa; tiện thể vá bug có sẵn (route list không check `routeConfirmed`).
 1. ⬜ Anh `ng serve` xem lại → `ng build` production + deploy.
-2. ⬜ Test: lệnh đủ 2 mốc t/g → Check EUP ở list & modal ra đúng bảng trạm/tiền; địa chỉ dài + ghi chú dài xuống dòng gọn trong cột, không tràn.
-3. ⚠ Nhánh CÓ keyword của `SP_DispatchOrderFCL_GetAll` còn thiếu `StartedDate/FinishedDate` — lọc theo từ khóa sẽ tạm mất nút Check EUP ở list (modal không ảnh hưởng). Anh bổ sung khi rảnh (đối chiếu dòng `m.Tongdau, m.Chiphidau, m.IsSummarized,` trong nhánh có keyword).
+2. ⬜ Test: tạo lệnh mới không cần chọn chặng cuối vẫn Lưu được; bấm Duyệt B1 khi chưa chọn chặng cuối → bị chặn (tooltip); sau khi Duyệt B1 → mở lại ở chế độ sửa vẫn không sửa/xóa/kéo-thả được dầu/phí/tóm tắt/ghi chú/điểm route/trạm ETC.
+3. ⚠ Biết trước: gate chặng cuối ở Duyệt B1 gần như luôn pass khi mở lại lệnh đã lưu (`edit()` tự set `lastSegmentFinal=true`) — chỉ chặn thật nếu bấm Lưu mà chưa từng chọn chặng cuối.
 
-## ▶ FCL legacy — modal "Lịch sử lệnh" mới — BE+FE, build 0 err, ĐÃ COMMIT+PUSH cả 2 repo (2026-08-06/07) — chi tiết done.md
-Modal mới `modal-fcl-history` hiện lịch sử đổi trạng thái (kể cả lý do từ chối, bảng `DispatchOrderFCLHistory` — vốn đã ghi từ trước nhưng FE chưa từng hiển thị). Nút "Lịch sử" gắn vào `modal-dispatch-order-fcl` + `modal-perform-fcl`. Anh đã tự sửa `SP_DispatchOrderFCL_GetByRefNo` (JOIN `V_Users` lấy `EmployeeFullName`) + đang tự bổ sung nhánh `@CurrentStatus=5` trong `SP_DispatchOrderFCL_UpdateState` để `@Step` hiện đúng "Từ chối chốt lệnh". Em đồng bộ Model BE (`DispatchOrderFCLHistory.cs` +`Step`) + FE (model +`step`, HTML +cột "Bước").
-1. ⬜ **Tắt API + `dotnet publish`** (Model C# đổi lần này, không chỉ FE-only như trước) → `ng build` production deploy FE.
-2. ⬜ Test: mở lịch sử 1 lệnh từng bị từ chối ở bước chốt lệnh → cột "Bước" phải hiện "Từ chối chốt lệnh", "Người thực hiện" phải có tên.
+## ⏸ FCL — Lệnh vận tải phụ (cắt mooc LG/Pantos/Canon) — CHỐT Ý TƯỞNG, PAUSE chờ anh báo bắt đầu (2026-08-10, CHƯA CODE)
+Ý tưởng: dùng chung bảng `DispatchOrderFCL` + field phân biệt chính/phụ + liên kết lệnh cha, tái dùng nguyên workflow Duyệt B1/CHỐT LỆNH. Chi tiết + điểm chưa quyết (tên cột, lọc list, luồng tạo) ở memory `project_fcl_sub_order.md`.
+- ⬜ Không làm gì thêm cho tới khi anh chủ động yêu cầu bắt đầu.
 
-## ▶ EupfinController (proxy EUP cho ERP + GetTollFee mới) — build 0 err, test thật OK, CHƯA COMMIT (2026-08-06) — chi tiết done.md
-Controller MỚI `api/Eupfin` dồn 5 API EUP cho ERP tự dùng (JWT thường, không đụng `GaragesController`/Innvie): GetRealtimeByCars/GetCars/GetHistory/GetDistance (port lại) + `GetTollFee` MỚI (path `/road/cost`, có cơ chế tự dò lại biển qua `/cars` khi EUP báo INVALID_DEVICE do biển đăng ký kèm hậu tố thiết bị vd `(CAM)`). Test thật xe `29E10562` → tự dò ra `29E10562(CAM)` → 9 lượt qua trạm, cost=0.
-1. ⬜ Anh review diff (`EupfinController.cs` mới + `EupClass.cs` +3 model + `appsettings.Development/Production.json` +`EupfinTollFeePath`) → commit+push.
-2. ⬜ Tắt API → `dotnet publish`.
-3. ⚠ Lưu ý: `cost=0` toàn bộ lượt test — nếu dùng dữ liệu này cho nghiệp vụ (đối chiếu ETC, Vé tháng...) cần xác nhận với EUP/thực tế xem trạm 484/485 có thật sự miễn phí xe này hay dữ liệu thiếu.
+## ✅ FCL v2 "Check EUP" + FCL legacy "Lịch sử lệnh" + EupfinController — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-07)
+Chi tiết đầy đủ ở done.md. Không còn việc tồn đọng — chỉ 1 ghi chú nhỏ không chặn: nhánh CÓ keyword của `SP_DispatchOrderFCL_GetAll` vẫn thiếu `StartedDate/FinishedDate` (mất nút Check EUP ở list khi lọc từ khóa, modal không ảnh hưởng), anh bổ sung khi rảnh.
 
 ## ▶ Shipment: trường phân biệt loại hình KH `ShipmentFormType` — CHỐT THIẾT KẾ, anh tự làm tối/cuối tuần (2026-08-05, CHƯA CODE)
 **Vấn đề**: Lô thường & Canon **dùng chung bảng `Shipment`**, mỗi loại KH map field khác nhau + hiển thị khác, NHƯNG **không có trường phân biệt**. Hiện dò Canon bằng `shipmentType===1176 && pallets>0` — SAI bản chất (`1176`=TR Inland Trucking generic, 154k lô; định nghĩa Canon thật của hệ thống = KH có trong `CanonRoad` AND `Pallets>0`, xem nhánh `@ShipmentType=0` trong `SP_Shipment_GetPagingNormal`).
@@ -28,15 +24,9 @@ Controller MỚI `api/Eupfin` dồn 5 API EUP cho ERP tự dùng (JWT thường,
 4. **DraftWeb+DraftAPI**: `ShipmentDraftPayload` +field; `canon-job-form` set `=1` / `shipment-form` `0`; **thay `isCanonPayload`** (helper phiên 2026-08-05) → `shipmentFormType===1` ở 2 list (canon-job-list/shipment-list); promote `AddFromDraft` map field.
 - ⚠ Param SP mới đặt CUỐI + `=0` default (tránh "too many arguments"). Deploy FE Canon đồng nhịp, hoặc BE tự set 1 cho path Canon, để lô Canon mới không rớt về 0.
 
-## ▶ FCL v2 — per-line fee (CreateFeeV2/UpdateFeeV2/DeleteFeeV2 + @SkipFeeMerge) — SQL đã chạy, BE 0 err + FIX ảnh đính kèm 2026-08-06 CHỜ COMMIT, CHỜ redeploy API + mobile — chi tiết done.md
-Mobile lưu từng dòng chi phí ngay khi lái xe thêm/sửa/xóa. Phương án A (SP+endpoint V2 riêng, không đụng cũ). Nguồn: `NewAPI/PROMPT_BE_FCL_V2_FEE_PER_LINE_API.md`. Anh đã chốt: **DeleteV2 riêng** (phí nhiều hơn 659/665) + **CreateFeeV2/UpdateFeeV2 multipart** (PDA POST 1 lần kèm ảnh). **Push**: BE NewAPI master `4f683cc` · docs+skill main `7d56bf2`.
-- ✅ **SQL đã chạy** (2026-08-06, anh xác nhận).
-- ★ **FIX 2026-08-06 #1 (chưa commit)**: ảnh hóa đơn per-line ban đầu code nhảy vào "Ảnh hiện trường" (`DispatchOrderAttachFiles`, IsPod=false) — SAI, anh yêu cầu phải vào đúng tab **"Đính kèm hồ sơ"** của lệnh (hệ thống `AttachFiles` generic, `FrmName/FunctionName='FCL'`, cùng chỗ nút "Đính kèm hồ sơ" trên modal tạo lệnh dùng). Đã sửa `SaveFeeFileAsync` trong `DispatchOrderFCLController.cs` (DI đổi `IDispatchOrderAttachFiles`→`IAttachFiles`, ghi qua `SP_AttachFiles_Create` có sẵn, không cần SQL mới).
-- ★ **FIX 2026-08-06 #2 (chưa commit)**: `AttachFiles` gộp theo `RefNo` lệnh, không phân biệt được ảnh nào ứng với dòng phí nào — anh hỏi thẳng. Mượn 2 cột có sẵn (không ALTER): **`JobId` = Id dòng phí** (để lọc/liên kết ngược) + **`Title` = `Contents`** (nội dung dòng phí, hiện tên gợi nhớ). `CreateFeeV2` phải đảo thứ tự: INSERT phí trước (PathFile=NULL) lấy `newId` → lưu ảnh gắn `JobId=newId` → UPDATE lại PathFile (2 lượt SQL khi có ảnh, thay vì 1). `UpdateFeeV2` không đổi thứ tự (đã có Id sẵn). `dotnet build -t:Compile` 0 Error (cả 2 fix).
-1. ⬜ Anh review + commit 2 fix attach (chưa commit).
-2. ⬜ Tắt API → `dotnet publish`. Web KHÔNG đổi (SkipFeeMerge mặc định false).
-3. ⬜ Mobile đổi handler: **POST multipart** tới CreateFeeV2/UpdateFeeV2 kèm form `Item`(JSON, không PathFile)+`File`(tùy chọn)+`TokenKey` (đọc `data.Id`+`data.PathFile`); DeleteFeeV2 (FromBody); driverUpdate KM/giờ truyền `skipFeeMerge=1` (bỏ listFee khỏi payload). **KHÔNG cần gọi endpoint upload riêng** — CreateFeeV2 tự lưu file.
-4. ⬜ Test E2E: lái xe thêm dòng phí có hóa đơn + chọn ảnh → 1 POST CreateFeeV2 → trả Id+PathFile, ảnh vào **"Đính kèm hồ sơ"** của lệnh (KHÔNG phải "Ảnh hiện trường"/POD), gắn đúng `JobId`=Id dòng phí + `Title`=nội dung phí; UpdateFeeV2 không gửi file → giữ ảnh cũ, có gửi → thay ảnh + JobId/Title đúng dòng đang sửa; driverUpdate skipFeeMerge=1 KHÔNG xóa phí per-line; web v2 batch listFee vẫn chạy (skip=0). ⚠ Biết trước: `DeleteFeeV2` chưa dọn `AttachFiles` mồ côi khi xóa dòng phí có ảnh (để sau, giống hạn chế cũ của POD).
+## ✅ FCL v2 — per-line fee (CreateFeeV2/UpdateFeeV2/DeleteFeeV2 + @SkipFeeMerge) — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-07)
+Chi tiết đầy đủ ở done.md. SQL đã chạy, BE đã commit+publish, mobile đã đổi handler (multipart CreateFeeV2/UpdateFeeV2 kèm ảnh, DeleteFeeV2, driverUpdate skipFeeMerge=1), ảnh dòng phí vào đúng tab "Đính kèm hồ sơ" với JobId/Title. Không còn việc tồn đọng.
+- ⚠ Biết trước, để sau: `DeleteFeeV2` chưa dọn `AttachFiles` mồ côi khi xóa dòng phí có ảnh (giống hạn chế cũ của POD).
 
 ## ★★ MỐC 2026-07-24 — SQL ĐÃ CHẠY HẾT + BE/FE ĐÃ DEPLOY HẾT
 Anh xác nhận: **toàn bộ file `.sql` đang treo trong tài liệu này đã chạy** và **ERP API + ERP FE + draft-web + DraftAPI đã deploy xong**.

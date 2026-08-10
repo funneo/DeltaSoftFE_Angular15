@@ -262,6 +262,12 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   private _routeContext: 'segment' | 'extra-view' | 'extra-existing' = 'segment';
   private _extraExistingId: number | null = null;
 
+  // 2026-08-10: sau khi Duyệt B1 (status>=5) lệnh chỉ còn chờ CHỐT LỆNH — khóa mọi ô/nút
+  // thêm-bớt-sửa còn lại (dầu, chi phí, tóm tắt/ghi chú...) BẤT KỂ flagXem hay không.
+  // Route/ETC/xe/lái xe đã khóa từ trước qua routeConfirmed (ngay khi có refNo, sớm hơn).
+  get postB1Locked(): boolean {
+    return this.flagXem || (this.entity?.status ?? 0) >= 5;
+  }
   get showExtraSegmentsSection(): boolean {
     // Hiện luôn trong modal V2 (V2 = lệnh mới, không phải legacy). Trước khi save thì
     // hiện trạng thái disabled + hint "Lưu lệnh trước"; sau khi save hiện full controls.
@@ -1220,6 +1226,10 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       this.notificationService.printErrorMessage('Vui lòng lưu lệnh trước khi nhập dầu máy phát.');
       return;
     }
+    if (this.postB1Locked) {
+      this.notificationService.printErrorMessage('Lệnh đã Duyệt B1 — không thể sửa thông tin dầu.');
+      return;
+    }
     this.computeGenerator();
     this.dispatchOrderService.updateGenerator(this.entity).subscribe((res: any) => {
       if (res.code == '200' || res.code == '201') {
@@ -1823,7 +1833,12 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       });
   }
   // Điều vận: Duyệt B1 (3→5) — lưu chỉnh sửa (updateWithTo) rồi đổi trạng thái. Quyền FCL_ACCEPT (BE kiểm).
+  // 2026-08-10: bắt buộc đã xác nhận "Chặng cuối" mới cho Duyệt B1 (thay vì chặn ở Lưu như trước).
   duyetB1() {
+    if (!this.lastSegmentFinal) {
+      this.notificationService.printErrorMessage('Cần xác nhận Chặng cuối ở Cung đường vận tải trước khi Duyệt B1.');
+      return;
+    }
     var item = Object.assign({}, this.entity);
     this.notificationService.printConfirmationYesNo(
       "Chốt duyệt B1 lệnh vận chuyển hay không?",
@@ -2160,12 +2175,18 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   addToRoute(task: ShippingTask, type: 'pickup' | 'delivery') {
     if (this.lastSegmentFinal) return;
     const locationId = type === 'pickup' ? task.pickupLocationId : task.deliveryLocationId;
-    if (this._isSameAsLastLocation(locationId, 1)) {
+    // Nguồn điểm Nhận/Giao đảo giữa Ports(2)/CustomerLocations(1) theo isEport (shipmentType===1174),
+    // đúng logic bên modal-shipping-task-cs — KHÔNG được hardcode 1, vì Ports/CustomerLocations là 2 bảng
+    // Id độc lập (trùng số rất phổ biến), gắn sai type khiến guard "trùng điểm cuối" so nhầm 2 điểm khác nhau.
+    const isEport = task.shipmentType === 1174;
+    const locationType = type === 'pickup' ? (isEport ? 1 : 2) : (isEport ? 2 : 1);
+    if (this._isSameAsLastLocation(locationId, locationType)) {
       this.notificationService.printErrorMessage('Điểm này đang là điểm cuối lộ trình — không thể thêm liền kề chính nó.');
       return;
     }
     this.locations.push({
       locationId,
+      locationType,
       locationName: type === 'pickup' ? task.pickupLocation : task.deliveryLocation,
       lat: type === 'pickup' ? task.pickupLatitude : task.deliveryLatitude,
       lng: type === 'pickup' ? task.pickupLongitude : task.deliveryLongitude,
@@ -2177,11 +2198,13 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   }
 
   onDropLocation(event: CdkDragDrop<LocationItem[]>) {
+    if (this.routeConfirmed) return;
     moveItemInArray(this.locations, event.previousIndex, event.currentIndex);
     this._rebuildSegments();
   }
 
   removeLocation(index: number) {
+    if (this.routeConfirmed) return;
     this.locations.splice(index, 1);
     this.lastSegmentFinal = false;
     this._rebuildSegments();
@@ -2216,6 +2239,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   }
 
   removeStation(segIndex: number, stationIndex: number) {
+    if (this.routeConfirmed) return;
     this.entity.segments[segIndex].listStations.splice(stationIndex, 1);
     this.calculateTotal();
   }

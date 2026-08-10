@@ -222,7 +222,7 @@
                   <label class="col-sm-1 control-label">Bù dầu</label>
                   <div class="col-sm-1 text-right">
                     <input type="text" [(ngModel)]="entity.oilCompensation" name="oilCompensation" class="form-control"
-                      [mask]="maskNumber" [disabled]="flagXem" (change)="calulateOil()" />
+                      [mask]="maskNumber" [disabled]="postB1Locked" (change)="calulateOil()" />
                   </div>
                   <label class="col-sm-2 control-label">Tổng km</label>
                   <div class="col-sm-1">
@@ -239,7 +239,7 @@
                   <label class="col-sm-2 control-label">Lý do bù dầu</label>
                   <div class="col-sm-10">
                     <input type="text" [(ngModel)]="entity.reasonOilCompensation" name="reasonOilCompensation"
-                      class="form-control" [disabled]="flagXem" />
+                      class="form-control" [disabled]="postB1Locked" />
                   </div>
                 </div>
                 <!-- Dầu máy phát (2026-06-17) — tách riêng dầu định mức; chốt dầu tính bucket Máy phát -->
@@ -247,24 +247,24 @@
                   <label class="col-sm-2 control-label">Dầu máy phát</label>
                   <div class="col-sm-2">
                     <input type="number" [(ngModel)]="entity.generatorRunningHours" name="generatorRunningHours"
-                      class="form-control" placeholder="Số giờ chạy" (ngModelChange)="computeGenerator()" [disabled]="flagXem" />
+                      class="form-control" placeholder="Số giờ chạy" (ngModelChange)="computeGenerator()" [disabled]="postB1Locked" />
                   </div>
                   <label class="col-sm-1 control-label">Nhiệt độ</label>
                   <div class="col-sm-1">
                     <input type="number" [(ngModel)]="entity.generatorTemperature" name="generatorTemperature"
-                      class="form-control" placeholder="°C" [disabled]="flagXem" />
+                      class="form-control" placeholder="°C" [disabled]="postB1Locked" />
                   </div>
                   <label class="col-sm-2 control-label">Định mức (lít/giờ)</label>
                   <div class="col-sm-1">
                     <input type="number" [(ngModel)]="entity.generatorFuelNorm" name="generatorFuelNorm"
-                      class="form-control" (ngModelChange)="computeGenerator()" [disabled]="flagXem" />
+                      class="form-control" (ngModelChange)="computeGenerator()" [disabled]="postB1Locked" />
                   </div>
                   <label class="col-sm-1 control-label">Dầu MP</label>
                   <div class="col-sm-1">
                     <span class="form-control text-right">{{entity.generatorFuelAmount | number:'1.2-2'}}</span>
                   </div>
                   <div class="col-sm-1">
-                    <button type="button" class="btn btn-info btn-sm" *ngIf="!flagXem"
+                    <button type="button" class="btn btn-info btn-sm" *ngIf="!postB1Locked"
                       [disabled]="!entity.refNo" title="Lưu lệnh trước rồi mới lưu được dầu máy phát"
                       (click)="saveGenerator()"><i class="fa fa-save"></i> Lưu</button>
                   </div>
@@ -290,14 +290,14 @@
                   <label class="col-sm-2 control-label">Tóm tắt Lệnh</label>
                   <div class="col-sm-10">
                     <textarea class="form-control" [(ngModel)]="entity.dispatchSummarize" name="note" rows="4"
-                      [readonly]="flagXem"></textarea>
+                      [readonly]="postB1Locked"></textarea>
                   </div>
                 </div>
                 <div class="form-group">
                   <label class="col-sm-2 control-label">Ghi chú</label>
                   <div class="col-sm-10">
                     <textarea class="form-control" [(ngModel)]="entity.note" name="ghichu" rows="1"
-                      [readonly]="flagXem"></textarea>
+                      [readonly]="postB1Locked"></textarea>
                   </div>
                 </div>
                 <div class="form-group" *ngIf="entity.startedDate">
@@ -551,13 +551,14 @@
             <!-- List có thể drag-drop -->
             <div cdkDropList class="route-list"
               [cdkDropListData]="locations"
+              [cdkDropListDisabled]="routeConfirmed"
               (cdkDropListDropped)="onDropLocation($event)"
               *ngIf="locations.length > 0">
 
               <ng-container *ngFor="let loc of locations; let i = index">
 
                 <!-- Item điểm dừng -->
-                <div class="route-item" cdkDrag [cdkDragData]="loc">
+                <div class="route-item" cdkDrag [cdkDragData]="loc" [cdkDragDisabled]="routeConfirmed">
                   <!-- Handle kéo thả -->
                   <div class="route-item-handle" cdkDragHandle title="Kéo để đổi thứ tự">
                     <i class="fa fa-bars"></i>
@@ -578,7 +579,7 @@
                     </span>
                   </div>
                   <!-- Nút xóa -->
-                  <button type="button" class="route-item-remove" (click)="removeLocation(i)"
+                  <button type="button" class="route-item-remove" *ngIf="!routeConfirmed" (click)="removeLocation(i)"
                     title="Xóa khỏi lộ trình">
                     <i class="fa fa-times"></i>
                   </button>
@@ -609,9 +610,10 @@
                             [(ngModel)]="s.price"
                             (ngModelChange)="calculateTotal()"
                             [ngModelOptions]="{standalone: true}"
+                            [disabled]="routeConfirmed"
                             title="Đơn giá (có thể sửa)">
                           <span class="text-muted small">đ</span>
-                          <button type="button" class="btn-etc-remove" (click)="removeStation(i, j)">
+                          <button type="button" class="btn-etc-remove" *ngIf="!routeConfirmed" (click)="removeStation(i, j)">
                             <i class="fa fa-times text-danger"></i>
                           </button>
                         </div>
@@ -1048,36 +1050,36 @@
                         <tr *ngFor="let item of entity.listFee; let i=index;">
                           <td>
                             <ng-select name="feeId{{i}}" [items]="listDriverFee" bindLabel="feeName" bindValue="id"
-                              (change)="feeCode2Changed(item,$event)" [(ngModel)]="item.feeId" required>
+                              (change)="feeCode2Changed(item,$event)" [(ngModel)]="item.feeId" [disabled]="postB1Locked" required>
                             </ng-select>
                           </td>
                           <td>
                             <input type="text" class="form-control" name="contents{{i}}" [(ngModel)]="item.contents"
-                              placeholder="Nội dung" [readonly]="flagXem" />
+                              placeholder="Nội dung" [readonly]="postB1Locked" />
                           </td>
                           <td>
                             <input type="text" class="form-control" name="soluong{{i}}" style="text-align: right;"
                               [allowNegativeNumbers]="false" [(ngModel)]="item.quantity" (change)="changeQuantity(item)"
-                              placeholder="Số lượng" [readonly]="flagXem" [mask]="maskNumber" required />
+                              placeholder="Số lượng" [readonly]="postB1Locked" [mask]="maskNumber" required />
                           </td>
                           <td style="width: 150px;">
                             <input type="text" class="form-control" name="sotienFee{{i}}" style="text-align: right;"
                               [allowNegativeNumbers]="false" [(ngModel)]="item.cost" (change)="changeCost(item)"
-                              placeholder="Chi phí" [readonly]="flagXem" [mask]="maskNumber" required />
+                              placeholder="Chi phí" [readonly]="postB1Locked" [mask]="maskNumber" required />
                           </td>
                           <td style="width: 100px;">
                             <input type="text" class="form-control" name="vatFee{{i}}" style="text-align: right;"
                               [allowNegativeNumbers]="false" [(ngModel)]="item.vat" (change)="changeCost(item)"
-                              placeholder="Vat" [readonly]="flagXem" [mask]="maskNumber" required />
+                              placeholder="Vat" [readonly]="postB1Locked" [mask]="maskNumber" required />
                           </td>
                           <td style="width: 100px;">
                             <input type="text" class="form-control" name="totlaFeeCost{{i}}" style="text-align: right;"
                               [(ngModel)]="item.totalCost" placeholder="Tổng tiền" [allowNegativeNumbers]="false"
-                              [readonly]="flagXem" readonly [mask]="maskNumber" required />
+                              [readonly]="true" [mask]="maskNumber" required />
                           </td>
                           <td>
                             <input class="form-control" [(ngModel)]="item.note" type="text" name="noteFee{{i}}"
-                              [readonly]="flagXem" />
+                              [readonly]="postB1Locked" />
                             <!-- {{item.note}} -->
                           </td>
                           <td style="width:40px">
@@ -1187,7 +1189,10 @@
         <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-mau1 btn-sm"
           (click)="updateEtcFee()">
           <i class="fa fa-refresh"></i> Cập nhật chi phí</button>
+        <!-- 2026-08-10: yêu cầu "Chặng cuối" chuyển từ nút Lưu (tạo lệnh) sang nút Duyệt B1 —
+             xem memory project_fcl_v2_no_require_last_segment. -->
         <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-duyet btn-sm"
+          [disabled]="!lastSegmentFinal" [title]="!lastSegmentFinal ? 'Cần xác nhận Chặng cuối ở Cung đường vận tải trước khi Duyệt B1' : ''"
           (click)="duyetB1()">
           <i class="fa fa-check"></i> Duyệt B1</button>
         <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-danger btn-sm"
@@ -1200,9 +1205,10 @@
         <button *ngIf="closing_permission && entity.status==5" type="button" class="btn btn-duyet btn-sm"
           (click)="chotlenh()">
           <i class="fa fa-lock"></i> CHỐT LỆNH</button>
-        <!-- Nút Lưu: khi tạo mới (chưa có refNo) yêu cầu phải chốt chặng cuối trước.
-             Sau khi đã có refNo (edit mode) thì Lưu hiện như bình thường. -->
-        <button *ngIf="!flagXem && entity.status<3 && (entity.refNo || lastSegmentFinal)" type="submit"
+        <!-- 2026-08-10: bỏ yêu cầu phải chốt "Chặng cuối" mới hiện nút Lưu (trước đây tạo mới
+             bắt buộc lastSegmentFinal=true). Xem memory project_fcl_v2_no_require_last_segment
+             nếu cần bật lại. -->
+        <button *ngIf="!flagXem && entity.status<3" type="submit"
           class="btn btn-primary btn-sm"
           [disabled]=" !addEditForm.form.valid || flagSave ">
           <i class="fa fa-save"></i> Lưu</button>
