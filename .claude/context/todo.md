@@ -7,16 +7,14 @@
 3. ⬜ Test app Flutter gọi API bình thường (không cần đổi code app) — xác nhận đọc dữ liệu đúng.
 4. ⬜ Test Innvie/EUP (client ngoài dùng header `Api-Key`, không JWT) — cùng cơ chế nên lý thuyết an toàn, xác nhận thực tế 1 lần cho chắc.
 
-## ▶ Fix bug chốt phiếu cấp dầu IGAS khi S/L thực tế = 0 — FE-only, tsc 0 lỗi mới, CHỜ build/deploy (2026-08-15) — chi tiết done.md
+## ▶ Fix bug chốt phiếu cấp dầu IGAS khi S/L thực tế = 0 — FE-only, ✅ ĐÃ ng build + DEPLOY (anh xác nhận 2026-08-18), CHỜ TEST (2026-08-15) — chi tiết done.md
 `chotPhieu()` ở `modal-driver-fuel-approval` + `modal-fuel-summary` trước đây chặn im lặng khi nhập 0 lít (trường hợp xuất phiếu nhưng lái xe không đổ). Đã sửa cho phép 0 hợp lệ + bỏ bắt buộc thời gian đổ.
-1. ⬜ Anh `ng serve` xem lại → `ng build` production + deploy.
-2. ⬜ Test: xuất phiếu IGAS → không đổ, nhập S/L thực tế=0, để trống thời gian đổ → bấm Chốt dữ liệu → chốt được; để trống S/L thực tế → báo lỗi rõ thay vì im lặng.
+1. ⬜ Test: xuất phiếu IGAS → không đổ, nhập S/L thực tế=0, để trống thời gian đổ → bấm Chốt dữ liệu → chốt được; để trống S/L thực tế → báo lỗi rõ thay vì im lặng.
 
-## ▶ FCL v2 — Duyệt B1 gate + khóa toàn bộ sau B1 (postB1Locked) — FE-only, tsc 0 lỗi mới, CHỜ build/deploy (2026-08-10) — chi tiết done.md
+## ▶ FCL v2 — Duyệt B1 gate + khóa toàn bộ sau B1 (postB1Locked) — FE-only, ✅ ĐÃ ng build + DEPLOY (anh xác nhận 2026-08-18), CHỜ TEST (2026-08-10) — chi tiết done.md
 Chuyển gate "chặng cuối" từ Lưu sang Duyệt B1; khóa cứng dầu/phí/tóm tắt/ghi chú/route sau khi Duyệt B1 (status≥5) bất kể xem/sửa; tiện thể vá bug có sẵn (route list không check `routeConfirmed`).
-1. ⬜ Anh `ng serve` xem lại → `ng build` production + deploy.
-2. ⬜ Test: tạo lệnh mới không cần chọn chặng cuối vẫn Lưu được; bấm Duyệt B1 khi chưa chọn chặng cuối → bị chặn (tooltip); sau khi Duyệt B1 → mở lại ở chế độ sửa vẫn không sửa/xóa/kéo-thả được dầu/phí/tóm tắt/ghi chú/điểm route/trạm ETC.
-3. ⚠ Biết trước: gate chặng cuối ở Duyệt B1 gần như luôn pass khi mở lại lệnh đã lưu (`edit()` tự set `lastSegmentFinal=true`) — chỉ chặn thật nếu bấm Lưu mà chưa từng chọn chặng cuối.
+1. ⬜ Test: tạo lệnh mới không cần chọn chặng cuối vẫn Lưu được; bấm Duyệt B1 khi chưa chọn chặng cuối → bị chặn (tooltip); sau khi Duyệt B1 → mở lại ở chế độ sửa vẫn không sửa/xóa/kéo-thả được dầu/phí/tóm tắt/ghi chú/điểm route/trạm ETC.
+2. ⚠ Biết trước: gate chặng cuối ở Duyệt B1 gần như luôn pass khi mở lại lệnh đã lưu (`edit()` tự set `lastSegmentFinal=true`) — chỉ chặn thật nếu bấm Lưu mà chưa từng chọn chặng cuối.
 
 ## ⏸ FCL — Lệnh vận tải phụ (cắt mooc LG/Pantos/Canon) — CHỐT Ý TƯỞNG, PAUSE chờ anh báo bắt đầu (2026-08-10, CHƯA CODE)
 Ý tưởng: dùng chung bảng `DispatchOrderFCL` + field phân biệt chính/phụ + liên kết lệnh cha, tái dùng nguyên workflow Duyệt B1/CHỐT LỆNH. Chi tiết + điểm chưa quyết (tên cột, lọc list, luồng tạo) ở memory `project_fcl_sub_order.md`.
