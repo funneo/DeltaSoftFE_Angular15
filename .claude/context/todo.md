@@ -1,5 +1,17 @@
 # Pending / In-Progress Work
 
+## ▶ HTTP Response Compression (gzip/brotli) toàn API — BE-only, build 0 lỗi, CHỜ tắt API build/publish + test (2026-08-18) — chi tiết done.md
+`Program.cs` (NewAPI) đã thêm `AddResponseCompression`/`UseResponseCompression` (Brotli+Gzip, `EnableForHttps=true`, MIME `application/json`). Đo thực tế 50k dòng `Shipment` thật: giảm 94-97% dung lượng JSON. Không đụng SQL/FE (web lẫn app Flutter đều tự động hưởng lợi qua HTTP content-negotiation, không cần đổi code client).
+1. ⬜ Anh tắt API đang chạy (khóa DLL) → `dotnet build`/publish → chạy lại.
+2. ⬜ Test: DevTools web (tab Network) gọi 1 API list nặng → xem header `Content-Encoding: br`/`gzip` + so kích thước response trước/sau.
+3. ⬜ Test app Flutter gọi API bình thường (không cần đổi code app) — xác nhận đọc dữ liệu đúng.
+4. ⬜ Test Innvie/EUP (client ngoài dùng header `Api-Key`, không JWT) — cùng cơ chế nên lý thuyết an toàn, xác nhận thực tế 1 lần cho chắc.
+
+## ▶ Fix bug chốt phiếu cấp dầu IGAS khi S/L thực tế = 0 — FE-only, tsc 0 lỗi mới, CHỜ build/deploy (2026-08-15) — chi tiết done.md
+`chotPhieu()` ở `modal-driver-fuel-approval` + `modal-fuel-summary` trước đây chặn im lặng khi nhập 0 lít (trường hợp xuất phiếu nhưng lái xe không đổ). Đã sửa cho phép 0 hợp lệ + bỏ bắt buộc thời gian đổ.
+1. ⬜ Anh `ng serve` xem lại → `ng build` production + deploy.
+2. ⬜ Test: xuất phiếu IGAS → không đổ, nhập S/L thực tế=0, để trống thời gian đổ → bấm Chốt dữ liệu → chốt được; để trống S/L thực tế → báo lỗi rõ thay vì im lặng.
+
 ## ▶ FCL v2 — Duyệt B1 gate + khóa toàn bộ sau B1 (postB1Locked) — FE-only, tsc 0 lỗi mới, CHỜ build/deploy (2026-08-10) — chi tiết done.md
 Chuyển gate "chặng cuối" từ Lưu sang Duyệt B1; khóa cứng dầu/phí/tóm tắt/ghi chú/route sau khi Duyệt B1 (status≥5) bất kể xem/sửa; tiện thể vá bug có sẵn (route list không check `routeConfirmed`).
 1. ⬜ Anh `ng serve` xem lại → `ng build` production + deploy.
