@@ -123,7 +123,7 @@
                   (hideDaterangepicker)="closedNgaybatdau($event)" autocomplete="off"
                   [disabled]="flagXem || entity.approved">
               </div>
-              <label class="col-sm-2 control-label">S/L thực tế</label>
+              <label class="col-sm-2 control-label">S/L thực tế <span class="error">*</span></label>
               <div class="col-sm-1">
                 <input class="form-control" [(ngModel)]="entity.quantityIgas" type="text" name="quantityIgas" [mask]="maskNumber"
                   [readonly]="flagXem || entity.approved"/>

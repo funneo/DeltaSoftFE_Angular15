@@ -100,7 +100,10 @@ export class ModalFuelSummaryComponent implements OnInit {
       });
   }
   chotPhieu() {
-    if (!this.entity.refuelingTimeIgas || this.entity.quantityIgas == 0) return;
+    if (this.entity.quantityIgas == null || (this.entity.quantityIgas as any) === '') {
+      this._notificationService.printErrorMessage('Vui lòng nhập S/L thực tế (nhập 0 nếu lái xe không đổ)');
+      return;
+    }
     this._notificationService.printConfirmationDialog(
       MessageContstants.CLOSING_FUEL_DRIVER,
       () => {
