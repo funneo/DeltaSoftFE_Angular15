@@ -1,5 +1,13 @@
 # Pending / In-Progress Work
 
+## ▶ Fix double dữ liệu khi Duyệt nháp ERP (race condition) — BE-only, build 0 lỗi, CHỜ tắt API build/publish + chạy SQL (2026-08-19) — chi tiết done.md
+Anh phát hiện: duyệt nháp (Lô hàng/Payment/Debit/ShippingTask) qua ERP đôi khi bị tạo trùng bản ghi thật, đặc biệt lộ rõ lúc "Duyệt nhiều" (bulk). Nguyên nhân: `AddFromDraft` ở 4 controller làm 3 bước KHÔNG nguyên tử (đọc Status → tạo bản ghi thật → ghi ngược Promoted) → 2 request cùng nháp gần như đồng thời đều lọt qua guard → double ERP. Đã fix bằng claim nguyên tử (trạng thái trung gian `Promoting`) — xem chi tiết done.md.
+1. ⬜ Anh review + chạy `Migration_DraftSite_PromoteClaim_20260819.sql` (login delta.erp) — **⚠ chạy TRƯỚC khi deploy BE** (BE mới gọi thẳng 2 SP mới, chưa có SP sẽ lỗi "could not find stored procedure").
+2. ⬜ Anh tắt API đang chạy (khóa DLL) → `dotnet build`/publish → chạy lại.
+3. ⬜ Test: mở 2 tab (hoặc 2 tài khoản) cùng duyệt 1 dòng nháp gần như đồng thời → xác nhận chỉ tạo 1 bản ghi thật, tab/thao tác thua nhận thông báo "đang/đã được duyệt bởi thao tác khác".
+4. ⬜ Test "Duyệt nhiều" bình thường (không có tab thứ 2) ở cả 3 màn (Lô hàng/Canon/ShippingTask CS) — xác nhận vẫn chạy đúng như trước (không regressions).
+5. ⬜ Test case tạo bản ghi thật LỖI giữa chừng (vd thiếu field bắt buộc ở SP thật) → xác nhận nháp trả về lại `Status='Draft'` (không bị kẹt ở `Promoting`), duyệt lại được bình thường.
+
 ## ▶ HTTP Response Compression (gzip/brotli) toàn API — BE-only, build 0 lỗi, CHỜ tắt API build/publish + test (2026-08-18) — chi tiết done.md
 `Program.cs` (NewAPI) đã thêm `AddResponseCompression`/`UseResponseCompression` (Brotli+Gzip, `EnableForHttps=true`, MIME `application/json`). Đo thực tế 50k dòng `Shipment` thật: giảm 94-97% dung lượng JSON. Không đụng SQL/FE (web lẫn app Flutter đều tự động hưởng lợi qua HTTP content-negotiation, không cần đổi code client).
 1. ⬜ Anh tắt API đang chạy (khóa DLL) → `dotnet build`/publish → chạy lại.
