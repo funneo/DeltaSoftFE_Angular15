@@ -8,6 +8,12 @@ Anh phát hiện: duyệt nháp (Lô hàng/Payment/Debit/ShippingTask) qua ERP �
 4. ⬜ Test "Duyệt nhiều" bình thường (không có tab thứ 2) ở cả 3 màn (Lô hàng/Canon/ShippingTask CS) — xác nhận vẫn chạy đúng như trước (không regressions).
 5. ⬜ Test case tạo bản ghi thật LỖI giữa chừng (vd thiếu field bắt buộc ở SP thật) → xác nhận nháp trả về lại `Status='Draft'` (không bị kẹt ở `Promoting`), duyệt lại được bình thường.
 
+## ▶ Chốt dầu tháng — thêm nguồn "Mua dầu ngoài, tạm ứng" (ExternalOilPurchased) — SQL soạn xong CHỜ CHẠY + FE-only đã sửa CHỜ ng build (2026-08-19) — chi tiết done.md
+`SP_DriverFuelClosing_GetCandidates` trước đây thiếu nguồn dầu mua ngoài (bảng `ExternalOilPurchased`, nội bộ "MUA DAU NGOAI TIEN MAT") — dầu này tài xế đã được ghi nợ (`DriverFuelDebit`) khi Duyệt B2 nhưng chưa từng bị trừ vào phiếu chốt dầu tháng. Đã soạn `Migration_DriverFuelClosing_ExternalOilPurchased_20260819.sql` (3 SP: GetCandidates thêm Source=7, Create gộp Source 1+7 vào `@SupOper`, Approve thêm `IsFuelClosing=1` cho Source=7) + sửa FE `modal-vehicle-fuel-closing.component.ts/.html` (sourceLabel, recalcSummary, tab hiển thị source 7).
+1. ⬜ Anh review + chạy `Migration_DriverFuelClosing_ExternalOilPurchased_20260819.sql` (login delta.erp) — không có param mới BE gửi lên nên chạy trước/sau deploy đều được, nhưng nên chạy sớm để có nguồn 7.
+2. ⬜ `ng build` + deploy FE.
+3. ⬜ Test: mở "Chốt dầu phương tiện" cho 1 xe có phiếu Mua dầu ngoài Status=3 trong tháng → thấy nhóm "Mua dầu ngoài — tạm ứng (A)" xuất hiện, số lít trừ đúng vào Cấp Vận hành → Lưu/Duyệt → phiếu Mua dầu ngoài đó set `IsFuelClosing=1`, không còn là candidate ở phiếu chốt kế tiếp.
+
 ## ▶ HTTP Response Compression (gzip/brotli) toàn API — BE-only, build 0 lỗi, CHỜ tắt API build/publish + test (2026-08-18) — chi tiết done.md
 `Program.cs` (NewAPI) đã thêm `AddResponseCompression`/`UseResponseCompression` (Brotli+Gzip, `EnableForHttps=true`, MIME `application/json`). Đo thực tế 50k dòng `Shipment` thật: giảm 94-97% dung lượng JSON. Không đụng SQL/FE (web lẫn app Flutter đều tự động hưởng lợi qua HTTP content-negotiation, không cần đổi code client).
 1. ⬜ Anh tắt API đang chạy (khóa DLL) → `dotnet build`/publish → chạy lại.

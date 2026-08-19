@@ -208,14 +208,14 @@ export class ModalVehicleFuelClosingComponent implements OnInit {
   }
 
   // ====== Compute summary — NET = B + C − A (net CÓ DẤU) ======
-  // A = cấp dầu xe nhà (Type=0, source 1) ; B = dầu còn thừa cấp theo lệnh (Type=2, source 6)
+  // A = cấp dầu xe nhà (Type=0, source 1) + mua dầu ngoài tạm ứng (source 7) ; B = dầu còn thừa cấp theo lệnh (Type=2, source 6)
   // C = định mức lệnh (source 2/3/4 vận hành, 5 máy phát). NET<0 → thu tiền lái xe, >0 → chi.
   recalcSummary() {
     const list = (this.entity.detaileds ?? []).filter(x => x.checked !== false);
     const price = +(this.entity.oilPrice ?? 0);
 
-    // Bucket VẬN HÀNH: cấp A = source 1 bucket 1 ; định mức C = source 2/3/4
-    const supOper = this.sumBy(list, d => d.source === 1 && (d.bucket ?? 1) === 1);
+    // Bucket VẬN HÀNH: cấp A = source 1 bucket 1 + source 7 ; định mức C = source 2/3/4
+    const supOper = this.sumBy(list, d => (d.source === 1 && (d.bucket ?? 1) === 1) || d.source === 7);
     const demOper = this.sumBy(list, d => d.source === 2 || d.source === 3 || d.source === 4);
     this.entity.supplyOperQty = supOper;
     this.entity.demandOperQty = demOper;
@@ -286,6 +286,7 @@ export class ModalVehicleFuelClosingComponent implements OnInit {
       case 4: return 'Phát sinh (C)';
       case 5: return 'Dầu máy phát FCL (C)';
       case 6: return 'Dầu còn thừa — cấp theo lệnh (B)';
+      case 7: return 'Mua dầu ngoài — tạm ứng (A)';
       default: return '?';
     }
   }

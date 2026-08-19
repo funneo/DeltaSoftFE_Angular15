@@ -172,7 +172,7 @@
             <div class="form-group" *ngIf="entity.detaileds?.length">
               <div class="col-sm-12">
                 <h5>Chi tiết phiếu nguồn</h5>
-                <div *ngFor="let s of [1, 2, 3, 4, 5, 6]">
+                <div *ngFor="let s of [1, 2, 3, 4, 5, 6, 7]">
                   <div *ngIf="filterBySource(s).length > 0" style="margin-bottom:8px;">
                     <strong>{{sourceLabel(s)}}</strong>
                     <table class="table table-bordered table-sm" style="margin-top:4px;">
@@ -185,7 +185,7 @@
                           <th class="text-right">Đầu Km</th>
                           <th class="text-right">Cuối Km</th>
                           <th>Ngày</th>
-                          <th *ngIf="s === 1">Lý do</th>
+                          <th *ngIf="s === 1 || s === 7">Lý do</th>
                           <th class="text-right">Lít</th>
                           <th *ngIf="!flagXem && entity?.status !== 1" style="width:36px;"></th>
                         </tr>
@@ -202,7 +202,7 @@
                           <td class="text-right">{{d.startVehicleOdor | number:'1.0-0'}}</td>
                           <td class="text-right">{{d.finishVehicleOdor | number:'1.0-0'}}</td>
                           <td>{{d.date | date:'dd/MM/yyyy'}}</td>
-                          <td *ngIf="s === 1">{{d.reasonName}}</td>
+                          <td *ngIf="s === 1 || s === 7">{{d.reasonName}}</td>
                           <td class="text-right"><strong>{{d.quantity | number:'1.0-3'}}</strong></td>
                           <td *ngIf="!flagXem && entity?.status !== 1">
                             <button type="button" class="btn btn-xs btn-danger" (click)="removeRow(d)">
