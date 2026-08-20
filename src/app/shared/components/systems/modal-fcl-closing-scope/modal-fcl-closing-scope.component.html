@@ -1,0 +1,91 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalScope="bs-modal" [config]="{backdrop: 'static'}"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Phân quyền Chốt lệnh FCL theo khách hàng</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalScope.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="box-body" style="padding:0 0 12px 0;">
+          <div class="alert alert-info" style="margin-bottom:10px; padding:8px 12px; font-size:12px;">
+            "Chốt tất cả": chốt được mọi lệnh FCL. "Chốt theo KH": chỉ chốt được lệnh <b>chỉ có đúng 1 KH</b> nằm
+            trong danh sách chọn — lệnh nhiều KH khác nhau sẽ tự động rơi về nhóm "Chốt tất cả".
+          </div>
+
+          <table class="table table-bordered table-condensed">
+            <thead>
+              <tr>
+                <th>Tài khoản</th>
+                <th>Phạm vi</th>
+                <th style="width:120px;"></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let row of listByUser">
+                <td>{{row.userName}}</td>
+                <td>
+                  <span *ngIf="row.isAll" class="label label-success">Chốt tất cả</span>
+                  <span *ngIf="!row.isAll">
+                    <span *ngFor="let c of row.customers" class="label label-default" style="margin-right:4px;">{{c.name}}</span>
+                  </span>
+                </td>
+                <td>
+                  <button type="button" class="btn btn-xs btn-primary" (click)="editRow(row)"><i class="fa fa-edit"></i> Sửa</button>
+                  <button type="button" class="btn btn-xs btn-danger" (click)="removeUser(row)"><i class="fa fa-trash"></i></button>
+                </td>
+              </tr>
+              <tr *ngIf="!busy && listByUser.length==0">
+                <td colspan="3">Chưa có ai được gán quyền chốt lệnh.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <hr />
+
+          <form class="form-horizontal" novalidate #scopeForm="ngForm" (ngSubmit)="save()">
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Tài khoản <span class="error">*</span></label>
+              <div class="col-sm-9">
+                <ng-select name="userId" [items]="listUser" bindLabel="employeeFullName" bindValue="id"
+                  [(ngModel)]="selectedUserId" required placeholder="Chọn tài khoản">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-sm-3 control-label">Phạm vi</label>
+              <div class="col-sm-9">
+                <label class="radio-inline">
+                  <input type="radio" name="isAll" [value]="true" [(ngModel)]="isAll" /> Chốt tất cả
+                </label>
+                <label class="radio-inline">
+                  <input type="radio" name="isAll" [value]="false" [(ngModel)]="isAll" /> Chốt theo KH
+                </label>
+              </div>
+            </div>
+            <div class="form-group" *ngIf="!isAll">
+              <label class="col-sm-3 control-label">Khách hàng <span class="error">*</span></label>
+              <div class="col-sm-9">
+                <ng-select name="customerIds" [items]="listCustomer" bindLabel="customerName" bindValue="id"
+                  [(ngModel)]="selectedCustomerIds" [multiple]="true" placeholder="Chọn 1 hoặc nhiều khách hàng">
+                </ng-select>
+              </div>
+            </div>
+            <div class="form-group" style="text-align:right;">
+              <button type="submit" class="btn btn-primary btn-sm" [disabled]="!scopeForm.form.valid || flagSave">
+                <i class="fa fa-save"></i> Lưu gán quyền
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" (click)="modalScope.hide()" class="btn btn-danger btn-sm">
+          <i class="fa fa-close"></i> Đóng
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

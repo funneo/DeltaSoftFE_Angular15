@@ -185,6 +185,9 @@ export interface DispatchOrderFcl {
     // Lịch sử đổi trạng thái (kể cả từ chối) — BE trả sẵn trong getbyrefno/GetByRefNoWithTO
     // (bảng DispatchOrderFCLHistory), FE trước giờ chưa map/hiển thị (2026-08-06 bổ sung modal-fcl-history).
     listHistory?: DispatchOrderFclHistory[];
+    // Phân quyền Chốt lệnh theo KH (2026-08-20) — BE tính sẵn theo user hiện tại + KH của lệnh,
+    // thay cho closing_permission tĩnh cũ. Dùng cho cả modal, list từng dòng, và bulk "Chốt nhiều".
+    canCloseFcl?: boolean;
 }
 
 export interface DispatchOrderFclHistory {

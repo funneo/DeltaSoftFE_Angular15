@@ -4,6 +4,7 @@ import { ChangeDetectorRef, Component, OnInit, ViewChild } from "@angular/core";
 import { ModalClosingFclProcessComponent } from "@app/shared/components/transports/modal-closing-fcl-process/modal-closing-fcl-process.component";
 import { ModalDispatchOrderFclV2Component } from "@app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component";
 import { ModalEupTollCheckComponent } from "@app/shared/components/transports/modal-eup-toll-check/modal-eup-toll-check.component";
+import { ModalFclClosingScopeComponent } from "@app/shared/components/systems/modal-fcl-closing-scope/modal-fcl-closing-scope.component";
 import { MessageContstants } from "@app/shared/constants";
 import { SystemContstants } from "@app/shared/constants/SystemConstants";
 import {
@@ -83,10 +84,12 @@ export class DispatchOrderFclNewComponent implements OnInit {
   viewModalV2 = false;
   viewModalPayment = false;
   viewModalEupTollCheck = false;
+  viewModalClosingScope = false;
   @ViewChild(ModalDispatchOrderFclV2Component, { static: false }) modalDispatchOrderFclV2AddEdit: ModalDispatchOrderFclV2Component;
   @ViewChild(ModalClosingFclProcessComponent, { static: false }) modalChotMulti: ModalClosingFclProcessComponent;
   @ViewChild(ModalPhieuChiLenhComponent, { static: false }) modalPayment: ModalPhieuChiLenhComponent;
   @ViewChild(ModalEupTollCheckComponent, { static: false }) modalEupTollCheck: ModalEupTollCheckComponent;
+  @ViewChild(ModalFclClosingScopeComponent, { static: false }) modalClosingScope: ModalFclClosingScopeComponent;
 
   constructor(
     private _service: DispatchOrderFclService,
@@ -142,7 +145,8 @@ export class DispatchOrderFclNewComponent implements OnInit {
     var isChecked = false;
     let checkList = this.listFilter.filter((x) => x.checked);
     if (checkList.length > 0) {
-      isChecked = !checkList.some((x) => x.status != 5);
+      // 2026-08-20: phân quyền Chốt lệnh theo KH — mọi dòng đã tick đều phải canCloseFcl.
+      isChecked = !checkList.some((x) => x.status != 5 || !x.canCloseFcl);
     }
     return isChecked;
   }
@@ -494,5 +498,16 @@ export class DispatchOrderFclNewComponent implements OnInit {
 
   closePayment() {
     this.viewModalPayment = false;
+  }
+
+  openClosingScope() {
+    this.viewModalClosingScope = true;
+    setTimeout(() => {
+      this.modalClosingScope.show();
+    }, 50);
+  }
+
+  closeClosingScope() {
+    this.viewModalClosingScope = false;
   }
 }

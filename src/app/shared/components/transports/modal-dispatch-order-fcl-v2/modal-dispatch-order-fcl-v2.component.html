@@ -1198,11 +1198,11 @@
         <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-danger btn-sm"
           (click)="tuchoiB1()">
           <i class="fa fa-times-circle"></i> Từ chối B1</button>
-        <!-- Người chốt (FCL_CLOSING) — status 5 chờ chốt -->
-        <button *ngIf="closing_permission && entity.status==5" type="button" class="btn btn-danger btn-sm"
+        <!-- Người chốt (FCL_CLOSING + phạm vi KH, 2026-08-20: entity.canCloseFcl do BE tính) — status 5 chờ chốt -->
+        <button *ngIf="entity.canCloseFcl && entity.status==5" type="button" class="btn btn-danger btn-sm"
           (click)="tuchoiChot()">
           <i class="fa fa-times-circle"></i> Từ chối CHỐT</button>
-        <button *ngIf="closing_permission && entity.status==5" type="button" class="btn btn-duyet btn-sm"
+        <button *ngIf="entity.canCloseFcl && entity.status==5" type="button" class="btn btn-duyet btn-sm"
           (click)="chotlenh()">
           <i class="fa fa-lock"></i> CHỐT LỆNH</button>
         <!-- 2026-08-10: bỏ yêu cầu phải chốt "Chặng cuối" mới hiện nút Lưu (trước đây tạo mới
