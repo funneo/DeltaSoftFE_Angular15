@@ -5,29 +5,29 @@
 2. ⬜ Tắt API build/publish + `ng build` FE.
 3. ⬜ Test: mở nút "Phân quyền chốt" (toolbar list FCL mới, chỉ Admin thấy) → gán thử 1 user "Chốt tất cả" + 1 user "Chốt theo KH" 1 khách cụ thể → xác nhận nút CHỐT LỆNH hiện/ẩn đúng ở modal chi tiết + list từng dòng + bulk "Chốt lệnh nhiều"; thử gọi thẳng API `ChangeStatus` ActionType=4 với user ngoài phạm vi → phải bị chặn (RAISERROR).
 
-## 🚨 URGENT — WorkflowController.PromoteFromDraft bị bỏ sót khi fix double-data → đã tạo TRÙNG ~167 Job thật sáng 2026-08-20 — ĐÃ SỬA, CHỜ DEPLOY NGAY
+## URGENT — WorkflowController.PromoteFromDraft bị bỏ sót khi fix double-data → đã tạo TRÙNG ~167 Job thật sáng 2026-08-20 — ✅ ĐÃ DEPLOY (anh xác nhận 2026-08-20), CHỜ TEST
 Sáng 2026-08-20 sau khi anh chạy SQL `Migration_DraftSite_PromoteClaim_20260819.sql`, phát hiện `WorkflowController.PromoteFromDraft` (duyệt Job — KHÁC tên `AddFromDraft` nên bị bỏ sót lúc rà 4 controller hôm 2026-08-19) vẫn dùng luồng cũ, không gọi `ClaimPromote` → Job thật vẫn tạo được nhưng draft không bao giờ chuyển `Promoted` → không biến mất khỏi list → anh bấm lại nhiều lần → tạo trùng. Đã kiểm tra DB (chỉ SELECT): **25 JobId bị trùng, ~167 dòng `dbo.Workflow` (IsMainJob=1) thừa**, riêng `SSG26081203000001` bị trùng 64 lần, tất cả từ 1 người dùng bấm lại liên tục. Đã sửa `WorkflowController.PromoteFromDraft` theo đúng khuôn Claim/Release — build 0 lỗi — commit `c752b45` (NewAPI).
-1. ⬜⬜⬜ **DEPLOY NGAY** (tắt API/build/publish) — mỗi phút chưa deploy là còn tiếp tục tạo trùng nếu ai đó duyệt Job.
-2. ⬜ Anh đã chọn: TẠM CHƯA dọn 167 dòng trùng (ưu tiên chặn đứng trước) — quay lại xử lý dọn dữ liệu sau khi ổn định. Khi sẵn sàng, báo em soạn SQL dọn (giữ dòng đầu tiên/mới nhất mỗi JobId — cần xác nhận hướng trước khi chạy).
-3. ⬜ Sau deploy: test lại "Duyệt nhiều" Job → xác nhận biến mất khỏi list đúng, không tạo trùng nữa.
+1. ✅ Đã deploy (tắt API/build/publish) — hết nguy cơ tạo trùng tiếp.
+2. ⬜ Anh đã chọn: TẠM CHƯA dọn 167 dòng trùng — script đã soạn sẵn `Migration_DraftSite_Job_Duplicate_Cleanup_20260820.sql` (đã commit `bbf3d3e` NewAPI), chờ anh review + chạy khi tiện.
+3. ⬜ Test lại "Duyệt nhiều" Job → xác nhận biến mất khỏi list đúng, không tạo trùng nữa.
 
-## ▶ Fix double dữ liệu khi Duyệt nháp ERP (race condition) — BE-only, build 0 lỗi, CHỜ tắt API build/publish + chạy SQL (2026-08-19) — chi tiết done.md
+## ▶ Fix double dữ liệu khi Duyệt nháp ERP (race condition) — ✅ ĐÃ chạy SQL + build/publish (anh xác nhận 2026-08-20), CHỜ TEST (2026-08-19) — chi tiết done.md
 Anh phát hiện: duyệt nháp (Lô hàng/Payment/Debit/ShippingTask) qua ERP đôi khi bị tạo trùng bản ghi thật, đặc biệt lộ rõ lúc "Duyệt nhiều" (bulk). Nguyên nhân: `AddFromDraft` ở 4 controller làm 3 bước KHÔNG nguyên tử (đọc Status → tạo bản ghi thật → ghi ngược Promoted) → 2 request cùng nháp gần như đồng thời đều lọt qua guard → double ERP. Đã fix bằng claim nguyên tử (trạng thái trung gian `Promoting`) — xem chi tiết done.md.
-1. ⬜ Anh review + chạy `Migration_DraftSite_PromoteClaim_20260819.sql` (login delta.erp) — **⚠ chạy TRƯỚC khi deploy BE** (BE mới gọi thẳng 2 SP mới, chưa có SP sẽ lỗi "could not find stored procedure").
-2. ⬜ Anh tắt API đang chạy (khóa DLL) → `dotnet build`/publish → chạy lại.
+1. ✅ Đã chạy `Migration_DraftSite_PromoteClaim_20260819.sql`.
+2. ✅ Đã tắt API → `dotnet build`/publish → chạy lại.
 3. ⬜ Test: mở 2 tab (hoặc 2 tài khoản) cùng duyệt 1 dòng nháp gần như đồng thời → xác nhận chỉ tạo 1 bản ghi thật, tab/thao tác thua nhận thông báo "đang/đã được duyệt bởi thao tác khác".
 4. ⬜ Test "Duyệt nhiều" bình thường (không có tab thứ 2) ở cả 3 màn (Lô hàng/Canon/ShippingTask CS) — xác nhận vẫn chạy đúng như trước (không regressions).
 5. ⬜ Test case tạo bản ghi thật LỖI giữa chừng (vd thiếu field bắt buộc ở SP thật) → xác nhận nháp trả về lại `Status='Draft'` (không bị kẹt ở `Promoting`), duyệt lại được bình thường.
 
-## ▶ Chốt dầu tháng — thêm nguồn "Mua dầu ngoài, tạm ứng" (ExternalOilPurchased) — SQL soạn xong CHỜ CHẠY + FE-only đã sửa CHỜ ng build (2026-08-19) — chi tiết done.md
+## ▶ Chốt dầu tháng — thêm nguồn "Mua dầu ngoài, tạm ứng" (ExternalOilPurchased) — ✅ ĐÃ chạy SQL + ng build/deploy (anh xác nhận 2026-08-20), CHỜ TEST (2026-08-19) — chi tiết done.md
 `SP_DriverFuelClosing_GetCandidates` trước đây thiếu nguồn dầu mua ngoài (bảng `ExternalOilPurchased`, nội bộ "MUA DAU NGOAI TIEN MAT") — dầu này tài xế đã được ghi nợ (`DriverFuelDebit`) khi Duyệt B2 nhưng chưa từng bị trừ vào phiếu chốt dầu tháng. Đã soạn `Migration_DriverFuelClosing_ExternalOilPurchased_20260819.sql` (3 SP: GetCandidates thêm Source=7, Create gộp Source 1+7 vào `@SupOper`, Approve thêm `IsFuelClosing=1` cho Source=7) + sửa FE `modal-vehicle-fuel-closing.component.ts/.html` (sourceLabel, recalcSummary, tab hiển thị source 7).
-1. ⬜ Anh review + chạy `Migration_DriverFuelClosing_ExternalOilPurchased_20260819.sql` (login delta.erp) — không có param mới BE gửi lên nên chạy trước/sau deploy đều được, nhưng nên chạy sớm để có nguồn 7.
-2. ⬜ `ng build` + deploy FE.
+1. ✅ Đã chạy `Migration_DriverFuelClosing_ExternalOilPurchased_20260819.sql`.
+2. ✅ Đã `ng build` + deploy FE.
 3. ⬜ Test: mở "Chốt dầu phương tiện" cho 1 xe có phiếu Mua dầu ngoài Status=3 trong tháng → thấy nhóm "Mua dầu ngoài — tạm ứng (A)" xuất hiện, số lít trừ đúng vào Cấp Vận hành → Lưu/Duyệt → phiếu Mua dầu ngoài đó set `IsFuelClosing=1`, không còn là candidate ở phiếu chốt kế tiếp.
 
-## ▶ HTTP Response Compression (gzip/brotli) toàn API — BE-only, build 0 lỗi, CHỜ tắt API build/publish + test (2026-08-18) — chi tiết done.md
+## ▶ HTTP Response Compression (gzip/brotli) toàn API — ✅ ĐÃ build/publish (anh xác nhận 2026-08-20), CHỜ TEST (2026-08-18) — chi tiết done.md
 `Program.cs` (NewAPI) đã thêm `AddResponseCompression`/`UseResponseCompression` (Brotli+Gzip, `EnableForHttps=true`, MIME `application/json`). Đo thực tế 50k dòng `Shipment` thật: giảm 94-97% dung lượng JSON. Không đụng SQL/FE (web lẫn app Flutter đều tự động hưởng lợi qua HTTP content-negotiation, không cần đổi code client).
-1. ⬜ Anh tắt API đang chạy (khóa DLL) → `dotnet build`/publish → chạy lại.
+1. ✅ Đã tắt API → `dotnet build`/publish → chạy lại.
 2. ⬜ Test: DevTools web (tab Network) gọi 1 API list nặng → xem header `Content-Encoding: br`/`gzip` + so kích thước response trước/sau.
 3. ⬜ Test app Flutter gọi API bình thường (không cần đổi code app) — xác nhận đọc dữ liệu đúng.
 4. ⬜ Test Innvie/EUP (client ngoài dùng header `Api-Key`, không JWT) — cùng cơ chế nên lý thuyết an toàn, xác nhận thực tế 1 lần cho chắc.
