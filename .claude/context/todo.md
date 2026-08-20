@@ -1,5 +1,11 @@
 # Pending / In-Progress Work
 
+## 🚨 URGENT — WorkflowController.PromoteFromDraft bị bỏ sót khi fix double-data → đã tạo TRÙNG ~167 Job thật sáng 2026-08-20 — ĐÃ SỬA, CHỜ DEPLOY NGAY
+Sáng 2026-08-20 sau khi anh chạy SQL `Migration_DraftSite_PromoteClaim_20260819.sql`, phát hiện `WorkflowController.PromoteFromDraft` (duyệt Job — KHÁC tên `AddFromDraft` nên bị bỏ sót lúc rà 4 controller hôm 2026-08-19) vẫn dùng luồng cũ, không gọi `ClaimPromote` → Job thật vẫn tạo được nhưng draft không bao giờ chuyển `Promoted` → không biến mất khỏi list → anh bấm lại nhiều lần → tạo trùng. Đã kiểm tra DB (chỉ SELECT): **25 JobId bị trùng, ~167 dòng `dbo.Workflow` (IsMainJob=1) thừa**, riêng `SSG26081203000001` bị trùng 64 lần, tất cả từ 1 người dùng bấm lại liên tục. Đã sửa `WorkflowController.PromoteFromDraft` theo đúng khuôn Claim/Release — build 0 lỗi — commit `c752b45` (NewAPI).
+1. ⬜⬜⬜ **DEPLOY NGAY** (tắt API/build/publish) — mỗi phút chưa deploy là còn tiếp tục tạo trùng nếu ai đó duyệt Job.
+2. ⬜ Anh đã chọn: TẠM CHƯA dọn 167 dòng trùng (ưu tiên chặn đứng trước) — quay lại xử lý dọn dữ liệu sau khi ổn định. Khi sẵn sàng, báo em soạn SQL dọn (giữ dòng đầu tiên/mới nhất mỗi JobId — cần xác nhận hướng trước khi chạy).
+3. ⬜ Sau deploy: test lại "Duyệt nhiều" Job → xác nhận biến mất khỏi list đúng, không tạo trùng nữa.
+
 ## ▶ Fix double dữ liệu khi Duyệt nháp ERP (race condition) — BE-only, build 0 lỗi, CHỜ tắt API build/publish + chạy SQL (2026-08-19) — chi tiết done.md
 Anh phát hiện: duyệt nháp (Lô hàng/Payment/Debit/ShippingTask) qua ERP đôi khi bị tạo trùng bản ghi thật, đặc biệt lộ rõ lúc "Duyệt nhiều" (bulk). Nguyên nhân: `AddFromDraft` ở 4 controller làm 3 bước KHÔNG nguyên tử (đọc Status → tạo bản ghi thật → ghi ngược Promoted) → 2 request cùng nháp gần như đồng thời đều lọt qua guard → double ERP. Đã fix bằng claim nguyên tử (trạng thái trung gian `Promoting`) — xem chi tiết done.md.
 1. ⬜ Anh review + chạy `Migration_DraftSite_PromoteClaim_20260819.sql` (login delta.erp) — **⚠ chạy TRƯỚC khi deploy BE** (BE mới gọi thẳng 2 SP mới, chưa có SP sẽ lỗi "could not find stored procedure").
