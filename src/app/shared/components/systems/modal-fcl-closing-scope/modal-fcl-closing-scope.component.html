@@ -15,22 +15,24 @@
             trong danh sách chọn — lệnh nhiều KH khác nhau sẽ tự động rơi về nhóm "Chốt tất cả".
           </div>
 
-          <table class="table table-bordered table-condensed">
+          <table class="table table-bordered table-condensed" style="table-layout:fixed;">
             <thead>
               <tr>
-                <th>Tài khoản</th>
+                <th style="width:160px;">Tài khoản</th>
                 <th>Phạm vi</th>
                 <th style="width:120px;"></th>
               </tr>
             </thead>
             <tbody>
               <tr *ngFor="let row of listByUser">
-                <td>{{row.userName}}</td>
+                <td style="word-break:break-word;">{{row.userName}}</td>
                 <td>
                   <span *ngIf="row.isAll" class="label label-success">Chốt tất cả</span>
-                  <span *ngIf="!row.isAll">
-                    <span *ngFor="let c of row.customers" class="label label-default" style="margin-right:4px;">{{c.name}}</span>
-                  </span>
+                  <div *ngIf="!row.isAll">
+                    <div *ngFor="let c of row.customers" style="margin-bottom:3px;">
+                      <span class="label label-default">{{c.name}}</span>
+                    </div>
+                  </div>
                 </td>
                 <td>
                   <button type="button" class="btn btn-xs btn-primary" (click)="editRow(row)"><i class="fa fa-edit"></i> Sửa</button>
@@ -49,7 +51,7 @@
             <div class="form-group">
               <label class="col-sm-3 control-label">Tài khoản <span class="error">*</span></label>
               <div class="col-sm-9">
-                <ng-select name="userId" [items]="listUser" bindLabel="employeeFullName" bindValue="id"
+                <ng-select name="userId" [items]="listUser" bindLabel="userName" bindValue="id"
                   [(ngModel)]="selectedUserId" required placeholder="Chọn tài khoản">
                 </ng-select>
               </div>
