@@ -1,9 +1,7 @@
 # Pending / In-Progress Work
 
-## ▶ FCL — Phân quyền CHỐT LỆNH theo KH — SQL soạn xong CHỜ CHẠY + BE/FE build sạch (kể cả trang quản lý, đã vá 3 lỗi UI 2026-08-21) (2026-08-20) — chi tiết done.md
-1. ⬜ Anh review + chạy `Migration_FCL_ClosingScope_ByCustomer_20260820.sql` (login delta.erp).
-2. ⬜ Tắt API build/publish + `ng build` FE (gồm cả 3 fix UI modal Phân quyền: màu nút, dropdown tài khoản, list KH xuống dòng).
-3. ⬜ Test: mở nút "Phân quyền chốt" (toolbar list FCL mới, chỉ Admin thấy) → gán thử 1 user "Chốt tất cả" + 1 user "Chốt theo KH" 1 khách cụ thể → xác nhận nút CHỐT LỆNH hiện/ẩn đúng ở modal chi tiết + list từng dòng + bulk "Chốt lệnh nhiều"; thử gọi thẳng API `ChangeStatus` ActionType=4 với user ngoài phạm vi → phải bị chặn (RAISERROR).
+## ✅ FCL — Phân quyền CHỐT LỆNH theo KH — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-21) — chi tiết done.md
+SQL `Migration_FCL_ClosingScope_ByCustomer_20260820.sql` đã chạy, BE/FE đã deploy (gồm cả 3 fix UI modal Phân quyền), anh đã test xong. Không còn việc tồn đọng.
 
 ## URGENT — WorkflowController.PromoteFromDraft bị bỏ sót khi fix double-data → đã tạo TRÙNG ~167 Job thật sáng 2026-08-20 — ✅ ĐÃ DEPLOY (anh xác nhận 2026-08-20), CHỜ TEST
 Sáng 2026-08-20 sau khi anh chạy SQL `Migration_DraftSite_PromoteClaim_20260819.sql`, phát hiện `WorkflowController.PromoteFromDraft` (duyệt Job — KHÁC tên `AddFromDraft` nên bị bỏ sót lúc rà 4 controller hôm 2026-08-19) vẫn dùng luồng cũ, không gọi `ClaimPromote` → Job thật vẫn tạo được nhưng draft không bao giờ chuyển `Promoted` → không biến mất khỏi list → anh bấm lại nhiều lần → tạo trùng. Đã kiểm tra DB (chỉ SELECT): **25 JobId bị trùng, ~167 dòng `dbo.Workflow` (IsMainJob=1) thừa**, riêng `SSG26081203000001` bị trùng 64 lần, tất cả từ 1 người dùng bấm lại liên tục. Đã sửa `WorkflowController.PromoteFromDraft` theo đúng khuôn Claim/Release — build 0 lỗi — commit `c752b45` (NewAPI).
