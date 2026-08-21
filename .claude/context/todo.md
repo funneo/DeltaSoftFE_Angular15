@@ -1,8 +1,8 @@
 # Pending / In-Progress Work
 
-## ▶ FCL — Phân quyền CHỐT LỆNH theo KH — SQL soạn xong CHỜ CHẠY + BE/FE build sạch (kể cả trang quản lý) (2026-08-20) — chi tiết done.md
+## ▶ FCL — Phân quyền CHỐT LỆNH theo KH — SQL soạn xong CHỜ CHẠY + BE/FE build sạch (kể cả trang quản lý, đã vá 3 lỗi UI 2026-08-21) (2026-08-20) — chi tiết done.md
 1. ⬜ Anh review + chạy `Migration_FCL_ClosingScope_ByCustomer_20260820.sql` (login delta.erp).
-2. ⬜ Tắt API build/publish + `ng build` FE.
+2. ⬜ Tắt API build/publish + `ng build` FE (gồm cả 3 fix UI modal Phân quyền: màu nút, dropdown tài khoản, list KH xuống dòng).
 3. ⬜ Test: mở nút "Phân quyền chốt" (toolbar list FCL mới, chỉ Admin thấy) → gán thử 1 user "Chốt tất cả" + 1 user "Chốt theo KH" 1 khách cụ thể → xác nhận nút CHỐT LỆNH hiện/ẩn đúng ở modal chi tiết + list từng dòng + bulk "Chốt lệnh nhiều"; thử gọi thẳng API `ChangeStatus` ActionType=4 với user ngoài phạm vi → phải bị chặn (RAISERROR).
 
 ## URGENT — WorkflowController.PromoteFromDraft bị bỏ sót khi fix double-data → đã tạo TRÙNG ~167 Job thật sáng 2026-08-20 — ✅ ĐÃ DEPLOY (anh xác nhận 2026-08-20), CHỜ TEST
@@ -11,13 +11,14 @@ Sáng 2026-08-20 sau khi anh chạy SQL `Migration_DraftSite_PromoteClaim_202608
 2. ⬜ Anh đã chọn: TẠM CHƯA dọn 167 dòng trùng — script đã soạn sẵn `Migration_DraftSite_Job_Duplicate_Cleanup_20260820.sql` (đã commit `bbf3d3e` NewAPI), chờ anh review + chạy khi tiện.
 3. ⬜ Test lại "Duyệt nhiều" Job → xác nhận biến mất khỏi list đúng, không tạo trùng nữa.
 
-## ▶ Fix double dữ liệu khi Duyệt nháp ERP (race condition) — ✅ ĐÃ chạy SQL + build/publish (anh xác nhận 2026-08-20), CHỜ TEST (2026-08-19) — chi tiết done.md
+## ✅ Fix double dữ liệu khi Duyệt nháp ERP (race condition) — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-21) — 2026-08-19
 Anh phát hiện: duyệt nháp (Lô hàng/Payment/Debit/ShippingTask) qua ERP đôi khi bị tạo trùng bản ghi thật, đặc biệt lộ rõ lúc "Duyệt nhiều" (bulk). Nguyên nhân: `AddFromDraft` ở 4 controller làm 3 bước KHÔNG nguyên tử (đọc Status → tạo bản ghi thật → ghi ngược Promoted) → 2 request cùng nháp gần như đồng thời đều lọt qua guard → double ERP. Đã fix bằng claim nguyên tử (trạng thái trung gian `Promoting`) — xem chi tiết done.md.
 1. ✅ Đã chạy `Migration_DraftSite_PromoteClaim_20260819.sql`.
 2. ✅ Đã tắt API → `dotnet build`/publish → chạy lại.
-3. ⬜ Test: mở 2 tab (hoặc 2 tài khoản) cùng duyệt 1 dòng nháp gần như đồng thời → xác nhận chỉ tạo 1 bản ghi thật, tab/thao tác thua nhận thông báo "đang/đã được duyệt bởi thao tác khác".
-4. ⬜ Test "Duyệt nhiều" bình thường (không có tab thứ 2) ở cả 3 màn (Lô hàng/Canon/ShippingTask CS) — xác nhận vẫn chạy đúng như trước (không regressions).
-5. ⬜ Test case tạo bản ghi thật LỖI giữa chừng (vd thiếu field bắt buộc ở SP thật) → xác nhận nháp trả về lại `Status='Draft'` (không bị kẹt ở `Promoting`), duyệt lại được bình thường.
+3. ✅ Test 2 tab/2 tài khoản cùng duyệt 1 dòng nháp gần như đồng thời → chỉ tạo 1 bản ghi thật, thao tác thua nhận thông báo đang/đã được duyệt bởi thao tác khác.
+4. ✅ Test "Duyệt nhiều" bình thường (không có tab thứ 2) ở cả 3 màn (Lô hàng/Canon/ShippingTask CS) — chạy đúng như trước, không regression.
+5. ✅ Test case tạo bản ghi thật LỖI giữa chừng → nháp trả về lại `Status='Draft'` (không kẹt ở `Promoting`), duyệt lại được bình thường.
+- Không còn việc tồn đọng.
 
 ## ▶ Chốt dầu tháng — thêm nguồn "Mua dầu ngoài, tạm ứng" (ExternalOilPurchased) — ✅ ĐÃ chạy SQL + ng build/deploy (anh xác nhận 2026-08-20), CHỜ TEST (2026-08-19) — chi tiết done.md
 `SP_DriverFuelClosing_GetCandidates` trước đây thiếu nguồn dầu mua ngoài (bảng `ExternalOilPurchased`, nội bộ "MUA DAU NGOAI TIEN MAT") — dầu này tài xế đã được ghi nợ (`DriverFuelDebit`) khi Duyệt B2 nhưng chưa từng bị trừ vào phiếu chốt dầu tháng. Đã soạn `Migration_DriverFuelClosing_ExternalOilPurchased_20260819.sql` (3 SP: GetCandidates thêm Source=7, Create gộp Source 1+7 vào `@SupOper`, Approve thêm `IsFuelClosing=1` cho Source=7) + sửa FE `modal-vehicle-fuel-closing.component.ts/.html` (sourceLabel, recalcSummary, tab hiển thị source 7).
