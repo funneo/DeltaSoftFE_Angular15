@@ -1,10 +1,9 @@
 # Pending / In-Progress Work
 
-## ▶ Đọc số container AI (Gemini) — FIX LẦN 2 (mediaResolution HIGH + ép tự-đếm ký tự), CHỜ REDEPLOY API + test lại — 2026-08-22
-BE (`extract-container`, tự kiểm check-digit ISO 6346) + FE component dùng chung `modal-doc-container` — chi tiết done.md. Test thật lần 1 sau fix prompt lần 1: **vẫn thiếu chữ I đầu**. Đã fix lần 2: `mediaResolution` MEDIUM→HIGH (ảnh toàn cảnh từ xa, chữ nhỏ dễ mất nét) + prompt bắt trả thêm `charCount`/`checkedSeparateLetter` để tự-kiểm qua field JSON + bỏ `thinkingBudget=0`. `dotnet build` 0 lỗi. **Chưa test lại được với ảnh thật** (không có file để gọi thử).
-1. ⬜ **Anh redeploy API** (tắt API → build/publish) — BE-only, KHÔNG cần `ng build` lại FE.
-2. ⬜ Test lại đúng ảnh cont `IAAU2704620` + vài ảnh khác → xác nhận đọc đủ 11 ký tự, badge check-digit khớp. Nếu vẫn sai → báo lại kèm ảnh để em tiếp tục điều chỉnh (có thể phải đổi cách gộp nhiều ảnh, hoặc thử `gemini-2.5-pro` thay vì flash).
-3. ⬜ Sau khi test OK: anh quyết định nơi gắn chính thức (field/màn cụ thể) → wire `SelectItem` vào đúng field.
+## ▶ Đọc số container AI (Gemini) — ĐÃ FIX + TEST OK (anh xác nhận 2026-08-22, mediaResolution HIGH), CHỜ chọn nơi gắn chính thức
+BE (`extract-container`, tự kiểm check-digit ISO 6346, `mediaResolution HIGH`) + FE component dùng chung `modal-doc-container` — chi tiết done.md. Đã test thật OK: đọc đúng đủ 11 ký tự `IAAU2704620`. Hiện đang là nút pilot (`*ngIf="adminPermission"` trong toolbar `dispatch-order-fcl-new`, chỉ toast kết quả, chưa gắn field nào).
+1. ⬜ Anh quyết định nơi gắn chính thức (field/màn cụ thể cần điền "Số container") → wire `SelectItem` vào đúng field, có thể gỡ nút pilot đi.
+2. ⬜ (Tùy chọn, không gấp) theo dõi số token thực tế hiển thị ở footer modal qua vài lần dùng — nếu cao bất thường thì cân nhắc giới hạn còn 3-4 ảnh/lần thay vì 6.
 
 ## ✅ FCL — Phân quyền CHỐT LỆNH theo KH — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-21) — chi tiết done.md
 SQL `Migration_FCL_ClosingScope_ByCustomer_20260820.sql` đã chạy, BE/FE đã deploy (gồm cả 3 fix UI modal Phân quyền), anh đã test xong. Không còn việc tồn đọng.
