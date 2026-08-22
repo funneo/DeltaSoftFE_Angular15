@@ -1,10 +1,9 @@
 # Pending / In-Progress Work
 
-## ▶ Đọc số container AI (Gemini) — engine+component xong, CHỜ anh chỉ định nơi pilot để nhúng — 2026-08-21
-BE (`extract-container`, tự kiểm check-digit ISO 6346) + FE component dùng chung `modal-doc-container` build sạch — chi tiết done.md. Việc còn lại: anh chỉ định 1 màn cụ thể để nhúng nút "Đọc số container AI" (đúng nguyên tắc pilot trước khi nhân rộng) → nhúng + test.
-1. ⬜ Anh chỉ định nơi pilot (tối nay).
-2. ⬜ Nhúng component vào đúng chỗ + wire `SelectItem` vào field `contNo` + `ng build`.
-3. ⬜ Test thật với ảnh container thật — so số đọc được với thực tế + badge check-digit.
+## ▶ Đọc số container AI (Gemini) — ĐÃ NHÚNG PILOT (toolbar FCL v2, chỉ Admin), CHỜ anh test thật — 2026-08-21
+BE (`extract-container`, tự kiểm check-digit ISO 6346) + FE component dùng chung `modal-doc-container` build sạch — chi tiết done.md. Đã nhúng tạm nút "Đọc số cont (AI)" vào toolbar `dispatch-order-fcl-new` (`*ngIf="adminPermission"`, chưa gắn field nào — chỉ toast kết quả). `ng build` 0 lỗi mới.
+1. ⬜ Anh `ng build` deploy + test thật: chụp vài góc container thật → bấm đọc → so số với thực tế + xem badge check-digit đúng/lệch.
+2. ⬜ Sau khi test OK: anh quyết định nơi gắn chính thức (field/màn cụ thể) → wire `SelectItem` vào đúng field.
 
 ## ✅ FCL — Phân quyền CHỐT LỆNH theo KH — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-21) — chi tiết done.md
 SQL `Migration_FCL_ClosingScope_ByCustomer_20260820.sql` đã chạy, BE/FE đã deploy (gồm cả 3 fix UI modal Phân quyền), anh đã test xong. Không còn việc tồn đọng.
