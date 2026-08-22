@@ -1,9 +1,9 @@
 # Pending / In-Progress Work
 
-## ▶ Đọc số container AI (Gemini) — ĐÃ NHÚNG PILOT + FIX PROMPT sau test đầu, CHỜ REDEPLOY API + test lại — 2026-08-22
-BE (`extract-container`, tự kiểm check-digit ISO 6346) + FE component dùng chung `modal-doc-container` — chi tiết done.md. Test thật lần 1: AI đọc thiếu chữ cái đầu (bị in tách xa các chữ sau, dễ nhầm logo) — đã sửa prompt cảnh báo rõ lỗi này + bắt tự đếm đủ 11 ký tự. `dotnet build` 0 lỗi.
+## ▶ Đọc số container AI (Gemini) — FIX LẦN 2 (mediaResolution HIGH + ép tự-đếm ký tự), CHỜ REDEPLOY API + test lại — 2026-08-22
+BE (`extract-container`, tự kiểm check-digit ISO 6346) + FE component dùng chung `modal-doc-container` — chi tiết done.md. Test thật lần 1 sau fix prompt lần 1: **vẫn thiếu chữ I đầu**. Đã fix lần 2: `mediaResolution` MEDIUM→HIGH (ảnh toàn cảnh từ xa, chữ nhỏ dễ mất nét) + prompt bắt trả thêm `charCount`/`checkedSeparateLetter` để tự-kiểm qua field JSON + bỏ `thinkingBudget=0`. `dotnet build` 0 lỗi. **Chưa test lại được với ảnh thật** (không có file để gọi thử).
 1. ⬜ **Anh redeploy API** (tắt API → build/publish) — BE-only, KHÔNG cần `ng build` lại FE.
-2. ⬜ Test lại đúng ảnh cont `IAAU2704620` + vài ảnh khác → xác nhận đọc đủ 11 ký tự, badge check-digit khớp.
+2. ⬜ Test lại đúng ảnh cont `IAAU2704620` + vài ảnh khác → xác nhận đọc đủ 11 ký tự, badge check-digit khớp. Nếu vẫn sai → báo lại kèm ảnh để em tiếp tục điều chỉnh (có thể phải đổi cách gộp nhiều ảnh, hoặc thử `gemini-2.5-pro` thay vì flash).
 3. ⬜ Sau khi test OK: anh quyết định nơi gắn chính thức (field/màn cụ thể) → wire `SelectItem` vào đúng field.
 
 ## ✅ FCL — Phân quyền CHỐT LỆNH theo KH — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-21) — chi tiết done.md
