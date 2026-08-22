@@ -1,9 +1,10 @@
 # Pending / In-Progress Work
 
-## ▶ Đọc số container AI (Gemini) — ĐÃ NHÚNG PILOT (toolbar FCL v2, chỉ Admin), CHỜ anh test thật — 2026-08-21
-BE (`extract-container`, tự kiểm check-digit ISO 6346) + FE component dùng chung `modal-doc-container` build sạch — chi tiết done.md. Đã nhúng tạm nút "Đọc số cont (AI)" vào toolbar `dispatch-order-fcl-new` (`*ngIf="adminPermission"`, chưa gắn field nào — chỉ toast kết quả). `ng build` 0 lỗi mới.
-1. ⬜ Anh `ng build` deploy + test thật: chụp vài góc container thật → bấm đọc → so số với thực tế + xem badge check-digit đúng/lệch.
-2. ⬜ Sau khi test OK: anh quyết định nơi gắn chính thức (field/màn cụ thể) → wire `SelectItem` vào đúng field.
+## ▶ Đọc số container AI (Gemini) — ĐÃ NHÚNG PILOT + FIX PROMPT sau test đầu, CHỜ REDEPLOY API + test lại — 2026-08-22
+BE (`extract-container`, tự kiểm check-digit ISO 6346) + FE component dùng chung `modal-doc-container` — chi tiết done.md. Test thật lần 1: AI đọc thiếu chữ cái đầu (bị in tách xa các chữ sau, dễ nhầm logo) — đã sửa prompt cảnh báo rõ lỗi này + bắt tự đếm đủ 11 ký tự. `dotnet build` 0 lỗi.
+1. ⬜ **Anh redeploy API** (tắt API → build/publish) — BE-only, KHÔNG cần `ng build` lại FE.
+2. ⬜ Test lại đúng ảnh cont `IAAU2704620` + vài ảnh khác → xác nhận đọc đủ 11 ký tự, badge check-digit khớp.
+3. ⬜ Sau khi test OK: anh quyết định nơi gắn chính thức (field/màn cụ thể) → wire `SelectItem` vào đúng field.
 
 ## ✅ FCL — Phân quyền CHỐT LỆNH theo KH — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-21) — chi tiết done.md
 SQL `Migration_FCL_ClosingScope_ByCustomer_20260820.sql` đã chạy, BE/FE đã deploy (gồm cả 3 fix UI modal Phân quyền), anh đã test xong. Không còn việc tồn đọng.
