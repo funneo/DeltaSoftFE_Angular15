@@ -1,0 +1,29 @@
+.doc-container-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.doc-container-thumb {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.doc-container-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.doc-container-thumb-remove {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  padding: 0 4px;
+  line-height: 16px;
+}

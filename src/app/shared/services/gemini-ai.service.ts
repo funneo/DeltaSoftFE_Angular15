@@ -55,6 +55,18 @@ export interface ExtractInvoicesResponse {
   results: InvoiceExtractionResult[];
 }
 
+export interface ContainerExtractionResult {
+  containerNo: string;
+  isCheckDigitValid?: boolean;   // null = không đủ dữ liệu để tự kiểm (thiếu ký tự/sai định dạng)
+  computedCheckDigit?: number;
+  note?: string;
+  rawJson?: string;
+  error?: string;
+  promptTokens?: number;
+  completionTokens?: number;
+  totalTokens?: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -97,6 +109,17 @@ export class GeminiAiService extends BaseService {
     return this.http.post(
       `${environment.apiUrl}/api/geminiAI/extract-invoices-discard`,
       { uploadId }
+    ).pipe(catchError(this.handleError));
+  }
+
+  // Đọc số container từ NHIỀU ảnh của CÙNG 1 container (góc/khoảng cách khác nhau) -> 1 kết quả.
+  // Không lưu file/DB -> gọi lại bao nhiêu lần cũng được, không cần uploadId/retry.
+  extractContainer(files: File[]): Observable<ContainerExtractionResult> {
+    const formData = new FormData();
+    files.forEach(f => formData.append('files', f));
+    return this.http.post<ContainerExtractionResult>(
+      `${environment.apiUrl}/api/geminiAI/extract-container`,
+      formData
     ).pipe(catchError(this.handleError));
   }
 }

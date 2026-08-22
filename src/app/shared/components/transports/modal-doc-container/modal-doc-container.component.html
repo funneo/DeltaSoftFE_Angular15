@@ -1,0 +1,76 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalDocContainer="bs-modal"
+  [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" aria-labelledby="dialog-static-name"
+  (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left"><i class="fa fa-camera text-primary"></i> Đọc số container (AI)</h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalDocContainer.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:8px;">
+          <label class="text-muted" style="font-size:12px;">
+            Chụp/chọn vài ảnh số container (tối đa 6, càng nhiều góc AI đọc càng chính xác)
+          </label>
+          <input type="file" accept="image/*" capture="environment" multiple
+            (change)="onFilesSelected($event)" [disabled]="images.length >= 6 || loading" />
+        </div>
+
+        <div class="doc-container-thumbs" *ngIf="images.length">
+          <div class="doc-container-thumb" *ngFor="let img of images; let i = index">
+            <img [src]="img.previewUrl" />
+            <button type="button" class="btn btn-xs btn-danger doc-container-thumb-remove"
+              (click)="removeImage(i)" [disabled]="loading" title="Xóa ảnh">
+              <i class="fa fa-close"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="text-center" style="margin:10px 0;">
+          <button type="button" class="btn btn-primary btn-sm" [disabled]="!canRead" (click)="read()">
+            <i class="fa" [ngClass]="loading ? 'fa-spinner fa-spin' : 'fa-magic'"></i>
+            {{ loading ? 'Đang đọc...' : 'Đọc số container' }}
+          </button>
+        </div>
+
+        <div class="alert alert-warning" style="padding:6px 10px;" *ngIf="errorMsg">
+          <i class="fa fa-exclamation-triangle"></i> {{errorMsg}}
+        </div>
+
+        <div *ngIf="result && !loading">
+          <div class="form-group">
+            <label>Số container</label>
+            <input type="text" class="form-control input-sm" style="font-family:monospace;font-size:16px;letter-spacing:1px;"
+              [(ngModel)]="containerNoEdit" maxlength="11" placeholder="VD: MSCU1234567" />
+          </div>
+          <div style="margin-bottom:8px;">
+            <span class="label label-success" *ngIf="result.isCheckDigitValid === true">
+              <i class="fa fa-check"></i> Khớp check-digit ISO 6346
+            </span>
+            <span class="label label-danger" *ngIf="result.isCheckDigitValid === false">
+              <i class="fa fa-warning"></i> LỆCH check-digit (tính được {{result.computedCheckDigit}}) — kiểm tra lại
+            </span>
+            <span class="label label-default" *ngIf="result.isCheckDigitValid == null">
+              <i class="fa fa-question"></i> Chưa đủ ký tự để tự kiểm tra
+            </span>
+          </div>
+          <div class="text-muted" style="font-size:12px;" *ngIf="result.note">
+            <i class="fa fa-info-circle"></i> {{result.note}}
+          </div>
+          <div class="text-muted" style="font-size:11px;" *ngIf="result.totalTokens">
+            {{result.promptTokens}} in / {{result.completionTokens}} out = {{result.totalTokens}} tokens
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer text-right">
+        <button type="button" class="btn btn-success btn-sm" [disabled]="!containerNoValid" (click)="confirm()"
+          title="{{ containerNoEdit && !containerNoValid ? 'Số container phải đúng định dạng 4 chữ + 7 số' : '' }}">
+          <i class="fa fa-check"></i> Dùng số này</button>
+        <button type="button" class="btn btn-danger btn-sm" (click)="close()">
+          <i class="fa fa-close"></i> Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
