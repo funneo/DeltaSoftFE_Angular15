@@ -45,6 +45,10 @@
         title="Phân quyền Chốt lệnh theo khách hàng">
         <i class="fa fa-key"></i> Phân quyền chốt
       </button>
+      <button *ngIf="adminPermission" class="dof-btn dof-btn--admin" (click)="openDocContainer()"
+        title="Pilot — chỉ Admin thấy, chưa gắn vào lệnh nào">
+        <i class="fa fa-camera"></i> Đọc số cont (AI)
+      </button>
     </div>
   </div>
 
@@ -167,3 +171,6 @@
 </modal-eup-toll-check>
 <modal-fcl-closing-scope *ngIf="viewModalClosingScope" (CloseModal)="closeClosingScope()">
 </modal-fcl-closing-scope>
+<modal-doc-container *ngIf="viewModalDocContainer" (SelectItem)="onContainerRead($event)"
+  (CloseModal)="closeDocContainer()">
+</modal-doc-container>

@@ -19,6 +19,7 @@ import { ModalClosingFclProcessModule } from '@app/shared/components/transports/
 import { ModalPhieuChiLenhModule } from '@app/shared/components/accounting/modal-phieu-chi-lenh/modal-phieu-chi-lenh.module';
 import { ModalEupTollCheckModule } from '@app/shared/components/transports/modal-eup-toll-check/modal-eup-toll-check.module';
 import { ModalFclClosingScopeModule } from '@app/shared/components/systems/modal-fcl-closing-scope/modal-fcl-closing-scope.module';
+import { ModalDocContainerModule } from '@app/shared/components/transports/modal-doc-container/modal-doc-container.module';
 
 @NgModule({
   declarations: [DispatchOrderFclNewComponent],
@@ -37,7 +38,8 @@ import { ModalFclClosingScopeModule } from '@app/shared/components/systems/modal
     ModalClosingFclProcessModule,
     ModalPhieuChiLenhModule,
     ModalEupTollCheckModule,
-    ModalFclClosingScopeModule
+    ModalFclClosingScopeModule,
+    ModalDocContainerModule
   ],
   providers: [DatePipe]
 })

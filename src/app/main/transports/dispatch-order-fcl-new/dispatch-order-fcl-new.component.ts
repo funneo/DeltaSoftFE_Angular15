@@ -5,6 +5,7 @@ import { ModalClosingFclProcessComponent } from "@app/shared/components/transpor
 import { ModalDispatchOrderFclV2Component } from "@app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component";
 import { ModalEupTollCheckComponent } from "@app/shared/components/transports/modal-eup-toll-check/modal-eup-toll-check.component";
 import { ModalFclClosingScopeComponent } from "@app/shared/components/systems/modal-fcl-closing-scope/modal-fcl-closing-scope.component";
+import { ModalDocContainerComponent } from "@app/shared/components/transports/modal-doc-container/modal-doc-container.component";
 import { MessageContstants } from "@app/shared/constants";
 import { SystemContstants } from "@app/shared/constants/SystemConstants";
 import {
@@ -85,11 +86,13 @@ export class DispatchOrderFclNewComponent implements OnInit {
   viewModalPayment = false;
   viewModalEupTollCheck = false;
   viewModalClosingScope = false;
+  viewModalDocContainer = false;
   @ViewChild(ModalDispatchOrderFclV2Component, { static: false }) modalDispatchOrderFclV2AddEdit: ModalDispatchOrderFclV2Component;
   @ViewChild(ModalClosingFclProcessComponent, { static: false }) modalChotMulti: ModalClosingFclProcessComponent;
   @ViewChild(ModalPhieuChiLenhComponent, { static: false }) modalPayment: ModalPhieuChiLenhComponent;
   @ViewChild(ModalEupTollCheckComponent, { static: false }) modalEupTollCheck: ModalEupTollCheckComponent;
   @ViewChild(ModalFclClosingScopeComponent, { static: false }) modalClosingScope: ModalFclClosingScopeComponent;
+  @ViewChild(ModalDocContainerComponent, { static: false }) modalDocContainer: ModalDocContainerComponent;
 
   constructor(
     private _service: DispatchOrderFclService,
@@ -509,5 +512,21 @@ export class DispatchOrderFclNewComponent implements OnInit {
 
   closeClosingScope() {
     this.viewModalClosingScope = false;
+  }
+
+  // Nhúng tạm (pilot, chỉ Admin thấy nút) — chưa gắn vào field nào, chỉ để test đọc thực tế.
+  openDocContainer() {
+    this.viewModalDocContainer = true;
+    setTimeout(() => {
+      this.modalDocContainer.show();
+    }, 50);
+  }
+
+  closeDocContainer() {
+    this.viewModalDocContainer = false;
+  }
+
+  onContainerRead(containerNo: string) {
+    this.notificationService.printSuccessMessage("Đã đọc số container: " + containerNo);
   }
 }
