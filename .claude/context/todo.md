@@ -1,13 +1,19 @@
 # Pending / In-Progress Work
 
+## ▶ Đọc số container AI (Gemini) — engine+component xong, CHỜ anh chỉ định nơi pilot để nhúng — 2026-08-21
+BE (`extract-container`, tự kiểm check-digit ISO 6346) + FE component dùng chung `modal-doc-container` build sạch — chi tiết done.md. Việc còn lại: anh chỉ định 1 màn cụ thể để nhúng nút "Đọc số container AI" (đúng nguyên tắc pilot trước khi nhân rộng) → nhúng + test.
+1. ⬜ Anh chỉ định nơi pilot (tối nay).
+2. ⬜ Nhúng component vào đúng chỗ + wire `SelectItem` vào field `contNo` + `ng build`.
+3. ⬜ Test thật với ảnh container thật — so số đọc được với thực tế + badge check-digit.
+
 ## ✅ FCL — Phân quyền CHỐT LỆNH theo KH — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-21) — chi tiết done.md
 SQL `Migration_FCL_ClosingScope_ByCustomer_20260820.sql` đã chạy, BE/FE đã deploy (gồm cả 3 fix UI modal Phân quyền), anh đã test xong. Không còn việc tồn đọng.
 
-## URGENT — WorkflowController.PromoteFromDraft bị bỏ sót khi fix double-data → đã tạo TRÙNG ~167 Job thật sáng 2026-08-20 — ✅ ĐÃ DEPLOY (anh xác nhận 2026-08-20), CHỜ TEST
+## ✅ WorkflowController.PromoteFromDraft bị bỏ sót khi fix double-data → đã tạo TRÙNG ~167 Job thật sáng 2026-08-20 — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-21)
 Sáng 2026-08-20 sau khi anh chạy SQL `Migration_DraftSite_PromoteClaim_20260819.sql`, phát hiện `WorkflowController.PromoteFromDraft` (duyệt Job — KHÁC tên `AddFromDraft` nên bị bỏ sót lúc rà 4 controller hôm 2026-08-19) vẫn dùng luồng cũ, không gọi `ClaimPromote` → Job thật vẫn tạo được nhưng draft không bao giờ chuyển `Promoted` → không biến mất khỏi list → anh bấm lại nhiều lần → tạo trùng. Đã kiểm tra DB (chỉ SELECT): **25 JobId bị trùng, ~167 dòng `dbo.Workflow` (IsMainJob=1) thừa**, riêng `SSG26081203000001` bị trùng 64 lần, tất cả từ 1 người dùng bấm lại liên tục. Đã sửa `WorkflowController.PromoteFromDraft` theo đúng khuôn Claim/Release — build 0 lỗi — commit `c752b45` (NewAPI).
 1. ✅ Đã deploy (tắt API/build/publish) — hết nguy cơ tạo trùng tiếp.
-2. ⬜ Anh đã chọn: TẠM CHƯA dọn 167 dòng trùng — script đã soạn sẵn `Migration_DraftSite_Job_Duplicate_Cleanup_20260820.sql` (đã commit `bbf3d3e` NewAPI), chờ anh review + chạy khi tiện.
-3. ⬜ Test lại "Duyệt nhiều" Job → xác nhận biến mất khỏi list đúng, không tạo trùng nữa.
+2. ✅ Test lại "Duyệt nhiều" Job — biến mất khỏi list đúng, không tạo trùng nữa (anh xác nhận 2026-08-21).
+3. ⬜ Dọn 167 dòng trùng cũ: anh vẫn chọn TẠM CHƯA — script đã soạn sẵn `Migration_DraftSite_Job_Duplicate_Cleanup_20260820.sql` (đã commit `bbf3d3e` NewAPI), chờ anh review + chạy khi tiện.
 
 ## ✅ Fix double dữ liệu khi Duyệt nháp ERP (race condition) — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-21) — 2026-08-19
 Anh phát hiện: duyệt nháp (Lô hàng/Payment/Debit/ShippingTask) qua ERP đôi khi bị tạo trùng bản ghi thật, đặc biệt lộ rõ lúc "Duyệt nhiều" (bulk). Nguyên nhân: `AddFromDraft` ở 4 controller làm 3 bước KHÔNG nguyên tử (đọc Status → tạo bản ghi thật → ghi ngược Promoted) → 2 request cùng nháp gần như đồng thời đều lọt qua guard → double ERP. Đã fix bằng claim nguyên tử (trạng thái trung gian `Promoting`) — xem chi tiết done.md.
@@ -18,18 +24,18 @@ Anh phát hiện: duyệt nháp (Lô hàng/Payment/Debit/ShippingTask) qua ERP �
 5. ✅ Test case tạo bản ghi thật LỖI giữa chừng → nháp trả về lại `Status='Draft'` (không kẹt ở `Promoting`), duyệt lại được bình thường.
 - Không còn việc tồn đọng.
 
-## ▶ Chốt dầu tháng — thêm nguồn "Mua dầu ngoài, tạm ứng" (ExternalOilPurchased) — ✅ ĐÃ chạy SQL + ng build/deploy (anh xác nhận 2026-08-20), CHỜ TEST (2026-08-19) — chi tiết done.md
+## ✅ Chốt dầu tháng — thêm nguồn "Mua dầu ngoài, tạm ứng" (ExternalOilPurchased) — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-21) — 2026-08-19 — chi tiết done.md
 `SP_DriverFuelClosing_GetCandidates` trước đây thiếu nguồn dầu mua ngoài (bảng `ExternalOilPurchased`, nội bộ "MUA DAU NGOAI TIEN MAT") — dầu này tài xế đã được ghi nợ (`DriverFuelDebit`) khi Duyệt B2 nhưng chưa từng bị trừ vào phiếu chốt dầu tháng. Đã soạn `Migration_DriverFuelClosing_ExternalOilPurchased_20260819.sql` (3 SP: GetCandidates thêm Source=7, Create gộp Source 1+7 vào `@SupOper`, Approve thêm `IsFuelClosing=1` cho Source=7) + sửa FE `modal-vehicle-fuel-closing.component.ts/.html` (sourceLabel, recalcSummary, tab hiển thị source 7).
 1. ✅ Đã chạy `Migration_DriverFuelClosing_ExternalOilPurchased_20260819.sql`.
 2. ✅ Đã `ng build` + deploy FE.
-3. ⬜ Test: mở "Chốt dầu phương tiện" cho 1 xe có phiếu Mua dầu ngoài Status=3 trong tháng → thấy nhóm "Mua dầu ngoài — tạm ứng (A)" xuất hiện, số lít trừ đúng vào Cấp Vận hành → Lưu/Duyệt → phiếu Mua dầu ngoài đó set `IsFuelClosing=1`, không còn là candidate ở phiếu chốt kế tiếp.
+3. ✅ Test OK: nhóm "Mua dầu ngoài — tạm ứng (A)" hiện đúng, số lít trừ đúng vào Cấp Vận hành, Duyệt xong phiếu nguồn set `IsFuelClosing=1` (anh xác nhận 2026-08-21). Không còn việc tồn đọng.
 
-## ▶ HTTP Response Compression (gzip/brotli) toàn API — ✅ ĐÃ build/publish (anh xác nhận 2026-08-20), CHỜ TEST (2026-08-18) — chi tiết done.md
+## ✅ HTTP Response Compression (gzip/brotli) toàn API — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-21) — 2026-08-18 — chi tiết done.md
 `Program.cs` (NewAPI) đã thêm `AddResponseCompression`/`UseResponseCompression` (Brotli+Gzip, `EnableForHttps=true`, MIME `application/json`). Đo thực tế 50k dòng `Shipment` thật: giảm 94-97% dung lượng JSON. Không đụng SQL/FE (web lẫn app Flutter đều tự động hưởng lợi qua HTTP content-negotiation, không cần đổi code client).
 1. ✅ Đã tắt API → `dotnet build`/publish → chạy lại.
-2. ⬜ Test: DevTools web (tab Network) gọi 1 API list nặng → xem header `Content-Encoding: br`/`gzip` + so kích thước response trước/sau.
-3. ⬜ Test app Flutter gọi API bình thường (không cần đổi code app) — xác nhận đọc dữ liệu đúng.
-4. ⬜ Test Innvie/EUP (client ngoài dùng header `Api-Key`, không JWT) — cùng cơ chế nên lý thuyết an toàn, xác nhận thực tế 1 lần cho chắc.
+2. ✅ Test OK: DevTools web xác nhận header `Content-Encoding` + giảm kích thước response.
+3. ✅ Test OK: app Flutter gọi API bình thường, đọc dữ liệu đúng.
+4. ✅ Test OK: Innvie/EUP (Api-Key, không JWT) vẫn chạy bình thường. Không còn việc tồn đọng.
 
 ## ▶ Fix bug chốt phiếu cấp dầu IGAS khi S/L thực tế = 0 — FE-only, ✅ ĐÃ ng build + DEPLOY (anh xác nhận 2026-08-18), CHỜ TEST (2026-08-15) — chi tiết done.md
 `chotPhieu()` ở `modal-driver-fuel-approval` + `modal-fuel-summary` trước đây chặn im lặng khi nhập 0 lít (trường hợp xuất phiếu nhưng lái xe không đổ). Đã sửa cho phép 0 hợp lệ + bỏ bắt buộc thời gian đổ.
@@ -40,9 +46,16 @@ Chuyển gate "chặng cuối" từ Lưu sang Duyệt B1; khóa cứng dầu/ph�
 1. ⬜ Test: tạo lệnh mới không cần chọn chặng cuối vẫn Lưu được; bấm Duyệt B1 khi chưa chọn chặng cuối → bị chặn (tooltip); sau khi Duyệt B1 → mở lại ở chế độ sửa vẫn không sửa/xóa/kéo-thả được dầu/phí/tóm tắt/ghi chú/điểm route/trạm ETC.
 2. ⚠ Biết trước: gate chặng cuối ở Duyệt B1 gần như luôn pass khi mở lại lệnh đã lưu (`edit()` tự set `lastSegmentFinal=true`) — chỉ chặn thật nếu bấm Lưu mà chưa từng chọn chặng cuối.
 
-## ⏸ FCL — Lệnh vận tải phụ (cắt mooc LG/Pantos/Canon) — CHỐT Ý TƯỞNG, PAUSE chờ anh báo bắt đầu (2026-08-10, CHƯA CODE)
-Ý tưởng: dùng chung bảng `DispatchOrderFCL` + field phân biệt chính/phụ + liên kết lệnh cha, tái dùng nguyên workflow Duyệt B1/CHỐT LỆNH. Chi tiết + điểm chưa quyết (tên cột, lọc list, luồng tạo) ở memory `project_fcl_sub_order.md`.
-- ⬜ Không làm gì thêm cho tới khi anh chủ động yêu cầu bắt đầu.
+## ⏸ FCL — Lệnh vận tải phụ (cắt mooc LG/Pantos/Canon) — KẾ HOẠCH TRIỂN KHAI XONG, PAUSE chờ anh báo bắt đầu (2026-08-10 → kế hoạch 2026-08-21, CHƯA CODE)
+**Ý tưởng đã chốt**: lệnh phụ = một lệnh FCL ĐẦY ĐỦ y hệt lệnh chính về mọi mặt kỹ thuật (route Vietmap đầy đủ/km/ETC riêng/chi phí riêng/dầu riêng/workflow Duyệt B1→Chốt riêng, số liệu độc lập không cộng dồn) — chỉ khác 2 cột: `IsSubOrder BIT` (0=chính/1=phụ) + `ParentRefNo NVARCHAR(50)` (RefNo lệnh cha). Hiện chung trong list `dispatch-order-fcl-new` (badge/filter phân biệt), vẫn tạo qua `CreateWithTO`. Chi tiết đầy đủ ở memory `project_fcl_sub_order.md`.
+
+**Kế hoạch 4 giai đoạn (chưa làm, đúng thứ tự SQL trình duyệt → BE → FE → test):**
+1. **SQL** (soạn 1 file trình anh duyệt trước, KHÔNG tự chạy): (a) `ALTER TABLE DispatchOrderFCL ADD IsSubOrder BIT NOT NULL DEFAULT 0, ParentRefNo NVARCHAR(50) NULL` + index lọc theo `ParentRefNo`; (b) `SP_DispatchOrderFCL_GetAll` — thêm 2 cột vào SELECT (cả 2 nhánh có/không keyword); (c) `SP_DispatchOrderFcl_GetByRefNoWithTO` — thêm 2 cột vào result set 1; (d) `SP_DispatchOrderFCL_CreateWithTO` — thêm `@IsSubOrder`/`@ParentRefNo`, validate `ParentRefNo` tồn tại + `IsLegacy=0` + không tự trỏ chính nó khi `IsSubOrder=1`; (e) `SP_DispatchOrderFCL_UpdateWithTO` — thêm 2 param, khóa không cho đổi loại/cha sau khi đã tạo (giống các field khóa sau refNo khác).
+2. **BE**: model `DispatchOrderFCL` +2 field; `DispatchOrderFCLRepository.AddFclWithTOCommonParams` +2 param; `GetAllAsync`/`GetByRefNoWithTOAsync` map 2 cột mới vào ViewModel.
+3. **FE**: model +2 field; list `dispatch-order-fcl-new` thêm badge "Chính"/"Phụ #n" + filter theo loại; modal tạo/sửa hiện `ParentRefNo` (readonly sau khi tạo) khi là lệnh phụ.
+   - ⚠ **CHƯA CHỐT**: điểm bắt đầu tạo lệnh phụ (nút đặt ở đâu — trong modal lệnh chính hay chọn lệnh cha từ list) — anh xin tạm dừng câu này, quay lại khi có thêm thông tin. **Phải chốt trước khi code Phase 3.**
+4. **Test E2E**: tạo lệnh phụ từ lệnh chính → số liệu độc lập không cộng dồn; workflow Duyệt B1/Chốt lệnh phụ tách biệt lệnh chính; list hiện đúng badge + filter theo loại.
+- ⬜ Không làm gì thêm (kể cả SQL nháp) cho tới khi anh chủ động yêu cầu bắt đầu.
 
 ## ✅ FCL v2 "Check EUP" + FCL legacy "Lịch sử lệnh" + EupfinController — ĐÃ DEPLOY + TEST OK (anh xác nhận 2026-08-07)
 Chi tiết đầy đủ ở done.md. Không còn việc tồn đọng — chỉ 1 ghi chú nhỏ không chặn: nhánh CÓ keyword của `SP_DispatchOrderFCL_GetAll` vẫn thiếu `StartedDate/FinishedDate` (mất nút Check EUP ở list khi lọc từ khóa, modal không ảnh hưởng), anh bổ sung khi rảnh.
