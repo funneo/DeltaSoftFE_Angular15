@@ -17,4 +17,5 @@ export interface DispatchOrderEtc {
     _segIndex?: number;     // chặng nguồn (để thay thế đúng khi tính lại route)
     _allPrices?: string;    // JSON giá theo loại xe → tính lại Cost khi đổi xe
     _vietmapId?: number;    // id trạm Vietmap (tham chiếu)
+    _manual?: boolean;      // true = trạm người dùng bổ sung tay từ danh mục (Vietmap thiếu trạm)
 }

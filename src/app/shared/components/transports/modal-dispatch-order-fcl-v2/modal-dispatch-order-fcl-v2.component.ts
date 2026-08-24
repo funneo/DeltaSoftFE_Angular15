@@ -1321,6 +1321,11 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
           // Lệnh đã lưu → cung đường đã hoàn chỉnh, chặng cuối luôn là "Chặng cuối"
           // (đặc biệt khi chỉ có 1 chặng: chặng đó CHÍNH LÀ chặng cuối, không phải "Chặng đầu")
           this.lastSegmentFinal = true;
+          // 2026-08-24: gắn lại cờ FE-only _auto/_segIndex cho listEtc sau khi load từ BE
+          // (cờ này KHÔNG lưu DB, mất khi reload) — nếu không, lần đầu tiên _syncEtcFromSegment
+          // chạy trên lệnh đã lưu (vd bấm "Thêm trạm") sẽ không lọc được dòng auto cũ → NHÂN ĐÔI
+          // toàn bộ trạm của chặng đó trong bảng ETC.
+          this._hydrateEtcAutoTags();
           // Hydrate cung đường phát sinh: parse stationsJson/waypointsJson → mảng
           this.extraSegments = (this.entity.extraSegments || []).map(e => ({
             ...e,
@@ -1660,6 +1665,78 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     this.entity.listEtc.splice(index, 1);
   }
 
+  // ===== Trạm bổ sung tay từ danh mục (2026-08-24) =====
+  // Vietmap route-tolls đôi khi thiếu trạm → cho thêm tay 1 trạm có sẵn trong danh mục
+  // "Trạm thu phí" (listTollStation) vào ĐÚNG chặng đang thiếu. Lấy đủ giá theo tất cả
+  // hạng xe (getDetail trả listTicketPrices) để build allPrices CÙNG SHAPE với dữ liệu
+  // Vietmap trả về → hoạt động như trạm auto (đổi xe tự tính lại giá, gộp vào tổng ETC).
+  // Đánh dấu isManual để phân biệt màu — và để KHÔNG áp dụng khi "Tính lại lộ trình"
+  // (route mới ghi đè toàn bộ seg.listStations, xóa cả trạm tay — anh chốt xóa hết).
+  addStationSegIndex: number | null = null;
+  selectedManualStationId: number | null = null;
+
+  toggleAddStation(segIndex: number) {
+    this.addStationSegIndex = this.addStationSegIndex === segIndex ? null : segIndex;
+    this.selectedManualStationId = null;
+  }
+
+  confirmAddManualStation(segIndex: number) {
+    if (!this.selectedManualStationId) return;
+    const seg = this.entity.segments?.[segIndex];
+    if (!seg) return;
+    this.tollStationService.getDetail(this.selectedManualStationId)
+      .subscribe((res: any) => {
+        if (res.code !== '200' && res.code !== '201') {
+          this.notificationService.printErrorMessage('Không lấy được giá trạm.');
+          return;
+        }
+        const station: TollStation = res.data;
+        const prices: { [k: number]: number } = {};
+        (station.listTicketPrices || []).forEach(tp => {
+          const vietmapKey = this._botTypeMap[tp.vehicleTypeBotId];
+          if (vietmapKey) prices[vietmapKey] = +tp.cost || 0;
+        });
+        const price = this.vietmapVehicleKey ? (prices[this.vietmapVehicleKey] || 0) : 0;
+        if (!seg.listStations) seg.listStations = [];
+        seg.listStations.push({
+          stationName: station.tollStationName,
+          price,
+          allPrices: JSON.stringify(prices),
+          isManual: true,
+        });
+        this._applyTollPrices();
+        this._syncEtcFromSegment(segIndex);
+        this.addStationSegIndex = null;
+        this.selectedManualStationId = null;
+      });
+  }
+
+  // 2026-08-24: sau khi load lệnh đã lưu từ BE, entity.listEtc mất hết cờ FE-only
+  // (_auto/_segIndex — không lưu DB). Gắn lại bằng cách khớp TÊN TRẠM với seg.listStations
+  // (đã persist riêng, đáng tin cậy hơn) để các lần _syncEtcFromSegment sau đó lọc đúng
+  // dòng cũ của từng chặng, không bị nhân đôi. Khớp theo tên + đánh dấu đã dùng để tránh
+  // gán trùng 1 dòng ETC cho nhiều trạm cùng tên.
+  private _hydrateEtcAutoTags() {
+    if (!this.entity?.listEtc?.length || !this.entity?.segments?.length) return;
+    const used = new Set<number>();
+    this.entity.segments.forEach((seg, segIndex) => {
+      (seg.listStations || []).forEach(st => {
+        const name = (st.stationName || '').trim();
+        if (!name) return;
+        const idx = this.entity.listEtc.findIndex((e, i) =>
+          !used.has(i) && !e._auto && (e.tollStationName || '').trim() === name);
+        if (idx < 0) return;
+        used.add(idx);
+        const e = this.entity.listEtc[idx];
+        e._auto = true;
+        e._segIndex = segIndex;
+        e._allPrices = st.allPrices;
+        e._vietmapId = st.vietmapId;
+        e._manual = st.isManual;
+      });
+    });
+  }
+
   // ===== Trạm phí auto từ Vietmap (2026-05-20) =====
   // Đồng bộ các dòng ETC auto của 1 chặng: xóa dòng auto cũ của chặng đó rồi thêm
   // từ seg.listStations (đã áp giá theo loại xe). Giữ nguyên dòng user nhập tay.
@@ -1684,6 +1761,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
         _segIndex: segIndex,
         _allPrices: st.allPrices,
         _vietmapId: st.vietmapId,
+        _manual: st.isManual,
       });
     });
   }
@@ -2248,6 +2326,14 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     if (this.routeConfirmed) return;
     this.entity.segments[segIndex].listStations.splice(stationIndex, 1);
     this.calculateTotal();
+    this._syncEtcFromSegment(segIndex); // đồng bộ lại bảng ETC (xóa luôn dòng auto tương ứng)
+  }
+
+  // Sửa tay đơn giá 1 trạm ngay ở khối theo cung → đồng bộ luôn sang dòng tương ứng ở bảng ETC tổng
+  // (trước đây chỉ calculateTotal() cho tổng cung, không cập nhật entity.listEtc → bảng tổng đứng yên).
+  onSegmentStationPriceChange(segIndex: number) {
+    this.calculateTotal();
+    this._syncEtcFromSegment(segIndex);
   }
 
   sortLoc(col: 'address' | 'locationType') {

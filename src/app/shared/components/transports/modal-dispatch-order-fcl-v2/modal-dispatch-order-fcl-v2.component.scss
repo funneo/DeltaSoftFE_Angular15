@@ -988,6 +988,23 @@
   padding: 3px 8px;
 
   i { color: #f39c12; flex-shrink: 0; }
+
+  /* trạm bổ sung tay từ danh mục (Vietmap thiếu trạm) — tím nhạt để phân biệt với trạm Vietmap */
+  &.segment-etc-item--manual {
+    background: #f3f0ff;
+    border-color: #d6c9f7;
+    i.text-manual { color: #8e5cd9; }
+  }
+}
+
+.segment-add-station-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+
+  .segment-add-station-select { flex: 1; font-size: 12px; }
+  ::ng-deep .ng-select-container { min-height: 26px; height: 26px; }
 }
 
 .segment-etc-name {
@@ -1918,6 +1935,8 @@
 
   /* dòng auto sinh từ Vietmap — nền nhạt để phân biệt với dòng nhập tay */
   .dsg-etc-row-auto td { background: #fffaf0; }
+  /* dòng trạm bổ sung tay từ danh mục (Vietmap thiếu trạm) — tím nhạt, khớp segment-etc-item--manual */
+  .dsg-etc-row-manual td { background: #f3f0ff; }
 
   tfoot .dsg-etc-foot td {
     padding: 4px 6px; border-top: 1px solid #d0e4f7;

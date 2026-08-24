@@ -1,5 +1,17 @@
 # Pending / In-Progress Work
 
+## ▶ FCL v2 — thêm trạm thu phí THỦ CÔNG theo cung (Vietmap thiếu trạm) — FE-only, build 0 lỗi, CHƯA DEPLOY (2026-08-24)
+Vietmap route-tolls đôi khi thiếu trạm. Thêm nút "+ Thêm trạm (Vietmap thiếu)" dưới khối "Trạm phí" của TỪNG cung trong `modal-dispatch-order-fcl-v2` — chọn 1 trạm có sẵn trong danh mục Trạm thu phí (`listTollStation`, đã load sẵn nhưng trước đó chưa dùng tới) → gọi `getDetail()` lấy giá theo cả 5 hạng xe (`listTicketPrices`) → build `allPrices` ĐÚNG SHAPE dữ liệu Vietmap trả về → hoạt động y hệt trạm auto (đổi loại xe tự tính lại giá, gộp vào tổng ETC). KHÔNG cần SQL/BE mới (tái dùng API `TollStation/getbyid` sẵn có).
+- **Đánh dấu nguồn gốc**: `SegmentStation.isManual`/`DispatchOrderEtc._manual` (FE-only) — tô màu tím nhạt phân biệt với trạm Vietmap (vàng nhạt), cả ở khối theo cung lẫn bảng ETC tổng.
+- **Tính lại lộ trình (Vietmap)**: anh chốt xóa hết kể cả trạm tay khi bấm "Tính lại" — hành vi ghi đè `seg.listStations` sẵn có đã tự đáp ứng, không cần code thêm.
+- **2 bug phát hiện khi test + đã fix cùng phiên**:
+  1. Nhân đôi trạm khi thêm tay vào lệnh ĐÃ LƯU (mở lại `edit()`): cờ `_auto`/`_segIndex` (dùng để `_syncEtcFromSegment` lọc đúng dòng cũ của 1 chặng trước khi rebuild) là **FE-only, không lưu DB** → mất sau khi tải lại từ BE → lần đầu sync chạy trên lệnh đã lưu không lọc được dòng cũ → nhân đôi. Fix: `_hydrateEtcAutoTags()` chạy ngay sau `edit()` load, gắn lại cờ bằng cách khớp TÊN TRẠM giữa `entity.listEtc` và `segments[].listStations` (nguồn persist riêng, đáng tin cậy hơn).
+  2. Sửa tay số tiền ở khối theo cung không cập nhật bảng ETC tổng (chỉ gọi `calculateTotal()`, không đụng `entity.listEtc`) → đổi sang `onSegmentStationPriceChange()` gọi thêm `_syncEtcFromSegment()`.
+  - Tiện thể vá thêm 1 lỗ hổng liên quan: `removeStation()` trước đó xóa trạm khỏi cung nhưng không đồng bộ lại bảng ETC (dòng cũ vẫn còn treo) — đã thêm `_syncEtcFromSegment()`.
+- ⚠ **Hạn chế còn biết trước**: `isManual` không lưu DB → sau khi Lưu + mở lại lệnh, màu phân biệt trạm tay/Vietmap sẽ MẤT (dữ liệu tiền vẫn đúng, chỉ mất phân biệt trực quan). Muốn giữ qua các lần mở lại cần thêm cột DB (SQL) — CHƯA làm, để sau nếu anh cần.
+1. ⬜ `ng build` + deploy FE.
+2. ⬜ Test E2E: thêm trạm tay vào 1 cung của lệnh MỚI (chưa lưu) → lên đúng bảng ETC, màu tím; Lưu → mở lại (`edit()`) → thêm tiếp 1 trạm tay khác vào CÙNG cung đó → không bị nhân đôi các trạm cũ; sửa tay số tiền 1 trạm (auto hoặc tay) → bảng ETC tổng cập nhật ngay; xóa 1 trạm ở khối theo cung → dòng tương ứng ở bảng ETC tổng cũng mất; bấm "Tính lại lộ trình" cho cung có trạm tay → trạm tay bị xóa theo (đúng ý đã chốt).
+
 ## ▶ FCL v2 — khóa sửa lệnh: quay về "sửa tự do tới trước Duyệt B1" — FE+BE build 0 lỗi, CHƯA DEPLOY (2026-08-24) — chi tiết memory `project_fcl_route_lock_policy`
 Rà lại theo yêu cầu anh ("check khóa sửa cung đường") phát hiện đợt refactor gộp ETC vào "Thông tin cung đường" đã vô tình đổi `routeConfirmed` (FE) thành khóa NGAY khi có `refNo` — khóa cả xe/mooc/lái xe/loại xe/giá dầu, không riêng route/ETC — lệch với quyết định 2026-08-18 (giữ sửa tự do tới trước Duyệt B1). Anh chốt lại: quay về sửa tự do TOÀN BỘ thông tin lệnh tới trước Duyệt B1 (`status>2`); quy trình đề xuất/duyệt sửa route (ý tưởng anh Nghĩa) để làm SAU.
 - **FE** `modal-dispatch-order-fcl-v2.component.ts`: `routeConfirmed` đổi `!!refNo` → `(status ?? 0) > 2 || flagXem`. `canAddExtraSegment`/nút Lưu/`extraEmptyHint` (ngưỡng gốc `status<3`) giữ nguyên, không đổi.

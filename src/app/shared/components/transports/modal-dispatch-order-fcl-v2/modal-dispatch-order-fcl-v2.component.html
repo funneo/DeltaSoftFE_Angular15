@@ -601,14 +601,17 @@
                     </div>
                     <!-- Kết quả -->
                     <ng-container *ngIf="!isSegmentCalculating(i) && getSegment(i)">
-                      <!-- Trạm phí từ Vietmap -->
+                      <!-- Trạm phí (Vietmap tự thêm + trạm bổ sung tay) -->
                       <div class="segment-etcs" *ngIf="getSegment(i).listStations?.length">
-                        <div class="segment-etc-item" *ngFor="let s of getSegment(i).listStations; let j = index">
-                          <i class="fa fa-ticket text-warning"></i>
+                        <div class="segment-etc-item" [class.segment-etc-item--manual]="s.isManual"
+                          *ngFor="let s of getSegment(i).listStations; let j = index">
+                          <i class="fa" [class.fa-ticket]="!s.isManual" [class.text-warning]="!s.isManual"
+                            [class.fa-hand-pointer-o]="s.isManual" [class.text-manual]="s.isManual"
+                            [title]="s.isManual ? 'Trạm bổ sung tay (không phải từ Vietmap)' : 'Trạm tự thêm từ Vietmap'"></i>
                           <span class="segment-etc-name">{{ s.stationName }}</span>
                           <input type="number" class="segment-etc-price"
                             [(ngModel)]="s.price"
-                            (ngModelChange)="calculateTotal()"
+                            (ngModelChange)="onSegmentStationPriceChange(i)"
                             [ngModelOptions]="{standalone: true}"
                             [disabled]="routeConfirmed"
                             title="Đơn giá (có thể sửa)">
@@ -617,6 +620,25 @@
                             <i class="fa fa-times text-danger"></i>
                           </button>
                         </div>
+                      </div>
+                      <!-- Bổ sung trạm tay từ danh mục (Vietmap thiếu trạm) -->
+                      <button type="button" class="btn-add-etc" *ngIf="!routeConfirmed && addStationSegIndex !== i"
+                        (click)="toggleAddStation(i)">
+                        <i class="fa fa-plus"></i> Thêm trạm (Vietmap thiếu)
+                      </button>
+                      <div class="segment-add-station-row" *ngIf="!routeConfirmed && addStationSegIndex === i">
+                        <ng-select class="segment-add-station-select" [items]="listTollStation"
+                          bindLabel="tollStationName" bindValue="id" placeholder="Tìm trạm trong danh mục..."
+                          [(ngModel)]="selectedManualStationId" [ngModelOptions]="{standalone: true}"
+                          [appendTo]="'body'">
+                        </ng-select>
+                        <button type="button" class="btn btn-xs btn-primary" [disabled]="!selectedManualStationId"
+                          (click)="confirmAddManualStation(i)">
+                          <i class="fa fa-check"></i>
+                        </button>
+                        <button type="button" class="btn btn-xs btn-default" (click)="toggleAddStation(i)">
+                          <i class="fa fa-times"></i>
+                        </button>
                       </div>
                     </ng-container>
                     <!-- Nút bản đồ per-segment -->
@@ -891,7 +913,8 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <tr *ngFor="let item of entity.listEtc; let i = index" [class.dsg-etc-row-auto]="item._auto">
+                  <tr *ngFor="let item of entity.listEtc; let i = index" [class.dsg-etc-row-auto]="item._auto && !item._manual"
+                    [class.dsg-etc-row-manual]="item._manual">
                     <td>
                       <input type="text" class="form-control form-control-sm" [(ngModel)]="item.tollStationName"
                         [ngModelOptions]="{standalone:true}" [readonly]="routeConfirmed" placeholder="Tên trạm">

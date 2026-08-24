@@ -235,6 +235,7 @@ export interface SegmentStation {
     price?: number;        // giá áp dụng theo loại xe của lệnh
     allPrices?: string;    // JSON: {"1":216000,"2":309000,"3":412000,"4":659000,"5":849000}
     isAvoided?: boolean;
+    isManual?: boolean;    // true = người dùng bổ sung tay từ danh mục Trạm thu phí (Vietmap thiếu trạm)
 }
 
 export interface TransportOrderSegmentEtc {
