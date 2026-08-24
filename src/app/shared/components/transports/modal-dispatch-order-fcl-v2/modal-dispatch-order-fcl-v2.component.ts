@@ -230,11 +230,17 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   // ===== TO refactor (2026-05-15): route builder state + ViewChild =====
   locations: LocationItem[] = [];
-  // Cung đường vận tải (main): khóa NGAY khi khởi tạo lệnh xong (có refNo) → muốn
-  // chỉnh route → dùng "Cung đường phát sinh".
-  // status: 0 = mới, 1 = gửi lệnh, 2 = nhận lệnh, 3 = duyệt B1, 4 = duyệt B2, 5 = chốt
+  // 2026-08-24 (anh chốt): sửa tự do TOÀN BỘ thông tin lệnh (xe/mooc/lái xe/giá dầu/
+  // cung đường/ETC...) tới trước khi Duyệt B1, cho quen tay trước khi siết lại sau.
+  // status>2 (>=3) = ĐÃ Duyệt B1 (anh xác nhận) — khóa từ đây.
+  // status: 0=mới · 1=đã giao lái xe · 2=đã nhận · 3+=đã Duyệt B1
+  // ⚠ MUỐN KHÔI PHỤC khóa NGAY khi Lưu (có RefNo, hành vi trước 2026-08-24) → đổi lại
+  // `!!this.entity?.refNo || this.flagXem`. Đồng thời phải khôi phục điều kiện BE tương ứng
+  // ở DispatchOrderFCLRepository.UpdateWithTOAsync (bỏ `&& existing.Status > 2`, phục hồi
+  // vô điều kiện như cũ) — không thì FE khóa lại nhưng BE vẫn cho ghi đè. Xem memory
+  // project_fcl_route_lock_policy.
   get routeConfirmed(): boolean {
-    return !!this.entity?.refNo || this.flagXem;
+    return (this.entity?.status ?? 0) > 2 || this.flagXem;
   }
   showPoolPanel = true;
   lastSegmentFinal = false;
@@ -289,8 +295,8 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       return 'Cần lưu lệnh trước (chọn "Chặng cuối" ở cung đường vận tải) — sau khi có RefNo bạn mới thêm được cung đường phát sinh.';
     if (this.flagXem)
       return 'Chế độ xem — không thể thêm cung đường phát sinh.';
-    if ((this.entity?.status ?? 0) >= 3)
-      return 'Lệnh đã chốt B1 — không thể thêm cung đường phát sinh.';
+    if ((this.entity?.status ?? 0) > 2)
+      return 'Lệnh đã Duyệt B1 — không thể thêm cung đường phát sinh.';
     if (!this.entity?.toId)
       return 'Không lấy được ToId — BE chưa restart sau update? Đóng modal và mở lại.';
     return 'Chưa có cung đường phát sinh. Bấm "Thêm cung đường phát sinh" để bổ sung.';

@@ -1207,7 +1207,7 @@
           <i class="fa fa-lock"></i> CHỐT LỆNH</button>
         <!-- 2026-08-10: bỏ yêu cầu phải chốt "Chặng cuối" mới hiện nút Lưu (trước đây tạo mới
              bắt buộc lastSegmentFinal=true). Xem memory project_fcl_v2_no_require_last_segment
-             nếu cần bật lại. -->
+             nếu cần bật lại. status<3 = trước Duyệt B1 (status>2 đã Duyệt B1). -->
         <button *ngIf="!flagXem && entity.status<3" type="submit"
           class="btn btn-primary btn-sm"
           [disabled]=" !addEditForm.form.valid || flagSave ">
