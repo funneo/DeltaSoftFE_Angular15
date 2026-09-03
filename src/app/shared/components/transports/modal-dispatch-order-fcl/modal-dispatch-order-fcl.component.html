@@ -36,7 +36,8 @@
                 </div>
                 <div class="form-group">
                   <label class="col-sm-2 control-label"></label>
-                  <div class="col-sm-4">
+                  <!-- Lệnh cũ = luôn là lệnh thầu phụ: ẩn nút chọn khi tạo mới, giữ hiển thị (disabled) khi xem lệnh cũ -->
+                  <div class="col-sm-4" *ngIf="!flagNew">
                     <label class="custom-checkbox">
                       <input type="checkbox" [(ngModel)]="entity.isSubcontractors" name="isLocal"
                         (change)="changeLocal()" [disabled]="entity.status>0 || flagXem" />

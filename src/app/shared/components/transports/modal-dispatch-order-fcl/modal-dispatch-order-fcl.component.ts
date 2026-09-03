@@ -890,6 +890,8 @@ export class ModalDispatchOrderFclComponent implements OnInit {
           this.gasValue = res.data;
           this.entity = {
             checked: false,
+            // Lệnh cũ = luôn lập cho nhà thầu phụ (không còn cho chọn xe nhà ở modal này)
+            isSubcontractors: true,
             branchId: Number.parseInt(this.userLoged.branchId),
             status: 0,
             oilPrice: this.gasValue.cost,
@@ -942,6 +944,9 @@ export class ModalDispatchOrderFclComponent implements OnInit {
           this.flagNew = true;
           this.flagXem = false;
           this.flagSave = false;
+          // ép modal về dạng thầu phụ ngay khi tạo mới
+          this.isLocal = false;
+          this.isSubcontractors = true;
           this.isExport = listItem[0].shipmentType == 1174;
           this.modalDispatchOrderFcl.show();
         } else {
@@ -1177,6 +1182,14 @@ export class ModalDispatchOrderFclComponent implements OnInit {
           );
           return;
         }
+      }
+
+      // Lệnh cũ = lập cho thầu phụ: bắt buộc chọn nhà cung cấp trước khi lưu
+      if (this.flagNew && !this.entity.shippingUnitId) {
+        this.notificationService.printErrorMessage(
+          "Vui lòng chọn Nhà cung cấp (nhà thầu phụ)!"
+        );
+        return;
       }
 
       this.entity.shortWay = this.orderType == 1;

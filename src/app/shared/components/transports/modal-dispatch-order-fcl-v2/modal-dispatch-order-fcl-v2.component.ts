@@ -1172,6 +1172,8 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
             // TO refactor (2026-05-15): khởi tạo segments rỗng cho route builder
             segments: [],
             isLegacy: false,
+            // Lệnh mới (v2) = luôn lập cho xe nhà
+            isSubcontractors: false,
           };
           // Reset route builder state cho lệnh mới
           this.locations = [];

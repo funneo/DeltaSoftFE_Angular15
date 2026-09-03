@@ -1,5 +1,10 @@
 # Pending / In-Progress Work
 
+## ▶ FCL — lệnh CŨ = luôn thầu phụ / lệnh MỚI v2 = luôn xe nhà — FE-only, tsc 0 lỗi mới, CHỜ ng build + deploy + test (2026-09-03) — chi tiết done.md
+Bỏ checkbox "Xe thuê ngoài" ở 2 modal FCL; phân loại cứng theo màn. Nút ở `shipping-task-opman`: "Lập lệnh thầu phụ" (modal cũ, ép `isSubcontractors=true` khi add + bắt chọn Nhà cung cấp) / "Lập lệnh xe nhà" (modal v2, `isSubcontractors=false`). Loại Cont ở v2 chuyển xuống cùng hàng "Tổng dầu lệnh". KHÔNG đụng BE/SP.
+1. ⬜ `ng build` + deploy FE.
+2. ⬜ Test E2E: từ `shipping-task-opman` 2 nút đúng tên; "Lập lệnh thầu phụ" → modal cũ không checkbox, chưa chọn Nhà cung cấp → chặn lưu + báo lỗi rõ; "Lập lệnh xe nhà" → modal v2 không checkbox, mặc định xe nhà, hàng Loại Cont nằm bên phải hàng Tổng dầu lệnh, không lơ lửng. Mở lại lệnh FCL cũ dạng xe nhà (isSub=0) → xem/sửa bình thường.
+
 ## ▶ FCL v2 — thêm trạm thu phí THỦ CÔNG theo cung — FE-only, ✅ ĐÃ ng build + DEPLOY (2026-09-03), CHỜ TEST (2026-08-24) — chi tiết done.md
 1. ⬜ Test E2E: thêm trạm tay vào 1 cung của lệnh MỚI (chưa lưu) → lên đúng bảng ETC, màu tím; Lưu → mở lại (`edit()`) → thêm tiếp 1 trạm tay khác vào CÙNG cung đó → không bị nhân đôi các trạm cũ; sửa tay số tiền 1 trạm (auto hoặc tay) → bảng ETC tổng cập nhật ngay; xóa 1 trạm ở khối theo cung → dòng tương ứng ở bảng ETC tổng cũng mất; bấm "Tính lại lộ trình" cho cung có trạm tay → trạm tay bị xóa theo (đúng ý đã chốt).
 2. ⚠ Biết trước: `isManual` không lưu DB → sau Lưu + mở lại lệnh, màu phân biệt trạm tay/Vietmap sẽ MẤT (số tiền vẫn đúng).

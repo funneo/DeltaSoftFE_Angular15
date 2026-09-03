@@ -32,7 +32,8 @@
                     </button>
                   </div>
                 </div>
-                <div class="form-group">
+                <!-- Lệnh mới (v2) = luôn là lệnh xe nhà: ẩn cả hàng nút chọn khi tạo mới, giữ hiển thị (disabled) khi xem lệnh cũ -->
+                <div class="form-group" *ngIf="!flagNew">
                   <label class="col-sm-2 control-label"></label>
                   <div class="col-sm-4">
                     <label class="custom-checkbox">
@@ -41,12 +42,6 @@
                       <span class="helping-el"></span>
                       Xe thuê ngoài
                     </label>
-                  </div>
-                  <label class="col-sm-2 control-label" *ngIf="!entity.isSubcontractors">Loại Cont</label>
-                  <div class="col-sm-4" *ngIf="!entity.isSubcontractors">
-                    <ng-select name="contType" [items]="listcontType" bindLabel="categoryName" bindValue="categoryName"
-                      [disabled]="routeConfirmed" [(ngModel)]="entity.contType">
-                    </ng-select>
                   </div>
                 </div>
                 <div class="form-group" *ngIf="entity.isSubcontractors">
@@ -275,9 +270,15 @@
                   <div class="col-sm-2">
                     <span class="form-control text-right" style="font-weight:600;">{{totalOrderOil | number:'1.2-2'}}</span>
                   </div>
-                  <label class="col-sm-8 control-label text-left" style="font-weight:400;color:#888;">
+                  <label class="col-sm-3 control-label text-left" style="font-weight:400;color:#888;">
                     = Tổng dầu định mức + Dầu máy phát
                   </label>
+                  <label class="col-sm-2 control-label">Loại Cont</label>
+                  <div class="col-sm-3">
+                    <ng-select name="contType" [items]="listcontType" bindLabel="categoryName" bindValue="categoryName"
+                      [disabled]="routeConfirmed" [(ngModel)]="entity.contType">
+                    </ng-select>
+                  </div>
                 </div>
                 <!-- <div class="form-group">
                   <label class="col-sm-2 control-label">Mã tham chiếu</label>
