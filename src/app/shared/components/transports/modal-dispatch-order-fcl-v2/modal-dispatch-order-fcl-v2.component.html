@@ -967,6 +967,67 @@
               </div>
 
               <!-- ═══════════════════════════════════════════════════════════════
+                   Vé ETC ngoài kế hoạch (2026-09-08) — lái xe né trạm chính nhưng vẫn
+                   qua trạm phụ không thuộc lộ trình lệnh, ETC công ty vẫn bị trừ.
+                   Ghi nhận để nhân sự trừ lương lái xe — KHÔNG cộng vào Tổng ETC.
+                   ═══════════════════════════════════════════════════════════════ -->
+              <div class="dsg-etc-header" *ngIf="entity.refNo && !entity.isLegacy">
+                <span class="dsg-etc-title"><i class="fa fa-exclamation-triangle text-danger"></i> Vé ETC ngoài kế hoạch (trừ lái xe)</span>
+                <button type="button" class="btn btn-xs btn-danger dsg-etc-add" *ngIf="!postB1Locked" (click)="newEtcPenalty()">
+                  <i class="fa fa-plus"></i> Thêm dòng
+                </button>
+              </div>
+              <table class="dsg-toll-table dsg-etc-table" *ngIf="entity.refNo && !entity.isLegacy && entity.listEtcPenalty?.length">
+                <thead>
+                  <tr>
+                    <th>Trạm phụ đã qua</th>
+                    <th>Ngày giờ qua trạm</th>
+                    <th class="text-right dsg-etc-num">Số tiền</th>
+                    <th>Lý do / ghi chú</th>
+                    <th class="text-center">Đã trừ lương</th>
+                    <th class="dsg-etc-act"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let item of entity.listEtcPenalty; let i = index">
+                    <td>
+                      <select class="form-control form-control-sm" [ngModel]="item.tollStationId"
+                        [ngModelOptions]="{standalone:true}" [disabled]="postB1Locked"
+                        (ngModelChange)="onEtcPenaltyStationChange(item, $event)">
+                        <option [ngValue]="null">-- Chọn trạm --</option>
+                        <option *ngFor="let st of listTollStation" [ngValue]="st.id">{{ st.tollStationName }}</option>
+                      </select>
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" autocomplete="off"
+                        daterangepicker [options]="item._dateOption" [(ngModel)]="item.passedDate"
+                        [ngModelOptions]="{standalone:true}" (selected)="selectedEtcPenaltyDate($event, item)"
+                        [readonly]="postB1Locked" [class.readonly-cell]="postB1Locked">
+                    </td>
+                    <td class="dsg-etc-num">
+                      <input type="text" class="form-control form-control-sm text-right" [(ngModel)]="item.cost"
+                        [ngModelOptions]="{standalone:true}" [mask]="maskNumber" [allowNegativeNumbers]="false" [disabled]="postB1Locked">
+                    </td>
+                    <td>
+                      <input type="text" class="form-control form-control-sm" [(ngModel)]="item.note"
+                        [ngModelOptions]="{standalone:true}" [disabled]="postB1Locked" placeholder="Vd: né trạm X, đi qua trạm Y">
+                    </td>
+                    <td class="text-center">
+                      <input type="checkbox" [(ngModel)]="item.isDeductedSalary" [ngModelOptions]="{standalone:true}" [disabled]="postB1Locked">
+                    </td>
+                    <td class="dsg-etc-act text-center" *ngIf="!postB1Locked">
+                      <button type="button" class="btn-esb-icon" title="Lưu" (click)="saveEtcPenaltyRow(item)">
+                        <i class="fa fa-check text-success"></i>
+                      </button>
+                      <button type="button" class="btn-esb-icon btn-esb-delete" title="Xóa" (click)="deleteEtcPenaltyRow(item, i)">
+                        <i class="fa fa-trash"></i>
+                      </button>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- ═══════════════════════════════════════════════════════════════
                    Cung đường phát sinh (2026-05-19) — chỉ hiện sau khi đã có refNo
                    ═══════════════════════════════════════════════════════════════ -->
               <div class="extra-segments-block" *ngIf="showExtraSegmentsSection">

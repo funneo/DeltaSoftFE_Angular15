@@ -2,6 +2,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { FromBodyBase } from '@app/shared/models';
 import { DispatchOrderFcl } from '@app/shared/models/fcl/dispatch-order-fcl';
+import { DispatchOrderFclEtcPenalty } from '@app/shared/models/fcl/dispatch-order-fcl-etc-penalty';
 import { environment } from '@environments/environment';
 import { map, catchError } from 'rxjs/operators';
 import { AuthService } from '../auth.service';
@@ -285,6 +286,42 @@ export class DispatchOrderFclService extends BaseService {
     p.item = entity;
     p.tokenKey = this.token;
     return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/UpdateGenerator`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+  // ===== Vé ETC ngoài kế hoạch (2026-09-08) — trừ lương lái xe =====
+  addEtcPenalty(entity: DispatchOrderFclEtcPenalty) {
+    let p: FromBodyBase<DispatchOrderFclEtcPenalty> = {};
+    p.item = entity;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/AddEtcPenalty`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+  updateEtcPenalty(entity: DispatchOrderFclEtcPenalty) {
+    let p: FromBodyBase<DispatchOrderFclEtcPenalty> = {};
+    p.item = entity;
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/UpdateEtcPenalty`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authenService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
+  deleteEtcPenalty(id: number) {
+    let p: FromBodyBase<DispatchOrderFclEtcPenalty> = { item: { id } };
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/DeleteEtcPenalty`, p)
     .pipe(map((response: any) => {
       if (response.code == '401')
         this.authenService.logout();

@@ -3,6 +3,7 @@ import { DispatchOrderEtc } from "@app/shared/models";
 import { DispatchOrderFee } from "@app/shared/models/transports/dispatchorders/dispatch-order-fee";
 import { ShippingTask } from "@app/shared/models/transports/shipping-task.model";
 import { TransportOrderExtraSegment, TransportOrderSegment } from "@app/shared/models/transports/dispatchorders/transport-order.model";
+import { DispatchOrderFclEtcPenalty } from "@app/shared/models/fcl/dispatch-order-fcl-etc-penalty";
 
 export interface DispatchOrderFcl {
     id?: number;
@@ -157,6 +158,8 @@ export interface DispatchOrderFcl {
     accountingDate?: string;
     shippingTaskItem?: ShippingTask;
     listEtc?: DispatchOrderEtc[];
+    // Vé ETC ngoài kế hoạch (2026-09-08) — trừ lương lái xe, KHÔNG cộng vào Tổng ETC.
+    listEtcPenalty?: DispatchOrderFclEtcPenalty[];
     listFee?: DispatchOrderFee[];
     listDetailed?:DispatchOrderFclDetail[];
     checked?:boolean;

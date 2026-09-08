@@ -39,6 +39,7 @@ import {
   DispatchOrderEtc,
 } from "@app/shared/models";
 import { Attachfiles } from "@app/shared/models/attachfiles.models";
+import { DispatchOrderFclEtcPenalty } from "@app/shared/models/fcl/dispatch-order-fcl-etc-penalty";
 import { HandOver } from "@app/shared/models/customer-communicate/app-garage-delta/hand-over.model";
 import { TollStation } from "@app/shared/models/toll-station.model";
 import { Tollroute } from "@app/shared/models/tollroute.model";
@@ -542,6 +543,11 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   }
 
   orderTypeChange(event: any) {
+    // entity.shortWay trước đây CHỈ được đồng bộ lúc Lưu (saveChange) — trong khi mọi hàm tính
+    // dầu theo cung đường (segments/extraSegments) đọc thẳng entity.shortWay. Kết quả: đổi
+    // Đường dài/Đường ngắn giữa chừng không cập nhật ngay, phải đợi tới lúc Lưu mới "ăn".
+    // Đồng bộ NGAY tại đây để mọi thao tác sau đó (đổi tải trọng 1 cung, tính lại route...) dùng đúng giá trị.
+    this.entity.shortWay = event.value === 1;
     if (event.value === 0) {
       // Nếu là đường dài
       this.entity.dinhmucDauLuotDi = this.listOilQuota.find(
@@ -582,7 +588,42 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
         (x) => x.id === this.entity.luonghangTrungchuyenNhamayVe
       )?.shortWayValue;
     }
-    this.calulateOil();
+    // KHÔNG gọi this.calulateOil() ở đây: hàm đó tính entity.tongdau từ 6 field chặng CŨ
+    // (chang1KmLuotDi...) mà lệnh v2 không hề ghi dữ liệu (v2 dùng segments[]) → luôn ra ~0
+    // và ĐÈ MẤT tổng dầu thật ngay trước khi đoạn dưới kịp tính lại đúng. 6 field dinhmucDau*
+    // phía trên vẫn giữ cập nhật (vô hại, không hiển thị/không dùng ở v2) để không đụng thêm gì khác.
+    //
+    // TO refactor: FCL v2 tính "Tổng dầu định mức" thật sự từ segments (calulateOilSegments).
+    // Phải áp lại fuelNorm cho TỪNG cung đường (chính + phát sinh) ĐANG CÓ, nếu không chúng giữ
+    // nguyên định mức cũ cho tới khi người dùng vô tình đụng vào 1 hành động khác làm tính lại.
+    this._reapplyShortWayToAllSegments();
+  }
+
+  private _reapplyShortWayToAllSegments() {
+    const applyNorm = (payloadWeight: number | undefined | null): number => {
+      if (!payloadWeight) return 0;
+      const quota = this.listOilQuota.find((x) => x.id === payloadWeight);
+      if (!quota) return 0;
+      return (this.entity.shortWay ? quota.shortWayValue : quota.value) || 0;
+    };
+    (this.entity.segments || []).forEach((seg) => {
+      if (!seg.payloadWeight) return;
+      seg.fuelNorm = applyNorm(seg.payloadWeight);
+      seg.fuelAmountCalculated = +((seg.fuelNorm || 0) * (seg.distanceKm || 0) / 100).toFixed(2);
+    });
+    // Cung phát sinh lưu qua bảng/SP riêng (Tbl_TransportOrder_ExtraSegments), KHÔNG nằm trong payload
+    // Lưu chính của lệnh — phải tự gọi update riêng cho từng dòng ĐÃ LƯU (có id), nếu không giá trị
+    // đúng chỉ tồn tại trên FE phiên này, mở lại lệnh sẽ đọc lại định mức CŨ từ DB.
+    (this.extraSegments || []).forEach((item) => {
+      if (!item.payloadWeight) return;
+      item.fuelNorm = applyNorm(item.payloadWeight);
+      item.fuelAmountCalculated = +((item.fuelNorm || 0) * (item.distanceKm || 0) / 100).toFixed(2);
+      if (this.canAddExtraSegment && item.id) {
+        this._debouncedUpdateExtra(item);
+      }
+    });
+    this.calculateTotal();
+    this.calulateOilSegments();
   }
   //Cập nhật lại toàn bộ phần lựa chọn định mức
   updateOilQuota() {
@@ -1151,6 +1192,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
             luotdiQuabai: false,
             luotveQuabai: false,
             listEtc: [],
+            listEtcPenalty: [],
             dieuchinhKmLuotDi: 0,
             dieuchinhKmLuotVe: 0,
             tongdauLuotDi: 0,
@@ -1328,6 +1370,8 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
           // chạy trên lệnh đã lưu (vd bấm "Thêm trạm") sẽ không lọc được dòng auto cũ → NHÂN ĐÔI
           // toàn bộ trạm của chặng đó trong bảng ETC.
           this._hydrateEtcAutoTags();
+          // Vé ETC ngoài kế hoạch: gán lại _dateOption (FE-only) + format ngày cho ngModel.
+          this._hydrateEtcPenaltyDates();
           // Hydrate cung đường phát sinh: parse stationsJson/waypointsJson → mảng
           this.extraSegments = (this.entity.extraSegments || []).map(e => ({
             ...e,
@@ -1665,6 +1709,88 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   deleteEtc(index: number) {
     this.entity.listEtc.splice(index, 1);
+  }
+
+  // ===== Vé ETC ngoài kế hoạch (2026-09-08) — trừ lương lái xe =====
+  // Gắn thẳng vào lệnh FCL v2 (RefNo) nhưng KHÔNG cộng vào Tổng ETC/tổng chi phí lệnh.
+  // Auto-save từng dòng (Add/Update/Delete riêng), khóa theo postB1Locked như các phần khác.
+  newEtcPenalty() {
+    if (!this.entity.listEtcPenalty) this.entity.listEtcPenalty = [];
+    this.entity.listEtcPenalty.push({
+      refNo: this.entity.refNo,
+      tollStationId: null,
+      tollStationName: '',
+      passedDate: null,
+      cost: 0,
+      note: '',
+      isDeductedSalary: false,
+      _dateOption: this._utilityService.dateTimeOptionDays(new Date(), true),
+    });
+  }
+
+  selectedEtcPenaltyDate(event: any, item: DispatchOrderFclEtcPenalty) {
+    item.passedDate = moment(event.start).format(FormatContstants.DATETIMEVN);
+  }
+
+  // Gán lại _dateOption (FE-only, không lưu DB) sau khi load entity.listEtcPenalty từ BE
+  // + format passedDate ISO → DATETIMEVN cho ngModel (cùng pattern modal-execute-fcl._initDateOption).
+  private _hydrateEtcPenaltyDates() {
+    (this.entity?.listEtcPenalty || []).forEach(item => {
+      const m = item.passedDate ? moment(item.passedDate) : null;
+      const seed = m && m.isValid() ? m.toDate() : new Date();
+      item._dateOption = this._utilityService.dateTimeOptionDays(seed, true);
+      item.passedDate = m && m.isValid() ? m.format(FormatContstants.DATETIMEVN) : null;
+    });
+  }
+
+  onEtcPenaltyStationChange(item: DispatchOrderFclEtcPenalty, stationId: number) {
+    const station = this.listTollStation.find(s => s.id === +stationId);
+    item.tollStationId = station ? station.id : null;
+    item.tollStationName = station ? station.tollStationName : '';
+  }
+
+  saveEtcPenaltyRow(item: DispatchOrderFclEtcPenalty) {
+    if (!item.tollStationId) {
+      this.notificationService.printErrorMessage('Chọn trạm thu phí trước khi lưu.');
+      return;
+    }
+    if (!item.cost || +item.cost < 1) {
+      this.notificationService.printErrorMessage('Nhập số tiền hợp lệ (≥ 1) trước khi lưu.');
+      return;
+    }
+    item.refNo = this.entity.refNo;
+    // passedDate hiển thị DATETIMEVN (dd/MM/yyyy HH:mm:ss) cho daterangepicker — BE cần ISO.
+    // Gửi bản copy, KHÔNG mutate giá trị đang hiển thị trên ngModel.
+    const copy = { ...item, _dateOption: undefined };
+    const m = item.passedDate ? moment(item.passedDate, FormatContstants.DATETIMEVN) : null;
+    copy.passedDate = m && m.isValid() ? m.toISOString() : null;
+    const call = item.id
+      ? this.dispatchOrderService.updateEtcPenalty(copy)
+      : this.dispatchOrderService.addEtcPenalty(copy);
+    call.subscribe((res: any) => {
+      if (res.code == '200' || res.code == '201') {
+        if (!item.id && res.data) item.id = res.data;
+        this.notificationService.printSuccessMessage('Đã lưu.');
+      } else {
+        this.notificationService.printErrorMessage(res.message || 'Lỗi lưu vé ETC ngoài kế hoạch.');
+      }
+    });
+  }
+
+  deleteEtcPenaltyRow(item: DispatchOrderFclEtcPenalty, index: number) {
+    if (!item.id) {
+      this.entity.listEtcPenalty.splice(index, 1);
+      return;
+    }
+    this.notificationService.printConfirmationDialog('Xóa dòng vé ETC ngoài kế hoạch này?', () => {
+      this.dispatchOrderService.deleteEtcPenalty(item.id).subscribe((res: any) => {
+        if (res.code == '200' || res.code == '201') {
+          this.entity.listEtcPenalty.splice(index, 1);
+        } else {
+          this.notificationService.printErrorMessage(res.message || 'Lỗi xóa.');
+        }
+      });
+    });
   }
 
   // ===== Trạm bổ sung tay từ danh mục (2026-08-24) =====
