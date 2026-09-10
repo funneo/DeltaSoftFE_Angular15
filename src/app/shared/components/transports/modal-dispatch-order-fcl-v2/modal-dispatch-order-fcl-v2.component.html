@@ -893,7 +893,12 @@
                 <button type="button" class="btn btn-xs btn-warning dsg-etc-add"
                   *ngIf="entity.startedDate && entity.finishedDate"
                   (click)="checkEup()">
-                  <i class="fa fa-road"></i> Check EUP
+                  <i class="fa fa-road"></i> Check trạm EUP
+                </button>
+                <button type="button" class="btn btn-xs btn-danger dsg-etc-add"
+                  *ngIf="entity.startedDate && entity.finishedDate"
+                  (click)="checkEupGps()">
+                  <i class="fa fa-map-o"></i> Hành trình GPS-EUP
                 </button>
                 <button type="button" class="btn btn-xs btn-primary dsg-etc-add"
                   *ngIf="!routeConfirmed && !entity.isSubcontractors"
@@ -908,7 +913,7 @@
                     <th class="text-right dsg-etc-num">Số tiền</th>
                     <th class="text-right dsg-etc-num">VAT</th>
                     <th class="text-right dsg-etc-num">Tổng tiền</th>
-                    <th class="text-center dsg-etc-pass">Trốn vé</th>
+                    <th class="text-center dsg-etc-pass">Tránh trạm</th>
                     <th>Ghi chú</th>
                     <th class="dsg-etc-act" *ngIf="!routeConfirmed"></th>
                   </tr>
@@ -972,7 +977,7 @@
                    Ghi nhận để nhân sự trừ lương lái xe — KHÔNG cộng vào Tổng ETC.
                    ═══════════════════════════════════════════════════════════════ -->
               <div class="dsg-etc-header" *ngIf="entity.refNo && !entity.isLegacy">
-                <span class="dsg-etc-title"><i class="fa fa-exclamation-triangle text-danger"></i> Vé ETC ngoài kế hoạch (trừ lái xe)</span>
+                <span class="dsg-etc-title"><i class="fa fa-exclamation-triangle text-danger"></i> Vé ETC ngoài kế hoạch (trừ tiền lái xe)</span>
                 <button type="button" class="btn btn-xs btn-danger dsg-etc-add" *ngIf="!postB1Locked" (click)="newEtcPenalty()">
                   <i class="fa fa-plus"></i> Thêm dòng
                 </button>
@@ -991,12 +996,12 @@
                 <tbody>
                   <tr *ngFor="let item of entity.listEtcPenalty; let i = index">
                     <td>
-                      <select class="form-control form-control-sm" [ngModel]="item.tollStationId"
-                        [ngModelOptions]="{standalone:true}" [disabled]="postB1Locked"
+                      <ng-select class="form-control-sm dsg-etc-penalty-select" [items]="listTollStation"
+                        bindLabel="tollStationName" bindValue="id" placeholder="Gõ để tìm trạm..."
+                        [ngModel]="item.tollStationId" [ngModelOptions]="{standalone:true}"
+                        [disabled]="postB1Locked" [appendTo]="'body'"
                         (ngModelChange)="onEtcPenaltyStationChange(item, $event)">
-                        <option [ngValue]="null">-- Chọn trạm --</option>
-                        <option *ngFor="let st of listTollStation" [ngValue]="st.id">{{ st.tollStationName }}</option>
-                      </select>
+                      </ng-select>
                     </td>
                     <td>
                       <input type="text" class="form-control form-control-sm" autocomplete="off"
@@ -1320,6 +1325,7 @@
 <modal-map-routes (RouteSelected)="onGoogleRouteSelected($event)"></modal-map-routes>
 <modal-route-compare [vehicleKey]="vietmapVehicleKey" (RouteSelected)="onCompareRouteSelected($event)"></modal-route-compare>
 <modal-eup-toll-check *ngIf="viewEupTollCheck" (CloseModal)="closeModalEupTollCheck()"></modal-eup-toll-check>
+<modal-eup-gps-history *ngIf="viewEupGpsHistory" (CloseModal)="closeModalEupGpsHistory()"></modal-eup-gps-history>
 
 <!-- Modal "Thêm cung đường phát sinh" — tách riêng (tự chứa Vietmap/So sánh) -->
 <modal-add-extra-segment (SaveSuccess)="onExtraSegmentSaved($event)"></modal-add-extra-segment>

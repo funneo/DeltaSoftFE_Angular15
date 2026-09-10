@@ -19,6 +19,7 @@ import {
 import { TransportOrderService } from "@app/shared/services/transports/transport-order.service";
 import { ModalVietmapRoutesComponent } from "../../danhmuc/modal-vietmap-routes/modal-vietmap-routes.component";
 import { ModalEupTollCheckComponent } from "../modal-eup-toll-check/modal-eup-toll-check.component";
+import { ModalEupGpsHistoryComponent } from "../modal-eup-gps-history/modal-eup-gps-history.component";
 import { ModalMapRoutesComponent } from "../../danhmuc/modal-map-routes/modal-map-routes.component";
 import { ModalRouteCompareComponent, CompareRouteResult } from "../../danhmuc/modal-route-compare/modal-route-compare.component";
 import { ModalAddExtraSegmentComponent, ExtraSegmentSavedResult } from "../modal-add-extra-segment/modal-add-extra-segment.component";
@@ -134,6 +135,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   public viewRoute: boolean = false;
   public viewAttachFiles: boolean = false;
   public viewEupTollCheck: boolean = false;
+  public viewEupGpsHistory: boolean = false;
   public viewTicket: boolean = false;
   public viewModalWorkflows: boolean = false;
   public viewJobModal: boolean = false;
@@ -360,6 +362,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   @ViewChild(ModalVietmapRoutesComponent, { static: false }) modalVietmap: ModalVietmapRoutesComponent;
   @ViewChild(ModalMapRoutesComponent, { static: false }) modalGoogle: ModalMapRoutesComponent;
   @ViewChild(ModalEupTollCheckComponent, { static: false }) modalEupTollCheck: ModalEupTollCheckComponent;
+  @ViewChild(ModalEupGpsHistoryComponent, { static: false }) modalEupGpsHistory: ModalEupGpsHistoryComponent;
   @ViewChild(ModalRouteCompareComponent, { static: false }) modalCompare: ModalRouteCompareComponent;
   @ViewChild(ModalAddExtraSegmentComponent, { static: false }) modalAddExtra: ModalAddExtraSegmentComponent;
 
@@ -641,12 +644,16 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     this.entity.dinhmucDauTrungchuyenNhamay = 0;
     this.entity.dinhmucDauTrungchuyenNhamayVe = 0;
   }
-  loadVehicle(id: number) {
+  // 2026-09-09: recomputeEtc mặc định true (case user CHỦ ĐỘNG đổi xe — cần tính lại giá trạm
+  // theo loại xe mới). Khi gọi từ edit() lúc MỞ LẠI lệnh đã lưu, truyền false — giá trạm
+  // (station.price + listEtc.cost) đã đúng sẵn từ DB, KHÔNG được tính lại đè lên, nếu không
+  // sẽ mất mọi lần sửa tay Cost 1 dòng ETC auto (Cost bị recompute về đúng giá Vietmap gốc).
+  loadVehicle(id: number, recomputeEtc: boolean = true) {
     if (!id) {
       this.listOilQuota = [];
       this._vehicleBotTypeId = null;
       this.vehicleLoading = false;
-      this._applyTollPrices();
+      if (recomputeEtc) this._applyTollPrices();
       return;
     }
     this.vehicleLoading = true;
@@ -661,7 +668,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
           this._vehicleBotTypeId = null;
         }
         this.vehicleLoading = false;
-        this._applyTollPrices();
+        if (recomputeEtc) this._applyTollPrices();
         // Xe chưa gán loại BOT, hoặc gán id không còn trong danh mục BOT (dữ liệu mồ côi)
         // → không tra được giá vé từng trạm. Cảnh báo ngay, đừng để tính ra 0 đồng lặng lẽ.
         if (this.vehicleBotMissing) {
@@ -1386,7 +1393,8 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
             this.orderType = this.entity.shortWay ? 1 : 0;
             this.loadLocations(checksToDelete.join(","));
             this.loadRoutes(checksToDelete.join(","));
-            this.loadVehicle(this.entity.vehicleId);
+            // false: đang MỞ LẠI lệnh đã lưu, không phải user đổi xe — giữ nguyên giá đã lưu, không recompute đè.
+            this.loadVehicle(this.entity.vehicleId, false);
             // TO refactor: rebuild locations từ segments + load all locations pool
             this.locations = this._segmentsToLocations(this.entity.segments || []);
             this.calculateTotal();
@@ -1652,6 +1660,17 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   closeModalEupTollCheck(): void {
     this.viewEupTollCheck = false;
+  }
+
+  checkEupGps() {
+    this.viewEupGpsHistory = true;
+    setTimeout(() => {
+      this.modalEupGpsHistory.show(this.entity.vehiclelLicensePlates, this.entity.startedDate, this.entity.finishedDate);
+    }, 50);
+  }
+
+  closeModalEupGpsHistory(): void {
+    this.viewEupGpsHistory = false;
   }
 
   attachFile() {

@@ -1933,6 +1933,13 @@
   .dsg-etc-pass  { width: 54px; }
   .dsg-etc-act   { width: 34px; }
 
+  /* dropdown trạm (ng-select có filter khi gõ) trong bảng vé ETC ngoài kế hoạch */
+  .dsg-etc-penalty-select {
+    display: block; padding: 0; border: 0;
+    ::ng-deep .ng-select-container { min-height: 26px; height: 26px; font-size: 12px; }
+    ::ng-deep .ng-value-label { font-size: 12px; }
+  }
+
   /* dòng auto sinh từ Vietmap — nền nhạt để phân biệt với dòng nhập tay */
   .dsg-etc-row-auto td { background: #fffaf0; }
   /* dòng trạm bổ sung tay từ danh mục (Vietmap thiếu trạm) — tím nhạt, khớp segment-etc-item--manual */

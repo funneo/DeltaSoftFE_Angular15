@@ -1,0 +1,47 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalEupGpsHistory="bs-modal"
+  [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" aria-labelledby="dialog-static-name"
+  (onShown)="OnShown()" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" [ngBusy]="busy">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left"><i class="fa fa-map-o text-danger"></i> Hành trình GPS-EUP
+          <a style="font-size: 14px;">{{vehiclePlate}}</a>
+        </h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalEupGpsHistory.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:8px;">
+          <b>Khoảng thời gian:</b>
+          {{startedDate | date:'dd/MM/yyyy HH:mm'}} &rarr; {{finishedDate | date:'dd/MM/yyyy HH:mm'}}
+        </div>
+        <div class="alert alert-warning" *ngIf="overRange" style="padding:6px 10px;">
+          <i class="fa fa-exclamation-triangle"></i> Khoảng tra cứu vượt 7 ngày — EUP giới hạn tối đa 7 ngày, dữ liệu có thể bị cắt.
+        </div>
+        <div class="alert alert-danger" *ngIf="loaded && errorMsg" style="padding:6px 10px;">
+          <i class="fa fa-exclamation-triangle"></i> {{errorMsg}}
+        </div>
+        <div class="egh-stats" *ngIf="loaded && !errorMsg">
+          <span><b>Tổng km (GPS):</b> {{totalMile | number:'1.0-1'}} km</span>
+          <span><b>Số điểm GPS:</b> {{pointCount | number}}</span>
+          <span><b>Số lần dừng:</b> {{stopCount}}</span>
+        </div>
+        <div class="egh-map-wrap" [class.egh-hidden]="loaded && errorMsg">
+          <div #mapContainer class="egh-map"></div>
+        </div>
+        <div class="egh-legend" *ngIf="loaded && !errorMsg">
+          <span><i class="fa fa-circle" style="color:#28a745;"></i> Điểm đầu</span>
+          <span><i class="fa fa-circle" style="color:#dc3545;"></i> Điểm cuối</span>
+          <span><i class="fa fa-circle" style="color:#7f8c8d;"></i> Dừng xe</span>
+          <span><i class="fa fa-circle" style="color:#f39c12;"></i> Dừng không tắt máy</span>
+          <span><i class="fa fa-minus" style="color:#e74c3c;"></i> Hành trình thực tế</span>
+        </div>
+      </div>
+      <div class="modal-footer text-right">
+        <button type="button" class="btn btn-danger btn-sm" (click)="modalEupGpsHistory.hide()">
+          <i class="fa fa-close"></i> Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
