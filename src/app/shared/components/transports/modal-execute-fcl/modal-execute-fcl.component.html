@@ -56,8 +56,9 @@
               </div>
             </div>
             <!-- Km đầu/Km cuối + Tài xế ghi chú: lái xe NHẬP khi đã nhận lệnh (status≤2),
-                 từ duyệt B1 (status>=3) trở đi readonly. -->
-            <div class="form-group">
+                 từ duyệt B1 (status>=3) trở đi readonly.
+                 2026-09-09: ẨN hiển thị theo yêu cầu anh Cường — field/logic (validate km đầu<cuối) GIỮ NGUYÊN. -->
+            <div class="form-group" hidden>
               <label class="col-sm-2 control-label">Km đầu <span class="exec-driver-hint">(lái xe)</span></label>
               <div class="col-sm-2">
                 <input class="form-control text-right" type="text" name="startVehicleOdor"
