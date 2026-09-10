@@ -1,11 +1,11 @@
 # Pending / In-Progress Work
 
-## ▶ FCL v2 — Cờ "Tránh trạm" (IsPassed) bị xóa khi điều vận lưu lệnh — SQL soạn xong, CHỜ anh chạy (2026-09-10) — chi tiết done.md
+## ▶ FCL v2 — Cờ "Tránh trạm" (IsPassed) bị xóa khi điều vận lưu lệnh — ✅ SQL + reset đã chạy hết (2026-09-10), CHỜ ng build + test E2E — chi tiết done.md
 `SP_DispatchOrderFCL_UpdateWithTO` xóa + chèn lại toàn bộ `DispatchOrderFCLEtc` không kèm `IsPassed` → mỗi lần điều vận Duyệt B1 (gọi `updateWithTo`) xóa cờ "Tránh trạm" lái xe đã tick. Fix: đổi khối ETC sang khuôn `SP_Payments_Update` (TVP→#temp → UPDATE/DELETE/INSERT, không đụng `IsPassed`) + index `IX_DispatchOrderFCLEtc_RefNo`.
-1. ⬜ Chạy `NewAPI/Migration_FCL_WithTO_EtcIsPassed_20260910.sql` (index + `_UpdateWithTO` + `_CreateWithTO`). Không cần redeploy BE, FE không đổi.
-2. ⬜ Chạy `NewAPI/Fix_FCL_ResetRejectedClosing_ToStatus2_20260910.sql` — `@Commit=0` xem preview (22 lệnh đang bị từ chối chốt, Status=3) → `@Commit=1` ghi thật.
-3. ⬜ Lái xe/điều vận vào lại từng lệnh tick "Tránh trạm" → Duyệt B1 → xác nhận cờ không còn bị xóa.
-4. ⬜ FCL-VT260909/0068 (Status=5, ngoài 22 lệnh): nếu xác nhận xe tránh Trạm số 2 QL5 thật → `UPDATE DispatchOrderFCLEtc SET IsPassed=1 WHERE Id IN (93275,93276)`.
+1. ✅ Đã chạy `NewAPI/Migration_FCL_WithTO_EtcIsPassed_20260910.sql` (verify live OK: `_UpdateWithTO` block `#Etc`, `_CreateWithTO` có `IsPassed`, index tồn tại). Không cần redeploy BE.
+2. ✅ Đã chạy `Fix_FCL_ResetRejectedClosing_ToStatus2_20260910.sql` (22 lệnh Status=3) + `Fix_FCL_ResetChoChot_ToStatus2_20260910.sql` (16 lệnh Status=5 có ETC chưa tick) với `@Commit=1`.
+3. ⬜ `ng build` + deploy FE (đổi nhãn "Trốn vé"→"Tránh trạm", nút Hành trình GPS-EUP, ẩn Km đầu/cuối — commit `87dfb0b`/`14528ef`/`1e3c37f`).
+4. ⬜ Test E2E: lệnh vừa reset (Status=2) → tick "Tránh trạm" → Hoàn thành → điều vận Duyệt B1 → mở lại cờ vẫn còn ✅ → chốt cờ vẫn nguyên.
 
 ## ✅ FCL — rà soát Từ chối B1/Từ chối chốt cũ vs mới — XÁC NHẬN ĐÃ ĐÚNG, KHÔNG SỬA GÌ (2026-09-08)
 Anh yêu cầu rà lại workflow Từ chối B1/Từ chối chốt của lệnh FCL. Phát hiện bug thật ở SP CŨ `SP_DispatchOrderFCL_UpdateState` (Từ chối chốt ở status=5 trả sai về 2 thay vì 3 — xem chi tiết done.md) và đã soạn sẵn `ALTER PROCEDURE` fix. Anh chốt lại phạm vi: **CHỈ giới hạn ở lệnh FCL MỚI (`SP_DispatchOrderFCL_ChangeStatus`) — KHÔNG đụng SP cũ `UpdateState`.** Đã xác nhận `SP_DispatchOrderFCL_ChangeStatus` (đọc live definition qua `OBJECT_DEFINITION`) vốn ĐÃ ĐÚNG sẵn (Từ chối B1: 3→2, Từ chối chốt: 5→3) từ đầu → **không cần sửa SQL/BE/FE gì cả**. File `Migration_FCL_Legacy_UpdateState_RejectClosing_Fix_20260908.sql` đã soạn rồi đã XÓA theo đúng quyết định này (bug ở SP cũ vẫn còn nguyên, chấp nhận không đụng theo nguyên tắc KHÔNG sửa SP cũ).
