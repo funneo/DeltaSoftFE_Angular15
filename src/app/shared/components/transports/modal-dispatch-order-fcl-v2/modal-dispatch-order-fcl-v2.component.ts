@@ -1884,6 +1884,18 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     });
   }
 
+  // ===== VAT vé ETC (2026-09-11) =====
+  // Giá Vietmap/danh mục trả về là giá THỰC TRẢ tại trạm (đã gồm VAT) = "Sau VAT".
+  // Tách ngược: tính VAT 8% trước (làm tròn 0.5 lên 1), rồi Trước VAT = Sau VAT − VAT.
+  // Cố ý KHÔNG tính xuôi (TrướcVAT×1.08) vì Sau VAT phải giữ ĐÚNG giá trạm — sai lệch
+  // ở đây sẽ kéo qua tổng trừ lương lái xe.
+  private readonly _tollVatRate = 0.08;
+  private _splitVat(sauVat: number): { cost: number; vat: number; totalCost: number } {
+    const totalCost = +sauVat || 0;
+    const vat = Math.floor(totalCost * this._tollVatRate / (1 + this._tollVatRate) + 0.5);
+    return { cost: totalCost - vat, vat, totalCost };
+  }
+
   // ===== Trạm phí auto từ Vietmap (2026-05-20) =====
   // Đồng bộ các dòng ETC auto của 1 chặng: xóa dòng auto cũ của chặng đó rồi thêm
   // từ seg.listStations (đã áp giá theo loại xe). Giữ nguyên dòng user nhập tay.
@@ -1895,13 +1907,13 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     const seg = this.entity.segments?.[segIndex];
     (seg?.listStations || []).forEach(st => {
       if (st.isAvoided) return; // tránh trạm → không tính phí
-      const cost = +(st.price || 0);
+      const { cost, vat, totalCost } = this._splitVat(+(st.price || 0));
       this.entity.listEtc.push({
         feeId: environment.tollFeeId,
         tollStationName: st.stationName,
         cost: cost,
-        vat: 0,
-        totalCost: cost,
+        vat: vat,
+        totalCost: totalCost,
         isPassed: false,
         note: '',
         _auto: true,
@@ -1913,15 +1925,18 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     });
   }
 
-  // Đổi loại xe → tính lại Cost các dòng ETC auto theo allPrices (giữ vat/note/trốn vé user đã sửa).
+  // Đổi loại xe → tính lại Cost/VAT các dòng ETC auto theo allPrices (giữ note/trốn vé user đã sửa).
   private _recomputeAutoEtcPrices() {
     const vietmapKey = this._vehicleBotTypeId ? (this._botTypeMap[this._vehicleBotTypeId] ?? null) : null;
     (this.entity?.listEtc || []).forEach(e => {
       if (!e._auto || !e._allPrices) return;
       try {
         const prices = JSON.parse(e._allPrices);
-        e.cost = vietmapKey ? (+prices[vietmapKey] || 0) : 0;
-        e.totalCost = (+e.cost || 0) + (+e.vat || 0);
+        const sauVat = vietmapKey ? (+prices[vietmapKey] || 0) : 0;
+        const { cost, vat, totalCost } = this._splitVat(sauVat);
+        e.cost = cost;
+        e.vat = vat;
+        e.totalCost = totalCost;
       } catch { /* giữ nguyên */ }
     });
   }

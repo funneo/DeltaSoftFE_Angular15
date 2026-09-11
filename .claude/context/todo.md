@@ -1,5 +1,11 @@
 # Pending / In-Progress Work
 
+## ▶ FCL v2 — Tách VAT 8% cho vé ETC — FE đã sửa, SQL soạn xong, CHỜ anh chạy SQL + deploy + test (2026-09-11) — chi tiết done.md
+Giá Vietmap trả (`route-tolls`) không có cấu trúc trước-VAT/VAT/tổng — FE cũ hardcode `Vat=0, Cost=TotalCost`. Đã sửa FE (`_splitVat()` trong `_syncEtcFromSegment`/`_recomputeAutoEtcPrices`): Sau VAT giữ nguyên (giá trạm thật) → `VAT=floor(SauVAT×8/108+0.5)` → `TrướcVAT=SauVAT−VAT`.
+1. ⬜ Anh chạy `NewAPI/Migration_DispatchOrderFCLEtc_Vat8Percent_20260911.sql` (login delta.erp) — soát block `[0] PREVIEW` trước, chỉ sửa 585 dòng ETC lệnh FCL v2 đang Vat=0, KHÔNG đụng lệnh legacy. Không cần deploy BE.
+2. ⬜ `ng build` + deploy FE.
+3. ⬜ Test E2E: cung có trạm 196.000đ → bảng ETC hiện Trước VAT ~181.481 / VAT ~14.519 / Tổng 196.000.
+
 ## ▶ FCL v2 — Cờ "Tránh trạm" (IsPassed) bị xóa khi điều vận lưu lệnh — ✅ SQL + reset đã chạy hết (2026-09-10), CHỜ ng build + test E2E — chi tiết done.md
 `SP_DispatchOrderFCL_UpdateWithTO` xóa + chèn lại toàn bộ `DispatchOrderFCLEtc` không kèm `IsPassed` → mỗi lần điều vận Duyệt B1 (gọi `updateWithTo`) xóa cờ "Tránh trạm" lái xe đã tick. Fix: đổi khối ETC sang khuôn `SP_Payments_Update` (TVP→#temp → UPDATE/DELETE/INSERT, không đụng `IsPassed`) + index `IX_DispatchOrderFCLEtc_RefNo`.
 1. ✅ Đã chạy `NewAPI/Migration_FCL_WithTO_EtcIsPassed_20260910.sql` (verify live OK: `_UpdateWithTO` block `#Etc`, `_CreateWithTO` có `IsPassed`, index tồn tại). Không cần redeploy BE.
