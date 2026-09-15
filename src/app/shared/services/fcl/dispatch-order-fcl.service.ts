@@ -221,7 +221,11 @@ export class DispatchOrderFclService extends BaseService {
 
   createWithTo(entity: DispatchOrderFcl) {
     let p: FromBodyBase<DispatchOrderFcl> = {};
-    p.item = entity;
+    // listEtcPenalty lưu qua Add/Update/DeleteEtcPenalty riêng (không thuộc CreateWithTO/
+    // UpdateWithTO) — hiển thị passedDate dạng dd/MM/yyyy cho daterangepicker làm BE lỗi
+    // "Could not convert string to DateTime" nếu gửi kèm nguyên object entity. Bỏ hẳn khỏi
+    // payload thay vì convert, vì BE không đọc field này ở 2 endpoint này.
+    p.item = { ...entity, listEtcPenalty: undefined };
     p.tokenKey = this.token;
     return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/CreateWithTO`, p)
     .pipe(map((response: any) => {
@@ -233,7 +237,8 @@ export class DispatchOrderFclService extends BaseService {
 
   updateWithTo(entity: DispatchOrderFcl) {
     let p: FromBodyBase<DispatchOrderFcl> = {};
-    p.item = entity;
+    // Xem ghi chú ở createWithTo — cùng lý do bỏ listEtcPenalty khỏi payload.
+    p.item = { ...entity, listEtcPenalty: undefined };
     p.tokenKey = this.token;
     return this.http.post(`${environment.apiUrl}/api/DispatchOrderFcl/UpdateWithTO`, p)
     .pipe(map((response: any) => {
