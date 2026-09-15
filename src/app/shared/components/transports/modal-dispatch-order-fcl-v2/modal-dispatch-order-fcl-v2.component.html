@@ -1173,7 +1173,7 @@
                             <!-- {{item.note}} -->
                           </td>
                           <td style="width:40px">
-                            <button [disabled]="entity.status>=5 || job_locked || flagXem" type="button"
+                            <button *ngIf="entity.status==2 || entity.status==3" [disabled]="job_locked || flagXem" type="button"
                               class="btn btn-warning btn-sm" (click)="deleteFee(item)">
                               <i class="fa fa-trash"></i>
                             </button>

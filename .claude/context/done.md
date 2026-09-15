@@ -1,9 +1,12 @@
 # Completed Features
 
-## FCL v2 — Nút xóa chi phí (tab "Chi phí") không hiện ở status=2 — FE-only, ĐÃ SỬA, CHỜ ng build — 2026-09-14
-Anh báo lúc sửa lệnh ở `status=2` (Đã nhận) không thấy nút xóa dòng chi phí, dù vẫn thêm được. Nguyên nhân: [modal-dispatch-order-fcl-v2.component.html](../../../src/app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component.html) nút "Thêm" cho phép khi `status<5` nhưng nút "Xóa" lại bị khóa cứng `*ngIf="entity.status==3"` — chỉ hiện đúng lúc Chờ duyệt, các status khác (1/2/4) trước khi khóa (status≥5) đều không xóa được dù thêm được, không nhất quán.
-- **Fix**: đổi nút Xóa từ `*ngIf="entity.status==3"` sang `[disabled]="entity.status>=5 || job_locked || flagXem"` — khớp đúng điều kiện nút "Thêm" cùng tab, luôn hiện + chỉ khóa khi đã Duyệt B1 (`status>=5`)/`job_locked`/xem-only. `deleteFee()` chỉ splice mảng client-side (`entity.listFee`), không gọi API riêng — an toàn khi cho hiện sớm hơn.
-- **CÒN**: FE-only, cần `ng build` để lên hiệu lực; chưa commit git.
+## FCL v2 — Nút xóa chi phí (tab "Chi phí") chỉ hiện status=2/3 (trước Duyệt B1) — FE-only, ĐÃ SỬA 4 lần, CHỜ ng build — 2026-09-14/15
+Anh báo lúc sửa lệnh ở `status=2` (Đã nhận) không thấy nút xóa dòng chi phí, dù vẫn thêm được. Nguyên nhân gốc: [modal-dispatch-order-fcl-v2.component.html](../../../src/app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component.html) nút "Thêm" cho phép khi `status<5` nhưng nút "Xóa" lại bị khóa cứng `*ngIf="entity.status==3"`.
+- **Lần 1 (2026-09-14, ĐÃ COMMIT+PUSH)**: đổi sang `[disabled]="entity.status>=5 || job_locked || flagXem"` (khớp điều kiện nút "Thêm") — anh chốt lại không đúng ý.
+- **Lần 2/3 (2026-09-15)**: thử `status==2` rồi `status==1||status==2` — vẫn chưa đúng.
+- **Xác minh lại vòng đời status FCL v2** (đọc trực tiếp code, 3 nguồn khớp nhau): `modal-execute-fcl.component.ts:389` (`_changeStatus` — ActionType 1 "Nhận" 1→2, ActionType 2 "Hoàn thành" 2→3), `modal-dispatch-order-fcl-v2.component.ts:2081` (`duyetB1()` — Điều vận Duyệt B1 chuyển 3→5), header workflow `modal-dispatch-order-fcl-v2.component.html:1276` ("1 Đã giao·2 Đã nhận·3 Chờ duyệt·5 Chờ chốt·6 Đã chốt"). Kết luận: **status=3 là 1 giá trị duy nhất, 2 tên gọi theo vai** — lái xe thấy "Hoàn thành lệnh", điều vận thấy "Chờ duyệt B1" — không phải 2 trạng thái khác nhau.
+- **Lần 4 (2026-09-15, CHỐT CUỐI)**: nút xóa chi phí cho cả status=2 (Đã nhận) VÀ status=3 (Hoàn thành/Chờ duyệt B1) — chỉ ẩn từ status≥5 (đã Duyệt B1). Đổi thành `*ngIf="entity.status==2 || entity.status==3" [disabled]="job_locked || flagXem"`. `deleteFee()` chỉ splice mảng client-side (`entity.listFee`), không gọi API riêng.
+- **CÒN**: FE-only, cần `ng build` để lên hiệu lực; CHƯA commit lần 2-4.
 
 ## dGas3/TransportERP Đợt 1 BE — model/repo/3 hàm sync/adapter/controller — build+publish 0 lỗi, CHƯA cắm trigger, CHƯA commit — 2026-09-13/14
 Thực hiện Đợt 1 theo kế hoạch đã duyệt (xem todo.md mục dGas3). Toàn bộ ADDITIVE, không sửa code/SP cũ.
