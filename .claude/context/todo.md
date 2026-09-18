@@ -1,5 +1,35 @@
 # Pending / In-Progress Work
 
+## ★★ GpsAPI — API riêng cung cấp GPS xe cho Khách hàng — Giai đoạn 1+2 CODE XONG, build 0 lỗi (2026-09-18)
+Process .NET 9 độc lập tại `D:\Delta\DeltaSoft\GpsAPI\` (tiền lệ DraftAPI) — KH gọi kèm token cố định (header) → GpsAPI kiểm tra biển số có thuộc KH đó không (gán theo mã DK05 = `SalesCustomer.CustomerCode`) → hợp lệ mới proxy sang EUP (Eupfin v3, tái dùng logic `EupfinController.cs`, dùng CHUNG credentials `EupfinV3*` với NewAPI) lấy vị trí thực tế, trả kết quả tối giản. Kế hoạch đầy đủ: [GpsAPI/GpsAPI-plan.md](../../../../GpsAPI/GpsAPI-plan.md).
+- **Đã chốt (2026-09-18)**: (1) EUP credentials dùng chung NewAPI; (2) schema DB riêng `gps` (cùng database chính) + **login SQL Server riêng `gps_app`** (credential riêng để GpsAPI tự kết nối DB, kiểu `draft_app` — KHÔNG phải màn hình đăng nhập) chỉ GRANT EXECUTE đúng 3 SP hẹp (`GetByToken`/`CheckOwnership`/`RequestLog_Insert`), không SELECT/INSERT thẳng bảng, không đụng `dbo` — cách ly khỏi ERP; (3) quản lý gán biển số/token = **1 TAB MỚI trong modal `modal-sales-customer`** (modal DK05 hiện có, KHÔNG tạo màn list riêng) — chỉ hiện khi sửa KH đã tồn tại; (4) 1 biển số chỉ thuộc 1 KH (unique filtered index); rate-limit 3 lớp (IP 120/phút, token 60/phút, token+biển số 1/10s) + audit log tầng ứng dụng (`Microsoft.AspNetCore.RateLimiting` .NET 9 có sẵn, số đọc từ config nới/siết sau không cần sửa code).
+- ⚠ **Rủi ro hạ tầng đã ghi nhận**: server HIỆN CHƯA có Cloudflare/WAF/reverse-proxy chặn DDoS tầng mạng (expose thẳng Kestrel/IIS). Không chặn code Phase 1 nhưng PHẢI xử lý (khuyến nghị Cloudflare free tier) trước khi cấp token cho KH thật đầu tiên.
+- ✅ **SQL ĐÃ CHẠY XONG cả 3 file (2026-09-18)** — tại `GpsAPI/`:
+  1. ✅ `Migration_GpsAPI_Schema_20260918.sql` (login delta.erp) — schema `gps` + 3 bảng (`CustomerVehicle`/`CustomerToken`/`RequestLog`) + 5 SP phía ERP + 3 SP phía GpsAPI.
+  2. ✅ `Migration_GpsAPI_Login_20260918.sql` — CREATE LOGIN + USER `gps_app`. Lần đầu chạy bằng `delta.erp` bị lỗi quyền (15247/15007, không phải sa/sysadmin) — đã sửa file thêm TRY/CATCH + VERIFY, chạy lại bằng `sa` thành công.
+  3. ✅ `Grant_GpsApp_ErpAccess_20260918.sql` (login delta.erp) — GRANT EXECUTE 3 SP cho `gps_app` + DENY toàn bộ schema `dbo`.
+- ✅ **Giai đoạn 1+2 ĐÃ CODE (2026-09-18), `dotnet build` 0 lỗi 0 warning** — project `.NET 9` tại `GpsAPI/` (port 44370, `.sln` đã tạo):
+  - `Program.cs` — rate-limit 2 lớp đầu (IP+token) qua `PartitionedRateLimiter.CreateChained` global middleware (`Microsoft.AspNetCore.RateLimiting`), HTTPS/HSTS, Swagger CHỈ mở ở Development (khác DraftAPI mở mọi env — chủ động siết hơn vì internet-facing), KHÔNG bật CORS.
+  - `Data/GpsRepository.cs` — clone pattern `DraftRepository.cs` (SqlConnection + Dapper trực tiếp, không cần adapter riêng), gọi đúng 3 SP `gps.SP_CustomerToken_GetByToken`/`SP_CustomerVehicle_CheckOwnership`/`SP_RequestLog_Insert`.
+  - `Services/EupClient.cs` + `Services/PlateNormalizer.cs` — clone logic thật từ `EupfinController.cs` (NewAPI).
+  - `Controllers/GpsController.cs` — `POST /api/gps/realtime` đủ flow: check token → validate format biển số (regex) → **lớp rate-limit thứ 3 (token+biển số, cooldown `IMemoryCache`)** → check ownership → gọi EUP → trả DTO tối giản → audit log (nuốt lỗi log, không chặn response).
+  - `appsettings.json` — ✅ `EupfinV3BaseUrl/ApiKey/ConsumerId` đã điền (copy từ `NewAPI/API/appsettings.Development.json`, giá trị thật). ⚠ Password `gps_app` trong connection string **VẪN LÀ PLACEHOLDER `CHANGE_ME_StrongPassw0rd!`** — anh xác nhận 2026-09-18 chưa đổi lúc chạy SQL, chủ động để vậy test trước, **sẽ đổi sau**. PHẢI đổi cả 2 chỗ đồng bộ trước khi go-live thật (mật khẩu login SQL Server + connection string này).
+1. ⬜ `dotnet run` test thử `POST /api/gps/realtime` (chưa có KH/token/biển số nào trong DB để test full flow — chờ Giai đoạn 3).
+2. ⬜ Giai đoạn 3: BE endpoint quản lý trong NewAPI (CRUD gán biển số/token) + tab "GPS" trong `modal-sales-customer`.
+3. ⬜ Test E2E + xử lý hạ tầng DDoS + **đổi mật khẩu `gps_app` thật** trước khi go-live KH thật.
+
+## ★ Đọc email ETC tự động (VETC/ePass) để cập nhật vé ETC thực tế — Ý TƯỞNG ĐÃ CHỐT, CHƯA CODE (2026-09-16)
+Nhà mạng ETC (VETC/ePass) tự gửi email khi xe qua trạm (mailbox Gmail công ty nhận). Mục tiêu: đọc email tự động, ghi nhận vé ETC thực tế (biển số/trạm/giờ/tiền), sau này đối chiếu với ETC ước tính hiện có (`DispatchOrderFCLEtc`, sinh từ Vietmap).
+- **Kiến trúc đã chốt**: 1 **service/worker riêng** (console app độc lập, KHÔNG chạy trong NewAPI) — poll IMAP Gmail (App Password) theo chu kỳ cấu hình được; mỗi vòng lặp tự đọc lại cấu hình từ DB (đổi cấu hình có hiệu lực ngay, không cần restart service). Lý do tách riêng: tránh phụ thuộc lúc tắt/build lại API chính (đang bị khóa DLL).
+- **Ghi nhận**: mỗi email → ghi log thô (toàn bộ nội dung + trạng thái xử lý: thành công/lỗi parse/không match được xe) + dữ liệu đã parse thành công (biển số, trạm, giờ qua trạm, số tiền, mã vé nếu có) vào bảng riêng. Chống xử lý trùng bằng lưu `messageId` đã xử lý trong DB (không dựa vào flag đã đọc trên Gmail).
+- **FE**: 1 trang MỚI "Nhật ký ETC Email" — list log (thời gian/trạng thái/biển số/trạm/tiền/raw content khi lỗi) + nút "Cấu hình" trên toolbar mở **modal** (theo đúng convention modal ERP: IMAP host/port/SSL/user/pass/chu kỳ poll/bật-tắt/sender filter + nút "Test kết nối" + Lưu). Không tách 2 trang riêng.
+- **Bảo mật**: mật khẩu IMAP mã hóa bằng `RsaKeyService` sẵn có (không viết mã hóa mới).
+- **Quyền**: permission riêng (vd `ETC_EMAIL_xxx`), chưa chọn FunctionCode — xem lưu ý trùng F047/F048 ở mục "⚠ TRÙNG FunctionCode" bên dưới, chọn mã CHƯA dùng.
+- **CHƯA CÓ** mẫu email thật (anh sẽ gửi sau) → parse logic (cấu trúc HTML/text, cách tách biển số/trạm/tiền) CHƯA thiết kế được, đang chặn bước soạn schema bảng log/SQL.
+1. ⬜ Chờ anh gửi mẫu email ETC thật (VETC/ePass) để thiết kế parser + finalize schema bảng config + bảng log.
+2. ⬜ Sau khi có mẫu email → soạn thiết kế SQL (bảng config, bảng log, SP) trình anh duyệt trước khi code BE/FE.
+3. ⬜ Đối chiếu tự động với `DispatchOrderFCLEtc` (ước tính) — để giai đoạn sau, sau khi giai đoạn 1 (ghi nhận + xem log) chạy ổn.
+
 ## ▶ FCL v2 — Tách VAT 8% cho vé ETC — FE đã sửa, SQL soạn xong, CHỜ anh chạy SQL + deploy + test (2026-09-11) — chi tiết done.md
 Giá Vietmap trả (`route-tolls`) không có cấu trúc trước-VAT/VAT/tổng — FE cũ hardcode `Vat=0, Cost=TotalCost`. Đã sửa FE (`_splitVat()` trong `_syncEtcFromSegment`/`_recomputeAutoEtcPrices`): Sau VAT giữ nguyên (giá trạm thật) → `VAT=floor(SauVAT×8/108+0.5)` → `TrướcVAT=SauVAT−VAT`.
 1. ⬜ Anh chạy `NewAPI/Migration_DispatchOrderFCLEtc_Vat8Percent_20260911.sql` (login delta.erp) — soát block `[0] PREVIEW` trước, chỉ sửa 585 dòng ETC lệnh FCL v2 đang Vat=0, KHÔNG đụng lệnh legacy. Không cần deploy BE.
