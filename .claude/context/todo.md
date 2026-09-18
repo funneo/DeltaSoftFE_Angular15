@@ -1,5 +1,13 @@
 # Pending / In-Progress Work
 
+## ✅ FCL — trang list CŨ bỏ trộn lệnh mới (isLegacy=0) — FE-only, tsc 0 lỗi mới, CHỜ ng build (2026-09-18)
+Anh phát hiện trang list FCL cũ (`dispatch-order-fcl.component.ts`) đang hiện TRỘN cả lệnh legacy lẫn lệnh mới (isLegacy=0) — do component có sẵn logic `useV2` tự chọn modal cũ/mới theo từng dòng (dòng 341) nhưng `loadData()` chưa từng set filter `isLegacy`.
+- **Review xác nhận toàn chuỗi đã sẵn sàng, KHÔNG cần sửa SQL/BE**: `SP_DispatchOrderFCL_GetAll` đã có `@IsLegacy bit = NULL` (lọc `IS NULL OR m.IsLegacy=@IsLegacy`) từ lúc làm TO refactor; BE controller đã truyền `obj.Item?.IsLegacy` xuống; FE service `getAll()` đã đọc query param `isLegacy` map vào `item.isLegacy`. Chỉ thiếu đúng 1 chỗ: trang cũ không set param này.
+- **Fix**: thêm `.set("isLegacy", "1")` vào `HttpParams` trong `loadData()` — trang cũ giờ chỉ hiện lệnh legacy thật; `dispatch-order-fcl-new.component.ts` (trang mới) vốn đã đúng chuẩn tự set `isLegacy=0` từ đầu, không đổi gì.
+- Anh chốt qua AskUserQuestion: GIỮ NGUYÊN `useV2`/`viewModalV2` (dead code vô hại sau khi lọc, không dọn ngay).
+1. ⬜ `ng build` + deploy FE.
+2. ⬜ Test E2E: mở trang FCL cũ → chỉ còn hiện lệnh legacy, không còn lệnh mới lẫn vào.
+
 ## ★★ GpsAPI — API riêng cung cấp GPS xe cho Khách hàng — Giai đoạn 1+2 CODE XONG, build 0 lỗi (2026-09-18)
 Process .NET 9 độc lập tại `D:\Delta\DeltaSoft\GpsAPI\` (tiền lệ DraftAPI) — KH gọi kèm token cố định (header) → GpsAPI kiểm tra biển số có thuộc KH đó không (gán theo mã DK05 = `SalesCustomer.CustomerCode`) → hợp lệ mới proxy sang EUP (Eupfin v3, tái dùng logic `EupfinController.cs`, dùng CHUNG credentials `EupfinV3*` với NewAPI) lấy vị trí thực tế, trả kết quả tối giản. Kế hoạch đầy đủ: [GpsAPI/GpsAPI-plan.md](../../../../GpsAPI/GpsAPI-plan.md).
 - **Đã chốt (2026-09-18)**: (1) EUP credentials dùng chung NewAPI; (2) schema DB riêng `gps` (cùng database chính) + **login SQL Server riêng `gps_app`** (credential riêng để GpsAPI tự kết nối DB, kiểu `draft_app` — KHÔNG phải màn hình đăng nhập) chỉ GRANT EXECUTE đúng 3 SP hẹp (`GetByToken`/`CheckOwnership`/`RequestLog_Insert`), không SELECT/INSERT thẳng bảng, không đụng `dbo` — cách ly khỏi ERP; (3) quản lý gán biển số/token = **1 TAB MỚI trong modal `modal-sales-customer`** (modal DK05 hiện có, KHÔNG tạo màn list riêng) — chỉ hiện khi sửa KH đã tồn tại; (4) 1 biển số chỉ thuộc 1 KH (unique filtered index); rate-limit 3 lớp (IP 120/phút, token 60/phút, token+biển số 1/10s) + audit log tầng ứng dụng (`Microsoft.AspNetCore.RateLimiting` .NET 9 có sẵn, số đọc từ config nới/siết sau không cần sửa code).

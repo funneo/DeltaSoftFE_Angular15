@@ -222,7 +222,9 @@ export class DispatchOrderFclComponent implements OnInit {
       .set("driverid", this.driverId ? this.driverId.toString() : "0")
       .set("fromDate", tuNgay)
       .set("toDate", denNgay)
-      .set("keyword", this.keyword);
+      .set("keyword", this.keyword)
+      // Trang CŨ chỉ hiện lệnh legacy — trang MỚI (dispatch-order-fcl-new, isLegacy=0) đã tách riêng.
+      .set("isLegacy", "1");
     // .set('usergroupid')
     this.busy = this._service
       .getAll(params)
