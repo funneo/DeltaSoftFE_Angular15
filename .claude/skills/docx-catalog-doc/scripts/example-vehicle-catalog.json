@@ -1,0 +1,37 @@
+{
+  "blocks": [
+    { "type": "heading", "level": 2, "text": "2.2. Danh mục Phương tiện" },
+    { "type": "heading", "level": 4, "text": "Vai trò của danh mục" },
+    { "type": "paragraph", "text": "Đoạn giới thiệu: vì sao danh mục này quan trọng, module nào dùng nó (Điều vận / Xưởng / Kế toán...)." },
+
+    { "type": "heading", "level": 3, "text": "2.2.1. Dữ liệu định danh" },
+    { "type": "paragraph", "italic": true, "text": "Câu note giải thích tiêu chí xếp một trường vào nhóm 'định danh' (ít đổi, dùng để phân loại/khoá tra cứu)." },
+    {
+      "type": "table",
+      "columns": ["STT", "Trường dữ liệu", "Diễn giải / Ý nghĩa nghiệp vụ", "Bắt buộc"],
+      "widthsCm": [1.2, 3.8, 8.0, 3.0],
+      "rows": [
+        ["1", "Biển kiểm soát", "Mã định danh duy nhất.", "Có"]
+      ]
+    },
+
+    { "type": "heading", "level": 3, "text": "2.2.2. Dữ liệu (Thuộc tính) mở rộng" },
+    { "type": "paragraph", "italic": true, "text": "Câu note giải thích tiêu chí xếp một trường vào nhóm 'mở rộng' (giá trị vận hành, dùng trong tính toán/cảnh báo, đổi theo thời gian)." },
+    {
+      "type": "table",
+      "columns": ["STT", "Trường dữ liệu", "Diễn giải / Ý nghĩa nghiệp vụ", "Module / Quy trình sử dụng"],
+      "widthsCm": [1.2, 3.8, 8.0, 3.0],
+      "rows": [
+        ["1", "Giá mua (VNĐ)", "Nguyên giá tại thời điểm mua.", "Kế toán tài sản"]
+      ]
+    },
+
+    { "type": "heading", "level": 4, "text": "Ghi chú khi phân tích" },
+    {
+      "type": "bullets",
+      "items": [
+        "Khoảng trống / điểm cần xác nhận thêm với anh, nếu có."
+      ]
+    }
+  ]
+}
