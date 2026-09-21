@@ -12,10 +12,10 @@ $bg: #f5f6fa;
   position: relative;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 90px);
+  height: calc(100vh - 62px);
   background: $bg;
-  padding: 10px;
-  gap: 10px;
+  padding: 5px;
+  gap: 5px;
 }
 
 .dof-loading { color: $primary; font-weight: 600; }
@@ -48,7 +48,7 @@ $bg: #f5f6fa;
     flex-wrap: wrap;
     align-items: center;
     gap: 8px;
-    flex: 1 1 auto;
+    flex: 1 1 100%;
   }
 
   &__actions {

@@ -1,6 +1,6 @@
 import { DatePipe } from "@angular/common";
 import { HttpParams } from "@angular/common/http";
-import { ChangeDetectorRef, Component, OnInit, ViewChild } from "@angular/core";
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild } from "@angular/core";
 import { ModalClosingFclProcessComponent } from "@app/shared/components/transports/modal-closing-fcl-process/modal-closing-fcl-process.component";
 import { ModalDispatchOrderFclV2Component } from "@app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component";
 import { ModalEupTollCheckComponent } from "@app/shared/components/transports/modal-eup-toll-check/modal-eup-toll-check.component";
@@ -38,7 +38,10 @@ import { ModalPhieuChiLenhComponent } from '@app/shared/components/accounting/mo
   templateUrl: "./dispatch-order-fcl-new.component.html",
   styleUrls: ["./dispatch-order-fcl-new.component.scss"],
 })
-export class DispatchOrderFclNewComponent implements OnInit {
+export class DispatchOrderFclNewComponent implements OnInit, AfterViewInit {
+  // Chiều cao trang = phần màn hình còn lại tính từ mép trên của trang (không phụ thuộc chiều cao header/padding layout).
+  pageHeight = 0;
+  @ViewChild("dofPage", { static: false }) dofPage: ElementRef<HTMLElement>;
   pageIndex = 1;
   pageSize = 9999;
   totalRows = 0;
@@ -142,6 +145,17 @@ export class DispatchOrderFclNewComponent implements OnInit {
     this.loadData();
     this.loadBranch();
     this.loadDriver();
+  }
+
+  ngAfterViewInit(): void {
+    setTimeout(() => this.fitHeight());
+  }
+
+  @HostListener("window:resize")
+  fitHeight(): void {
+    const el = this.dofPage?.nativeElement;
+    if (!el) return;
+    this.pageHeight = Math.max(300, Math.floor(window.innerHeight - el.getBoundingClientRect().top - 5));
   }
 
   checkClosing(): boolean {

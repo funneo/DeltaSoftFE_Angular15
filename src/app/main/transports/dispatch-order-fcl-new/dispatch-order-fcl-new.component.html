@@ -1,4 +1,4 @@
-<div class="dof-page">
+<div class="dof-page" #dofPage [style.height.px]="pageHeight || null">
   <ngx-spinner [fullScreen]="false" bdOpacity=0.9 bdColor="#f5f6fa" size="medium" color="#3a7afe"
     type="ball-clip-rotate">
     <p class="dof-loading">Tải dữ liệu ...</p>
@@ -9,6 +9,41 @@
     <div class="dof-toolbar__title">
       <i class="fa fa-truck"></i>
       <span>Lệnh vận chuyển FCL</span>
+    </div>
+
+    <div class="dof-toolbar__actions">
+      <div class="dof-dropdown">
+        <button class="dof-btn dof-btn--success" type="button" appPermission appFunction="FCL" appAction="EXPORT">
+          <i class="fa fa-file-excel-o"></i> Export <span class="caret"></span>
+        </button>
+        <div class="dof-dropdown__menu">
+          <div (click)="export(0)">Tổng hợp</div>
+          <div (click)="export(1)">Chi tiết</div>
+        </div>
+      </div>
+      <button class="dof-btn dof-btn--chot" (click)="chotlenhMulti()" [disabled]="!flagChecked" appPermission
+        appFunction="FCL" appAction="CLOSING">
+        <i class="fa fa-check-square-o"></i> Chốt lệnh
+      </button>
+      <button class="dof-btn dof-btn--primary" (click)="edit(false)" [disabled]="!flagEdit" appPermission
+        appFunction="FCL" appAction="UPDATE">
+        <i class="fa fa-edit"></i> Sửa
+      </button>
+      <button class="dof-btn dof-btn--danger" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
+        appFunction="FCL" appAction="DELETE">
+        <i class="fa fa-trash"></i> Xóa
+      </button>
+      <button class="dof-btn dof-btn--warning" (click)="payment()">
+        <i class="fa fa-money"></i> Thanh toán
+      </button>
+      <button *ngIf="adminPermission" class="dof-btn dof-btn--admin" (click)="openClosingScope()"
+        title="Phân quyền Chốt lệnh theo khách hàng">
+        <i class="fa fa-key"></i> Phân quyền chốt
+      </button>
+      <button *ngIf="adminPermission" class="dof-btn dof-btn--admin" (click)="openDocContainer()"
+        title="Pilot — chỉ Admin thấy, chưa gắn vào lệnh nào">
+        <i class="fa fa-camera"></i> Đọc số cont (AI)
+      </button>
     </div>
 
     <div class="dof-toolbar__filters">
@@ -26,29 +61,6 @@
           [(ngModel)]="keyword" placeholder="Từ khóa..." />
         <button class="dof-search__btn" type="button" (click)="timKiem()"><i class="fa fa-search"></i></button>
       </div>
-    </div>
-
-    <div class="dof-toolbar__actions">
-      <button class="dof-btn dof-btn--chot" (click)="chotlenhMulti()" [disabled]="!flagChecked" appPermission
-        appFunction="FCL" appAction="CLOSING">
-        <i class="fa fa-check-square-o"></i> Chốt lệnh
-      </button>
-      <button class="dof-btn dof-btn--primary" (click)="edit(false)" [disabled]="!flagEdit" appPermission
-        appFunction="FCL" appAction="UPDATE">
-        <i class="fa fa-edit"></i> Sửa
-      </button>
-      <button class="dof-btn dof-btn--danger" (click)="deleteConfirm()" [disabled]="!flagDelete" appPermission
-        appFunction="FCL" appAction="DELETE">
-        <i class="fa fa-trash"></i> Xóa
-      </button>
-      <button *ngIf="adminPermission" class="dof-btn dof-btn--admin" (click)="openClosingScope()"
-        title="Phân quyền Chốt lệnh theo khách hàng">
-        <i class="fa fa-key"></i> Phân quyền chốt
-      </button>
-      <button *ngIf="adminPermission" class="dof-btn dof-btn--admin" (click)="openDocContainer()"
-        title="Pilot — chỉ Admin thấy, chưa gắn vào lệnh nào">
-        <i class="fa fa-camera"></i> Đọc số cont (AI)
-      </button>
     </div>
   </div>
 
