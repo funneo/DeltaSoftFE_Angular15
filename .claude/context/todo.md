@@ -1,11 +1,20 @@
 # Pending / In-Progress Work
 
-## ✅ FCL — trang list CŨ bỏ trộn lệnh mới (isLegacy=0) — FE-only, tsc 0 lỗi mới, CHỜ ng build (2026-09-18)
+## ★★ MỐC 2026-09-20 — anh xác nhận ĐÃ DEPLOY HẾT (FE + các mục chờ deploy trước đó)
+`ng build --configuration production` sạch (exit 0, chỉ warning cũ) rồi anh đã đẩy lên. ⇒ Mọi dòng `⬜ ng build` / `⬜ deploy` ở các section FCL từ 2026-09-03 → 2026-09-18 bên dưới (lệnh cũ=thầu phụ/mới=xe nhà, Tránh trạm/GPS-EUP/ẩn Km, vé ETC ngoài kế hoạch, VAT 8% ETC, điểm đi/đến đầy đủ, nút xóa chi phí, bỏ listEtcPenalty, list FCL cũ isLegacy=1) coi như XONG. Anh xác nhận ĐÃ CHẠY cả 2 SQL (`Migration_DispatchOrderFCL_EtcPenalty_20260908.sql`, `Migration_DispatchOrderFCLEtc_Vat8Percent_20260911.sql`) ngày 2026-09-20. Còn lại chỉ test E2E.
+
+## ▶ FCL — list MỚI (`dispatch-order-fcl-new`): bê Export + Thanh toán từ list cũ, sắp lại toolbar, fill chiều dọc — FE-only, tsc 0 lỗi, CHỜ ng build + deploy + xem trên trình duyệt (2026-09-21) — chi tiết done.md
+1. ⬜ `ng build --configuration production` + deploy FE, refresh xem: hàng 1 = tiêu đề + nút action (phải), hàng 2 = bộ lọc; trang phủ hết chiều dọc; padding/gap 5px.
+2. ⬜ Test Export (Tổng hợp/Chi tiết) + Thanh toán (mở modal phiếu chi) trên list mới.
+3. ⚠ Cần xác nhận: `export()` KHÔNG gửi `isLegacy` (nguyên xi list cũ) → nếu BE `getExport` không tự lọc thì file Excel từ list mới có thể lẫn lệnh FCL cũ. Chưa đọc BE để kiểm — chờ anh muốn kiểm/lọc.
+4. ⏸ Yêu cầu "bổ sung phần cấp dầu từ lệnh ở FCL cũ qua FCL mới" (2026-09-21) CHƯA XÁC ĐỊNH ĐƯỢC nút/tính năng cụ thể: list + modal FCL cũ không có nút tên "Cấp dầu"; modal v2 đã có đủ trường dầu; "Cấp dầu theo lệnh" là trang riêng `driver-fuel-approval` (nút "Tổng kết" → `SP_DispatchOrder_GetForSummary` đã gộp cả FCL v2). Chờ anh chỉ rõ màn/nút — không code gì.
+
+## ✅ FCL — trang list CŨ bỏ trộn lệnh mới (isLegacy=0) — FE-only, ✅ ĐÃ DEPLOY (2026-09-20), CHỜ TEST (2026-09-18)
 Anh phát hiện trang list FCL cũ (`dispatch-order-fcl.component.ts`) đang hiện TRỘN cả lệnh legacy lẫn lệnh mới (isLegacy=0) — do component có sẵn logic `useV2` tự chọn modal cũ/mới theo từng dòng (dòng 341) nhưng `loadData()` chưa từng set filter `isLegacy`.
 - **Review xác nhận toàn chuỗi đã sẵn sàng, KHÔNG cần sửa SQL/BE**: `SP_DispatchOrderFCL_GetAll` đã có `@IsLegacy bit = NULL` (lọc `IS NULL OR m.IsLegacy=@IsLegacy`) từ lúc làm TO refactor; BE controller đã truyền `obj.Item?.IsLegacy` xuống; FE service `getAll()` đã đọc query param `isLegacy` map vào `item.isLegacy`. Chỉ thiếu đúng 1 chỗ: trang cũ không set param này.
 - **Fix**: thêm `.set("isLegacy", "1")` vào `HttpParams` trong `loadData()` — trang cũ giờ chỉ hiện lệnh legacy thật; `dispatch-order-fcl-new.component.ts` (trang mới) vốn đã đúng chuẩn tự set `isLegacy=0` từ đầu, không đổi gì.
 - Anh chốt qua AskUserQuestion: GIỮ NGUYÊN `useV2`/`viewModalV2` (dead code vô hại sau khi lọc, không dọn ngay).
-1. ⬜ `ng build` + deploy FE.
+1. ✅ `ng build` + deploy FE (2026-09-20).
 2. ⬜ Test E2E: mở trang FCL cũ → chỉ còn hiện lệnh legacy, không còn lệnh mới lẫn vào.
 
 ## ★★ GpsAPI — API riêng cung cấp GPS xe cho Khách hàng — Giai đoạn 1+2 CODE XONG, build 0 lỗi (2026-09-18)
@@ -25,8 +34,13 @@ Process .NET 9 độc lập tại `D:\Delta\DeltaSoft\GpsAPI\` (tiền lệ Draf
   - `appsettings.json` — ✅ `EupfinV3BaseUrl/ApiKey/ConsumerId` đã điền (copy từ `NewAPI/API/appsettings.Development.json`, giá trị thật). ⚠ Password `gps_app` trong connection string **VẪN LÀ PLACEHOLDER `CHANGE_ME_StrongPassw0rd!`** — anh xác nhận 2026-09-18 chưa đổi lúc chạy SQL, chủ động để vậy test trước, **sẽ đổi sau**. PHẢI đổi cả 2 chỗ đồng bộ trước khi go-live thật (mật khẩu login SQL Server + connection string này).
 - ✅ Test data thật đã chèn (`TestData_Insert_20260918.sql`, `GpsAPI/`) — Pantos (`Customer.Id=595`), biển `15C-126.60`, token `delta-pantos-...`, gọi qua đúng 2 SP `gps.SP_CustomerVehicle_Add`/`SP_CustomerToken_Create` (không insert thẳng bảng).
 - ✅ Test thủ công `POST /api/gps/realtime` qua instance đang chạy của anh (curl trực tiếp `https://localhost:44370`, không đụng process anh đang test bằng Swagger) — **XÁC NHẬN ĐÚNG**: không header → 401 ProblemDetails chuẩn (`[ApiController]` tự bọc, cố tình trả 401 GIỐNG NHAU cho thiếu header lẫn token sai — tránh lộ thông tin cho kẻ tấn công); có đúng token+biển số → 200, trả dữ liệu GPS THẬT từ EUP. Lỗi 401 anh gặp lúc test Swagger ban đầu là do thiếu/sai header trên UI, KHÔNG PHẢI bug code.
-1. ⬜ Giai đoạn 3: BE endpoint quản lý trong NewAPI (CRUD gán biển số/token) + tab "GPS" trong `modal-customer`.
-2. ⬜ Test E2E + xử lý hạ tầng DDoS + **đổi mật khẩu `gps_app` thật** trước khi go-live KH thật.
+- ✅ **Giai đoạn 3 ĐÃ CODE (2026-09-21)** — dùng ĐÚNG 5 SP đã có sẵn trong `gps` schema (không cần SQL mới):
+  - BE (NewAPI): `Models/Gps/GpsCustomerVehicle.cs`+`GpsCustomerToken.cs`, `Interfaces/Gps/IGpsCustomer.cs`, `Repositories/Gps/GpsCustomerRepository.cs`, `Controllers/Gps/GpsCustomerController.cs` (GetVehicles/AddVehicle/DeleteVehicle/GetToken/CreateToken). Token sinh ở BE dạng `delta-{customerId}-{random 32 ký tự}` (KHÔNG lookup tên/mã KH để làm đẹp — theo nguyên tắc Simplicity First). Chuẩn hóa biển số clone ĐÚNG `NormalizeForMatch` của `EupfinController.cs`. Permission mới **F050** (VIEW/CREATE/DELETE) — đã thêm vào `FunctionCode.cs`, **CHƯA có SQL grant** (Functions/ActionInFunctions/Permissions) — cần soạn + anh chạy trước khi phân quyền được. `dotnet build` 0 lỗi.
+  - FE: `shared/models/danhmuc/gps-customer.model.ts`, `shared/services/danhmuc/gps-customer.service.ts`, thêm tab "GPS" vào `modal-customer.component.html/ts` (đúng khuôn `<tabset>` có sẵn, giống tab "Địa điểm giao nhận hàng") — bảng biển số (thêm/xóa) + ô token che bớt (nút Hiện/Ẩn) + nút Tạo token mới (confirm vì thu hồi token cũ ngay). Chỉ hiện khi `entity.id>0` + có quyền `F050_VIEW`. `ng build` 0 lỗi.
+1. ⬜ **SQL đã soạn, CHỜ ANH DUYỆT + CHẠY**: `NewAPI/Migration_GpsAPI_F050_Grant_20260921.sql` (Functions IsMenu=0 + ActionInFunctions + Permissions Admin, VIEW/CREATE/DELETE) — chưa chạy, chưa ai có quyền test tab GPS thật. Cần RELOGIN sau khi chạy.
+2. ⬜ Test E2E: gán biển số qua tab GPS → gọi GpsAPI đúng biển số/token → nhận vị trí; tạo token mới → token cũ bị thu hồi (gọi lại 401).
+3. ⬜ Tắt API build lại (khóa DLL) + `ng build` production + deploy.
+4. ⬜ Xử lý hạ tầng DDoS + **đổi mật khẩu `gps_app` thật** trước khi go-live KH thật.
 
 ## ★ Đọc email ETC tự động (VETC/ePass) để cập nhật vé ETC thực tế — Ý TƯỞNG ĐÃ CHỐT, CHƯA CODE (2026-09-16)
 Nhà mạng ETC (VETC/ePass) tự gửi email khi xe qua trạm (mailbox Gmail công ty nhận). Mục tiêu: đọc email tự động, ghi nhận vé ETC thực tế (biển số/trạm/giờ/tiền), sau này đối chiếu với ETC ước tính hiện có (`DispatchOrderFCLEtc`, sinh từ Vietmap).
@@ -112,6 +126,10 @@ Anh hỏi nút "CHỐT LỆNH" hiện theo quyền gì → rà `SP_DispatchOrder
    - ✅ Pilot Đợt 2 (1/4 điểm, DispatchOrder cũ) cắm cùng lúc — xem mục 5.
    - ⬜ CHỜ: anh publish lại BE (tắt API cũ → build/deploy → chạy) để pilot có hiệu lực trên môi trường thật. Chi tiết: `done.md` mục "dGas3 — đổi driverCode...".
 9. ⚠ **2026-09-19 — XÁC NHẬN pilot CHƯA chạy trên server thật**: anh hỏi "sao chưa thấy lệnh nào chốt". Điều tra (read-only): `Tbl_FuelDgas3Outbound` = 0 dòng, nhưng `DispatchOrder` có **930 lệnh** `Status IN (6,7)` với `ClosingDate >= 2026-09-15` (ngày pilot commit), gần nhất tối 2026-09-18. Làm rõ luôn 1 điểm dễ nhầm: `@Type` truyền vào `SP_DispatchOrder_UpdateState` là **mã HÀNH ĐỘNG** (0-11, controller check `Status==8||11`), SP tự map nội bộ sang cột `Status` THẬT khác (`@Type=8→Status=6`, `@Type=11→Status=7`) — không phải bug, chỉ là 2 khái niệm trùng tên "Status". Kết luận: 930 lệnh chốt thật đã chạy qua bản BE CŨ (chưa có hook gọi `SyncDispatchOrderClosedAsync`) vì đúng bước "⬜ CHỜ publish lại BE" ở trên vẫn chưa làm — server hiện tại vẫn là build trước `127352e`. ⬜ CHỜ anh tắt API cũ → build/deploy → chạy lại; 930 lệnh đã chốt TRƯỚC lúc đó sẽ KHÔNG tự bù (pilot chỉ bắt sự kiện tại thời điểm chốt, chưa có job quét ngược) — cần script riêng nếu muốn gửi bù, CHƯA LÀM.
+10. ⚠ **2026-09-21 — anh đã deploy nhưng `Tbl_FuelDgas3Outbound` VẪN 0 dòng → tìm ra BUG, ĐÃ SỬA BE, CHỜ deploy lại**: SP `SP_FuelDgas3Outbound_Create` và `SP_FuelDgas3Completion_Create` khai báo `@Id INT OUTPUT` KHÔNG có default, còn 2 repo không truyền `@Id` → SQL Server báo "expects parameter '@Id', which was not supplied" (đã dựng lại đúng lỗi bằng proc tạm tempdb), lỗi bị `catch {}` ở `DispatchOrderController.UpdateState` nuốt nên chốt lệnh vẫn thành công còn bảng trống. Không hỏng dữ liệu, dGas3 chưa nhận gì. **Fix BE-only** (không đụng SP): thêm `p.Add("@Id", dbType: Int32, direction: Output)` vào `FuelDgas3OutboundRepository.CreateAsync` + `FuelDgas3CompletionRepository.CreateAsync`; compile sạch (2 lỗi còn lại chỉ là VS/IIS Express giữ khóa DLL). Rà 7 SP dGas3 còn lại: không SP nào khác thiếu tham số bắt buộc.
+   - ⬜ Tắt API → `dotnet publish`/deploy lại → chốt thử 1 lệnh vận chuyển CŨ (`DispatchOrder`) → xem `Tbl_FuelDgas3Outbound` / màn F047. Các lệnh chốt từ lúc deploy tới giờ KHÔNG có dòng outbound (không tự bù) — cần chốt lại hoặc script gửi bù.
+   - ⚠ Chiều dGas3→ERP (§3 `Completions`) cũng dùng `SP_FuelDgas3Completion_Create` nên cùng bị lỗi trước bản sửa này; theo tài liệu đối tác họ tự gửi lại khi 5xx.
+   - ⚠ Hook vẫn CHỈ cắm 1/4 điểm (DispatchOrder cũ). Lệnh **FCL (cũ + v2) chốt sáng 2026-09-21 (10:29–10:55, `Status=6`) và AdditionalFee chưa có hook** ⇒ chưa gửi dGas3 dù đã chốt.
 
 ## ▶ SP_Report01 (BC01) tối ưu tốc độ + bản cho site nháp bỏ userId — SQL, ĐANG A/B TEST (2026-09-07)
 `SP_Report01` (báo cáo doanh thu/chi phí theo lô) chậm ~12s. Dựng `SP_Report01_V2` **song song** để A/B test — kết quả PHẢI identical, chỉ nhanh hơn. KHÔNG đụng `SP_Report01`.

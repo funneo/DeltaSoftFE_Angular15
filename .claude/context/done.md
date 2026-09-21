@@ -1,5 +1,31 @@
 # Completed Features
 
+## Phiên 2026-09-21 — GpsAPI Giai đoạn 3 + fix dGas3 `@Id OUTPUT` + list FCL mới (Export/Thanh toán/toolbar) — CHƯA COMMIT (bỏ qua phần gọi thử Eupfin API theo yêu cầu anh)
+
+### 1. GpsAPI Giai đoạn 3 — quản lý biển số/token GPS cho KH (BE NewAPI + FE tab "GPS" trong `modal-customer`)
+- **BE** (`NewAPI/API`): `Models/Gps/GpsCustomerVehicle.cs`+`GpsCustomerToken.cs`, `Interfaces/Gps/IGpsCustomer.cs`, `Repositories/Gps/GpsCustomerRepository.cs`, `Controllers/Gps/GpsCustomerController.cs` (GetVehicles/AddVehicle/DeleteVehicle/GetToken/CreateToken) — dùng ĐÚNG 5 SP `gps.*` đã có, không cần SQL mới. Token sinh ở BE `delta-{customerId}-{random 32}` (`RandomNumberGenerator`); chuẩn hóa biển số clone `EupfinController.NormalizeForMatch`. Gate `[ClaimRequirement(FunctionCode.F050, VIEW|CREATE|DELETE)]`; `FunctionCode.F050` đã thêm.
+- **FE**: `shared/models/danhmuc/gps-customer.model.ts`, `shared/services/danhmuc/gps-customer.service.ts`, tab "GPS" trong `modal-customer.component.html/ts` (bảng biển số thêm/xóa, ô token che bớt + Hiện/Ẩn, nút "Tạo token mới" có confirm vì thu hồi token cũ ngay). Chỉ hiện khi `entity.id>0` và có `F050_VIEW` (Admin bypass).
+- **Giải thích với anh**: F050 = permission bucket KHÔNG phải màn hình/menu riêng — FE chỉ hiện tab, BE kiểm quyền; phân quyền qua màn Phân quyền có sẵn.
+- **SQL soạn, CHƯA chạy**: `NewAPI/Migration_GpsAPI_F050_Grant_20260921.sql` (Functions IsMenu=0 + ActionInFunctions + Permissions Admin). Build: `dotnet build` 0 lỗi, `tsc`/`ng build` sạch.
+
+### 2. dGas3 — anh deploy API rồi mà `Tbl_FuelDgas3Outbound` vẫn 0 dòng → tìm ra + sửa bug
+- **Điều tra read-only**: DB có đủ bảng/SP dGas3; DLL publish 2026-09-19 có hook `SyncDispatchOrderClosedAsync`; lệnh `DispatchOrder` chốt sáng nay đều có dầu FeeId 666 > 0 + lái xe có `EmployeeCode` ⇒ đúng điều kiện gửi nhưng không có dòng.
+- **Nguyên nhân**: `SP_FuelDgas3Outbound_Create` và `SP_FuelDgas3Completion_Create` khai báo `@Id INT OUTPUT` không default; 2 repo không truyền `@Id` → lỗi "expects parameter '@Id', which was not supplied" (dựng lại bằng proc tạm tempdb, không đụng DB thật). Bị `catch {}` ở `DispatchOrderController.UpdateState` nuốt.
+- **Ảnh hưởng**: không hỏng dữ liệu, không insert dở, nghiệp vụ chốt lệnh vẫn OK, dGas3 chưa nhận request nào; chỉ là chưa báo nhu cầu dầu.
+- **Fix BE-only (không đụng SP)**: thêm `p.Add("@Id", dbType: DbType.Int32, direction: ParameterDirection.Output)` vào `FuelDgas3OutboundRepository.CreateAsync` và `FuelDgas3CompletionRepository.CreateAsync`. Compile sạch (2 lỗi copy DLL do VS/IIS Express giữ khóa). Rà lại toàn bộ tham số bắt buộc của 7 SP dGas3: không SP nào khác lệch.
+- **CÒN**: deploy lại API + chốt thử 1 lệnh cũ; hook mới cắm 1/4 điểm — FCL (cũ+v2) và AdditionalFee chưa có (xem todo.md).
+
+### 3. List FCL MỚI `dispatch-order-fcl-new` — bê Export + Thanh toán, sắp lại toolbar, fill chiều dọc (FE-only, `tsc` 0 lỗi, KHÔNG đụng list cũ)
+- **Export + Thanh toán**: `export()`, `payment()` và `modal-phieu-chi-lenh` đã có sẵn trong component mới (copy từ list cũ), chỉ thiếu nút ở template. Thêm dropdown Export ("Tổng hợp"/"Chi tiết", gate `FCL_EXPORT`, cùng API `getExport`, cùng tên file Excel + danh sách cột lược) và nút "Thanh toán" (không gate quyền, như cũ) — dùng class `dof-*` (SCSS mới đã có sẵn `dof-dropdown`, `dof-btn--success/--warning`); bỏ divider giữa 2 mục dropdown.
+- **Toolbar**: hàng 1 = tiêu đề + các nút action (phải); hàng 2 = bộ lọc (khoảng ngày, chi nhánh, lái xe, từ khóa) — sắp lại thứ tự trong HTML, `.dof-toolbar__filters { flex: 1 1 100% }`.
+- **Fill chiều dọc**: trước đây `height: calc(100vh - 90px)` cứng → hở đáy. Nay trang tự đo mép trên (`getBoundingClientRect().top`) rồi `pageHeight = innerHeight − top − 5` (`ngAfterViewInit` + `@HostListener('window:resize')`, `[style.height.px]`); CSS mặc định fallback `calc(100vh - 62px)`.
+- **`.dof-page`**: padding 10→5px, gap 10→5px (anh yêu cầu).
+- **Lưu ý**: `export()` nguyên xi list cũ (không truyền `isLegacy`) → chưa xác nhận BE có lọc hay Excel lẫn lệnh cũ.
+
+### 4. Tra cứu / không đổi code
+- Nút "Tổng kết" trang `driver-fuel-approval` (modal `modal-fuel-summary`): chọn xe → `POST Dispatchorder/GetForSummary` → `SP_DispatchOrder_GetForSummary`; lưu → `DriverFuelApproval/Create` với `gType='1'` → `SP_DriverFuelApproval_Create2`; chốt phiếu → `SP_DriverFuelApproval_Approved`; xem → `SP_DriverFuelApproval_Summary_GetById`; hủy → `SP_DriverFuelApproval_Cancel`.
+- Yêu cầu "bổ sung cấp dầu từ lệnh FCL cũ → mới": không xác định được nút cụ thể trong FCL cũ (không có nút "Cấp dầu"; modal v2 đã có đủ trường dầu) — chờ anh chỉ rõ, chưa code.
+
 ## FCL v2 — Lỗi "Could not convert string to DateTime" khi Lưu/Duyệt B1 lệnh có vé ETC ngoài kế hoạch — FIX FE, CHƯA ng build — 2026-09-15
 Anh báo lúc thêm "trạm cấn trừ vé ETC" (vé ngoài kế hoạch, trừ lương lái xe) rồi bấm Lưu lệnh → lỗi `Could not convert string to DateTime: 14/09/2026 04:45:00. Path 'item.listEtcPenalty[0].passedDate'`.
 - **Nguyên nhân**: `listEtcPenalty[].passedDate` được `_hydrateEtcPenaltyDates()` format sang `dd/MM/yyyy HH:mm:ss` (DATETIMEVN) để hiển thị daterangepicker. Khi `updateWithTo(this.entity)`/`createWithTo(this.entity)` gửi nguyên `entity` lên `UpdateWithTO`/`CreateWithTO`, ASP.NET model-bind cố parse string đó thành `DateTime?` → lỗi ngay ở bước deserialize (trước khi vào controller) → chặn LUÔN toàn bộ request lưu lệnh, không chỉ riêng phần ETC.
