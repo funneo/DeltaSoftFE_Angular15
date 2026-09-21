@@ -378,6 +378,61 @@
                   </div>
                 </div>
               </tab>
+              <tab heading="GPS" *ngIf="entity?.id>0 && gpsViewPermission">
+                <div class="form-group">
+                  <label class="col-sm-2 control-label">Token API</label>
+                  <div class="col-sm-6">
+                    <input type="text" class="form-control" readonly
+                      [value]="gpsToken ? (showGpsToken ? gpsToken.tokenApi : maskGpsToken(gpsToken.tokenApi)) : 'Chưa có token'" />
+                  </div>
+                  <div class="col-sm-4">
+                    <button *ngIf="gpsToken" type="button" class="btn btn-default btn-sm" (click)="showGpsToken = !showGpsToken">
+                      <i class="fa" [ngClass]="showGpsToken ? 'fa-eye-slash' : 'fa-eye'"></i> {{showGpsToken ? 'Ẩn' : 'Hiện'}}
+                    </button>
+                    <button *ngIf="gpsCreatePermission" type="button" class="btn btn-primary btn-sm" (click)="confirmCreateGpsToken()">
+                      <i class="fa fa-refresh"></i> {{gpsToken ? 'Tạo token mới' : 'Tạo token'}}
+                    </button>
+                  </div>
+                </div>
+                <div class="form-group" *ngIf="gpsCreatePermission">
+                  <label class="col-sm-2 control-label">Thêm biển số</label>
+                  <div class="col-sm-4">
+                    <input type="text" class="form-control" [(ngModel)]="newGpsPlate" name="newGpsPlate"
+                      placeholder="Nhập biển số xe, vd: 29C-522.94" />
+                  </div>
+                  <div class="col-sm-2">
+                    <button type="button" class="btn btn-sm btn-primary" (click)="addGpsVehicle()">Thêm</button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <div class="table-responsive fixed-height" style="padding-left:15px; padding-right:15px">
+                    <table class="table table-bordered table-striped table-hover">
+                      <thead>
+                        <tr>
+                          <th>Biển số</th>
+                          <th>Ngày gán</th>
+                          <th>Tác vụ</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let item of listGpsVehicles">
+                          <td>{{item.licensePlate}}</td>
+                          <td>{{item.createdDate | date:'dd/MM/yyyy HH:mm'}}</td>
+                          <td>
+                            <button *ngIf="gpsDeletePermission" type="button" class="btn btn-warning btn-sm"
+                              (click)="confirmDeleteGpsVehicle(item.id)">
+                              <i class="fa fa-trash"></i> Xóa
+                            </button>
+                          </td>
+                        </tr>
+                        <tr *ngIf="listGpsVehicles?.length == 0">
+                          <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </tab>
             </tabset>
           </div>
           <!-- /.box-body -->

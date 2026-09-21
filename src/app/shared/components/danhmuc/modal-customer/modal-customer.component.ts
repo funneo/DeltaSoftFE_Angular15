@@ -48,6 +48,8 @@ import { ModalCustomerTollRoutesComponent } from '../modal-customer-toll-routes/
 import { CustomerTollRoutesService } from '@app/shared/services/danhmuc/customer-toll-routes.service';
 import { CustomerTollRoutes } from '@app/shared/models/danhmuc/customer-toll-routes';
 import { Ports } from '@app/shared/models/danhmuc/ports.model';
+import { GpsCustomerService } from '@app/shared/services/danhmuc/gps-customer.service';
+import { GpsCustomerVehicle, GpsCustomerToken } from '@app/shared/models/danhmuc/gps-customer.model';
 // import * as moment from 'moment';
 
 @Component({
@@ -73,6 +75,12 @@ export class ModalCustomerComponent implements OnInit {
   userLoged?: Profile;
   updatePermission = false;
   updateLocationPermission = false;
+  gpsViewPermission = false;
+  gpsCreatePermission = false;
+  gpsDeletePermission = false;
+  listGpsVehicles: GpsCustomerVehicle[] = [];
+  gpsToken: GpsCustomerToken = null;
+  newGpsPlate = '';
   // public dateTimeOptions = this._utilityService.dateTimeOptionNoTimes;
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
@@ -90,13 +98,17 @@ export class ModalCustomerComponent implements OnInit {
     private customerLocationsService: CustomerLocationsService,
     private customerRoutesServices: CustomerRoutesService,
     private csNormalRouteServies: CustomerNormalRoutesService,
-    private otherService: OtherCategoriesService
+    private otherService: OtherCategoriesService,
+    private gpsCustomerService: GpsCustomerService
   ) {
     this.userLoged = this._authService.getLoggedInUser();
     this._accept = this.userLoged.isAdmin || this.userLoged.employeeId == "21" || this.userLoged.employeeId == "369";
     this.updatePermission = _authService.hasPermission("CUSTOMER_UPDATE");
     this.updateLocationPermission = _authService.hasPermission("CUSTOMER_ACCOUNT");
     this._acceptOther = this.userLoged.isAdmin || _authService.hasPermission("CUSTOMER_ACCEPT");
+    this.gpsViewPermission = this.userLoged.isAdmin || _authService.hasPermission("F050_VIEW");
+    this.gpsCreatePermission = this.userLoged.isAdmin || _authService.hasPermission("F050_CREATE");
+    this.gpsDeletePermission = this.userLoged.isAdmin || _authService.hasPermission("F050_DELETE");
   }
 
   ngOnInit(): void {
@@ -266,6 +278,10 @@ export class ModalCustomerComponent implements OnInit {
           this.loadLocations();
           this.loadRoutes();
           this.loadNormalRoutes();
+          if (this.gpsViewPermission) {
+            this.loadGpsVehicles();
+            this.loadGpsToken();
+          }
           this.flagXem = flag;
           if (!this._accept && this.entity.status) this.flagXem = true;
           this.flagSave = false;
@@ -524,5 +540,71 @@ export class ModalCustomerComponent implements OnInit {
 
   closeModalRoutes() {
     this.viewRoutes = false;
+  }
+
+  loadGpsVehicles() {
+    this.gpsCustomerService.getVehicles(this.entity.id).subscribe((res: ResponseValue<GpsCustomerVehicle[]>) => {
+      this.listGpsVehicles = (res.code == "200" || res.code == "201") ? res.data : [];
+    });
+  }
+
+  addGpsVehicle() {
+    if (!this.newGpsPlate || !this.newGpsPlate.trim()) return;
+    const item: GpsCustomerVehicle = { customerId: this.entity.id, licensePlate: this.newGpsPlate.trim() };
+    this.gpsCustomerService.addVehicle(item).subscribe((res: ResponseValue<any>) => {
+      if (res.code == "200" || res.code == "201") {
+        this.newGpsPlate = '';
+        this.loadGpsVehicles();
+        this._notificationService.printSuccessMessage(MessageContstants.CREATED_OK_MSG);
+      } else {
+        this._notificationService.printErrorMessage(res.message || MessageContstants.CREATED_ERR_MSG);
+      }
+    });
+  }
+
+  confirmDeleteGpsVehicle(id: number): void {
+    this._notificationService.printConfirmationDialog(MessageContstants.CONFIRM_DELETE_MSG, () => this.deleteGpsVehicle(id));
+  }
+
+  deleteGpsVehicle(id: number) {
+    this.gpsCustomerService.deleteVehicle(id, this.entity.id).subscribe((res: ResponseValue<any>) => {
+      if (res.code == "200" || res.code == "201") {
+        this.loadGpsVehicles();
+        this._notificationService.printSuccessMessage(MessageContstants.DELETED_OK_MSG);
+      } else {
+        this._notificationService.printErrorMessage(MessageContstants.GETDATA_ERR_MSG);
+      }
+    });
+  }
+
+  showGpsToken = false;
+  maskGpsToken(token: string): string {
+    if (!token) return '';
+    if (token.length <= 14) return token;
+    return token.substring(0, 10) + '••••••••' + token.substring(token.length - 4);
+  }
+
+  loadGpsToken() {
+    this.gpsCustomerService.getToken(this.entity.id).subscribe((res: ResponseValue<GpsCustomerToken>) => {
+      this.gpsToken = (res.code == "200") ? res.data : null;
+    });
+  }
+
+  confirmCreateGpsToken(): void {
+    const msg = this.gpsToken
+      ? "Tạo token mới sẽ VÔ HIỆU HÓA token cũ ngay lập tức. Xác nhận tạo mới?"
+      : "Xác nhận tạo token GPS cho khách hàng này?";
+    this._notificationService.printConfirmationDialog(msg, () => this.createGpsToken());
+  }
+
+  createGpsToken() {
+    this.gpsCustomerService.createToken(this.entity.id).subscribe((res: ResponseValue<GpsCustomerToken>) => {
+      if (res.code == "200" || res.code == "201") {
+        this.gpsToken = res.data;
+        this._notificationService.printSuccessMessage(MessageContstants.CREATED_OK_MSG);
+      } else {
+        this._notificationService.printErrorMessage(MessageContstants.CREATED_ERR_MSG);
+      }
+    });
   }
 }
