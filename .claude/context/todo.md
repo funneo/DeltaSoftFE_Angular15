@@ -1,13 +1,11 @@
 # Pending / In-Progress Work
 
-## ▶ Phiên 2026-09-22 — TollStation match review, 3 SQL FCL/CP03 chờ chạy, VETC Phase 1 chờ tài khoản — chi tiết done.md
-1. ⬜ **Anh duyệt** `NewAPI/TollStation_MatchReview_20260922.xlsx` (điền cột `ChonLam`/`GhiChu` từng dòng) → gửi lại để soạn `Migration_TollStation_LinkNewLocations_<date>.sql` (UPDATE `StartLocation`/`EndLocation`).
-2. ⬜ Chạy `NewAPI/Migration_Reports_CP03Detail_20260922.sql` (2 SP mới `SP_ReportCP03Detail`/`SP_ReportCP03Diff`, song song — không bắt buộc nếu chỉ cần mục 3 bên dưới).
-3. ⬜ Chạy `NewAPI/Migration_Reports_CP03_FixDiffAnchor_20260922.sql` (ALTER `SP_ReportCP03` — fix chênh lệch ảo do join sai nhóm phí ở nhánh ELSE) — **nên chạy sớm**, đây là fix bug đang ảnh hưởng báo cáo thật.
-4. ⬜ Chạy `NewAPI/Migration_FCL_UnlockAfterDeny_20260922.sql` (ALTER `SP_DispatchOrderFCL_UpdateWithTO` — tự reset `IsDeny/Feedback` khi điều vận lưu lại lệnh bị từ chối) — cần chạy để FE badge/nút "sửa lại" có tác dụng thật.
-5. ⬜ **VETC**: anh gửi VETC danh sách tài khoản giao thông + IP public server → nhận Username/Password → điền `appsettings.Development.json` (dev) + `appsettings.Production.json` (prod) mục `VetcApi` (BaseUrl đã có sẵn) → test thật trang "Đối chiếu VETC" trong list FCL mới.
-6. ⏸ VETC Phase 2 (polling tự động + lưu DB + tự gắn cờ nghi né trạm) — CHƯA làm, chờ Phase 1 chạy ổn với dữ liệu thật trước.
-7. ⬜ `ng build` + deploy FE (badge/filter "Bị từ chối", banner modal, trang `etc-reconciliation`, nút "Đối chiếu VETC"); deploy lại API (VetcApiController mới + appsettings đổi) sau khi có tài khoản VETC — không bắt buộc gấp vì thiếu creds thì API tự trả lỗi 400 rõ ràng, không crash.
+## ▶ Phiên 2026-09-22 — TollStation match review chờ duyệt, VETC Phase 1 chờ tài khoản — chi tiết done.md
+1. ✅ Đã chạy cả 3 SQL (2026-09-22, verify qua `sys.objects.modify_date` read-only): `Migration_Reports_CP03_FixDiffAnchor_20260922.sql` (`SP_ReportCP03` sửa 10:52), `Migration_Reports_CP03Detail_20260922.sql` (`SP_ReportCP03Detail` tạo 10:17 — riêng `SP_ReportCP03Diff` cùng file không thấy tồn tại, có thể chỉ chạy phần đầu; không sao vì SP này chỉ là bản tham khảo phụ, hướng chính đã dùng ALTER `SP_ReportCP03`), `Migration_FCL_UnlockAfterDeny_20260922.sql` (`SP_DispatchOrderFCL_UpdateWithTO` sửa 15:09).
+2. ⬜ **Anh duyệt** `NewAPI/TollStation_MatchReview_20260922.xlsx` (điền cột `ChonLam`/`GhiChu` từng dòng) → gửi lại để soạn `Migration_TollStation_LinkNewLocations_<date>.sql` (UPDATE `StartLocation`/`EndLocation`).
+3. ⬜ **VETC**: anh gửi VETC danh sách tài khoản giao thông + IP public server → nhận Username/Password → điền `appsettings.Development.json` (dev) + `appsettings.Production.json` (prod) mục `VetcApi` (BaseUrl đã có sẵn) → test thật trang "Đối chiếu VETC" trong list FCL mới.
+4. ⏸ VETC Phase 2 (polling tự động + lưu DB + tự gắn cờ nghi né trạm) — CHƯA làm, chờ Phase 1 chạy ổn với dữ liệu thật trước.
+5. ⬜ `ng build` + deploy FE (badge/filter "Bị từ chối", banner modal, trang `etc-reconciliation`, nút "Đối chiếu VETC") — SQL đã chạy nên có thể deploy FE ngay để test tính năng "sửa lại lệnh bị từ chối" + báo cáo CP03 hết chênh lệch ảo; deploy lại API (VetcApiController mới) khi tiện, chưa gấp vì thiếu creds VETC thì API tự trả lỗi 400 rõ ràng, không crash.
 
 ## ★★ MỐC 2026-09-20 — anh xác nhận ĐÃ DEPLOY HẾT (FE + các mục chờ deploy trước đó)
 `ng build --configuration production` sạch (exit 0, chỉ warning cũ) rồi anh đã đẩy lên. ⇒ Mọi dòng `⬜ ng build` / `⬜ deploy` ở các section FCL từ 2026-09-03 → 2026-09-18 bên dưới (lệnh cũ=thầu phụ/mới=xe nhà, Tránh trạm/GPS-EUP/ẩn Km, vé ETC ngoài kế hoạch, VAT 8% ETC, điểm đi/đến đầy đủ, nút xóa chi phí, bỏ listEtcPenalty, list FCL cũ isLegacy=1) coi như XONG. Anh xác nhận ĐÃ CHẠY cả 2 SQL (`Migration_DispatchOrderFCL_EtcPenalty_20260908.sql`, `Migration_DispatchOrderFCLEtc_Vat8Percent_20260911.sql`) ngày 2026-09-20. Còn lại chỉ test E2E.
