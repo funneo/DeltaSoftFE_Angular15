@@ -1,6 +1,7 @@
 import { DatePipe } from "@angular/common";
 import { HttpParams } from "@angular/common/http";
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild } from "@angular/core";
+import { Router } from "@angular/router";
 import { ModalClosingFclProcessComponent } from "@app/shared/components/transports/modal-closing-fcl-process/modal-closing-fcl-process.component";
 import { ModalDispatchOrderFclV2Component } from "@app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component";
 import { ModalEupTollCheckComponent } from "@app/shared/components/transports/modal-eup-toll-check/modal-eup-toll-check.component";
@@ -75,6 +76,7 @@ export class DispatchOrderFclNewComponent implements OnInit, AfterViewInit {
     { value: 3, text: "Chờ duyệt" },
     { value: 4, text: "Chờ chốt" },
     { value: 5, text: "Đã chốt" },
+    { value: 6, text: "Bị từ chối" },
   ];
   statusSelected?: number = 0;
   filterColumns: { [key: string]: string } = {};
@@ -107,8 +109,14 @@ export class DispatchOrderFclNewComponent implements OnInit, AfterViewInit {
     private branchService: BranchService,
     private exportService: ExportService,
     private cdr: ChangeDetectorRef,
-    private employeeService: EmployeeService
+    private employeeService: EmployeeService,
+    private router: Router
   ) { }
+
+  // Đối chiếu ETC thực tế (Phase 1, 2026-09-22): mở trang riêng, truyền RefNo qua query param.
+  openEtcReconciliation(item: DispatchOrderFcl): void {
+    this.router.navigate(['/main/transports/etc-reconciliation'], { queryParams: { refNo: item.refNo } });
+  }
 
   ngOnInit(): void {
     this.userLoged = this._authService.getLoggedInUser();
@@ -280,7 +288,8 @@ export class DispatchOrderFclNewComponent implements OnInit, AfterViewInit {
           this.statusSelected == 2 ? data.status == 2 :
             this.statusSelected == 3 ? data.status == 3 :
               this.statusSelected == 4 ? data.status == 5 :
-                data.status == 6;   // statusSelected == 5 (Đã chốt)
+                this.statusSelected == 5 ? data.status == 6 :
+                  !!data.isDeny;   // statusSelected == 6 (Bị từ chối)
       });
     }
     this.listFilter = this.listFilter.filter((item) => {
@@ -472,6 +481,7 @@ export class DispatchOrderFclNewComponent implements OnInit, AfterViewInit {
   // Class badge trạng thái cho giao diện hiện đại
   // Workflow v2: nhãn status tính ở FE (không phụ thuộc rStatus của BE — đang lệch legacy).
   getStatusText(item: DispatchOrderFcl): string {
+    if (item.isDeny) return 'Bị từ chối';
     switch (item.status) {
       case 1: return 'Đã giao lái xe';
       case 2: return 'Lái xe đã nhận';
@@ -483,6 +493,7 @@ export class DispatchOrderFclNewComponent implements OnInit, AfterViewInit {
   }
 
   getStatusClass(item: DispatchOrderFcl): string {
+    if (item.isDeny) return 'dof-badge dof-badge--deny';
     switch (item.status) {
       case 1: return 'dof-badge dof-badge--sent';
       case 2: return 'dof-badge dof-badge--received';

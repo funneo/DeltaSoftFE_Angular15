@@ -22,6 +22,12 @@
       <form class="fcl-v2-form form-horizontal" novalidate #addEditForm="ngForm"
         (ngSubmit)="saveChange(addEditForm)" *ngIf="entity">
       <div class="fcl-v2-body">
+          <div class="alert alert-danger" *ngIf="entity.isDeny" style="margin: 8px 14px;">
+            <i class="fa fa-exclamation-triangle"></i>
+            Lái xe <b>{{ entity.driverName }}</b> đã <b>từ chối nhận</b> lệnh này.
+            <span *ngIf="entity.feedback"> Lý do: <i>{{ entity.feedback }}</i>.</span>
+            Điều chỉnh lại thông tin (tài xế/xe/tuyến đường/công việc...) rồi Lưu — lệnh sẽ tự động gửi lại cho tài xế.
+          </div>
           <div class="box-body">
             <tabset>
               <tab heading="Thông tin chung">

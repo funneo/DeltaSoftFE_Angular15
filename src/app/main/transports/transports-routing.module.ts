@@ -24,6 +24,8 @@ const routes: Routes = [
   { path: 'shippingopman', loadChildren: () => import('./shipping-task-opman/shipping-task-opman.module').then(m => m.ShippingTaskOpmanModule), data: { functionCode: 'F010' }, canActivate: [AuthGuard] },
   { path: 'shippingcs', loadChildren: () => import('./shipping-task-cs/shipping-task-cs.module').then(m => m.ShippingTaskCsModule), data: { functionCode: 'WORKFLOW' }, canActivate: [AuthGuard] },
   { path: 'transport-order', loadChildren: () => import('./dispatch-order-fcl-new/dispatch-order-fcl-new.module').then(m => m.DispatchOrderFclNewModule), data: { functionCode: 'DISPATCHORDER' }, canActivate: [AuthGuard] },
+  // Đối chiếu ETC thực tế (Phase 1, 2026-09-22) — chưa có Function/menu riêng (pilot), vào qua nút ở list FCL mới.
+  { path: 'etc-reconciliation', loadChildren: () => import('./etc-reconciliation/etc-reconciliation.module').then(m => m.EtcReconciliationModule), data: { functionCode: 'DISPATCHORDER' }, canActivate: [AuthGuard] },
 ];
 
 @NgModule({

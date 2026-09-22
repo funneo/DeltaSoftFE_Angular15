@@ -123,7 +123,7 @@
               <input type="checkbox" [checked]="item.checked" />
             </label>
           </td>
-          <td><span [class]="getStatusClass(item)">{{getStatusText(item)}}</span></td>
+          <td><span [class]="getStatusClass(item)" [title]="item.isDeny ? ('Lý do: ' + (item.feedback || '')) : ''">{{getStatusText(item)}}</span></td>
           <td><a class="dof-link" (click)="edit(true, item.refNo); $event.stopPropagation()">{{item.refNo}}</a></td>
           <td><b>{{item.referCode}}</b></td>
           <td>{{item.createdDate | date:'dd/MM/yyyy'}}</td>
@@ -153,6 +153,10 @@
             <button *ngIf="item.startedDate && item.finishedDate" type="button" class="dof-btn dof-btn--warning dof-btn--sm"
               (click)="checkEup(item); $event.stopPropagation()">
               <i class="fa fa-road"></i> Check EUP
+            </button>
+            <button *ngIf="item.startedDate" type="button" class="dof-btn dof-btn--sm"
+              (click)="openEtcReconciliation(item); $event.stopPropagation()">
+              <i class="fa fa-balance-scale"></i> Đối chiếu VETC
             </button>
           </td>
         </tr>

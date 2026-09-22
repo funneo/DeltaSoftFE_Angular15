@@ -1,0 +1,117 @@
+<section class="content-header">
+  <h1>Đối chiếu ETC thực tế (VETC)</h1>
+</section>
+<section class="content">
+  <div class="box box-primary">
+    <div class="box-body">
+      <div class="form-inline etc-search-bar">
+        <label>Số lệnh (RefNo)&nbsp;</label>
+        <input type="text" class="form-control" [(ngModel)]="refNoInput" name="refNoInput"
+          placeholder="VD: FCL-HN260922/0001" (keyup.enter)="search()" />
+        <button type="button" class="btn btn-primary" (click)="search()">
+          <i class="fa fa-search"></i> Đối chiếu
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div class="box box-info" *ngIf="result">
+    <div class="box-header with-border">
+      <h3 class="box-title">
+        Lệnh {{ result.refNo }} — Biển số <b>{{ result.vehiclePlate }}</b>
+      </h3>
+      <p class="etc-period">Khung thời gian đối chiếu: {{ result.periodFrom }} → {{ result.periodTo }}</p>
+    </div>
+    <div class="box-body">
+      <div class="row">
+        <!-- Cột trái: ETC ước tính (sinh từ Vietmap khi tạo lệnh) -->
+        <div class="col-md-6">
+          <h4>ETC ước tính (trong lệnh)</h4>
+          <table class="table table-bordered table-condensed">
+            <thead>
+              <tr>
+                <th>Trạm</th>
+                <th class="text-right">Tiền</th>
+                <th class="text-center">Đã qua?</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let e of result.estimated">
+                <td>{{ e.tollStationName }}</td>
+                <td class="text-right">{{ e.totalCost | VND }}</td>
+                <td class="text-center">
+                  <i class="fa" [ngClass]="e.isPassed ? 'fa-check text-green' : 'fa-minus text-muted'"></i>
+                </td>
+              </tr>
+              <tr *ngIf="!result.estimated?.length">
+                <td colspan="3" class="text-center text-muted">Không có trạm ước tính.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Cột phải: giao dịch thực tế VETC -->
+        <div class="col-md-6">
+          <h4>Thực tế VETC — Trạm kín</h4>
+          <table class="table table-bordered table-condensed">
+            <thead>
+              <tr>
+                <th>Hành trình</th>
+                <th>Vào - Ra</th>
+                <th class="text-right">Tiền</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let t of result.actualClose">
+                <tr>
+                  <td>{{ t.fromToll }} → {{ t.toToll }}</td>
+                  <td>{{ t.checkinDatetime }}<br />{{ t.checkoutDatetime }}</td>
+                  <td class="text-right">{{ t.totalAmount | VND }}</td>
+                  <td>{{ t.chargeStatus }}</td>
+                </tr>
+                <tr class="etc-stage-row" *ngIf="t.stages?.length > 1">
+                  <td colspan="4">
+                    <span class="etc-stage-item" *ngFor="let s of t.stages">
+                      {{ s.stageName }}: {{ s.priceAmount | VND }}&nbsp;&nbsp;
+                    </span>
+                  </td>
+                </tr>
+              </ng-container>
+              <tr *ngIf="!result.actualClose?.length">
+                <td colspan="4" class="text-center text-muted">Không có giao dịch trạm kín.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <h4>Thực tế VETC — Trạm mở</h4>
+          <table class="table table-bordered table-condensed">
+            <thead>
+              <tr>
+                <th>Trạm</th>
+                <th>Thời điểm</th>
+                <th class="text-right">Tiền</th>
+                <th>Trạng thái</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let o of result.actualOpen">
+                <td>{{ o.tollName }}</td>
+                <td>{{ o.transportDateTime }}</td>
+                <td class="text-right">{{ o.priceAmount | VND }}</td>
+                <td>{{ o.chargeStatus }}</td>
+              </tr>
+              <tr *ngIf="!result.actualOpen?.length">
+                <td colspan="4" class="text-center text-muted">Không có giao dịch trạm mở.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="box box-default" *ngIf="searched && !result">
+    <div class="box-body text-center text-muted">Không có dữ liệu.</div>
+  </div>
+</section>

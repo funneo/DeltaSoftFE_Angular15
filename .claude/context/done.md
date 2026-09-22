@@ -1,5 +1,28 @@
 # Completed Features
 
+## Phiên 2026-09-22 — TollLocations/TollStation, fix chênh lệch báo cáo CP03, FCL v2 cho sửa lệnh bị từ chối, Đối chiếu ETC thực tế (VETC) Phase 1
+
+### 1. TollLocations — bổ sung 170 trạm thiếu (đối chiếu `Tram thu phi.xlsx` vs DB) — SQL ĐÃ CHẠY
+- `NewAPI/Migration_TollLocations_SeedMissing_20260922.sql` — INSERT 170 dòng (Id 952-1166) thiếu so với Excel nguồn. **Anh đã chạy**, xác nhận `TollLocations` count=713.
+- Sau đó dựng thuật toán Node fuzzy-match 84 `TollStation` đang thiếu `StartLocation`/`EndLocation` với `TollLocations` mới → xuất `NewAPI/TollStation_MatchReview_20260922.xlsx` (178 dòng, gồm ứng viên + cột `ChonLam`/`GhiChu`) để anh duyệt tay từng dòng (phát hiện rủi ro match sai do lệch số Km giữa Excel/tên TollStation — không tự động match). **CHỜ anh duyệt file Excel** → sẽ soạn `Migration_TollStation_LinkNewLocations_<date>.sql` (UPDATE) sau.
+
+### 2. Báo cáo CP03 (report-cp03-filter) — điều tra + fix "chênh lệch ảo" — SQL SOẠN, CHƯA CHẠY
+- Trace `Chênh lệch (!=0)` → `SP_ReportCP03` (`ReportsController.GetCP03`). Viết 2 SP mới song song (drill-down theo job): `NewAPI/Migration_Reports_CP03Detail_20260922.sql` (`SP_ReportCP03Detail(@JobId)` — so sánh chi tiết Debit vs Payment theo từng dòng phí CP03, kèm `SoPhieuDebit`/`SoPhieuThanhToan`; `SP_ReportCP03Diff` — bản đối chiếu tham khảo).
+- **Root-cause bug thật** (dữ liệu thật: job SVT26080000700110/111, KH DK0500007, chi nhánh HN, tháng 9): nhánh ELSE của `SP_ReportCP03` join payment với **BẤT KỲ** debit note nào của shipment (không lọc GroupCode='CP03') → gán nhầm kỳ debit của nhóm phí khác (vd DT01) cho payment CP03 → chênh lệch ảo dù chi tiết = 0.
+- **Fix theo yêu cầu anh** (sửa thẳng SP cũ, KHÔNG viết SP mới để khỏi đổi BE): `NewAPI/Migration_Reports_CP03_FixDiffAnchor_20260922.sql` — `ALTER PROCEDURE SP_ReportCP03`, nhánh ELSE đổi `JOIN DebitNotes` (không lọc nhóm) → `EXISTS` bắt buộc `GroupCode='CP03'`, bỏ phép chia theo `COUNT() OVER(PARTITION BY db.Id)`. Verify read-only trên dữ liệu thật: 2 job trên hết chênh lệch ảo (NULL thay vì -4.3xx.000). Không đổi tham số/chữ ký → không cần sửa BE/FE.
+
+### 3. FCL v2 — cho phép điều vận sửa lại lệnh bị tài xế "Từ chối nhận" — SQL SOẠN CHƯA CHẠY, FE ĐÃ SỬA
+- Điều tra: khóa sửa route/xe/lái xe (`routeConfirmed`) chỉ có ở tầng C# (`UpdateWithTOAsync`) khi `Status>2` — lệnh bị từ chối vẫn ở `Status=1` nên **form đã mở sẵn**, không cần sửa FE phần khóa/nút Lưu.
+- **SQL** `NewAPI/Migration_FCL_UnlockAfterDeny_20260922.sql` — `ALTER PROCEDURE SP_DispatchOrderFCL_UpdateWithTO` (reproduce nguyên văn + 2 dòng `IsDeny=0, Feedback=NULL` vào UPDATE header) — mỗi lần điều vận lưu lại lệnh bị từ chối = tự động "gửi lại" cho tài xế.
+- **FE** (`dispatch-order-fcl-new.component.ts/.html`): thêm option filter + badge đỏ `dof-badge--deny` "Bị từ chối" (dùng class SCSS đã có sẵn nhưng chưa wire) khi `isDeny=true`, tooltip hiện lý do. `modal-dispatch-order-fcl-v2.component.html`: banner cảnh báo đỏ khi mở lệnh đang `isDeny=true`. Không cần SignalR (đã thử rồi bỏ theo yêu cầu anh — quá tay).
+
+### 4. Đối chiếu ETC thực tế (VETC) — Phase 1 — CODE XONG, CHỜ VETC cấp tài khoản
+Đọc tài liệu `NewAPI/TransportController-API.DOCX` (VETC customer-api v1.8, 4 endpoint: `/transport/close|open|ticket-history|registration-history`, Basic Auth + IP whitelist theo tài khoản giao thông). Phase 1 = trang đối chiếu on-demand, KHÔNG lưu DB, KHÔNG tự động gắn cờ (để Phase 2).
+- **BE**: `Controllers/CustomerCommunicate/Vetc/VetcApiController.cs` + `Models/CustomerCommunicate/Vetc/VetcApiModels.cs` (cùng cấu trúc thư mục `CustomerCommunicate/{Igas,Dgas3,GarageInnvie}` theo yêu cầu anh) — `POST /api/VetcApi/CompareByRefNo`: lấy lệnh theo RefNo → biển số + khung giờ chạy (`StartedDate`/`FinishedDate` ±6h) → gọi VETC close+open (KHÔNG truyền `plate` — tự lọc theo biển đã cắt hậu tố màu, tránh bẫy mục 1.7 tài liệu) → gộp trạm kín theo `transport_trans_id` (SUM đúng mục 2.4). `appsettings.json`/`appsettings.Development.json` thêm mục `VetcApi:{BaseUrl,Username,Password}` (Username/Password rỗng, chờ anh).
+- **FE**: `shared/services/transports/vetc-api.service.ts` + trang mới `main/transports/etc-reconciliation/` (2 cột: ETC ước tính | Thực tế VETC trạm kín/mở) + nút "Đối chiếu VETC" trong list FCL mới (hiện khi có `startedDate`). Route `DISPATCHORDER` (chưa cần Function/menu riêng — pilot).
+- Build BE `dotnet build` 0 Error, FE `tsc --noEmit` không phát sinh lỗi mới.
+- **CÒN**: anh gửi VETC danh sách tài khoản giao thông + IP public server để lấy Username/Password → điền vào appsettings (dev+prod), không cần sửa code. Phase 2 (sau khi Phase 1 chạy thật): polling tự động + lưu DB + tự gắn cờ nghi né trạm — CHƯA làm.
+
 ## Phiên 2026-09-21 — GpsAPI Giai đoạn 3 + fix dGas3 `@Id OUTPUT` + list FCL mới (Export/Thanh toán/toolbar) — CHƯA COMMIT (bỏ qua phần gọi thử Eupfin API theo yêu cầu anh)
 
 ### 1. GpsAPI Giai đoạn 3 — quản lý biển số/token GPS cho KH (BE NewAPI + FE tab "GPS" trong `modal-customer`)
