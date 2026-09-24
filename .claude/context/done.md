@@ -1,5 +1,16 @@
 # Completed Features
 
+## Phiên 2026-09-24 — BC01 cho site nháp qua DraftAPI (ĐÃ CHẠY THẬT) + điền tài khoản VETC
+
+### BC01 site nháp — DraftAPI proxy sang ERP
+- DraftAPI (không phải git repo) thêm `POST /api/draftReport/report01` (`Controllers/DraftReportController.cs`, `Models/DraftReportDtos.cs`, `Program.cs` HttpClient "erp", `appsettings.json` mục `ErpApi`): chuyển tiếp cùng Bearer `aud=draft` sang ERP `POST /api/reports/get-report-01-draft` → `SP_Report01_V2` (`@UserId=NULL` = tất cả KH). Tài liệu cho AI/client: `DraftAPI/docs/BC01-API.md` (tValue/gType chưa dùng, ngày `yyyyMMdd` sai định dạng bị âm thầm dùng mặc định, toDate 00:00 → gửi ngày kế tiếp, gọi theo tháng).
+- **Đã verify trên server thật** (2026-09-24): DraftAPI và ERP trên server thật (địa chỉ ghi trong cấu hình deploy, không ghi ở đây). Tài khoản test chi nhánh 4, 01–24/09/2026 → HTTP 200, ~9s, ~5.842 dòng (n=0: 2450, n=1: 370, n=2: 3022).
+- Bài học triển khai: (1) DB phải chạy LẠI `Migration_Report01_V2_20260907.sql` (bản cũ thiếu default `@UserId = NULL` → lỗi "expects parameter '@UserId'"); (2) production `ErpApi:BaseUrl` phải ghi đè (mặc định repo là localhost dev) — trỏ nhầm sang chính cổng DraftAPI sẽ 404; (3) dựng HttpRequestMessage phải nằm TRONG try, nếu không BaseUrl sai → 500 trắng.
+- CHƯA làm: màn BC01 trong draft-web; kiểm quyền theo user cho endpoint (hiện mọi user login-draft xem được P&L tất cả KH); tối ưu thêm SP_Report01_V2 (V_DispatchOrderAdditionalFee chưa lọc).
+
+### VETC — đã có tài khoản
+- Điền `VetcApi` (BaseUrl `https://customer-api.vetc.com.vn`, Username/Password do VETC cấp) vào `NewAPI/API/appsettings.Development.json` + `appsettings.Production.json` (đều gitignored; KHÔNG ghi vào `appsettings.json` tracked). Mật khẩu chỉ nằm trong 2 file đó. CHƯA gọi thử VETC; cần VETC whitelist IP public của server gọi ra.
+
 ## Phiên 2026-09-22 — TollLocations/TollStation, fix chênh lệch báo cáo CP03, FCL v2 cho sửa lệnh bị từ chối, Đối chiếu ETC thực tế (VETC) Phase 1
 
 ### 1. TollLocations — bổ sung 170 trạm thiếu (đối chiếu `Tram thu phi.xlsx` vs DB) — SQL ĐÃ CHẠY
