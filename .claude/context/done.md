@@ -9,6 +9,7 @@
 - CHƯA làm: màn BC01 trong draft-web; kiểm quyền theo user cho endpoint (hiện mọi user login-draft xem được P&L tất cả KH); tối ưu thêm SP_Report01_V2 (V_DispatchOrderAdditionalFee chưa lọc).
 
 ### VETC — đã có tài khoản
+- FE: nút "Đối chiếu VETC" chuyển từ list FCL mới sang **modal lệnh FCL v2** (cạnh "Check trạm EUP", hiện khi có `refNo` + `startedDate`, mở trang `etc-reconciliation` ở tab mới); đã BỎ nút + `openEtcReconciliation`/Router khỏi `dispatch-order-fcl-new`. Sau khi VETC chạy ổn có thể bỏ 2 nút EUP (Check trạm EUP, Hành trình GPS-EUP) trong modal. `tsc --noEmit` sạch, chưa `ng build`/deploy.
 - Điền `VetcApi` (BaseUrl `https://customer-api.vetc.com.vn`, Username/Password do VETC cấp) vào `NewAPI/API/appsettings.Development.json` + `appsettings.Production.json` (đều gitignored; KHÔNG ghi vào `appsettings.json` tracked). Mật khẩu chỉ nằm trong 2 file đó. CHƯA gọi thử VETC; cần VETC whitelist IP public của server gọi ra.
 
 ## Phiên 2026-09-22 — TollLocations/TollStation, fix chênh lệch báo cáo CP03, FCL v2 cho sửa lệnh bị từ chối, Đối chiếu ETC thực tế (VETC) Phase 1

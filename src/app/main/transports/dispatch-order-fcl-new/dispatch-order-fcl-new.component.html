@@ -154,10 +154,6 @@
               (click)="checkEup(item); $event.stopPropagation()">
               <i class="fa fa-road"></i> Check EUP
             </button>
-            <button *ngIf="item.startedDate" type="button" class="dof-btn dof-btn--sm"
-              (click)="openEtcReconciliation(item); $event.stopPropagation()">
-              <i class="fa fa-balance-scale"></i> Đối chiếu VETC
-            </button>
           </td>
         </tr>
         <tr *ngIf="listFilter?.length == 0">

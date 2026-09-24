@@ -1,7 +1,6 @@
 import { DatePipe } from "@angular/common";
 import { HttpParams } from "@angular/common/http";
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, HostListener, OnInit, ViewChild } from "@angular/core";
-import { Router } from "@angular/router";
 import { ModalClosingFclProcessComponent } from "@app/shared/components/transports/modal-closing-fcl-process/modal-closing-fcl-process.component";
 import { ModalDispatchOrderFclV2Component } from "@app/shared/components/transports/modal-dispatch-order-fcl-v2/modal-dispatch-order-fcl-v2.component";
 import { ModalEupTollCheckComponent } from "@app/shared/components/transports/modal-eup-toll-check/modal-eup-toll-check.component";
@@ -109,14 +108,8 @@ export class DispatchOrderFclNewComponent implements OnInit, AfterViewInit {
     private branchService: BranchService,
     private exportService: ExportService,
     private cdr: ChangeDetectorRef,
-    private employeeService: EmployeeService,
-    private router: Router
+    private employeeService: EmployeeService
   ) { }
-
-  // Đối chiếu ETC thực tế (Phase 1, 2026-09-22): mở trang riêng, truyền RefNo qua query param.
-  openEtcReconciliation(item: DispatchOrderFcl): void {
-    this.router.navigate(['/main/transports/etc-reconciliation'], { queryParams: { refNo: item.refNo } });
-  }
 
   ngOnInit(): void {
     this.userLoged = this._authService.getLoggedInUser();

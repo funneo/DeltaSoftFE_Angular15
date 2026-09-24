@@ -24,7 +24,7 @@ import { ModalMapRoutesComponent } from "../../danhmuc/modal-map-routes/modal-ma
 import { ModalRouteCompareComponent, CompareRouteResult } from "../../danhmuc/modal-route-compare/modal-route-compare.component";
 import { ModalAddExtraSegmentComponent, ExtraSegmentSavedResult } from "../modal-add-extra-segment/modal-add-extra-segment.component";
 import { NgForm } from "@angular/forms";
-import { Route } from "@angular/router";
+import { Route, Router } from "@angular/router";
 import { MessageContstants } from "@app/shared/constants";
 import { FormatContstants } from "@app/shared/constants/format.constants";
 import {
@@ -367,6 +367,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   @ViewChild(ModalAddExtraSegmentComponent, { static: false }) modalAddExtra: ModalAddExtraSegmentComponent;
 
   constructor(
+    private router: Router,
     private notificationService: NotificationService,
     private vihicleService: VihicleService,
     private employeeService: EmployeeService,
@@ -1660,6 +1661,12 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   closeModalEupTollCheck(): void {
     this.viewEupTollCheck = false;
+  }
+
+  // Đối chiếu ETC thực tế VETC: mở trang riêng ở TAB MỚI (giữ nguyên form đang sửa), truyền RefNo qua query param.
+  openVetcReconciliation(): void {
+    const url = this.router.serializeUrl(this.router.createUrlTree(['/main/transports/etc-reconciliation'], { queryParams: { refNo: this.entity.refNo } }));
+    window.open(url, '_blank');
   }
 
   checkEupGps() {

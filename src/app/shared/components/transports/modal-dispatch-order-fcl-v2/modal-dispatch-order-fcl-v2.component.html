@@ -895,6 +895,11 @@
               </div>
               <!-- Trạm thu phí (ETC) — gộp từ tab ETC cũ, dùng TÊN trạm; tự thêm từ Vietmap -->
               <div class="dsg-etc-header">
+                <button type="button" class="btn btn-xs btn-info dsg-etc-add"
+                  *ngIf="entity.refNo && entity.startedDate"
+                  (click)="openVetcReconciliation()">
+                  <i class="fa fa-balance-scale"></i> Đối chiếu VETC
+                </button>
                 <span class="dsg-etc-title"><i class="fa fa-money text-warning"></i> Trạm thu phí (ETC)</span>
                 <button type="button" class="btn btn-xs btn-warning dsg-etc-add"
                   *ngIf="entity.startedDate && entity.finishedDate"
