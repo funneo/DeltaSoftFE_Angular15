@@ -1,5 +1,12 @@
 # Pending / In-Progress Work
 
+## ▶ Phiên 2026-09-25 — việc anh cần làm/duyệt (chi tiết done.md)
+1. ⬜ **Chạy SQL** (theo thứ tự tùy ý): `Migration_Accounts_Create_SummarySupplierCost_20260925.sql` (TRƯỚC khi deploy FE summary-supplier-cost), `Migration_Report01_V2_DetailId_20260924.sql`, `Migration_DispatchOrderFCL_RevertToBeforeB1_20260924.sql` (rồi EXEC ví dụ cuối file với @DryRun=1 → 0 cho 4 lệnh FCL cần sửa chi phí), `Fix_DriverFuelApproval_DOVT260916_009929_FixQty_20260925.sql` (@Commit=0 xem trước → 1).
+2. ⬜ Deploy: ERP API (VetcApiController khung thời gian đúng) + `ng build` FE (modal VETC admin, bỏ trang etc-reconciliation, summary-supplier-cost typeAccount=7).
+3. ⬜ VETC: xác nhận tài khoản đã kích hoạt/đúng mật khẩu (gọi thật đang 401); test modal "Đối chiếu VETC" (Admin).
+4. ⬜ Dọn dữ liệu chi tiền tổng hợp NCC: hủy 3 phiếu chi trùng của 1 phiếu tổng hợp + ~5.485 dòng rác EmployeeDebit TAM_UNG_CK (chờ anh xác nhận, soạn script riêng).
+5. ⬜ (Ghi nhận, chưa sửa) SP_Accounts_Create: dòng chung UPDATE Advances theo @AdvanceId chạy cho cả loại 1-6 → có thể đánh dấu nhầm Advances trùng id.
+
 ## ▶ Phiên 2026-09-22 — TollStation match review chờ duyệt, VETC Phase 1 chờ tài khoản — chi tiết done.md
 1. ✅ Đã chạy cả 3 SQL (2026-09-22, verify qua `sys.objects.modify_date` read-only): `Migration_Reports_CP03_FixDiffAnchor_20260922.sql` (`SP_ReportCP03` sửa 10:52), `Migration_Reports_CP03Detail_20260922.sql` (`SP_ReportCP03Detail` tạo 10:17 — riêng `SP_ReportCP03Diff` cùng file không thấy tồn tại, có thể chỉ chạy phần đầu; không sao vì SP này chỉ là bản tham khảo phụ, hướng chính đã dùng ALTER `SP_ReportCP03`), `Migration_FCL_UnlockAfterDeny_20260922.sql` (`SP_DispatchOrderFCL_UpdateWithTO` sửa 15:09).
 2. ⬜ **Anh duyệt** `NewAPI/TollStation_MatchReview_20260922.xlsx` (điền cột `ChonLam`/`GhiChu` từng dòng) → gửi lại để soạn `Migration_TollStation_LinkNewLocations_<date>.sql` (UPDATE `StartLocation`/`EndLocation`).

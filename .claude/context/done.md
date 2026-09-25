@@ -1,5 +1,23 @@
 # Completed Features
 
+## Phiên 2026-09-25 — VETC modal (admin) + khung thời gian đúng, sửa lỗi chi tiền tổng hợp NCC, SQL sửa dữ liệu
+
+### VETC — modal thay trang riêng
+- Modal MỚI `modal-vetc-toll-check` (khuôn modal-eup-toll-check) mở từ nút "Đối chiếu VETC" trong **modal lệnh FCL v2**, cạnh "Check trạm EUP"; **chỉ Admin** thấy (`admin_permission && entity.refNo && entity.startedDate`). Hiện ETC ước tính + thực tế VETC trạm kín (gộp theo chuyến, có tổng) + trạm mở.
+- ĐÃ XÓA trang `etc-reconciliation` (component/module/routing + route trong transports-routing) và nút ở list FCL mới.
+- BE `VetcApiController.CompareByRefNo`: khung thời gian tra VETC = ĐÚNG StartedDate→FinishedDate của lái xe (BỎ nới ±6h). CẦN deploy lại ERP API.
+- VETC gọi thật báo 401 Unauthorized (request đã tới VETC, không phải chặn IP) → cần VETC xác nhận tài khoản đã kích hoạt/đúng mật khẩu.
+
+### Tổng hợp chi phí NCC (màn summary-supplier-cost) — lỗi chi tiền không đổi trạng thái → viết phiếu chi trùng
+- Nguyên nhân: FE tạo phiếu chi xong mới gọi API `SummarySupplierCosts/Update` (đòi quyền F018_UPDATE) để đổi Status 1→2; user chỉ có F018_ACCOUNT bị 403 im lặng → nút "Chi tiền" vẫn hiện → tạo trùng (ví dụ 1 phiếu có 4 phiếu chi). Ngoài ra màn gửi TypeAccount trống = 0 (Tạm ứng) nên SP_Accounts_Create sinh ~5.485 dòng rác EmployeeDebit TAM_UNG_CK (đa số NULL nhân viên/số tiền).
+- Sửa: `SP_Accounts_Create` thêm **TypeAccount = 7** (Tổng hợp chi phí NCC): cùng transaction đổi Status 1→2 (+ IsSummarized lệnh thầu phụ), nếu đã chi/không tồn tại → RAISERROR + rollback (chặn chi trùng). Thêm điều kiện `ISNULL(@TypeAccount,0) <> 7` cho dòng chung UPDATE Advances theo @AdvanceId. File `NewAPI/Migration_Accounts_Create_SummarySupplierCost_20260925.sql` (ALTER, giữ nguyên còn lại). FE gửi `typeAccount=7` + `advanceId=id phiếu tổng hợp`, bỏ lời gọi Update. **Chưa chạy SQL / chưa deploy FE.**
+- Chưa làm: hủy 3 phiếu chi trùng đã có + dọn 5.485 dòng rác EmployeeDebit (chờ anh xác nhận).
+
+### SQL soạn cho anh chạy tay (đều chưa chạy)
+- `Migration_Report01_V2_DetailId_20260924.sql`: SP_Report01_V2 trả Id = id dòng chi tiết mọi nguồn + Type = nguồn + DebitNoteId/PaymentDetailId (không sửa BE). Lưu ý DISTINCT không còn gộp dòng giống nhau → tổng chi phí có thể lớn hơn V1 chút.
+- `Migration_DispatchOrderFCL_RevertToBeforeB1_20260924.sql`: SP MỚI `SP_DispatchOrderFCL_RevertToBeforeB1` (chỉ chạy bằng SQL, không có BE/FE) đưa lệnh FCL v2 Status 5/6 về 3 (chờ Duyệt B1) để sửa chi phí; nhận nhiều RefNo, có @DryRun, ghi log ActionType 7, chặn lệnh đã nằm trong chốt dầu theo đợt.
+- `Fix_DriverFuelApproval_DOVT260916_009929_FixQty_20260925.sql`: sửa phiếu cấp dầu DO-VT260916/009929 (lệnh VT2609/2066 129.42→105 lít, tổng 196.02→171.6, tiền 4.887.168); mặc định dry-run.
+
 ## Phiên 2026-09-24 — BC01 cho site nháp qua DraftAPI (ĐÃ CHẠY THẬT) + điền tài khoản VETC
 
 ### BC01 site nháp — DraftAPI proxy sang ERP
