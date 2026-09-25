@@ -20,11 +20,12 @@ import { TransportOrderService } from "@app/shared/services/transports/transport
 import { ModalVietmapRoutesComponent } from "../../danhmuc/modal-vietmap-routes/modal-vietmap-routes.component";
 import { ModalEupTollCheckComponent } from "../modal-eup-toll-check/modal-eup-toll-check.component";
 import { ModalEupGpsHistoryComponent } from "../modal-eup-gps-history/modal-eup-gps-history.component";
+import { ModalVetcTollCheckComponent } from "../modal-vetc-toll-check/modal-vetc-toll-check.component";
 import { ModalMapRoutesComponent } from "../../danhmuc/modal-map-routes/modal-map-routes.component";
 import { ModalRouteCompareComponent, CompareRouteResult } from "../../danhmuc/modal-route-compare/modal-route-compare.component";
 import { ModalAddExtraSegmentComponent, ExtraSegmentSavedResult } from "../modal-add-extra-segment/modal-add-extra-segment.component";
 import { NgForm } from "@angular/forms";
-import { Route, Router } from "@angular/router";
+import { Route } from "@angular/router";
 import { MessageContstants } from "@app/shared/constants";
 import { FormatContstants } from "@app/shared/constants/format.constants";
 import {
@@ -136,6 +137,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   public viewAttachFiles: boolean = false;
   public viewEupTollCheck: boolean = false;
   public viewEupGpsHistory: boolean = false;
+  public viewVetcTollCheck: boolean = false;
   public viewTicket: boolean = false;
   public viewModalWorkflows: boolean = false;
   public viewJobModal: boolean = false;
@@ -363,11 +365,11 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   @ViewChild(ModalMapRoutesComponent, { static: false }) modalGoogle: ModalMapRoutesComponent;
   @ViewChild(ModalEupTollCheckComponent, { static: false }) modalEupTollCheck: ModalEupTollCheckComponent;
   @ViewChild(ModalEupGpsHistoryComponent, { static: false }) modalEupGpsHistory: ModalEupGpsHistoryComponent;
+  @ViewChild(ModalVetcTollCheckComponent, { static: false }) modalVetcTollCheck: ModalVetcTollCheckComponent;
   @ViewChild(ModalRouteCompareComponent, { static: false }) modalCompare: ModalRouteCompareComponent;
   @ViewChild(ModalAddExtraSegmentComponent, { static: false }) modalAddExtra: ModalAddExtraSegmentComponent;
 
   constructor(
-    private router: Router,
     private notificationService: NotificationService,
     private vihicleService: VihicleService,
     private employeeService: EmployeeService,
@@ -1663,10 +1665,16 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     this.viewEupTollCheck = false;
   }
 
-  // Đối chiếu ETC thực tế VETC: mở trang riêng ở TAB MỚI (giữ nguyên form đang sửa), truyền RefNo qua query param.
-  openVetcReconciliation(): void {
-    const url = this.router.serializeUrl(this.router.createUrlTree(['/main/transports/etc-reconciliation'], { queryParams: { refNo: this.entity.refNo } }));
-    window.open(url, '_blank');
+  // Đối chiếu ETC thực tế VETC: modal inline cùng khuôn Check EUP (2026-09-25), thay vì mở tab mới.
+  openVetcTollCheck(): void {
+    this.viewVetcTollCheck = true;
+    setTimeout(() => {
+      this.modalVetcTollCheck.show(this.entity.refNo);
+    });
+  }
+
+  closeModalVetcTollCheck(): void {
+    this.viewVetcTollCheck = false;
   }
 
   checkEupGps() {

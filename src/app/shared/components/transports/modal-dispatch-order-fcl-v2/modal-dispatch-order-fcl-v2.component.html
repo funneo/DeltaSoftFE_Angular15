@@ -896,8 +896,8 @@
               <!-- Trạm thu phí (ETC) — gộp từ tab ETC cũ, dùng TÊN trạm; tự thêm từ Vietmap -->
               <div class="dsg-etc-header">
                 <button type="button" class="btn btn-xs btn-info dsg-etc-add"
-                  *ngIf="entity.refNo && entity.startedDate"
-                  (click)="openVetcReconciliation()">
+                  *ngIf="admin_permission && entity.refNo && entity.startedDate"
+                  (click)="openVetcTollCheck()">
                   <i class="fa fa-balance-scale"></i> Đối chiếu VETC
                 </button>
                 <span class="dsg-etc-title"><i class="fa fa-money text-warning"></i> Trạm thu phí (ETC)</span>
@@ -1331,6 +1331,7 @@
 </modal-shipping-task-cs> -->
 <modal-view-shipping-task *ngIf="viewModalShippingTask" (CloseModal)="closeModalShippingTask()">
 </modal-view-shipping-task>
+<modal-vetc-toll-check *ngIf="viewVetcTollCheck" (CloseModal)="closeModalVetcTollCheck()"></modal-vetc-toll-check>
 <!-- TO refactor (2026-05-15): 3 modal phụ trợ cho route builder (copy từ modal-transport-order) -->
 <modal-vietmap-routes [vehicleKey]="vietmapVehicleKey" (RouteSelected)="onRouteSelected($event)"></modal-vietmap-routes>
 <modal-map-routes (RouteSelected)="onGoogleRouteSelected($event)"></modal-map-routes>

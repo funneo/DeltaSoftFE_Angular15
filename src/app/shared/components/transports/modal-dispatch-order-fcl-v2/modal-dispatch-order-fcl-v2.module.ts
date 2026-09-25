@@ -23,6 +23,7 @@ import { ModalMapRoutesModule } from '../../danhmuc/modal-map-routes/modal-map-r
 import { ModalAddExtraSegmentModule } from '../modal-add-extra-segment/modal-add-extra-segment.module';
 import { ModalEupTollCheckModule } from '../modal-eup-toll-check/modal-eup-toll-check.module';
 import { ModalEupGpsHistoryModule } from '../modal-eup-gps-history/modal-eup-gps-history.module';
+import { ModalVetcTollCheckModule } from '../modal-vetc-toll-check/modal-vetc-toll-check.module';
 
 @NgModule({
   declarations: [ModalDispatchOrderFclV2Component],
@@ -48,7 +49,8 @@ import { ModalEupGpsHistoryModule } from '../modal-eup-gps-history/modal-eup-gps
     ModalMapRoutesModule,
     ModalAddExtraSegmentModule,
     ModalEupTollCheckModule,
-    ModalEupGpsHistoryModule
+    ModalEupGpsHistoryModule,
+    ModalVetcTollCheckModule
   ],
   exports: [ModalDispatchOrderFclV2Component]
 })

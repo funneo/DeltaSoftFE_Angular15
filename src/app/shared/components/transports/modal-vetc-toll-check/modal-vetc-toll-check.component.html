@@ -1,0 +1,128 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalVetcTollCheck="bs-modal"
+  [config]="{backdrop: 'static'}" tabindex="-1" role="dialog" aria-labelledby="dialog-static-name"
+  (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" [ngBusy]="busy">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left"><i class="fa fa-balance-scale text-primary"></i> Đối chiếu VETC
+          <a style="font-size: 14px;">{{refNo}}</a>
+        </h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalVetcTollCheck.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:10px;" *ngIf="result">
+          <b>Biển số:</b> {{result.vehiclePlate}} &nbsp;&nbsp;
+          <b>Khung thời gian đối chiếu:</b> {{result.periodFrom}} &rarr; {{result.periodTo}}
+        </div>
+        <div class="alert alert-warning" *ngIf="loaded && errorMsg">
+          <i class="fa fa-exclamation-triangle"></i> {{errorMsg}}
+        </div>
+
+        <div *ngIf="result">
+          <h5><b>ETC ước tính (trong lệnh)</b></h5>
+          <div class="box-body table-responsive no-padding" style="margin-bottom:14px;">
+            <table class="table table-bordered table-condensed">
+              <thead>
+                <tr>
+                  <th>Trạm</th>
+                  <th class="text-right" style="width: 140px;">Tiền</th>
+                  <th class="text-center" style="width: 90px;">Đã qua?</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let e of result.estimated">
+                  <td>{{e.tollStationName}}</td>
+                  <td class="text-right">{{e.totalCost | number:'1.0-0'}}</td>
+                  <td class="text-center">
+                    <i class="fa" [ngClass]="e.isPassed ? 'fa-check text-green' : 'fa-minus text-muted'"></i>
+                  </td>
+                </tr>
+                <tr *ngIf="!result.estimated?.length">
+                  <td colspan="3" class="text-center text-muted">Không có trạm ước tính.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h5><b>Thực tế VETC — Trạm kín</b></h5>
+          <div class="box-body table-responsive no-padding" style="margin-bottom:14px;">
+            <table class="table table-bordered table-condensed">
+              <thead>
+                <tr>
+                  <th>Hành trình</th>
+                  <th style="width: 180px;">Vào - Ra</th>
+                  <th class="text-right" style="width: 120px;">Tiền</th>
+                  <th style="width: 140px;">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <ng-container *ngFor="let t of result.actualClose">
+                  <tr>
+                    <td>{{t.fromToll}} &rarr; {{t.toToll}}</td>
+                    <td>{{t.checkinDatetime}}<br />{{t.checkoutDatetime}}</td>
+                    <td class="text-right">{{t.totalAmount | number:'1.0-0'}}</td>
+                    <td>{{t.chargeStatus}}</td>
+                  </tr>
+                  <tr *ngIf="t.stages?.length > 1">
+                    <td colspan="4" style="background:#f8f9fa; font-size:11px; color:#6b7280;">
+                      <span *ngFor="let s of t.stages">{{s.stageName}}: {{s.priceAmount | number:'1.0-0'}}&nbsp;&nbsp;</span>
+                    </td>
+                  </tr>
+                </ng-container>
+                <tr *ngIf="!result.actualClose?.length">
+                  <td colspan="4" class="text-center text-muted">Không có giao dịch trạm kín.</td>
+                </tr>
+              </tbody>
+              <tfoot *ngIf="result.actualClose?.length">
+                <tr>
+                  <td colspan="2" class="text-right"><b>Tổng cộng</b></td>
+                  <td class="text-right"><b>{{totalActualClose | number:'1.0-0'}}</b></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <h5><b>Thực tế VETC — Trạm mở</b></h5>
+          <div class="box-body table-responsive no-padding">
+            <table class="table table-bordered table-condensed">
+              <thead>
+                <tr>
+                  <th>Trạm</th>
+                  <th style="width: 160px;">Thời điểm</th>
+                  <th class="text-right" style="width: 120px;">Tiền</th>
+                  <th style="width: 140px;">Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let o of result.actualOpen">
+                  <td>{{o.tollName}}</td>
+                  <td>{{o.transportDateTime}}</td>
+                  <td class="text-right">{{o.priceAmount | number:'1.0-0'}}</td>
+                  <td>{{o.chargeStatus}}</td>
+                </tr>
+                <tr *ngIf="!result.actualOpen?.length">
+                  <td colspan="4" class="text-center text-muted">Không có giao dịch trạm mở.</td>
+                </tr>
+              </tbody>
+              <tfoot *ngIf="result.actualOpen?.length">
+                <tr>
+                  <td class="text-right"><b>Tổng cộng</b></td>
+                  <td></td>
+                  <td class="text-right"><b>{{totalActualOpen | number:'1.0-0'}}</b></td>
+                  <td></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer text-right">
+        <button type="button" class="btn btn-danger btn-sm" (click)="modalVetcTollCheck.hide()">
+          <i class="fa fa-close"></i> Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>

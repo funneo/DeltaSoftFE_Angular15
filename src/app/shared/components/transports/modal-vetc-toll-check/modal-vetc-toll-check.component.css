@@ -1,0 +1,4 @@
+/* Giống modal-eup-toll-check: modal ngắn (bảng), icon loading global mặc định trôi giữa/dưới màn hình. */
+:host ::ng-deep .ng-busy {
+  margin-top: 0 !important;
+}
