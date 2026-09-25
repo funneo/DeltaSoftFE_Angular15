@@ -249,21 +249,19 @@ export class SummarySupplierCostComponent implements OnInit {
     item.amount = entity.amount;
     item.refNo = entity.refNo;
     item.notes = entity.contents;
-    item.accountid = entity.id;
+    // 2026-09-25: SP_Accounts_Create loai 7 = Tong hop chi phi NCC — SP tu doi Status 1->2 (+ chan chi trung) trong CUNG transaction
+    // voi viec tao phieu chi. KHONG gui accountid/paymentDetailId (khong phai PaymentDetail) va KHONG goi Update rieng nua.
+    item.typeAccount = 7;
+    item.advanceId = entity.id;
     this.viewAccounts = true;
     setTimeout(() => {
       this.modalPhieuChi.add(item);
     }, 50);
   }
   saveSuccessAccounts(event: any): void {
+    // Phieu chi + trang thai 'Da chi tien' da duoc luu cung luc o BE/SP -> chi can tai lai danh sach.
     if (event > 0) {
-      let item = Object.assign({}, this.selectedValue);
-      item.status = 2;
-      this.service.update(item).subscribe((res: ResponseValue<any>) => {
-        if (res.code == '200' || res.code == '201') {
-          this.loadData();
-        }
-      });
+      this.loadData();
     }
   }
   closeAccounts(): void {
