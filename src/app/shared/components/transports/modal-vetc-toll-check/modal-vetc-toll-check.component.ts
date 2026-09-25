@@ -48,6 +48,7 @@ export class ModalVetcTollCheckComponent {
   result: VetcCompareResult = null;
   errorMsg: string;
   loaded = false;
+  showEstimated = false; // ETC ước tính trong lệnh: mặc định thu gọn, bấm tiêu đề để xổ ra
   busy: any;
 
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
@@ -60,6 +61,7 @@ export class ModalVetcTollCheckComponent {
     this.result = null;
     this.errorMsg = null;
     this.loaded = false;
+    this.showEstimated = false;
     this.modalVetcTollCheck.show();
     this.loadData();
   }

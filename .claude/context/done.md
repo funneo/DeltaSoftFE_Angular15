@@ -3,7 +3,7 @@
 ## Phiên 2026-09-25 — VETC modal (admin) + khung thời gian đúng, sửa lỗi chi tiền tổng hợp NCC, SQL sửa dữ liệu
 
 ### VETC — modal thay trang riêng
-- Modal MỚI `modal-vetc-toll-check` (khuôn modal-eup-toll-check) mở từ nút "Đối chiếu VETC" trong **modal lệnh FCL v2**, cạnh "Check trạm EUP"; **chỉ Admin** thấy (`admin_permission && entity.refNo && entity.startedDate`). Hiện ETC ước tính + thực tế VETC trạm kín (gộp theo chuyến, có tổng) + trạm mở.
+- Modal MỚI `modal-vetc-toll-check` (khuôn modal-eup-toll-check) mở từ nút "Đối chiếu VETC" trong **modal lệnh FCL v2**, cạnh "Check trạm EUP"; hiện cho **mọi người dùng** (`entity.refNo && entity.startedDate`; ban đầu chỉ Admin, sau bỏ giới hạn). Modal: ETC ước tính trong lệnh **thu gọn mặc định, bấm để xổ ra**; thực tế VETC trạm kín (gộp theo chuyến, có tổng) + trạm mở luôn hiện.
 - ĐÃ XÓA trang `etc-reconciliation` (component/module/routing + route trong transports-routing) và nút ở list FCL mới.
 - BE `VetcApiController.CompareByRefNo`: khung thời gian tra VETC = ĐÚNG StartedDate→FinishedDate của lái xe (BỎ nới ±6h). CẦN deploy lại ERP API.
 - VETC gọi thật báo 401 Unauthorized (request đã tới VETC, không phải chặn IP) → cần VETC xác nhận tài khoản đã kích hoạt/đúng mật khẩu.

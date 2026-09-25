@@ -3,7 +3,7 @@
 ## ▶ Phiên 2026-09-25 — việc anh cần làm/duyệt (chi tiết done.md)
 1. ⬜ **Chạy SQL** (theo thứ tự tùy ý): `Migration_Accounts_Create_SummarySupplierCost_20260925.sql` (TRƯỚC khi deploy FE summary-supplier-cost), `Migration_Report01_V2_DetailId_20260924.sql`, `Migration_DispatchOrderFCL_RevertToBeforeB1_20260924.sql` (rồi EXEC ví dụ cuối file với @DryRun=1 → 0 cho 4 lệnh FCL cần sửa chi phí), `Fix_DriverFuelApproval_DOVT260916_009929_FixQty_20260925.sql` (@Commit=0 xem trước → 1).
 2. ⬜ Deploy: ERP API (VetcApiController khung thời gian đúng) + `ng build` FE (modal VETC admin, bỏ trang etc-reconciliation, summary-supplier-cost typeAccount=7).
-3. ⬜ VETC: xác nhận tài khoản đã kích hoạt/đúng mật khẩu (gọi thật đang 401); test modal "Đối chiếu VETC" (Admin).
+3. ⬜ VETC: xác nhận tài khoản đã kích hoạt/đúng mật khẩu (gọi thật đang 401); test modal "Đối chiếu VETC" (mọi người dùng thấy nút).
 4. ⬜ Dọn dữ liệu chi tiền tổng hợp NCC: hủy 3 phiếu chi trùng của 1 phiếu tổng hợp + ~5.485 dòng rác EmployeeDebit TAM_UNG_CK (chờ anh xác nhận, soạn script riêng).
 5. ⬜ (Ghi nhận, chưa sửa) SP_Accounts_Create: dòng chung UPDATE Advances theo @AdvanceId chạy cho cả loại 1-6 → có thể đánh dấu nhầm Advances trùng id.
 

@@ -896,7 +896,7 @@
               <!-- Trạm thu phí (ETC) — gộp từ tab ETC cũ, dùng TÊN trạm; tự thêm từ Vietmap -->
               <div class="dsg-etc-header">
                 <button type="button" class="btn btn-xs btn-info dsg-etc-add"
-                  *ngIf="admin_permission && entity.refNo && entity.startedDate"
+                  *ngIf="entity.refNo && entity.startedDate"
                   (click)="openVetcTollCheck()">
                   <i class="fa fa-balance-scale"></i> Đối chiếu VETC
                 </button>

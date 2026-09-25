@@ -21,8 +21,12 @@
         </div>
 
         <div *ngIf="result">
-          <h5><b>ETC ước tính (trong lệnh)</b></h5>
-          <div class="box-body table-responsive no-padding" style="margin-bottom:14px;">
+          <h5 style="cursor:pointer;" (click)="showEstimated = !showEstimated">
+            <i class="fa" [ngClass]="showEstimated ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+            <b>ETC ước tính (trong lệnh)</b>
+            <span class="text-muted" style="font-size:12px;">({{result.estimated?.length || 0}} trạm — bấm để {{showEstimated ? 'thu gọn' : 'xem'}})</span>
+          </h5>
+          <div class="box-body table-responsive no-padding" style="margin-bottom:14px;" *ngIf="showEstimated">
             <table class="table table-bordered table-condensed">
               <thead>
                 <tr>
