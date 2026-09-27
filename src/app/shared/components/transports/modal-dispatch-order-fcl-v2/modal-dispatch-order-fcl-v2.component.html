@@ -22,12 +22,6 @@
       <form class="fcl-v2-form form-horizontal" novalidate #addEditForm="ngForm"
         (ngSubmit)="saveChange(addEditForm)" *ngIf="entity">
       <div class="fcl-v2-body">
-          <div class="alert alert-danger" *ngIf="entity.isDeny" style="margin: 8px 14px;">
-            <i class="fa fa-exclamation-triangle"></i>
-            Lái xe <b>{{ entity.driverName }}</b> đã <b>từ chối nhận</b> lệnh này.
-            <span *ngIf="entity.feedback"> Lý do: <i>{{ entity.feedback }}</i>.</span>
-            Điều chỉnh lại thông tin (tài xế/xe/tuyến đường/công việc...) rồi Lưu — lệnh sẽ tự động gửi lại cho tài xế.
-          </div>
           <div class="box-body">
             <tabset>
               <tab heading="Thông tin chung">
@@ -895,16 +889,16 @@
               </div>
               <!-- Trạm thu phí (ETC) — gộp từ tab ETC cũ, dùng TÊN trạm; tự thêm từ Vietmap -->
               <div class="dsg-etc-header">
-                <button type="button" class="btn btn-xs btn-info dsg-etc-add"
-                  *ngIf="entity.refNo && entity.startedDate"
-                  (click)="openVetcTollCheck()">
-                  <i class="fa fa-balance-scale"></i> Đối chiếu VETC
-                </button>
                 <span class="dsg-etc-title"><i class="fa fa-money text-warning"></i> Trạm thu phí (ETC)</span>
                 <button type="button" class="btn btn-xs btn-warning dsg-etc-add"
                   *ngIf="entity.startedDate && entity.finishedDate"
                   (click)="checkEup()">
                   <i class="fa fa-road"></i> Check trạm EUP
+                </button>
+                <button type="button" class="btn btn-xs btn-info dsg-etc-add"
+                  *ngIf="entity.refNo && entity.startedDate"
+                  (click)="openVetcTollCheck()">
+                  <i class="fa fa-balance-scale"></i> Đối chiếu VETC
                 </button>
                 <button type="button" class="btn btn-xs btn-danger dsg-etc-add"
                   *ngIf="entity.startedDate && entity.finishedDate"
@@ -1331,13 +1325,13 @@
 </modal-shipping-task-cs> -->
 <modal-view-shipping-task *ngIf="viewModalShippingTask" (CloseModal)="closeModalShippingTask()">
 </modal-view-shipping-task>
-<modal-vetc-toll-check *ngIf="viewVetcTollCheck" (CloseModal)="closeModalVetcTollCheck()"></modal-vetc-toll-check>
 <!-- TO refactor (2026-05-15): 3 modal phụ trợ cho route builder (copy từ modal-transport-order) -->
 <modal-vietmap-routes [vehicleKey]="vietmapVehicleKey" (RouteSelected)="onRouteSelected($event)"></modal-vietmap-routes>
 <modal-map-routes (RouteSelected)="onGoogleRouteSelected($event)"></modal-map-routes>
 <modal-route-compare [vehicleKey]="vietmapVehicleKey" (RouteSelected)="onCompareRouteSelected($event)"></modal-route-compare>
 <modal-eup-toll-check *ngIf="viewEupTollCheck" (CloseModal)="closeModalEupTollCheck()"></modal-eup-toll-check>
 <modal-eup-gps-history *ngIf="viewEupGpsHistory" (CloseModal)="closeModalEupGpsHistory()"></modal-eup-gps-history>
+<modal-vetc-toll-check *ngIf="viewVetcTollCheck" (CloseModal)="closeModalVetcTollCheck()"></modal-vetc-toll-check>
 
 <!-- Modal "Thêm cung đường phát sinh" — tách riêng (tự chứa Vietmap/So sánh) -->
 <modal-add-extra-segment (SaveSuccess)="onExtraSegmentSaved($event)"></modal-add-extra-segment>
