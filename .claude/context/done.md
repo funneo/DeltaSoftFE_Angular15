@@ -1,5 +1,19 @@
 # Completed Features
 
+## Phiên 2026-09-27 — VETC Phase 2 (tự động fetch VETC khi lái xe hoàn thành lệnh) — thiết kế + SQL soạn xong, CHỜ CHẠY
+
+### Ý tưởng chốt với anh Cường
+- Khi lái xe bấm "Hoàn thành lệnh" (ActionType=2), CHỈ cho hoàn thành khi lệnh đã có đủ `StartedDate` + `FinishedDate` (App mobile đã tự chặn/báo phần này ở tầng UX; BE thêm gate làm lớp chặn phụ, KHÔNG sửa `SP_DispatchOrderFCL_ChangeStatus`).
+- Hoàn thành thành công → BE upsert vào bảng queue mới; 1 `HostedService` trong NewAPI định kỳ quét bảng queue, gọi VETC (tái dùng logic `VetcApiController.CompareByRefNo` — Phase 1, on-demand, giữ nguyên không đổi), lưu giao dịch thật vào bảng actual để đối chiếu/tính toán sau.
+- CHƯA tự động gắn cờ "nghi né trạm" (vẫn do lái xe tự làm) — tên trạm giữa ước tính (Vietmap) và thực tế (VETC `from_toll`/`to_toll`) có thể lệch chút, để dành xử lý khi làm tự động ở giai đoạn sau.
+- VETC lỗi liên tục quá 5 lần/RefNo → dừng tự retry (`FetchStatus=2`, cần can thiệp thủ công). Nếu `StartedDate`/`FinishedDate` bị sửa lại sau khi đã fetch → tự reset để lấy lại theo khung giờ mới.
+
+### SQL đã soạn — `NewAPI/Migration_FCL_VetcAutoFetch_20260927.sql` (CHƯA CHẠY)
+- `Tbl_DispatchOrderFCLVetcQueue` (hàng chờ, unique theo RefNo, `FetchStatus`/`FetchAttempts`/`FetchError`) + `Tbl_DispatchOrderFCLVetcActual` (giao dịch thật, `SourceType` 1=trạm kín/2=trạm mở) + TVP `TypeDispatchOrderFCLVetcActual`.
+- 3 SP mới: `SP_DispatchOrderFCLVetcQueue_Upsert` (upsert + auto-reset fetch status khi đổi giờ), `SP_DispatchOrderFCLVetcQueue_GetPending` (lấy RefNo cần fetch), `SP_DispatchOrderFCLVetcActual_Save` (ghi kết quả, idempotent — xóa/ghi lại theo RefNo; hoặc tăng đếm lỗi).
+- Không đụng bảng/SP `DispatchOrderFCL` hay `VetcApiController` hiện có.
+- CHƯA code phần BE (gate + gọi Upsert + HostedService) — chờ anh chạy SQL trước.
+
 ## Phiên 2026-09-25 — VETC modal (admin) + khung thời gian đúng, sửa lỗi chi tiền tổng hợp NCC, SQL sửa dữ liệu
 
 ### VETC — modal thay trang riêng

@@ -1,5 +1,10 @@
 # Pending / In-Progress Work
 
+## ▶ Phiên 2026-09-27 — VETC Phase 2 (tự động fetch + lưu) — SQL soạn xong, CHỜ CHẠY — chi tiết done.md
+1. ⬜ **Chạy SQL**: `NewAPI/Migration_FCL_VetcAutoFetch_20260927.sql` (2 bảng mới `Tbl_DispatchOrderFCLVetcQueue`/`Tbl_DispatchOrderFCLVetcActual` + TVP + 3 SP). Không phụ thuộc thứ tự với BE (object hoàn toàn mới, chưa ai gọi).
+2. ⏸ Sau khi SQL chạy: code BE — gate `StartedDate`/`FinishedDate` trong `DispatchOrderFCLController.ChangeStatus` (ActionType=2) trước khi gọi SP hiện hữu (không sửa SP), gọi `SP_DispatchOrderFCLVetcQueue_Upsert` sau khi đổi trạng thái thành công; `HostedService` mới poll `SP_DispatchOrderFCLVetcQueue_GetPending` → gọi VETC (tái dùng logic `VetcApiController.CompareByRefNo`) → `SP_DispatchOrderFCLVetcActual_Save`. CHƯA CODE.
+3. Thay thế mục "VETC Phase 2" ở phiên 2026-09-22 (mục 4) — nay đã lên thiết kế, không còn "chờ Phase 1 ổn" nữa vì đã chốt ý tưởng với anh.
+
 ## ▶ Phiên 2026-09-25 — việc anh cần làm/duyệt (chi tiết done.md)
 1. ⬜ **Chạy SQL** (theo thứ tự tùy ý): `Migration_Accounts_Create_SummarySupplierCost_20260925.sql` (TRƯỚC khi deploy FE summary-supplier-cost), `Migration_Report01_V2_DetailId_20260924.sql`, `Migration_DispatchOrderFCL_RevertToBeforeB1_20260924.sql` (rồi EXEC ví dụ cuối file với @DryRun=1 → 0 cho 4 lệnh FCL cần sửa chi phí), `Fix_DriverFuelApproval_DOVT260916_009929_FixQty_20260925.sql` (@Commit=0 xem trước → 1).
 2. ⬜ Deploy: ERP API (VetcApiController khung thời gian đúng) + `ng build` FE (modal VETC admin, bỏ trang etc-reconciliation, summary-supplier-cost typeAccount=7).
