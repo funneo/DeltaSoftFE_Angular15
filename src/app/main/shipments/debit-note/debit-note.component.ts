@@ -26,8 +26,12 @@ import { FormatContstants } from '@app/shared/constants/format.constants';
   styleUrls: ["./debit-note.component.css"],
 })
 export class DebitNoteComponent implements OnInit {
+  // Phân trang PHÍA FE: vẫn tải hết 1 lần (lọc cột client-side giữ nguyên), chỉ render listPage
+  // để không vẽ 6k dòng DOM một lúc.
   pageIndex = 1;
-  pageSize = SystemContstants.PAGESIZE;
+  pageSize = 50;
+  pageSizeOptions = [20, 50, 100, 200, 500];
+  listPage: DebitNotes[] = [];
   totalRows = 0;
   totalAmount = 0;
   flagEdit = false;
@@ -226,7 +230,8 @@ export class DebitNoteComponent implements OnInit {
   }
 
   export() {
-    let printList = this.listFilter.map(
+    // Chỉ xuất debit THẬT — dòng nháp không phải số liệu chính thức.
+    let printList = this.listFilter.filter((x) => !(x as any)._isDraft).map(
       ({
         id,
         partnerId,
@@ -355,7 +360,20 @@ export class DebitNoteComponent implements OnInit {
           .includes(this.nguoilapSearch.trim().toLocaleLowerCase());
       });
     this.calculator();
+    this.pageIndex = 1;
+    this.paginate();
   }
+
+  paginate(): void {
+    const start = (this.pageIndex - 1) * this.pageSize;
+    this.listPage = (this.listFilter ?? []).slice(start, start + this.pageSize);
+  }
+
+  changedPageSize(): void {
+    this.pageIndex = 1;
+    this.paginate();
+  }
+
   calculator() {
     this.totalAmount = 0;
     this.listFilter.forEach((it) => {
@@ -389,7 +407,7 @@ export class DebitNoteComponent implements OnInit {
     let denNgay = moment(this.ngayKetThuc).format("YYYYMMDD");
     this.spinner.show();
     const params = new HttpParams()
-      .set("pageIndex", this.pageIndex.toString())
+      .set("pageIndex", "1")   // load-all: luôn trang 1 (pageIndex giờ là trang FE)
       .set("pageSize", "99999")
       .set("keyword", this.keyword)
       .set("fromDate", tuNgay)
@@ -444,8 +462,9 @@ export class DebitNoteComponent implements OnInit {
       debitType: p.debitType,
       debitNo: 'NHÁP',
       refDate: d.createdAt,
-      debitDate: p.debitDate,
-      accountingDate: p.accountingDate,
+      // Payload nháp lưu 'dd/MM/yyyy' → DatePipe ném NG02100 (vd 28/09/2026) làm vỡ render cả bảng → đổi sang Date.
+      debitDate: this.parseDraftDate(p.debitDate),
+      accountingDate: this.parseDraftDate(p.accountingDate),
       totalAmount: d.totalAmount ?? p.totalAmount ?? 0,
       shipmentNo: p.jobId,
       cdsNumber: p.cdsNumber,
@@ -462,6 +481,13 @@ export class DebitNoteComponent implements OnInit {
       _draftPayload: d.payload,
     };
     return row as DebitNotes;
+  }
+
+  /** 'dd/MM/yyyy' (hoặc ISO) → Date; không hợp lệ → null để DatePipe không ném lỗi. */
+  private parseDraftDate(v: any): Date | null {
+    if (!v) return null;
+    const m = moment(v, ['DD/MM/YYYY', 'DD/MM/YYYY HH:mm:ss', moment.ISO_8601], true);
+    return m.isValid() ? m.toDate() : null;
   }
 
   clickRow(item: DebitNotes): void {
@@ -497,7 +523,7 @@ export class DebitNoteComponent implements OnInit {
 
   pageChanged(event: PageChangedEvent): void {
     this.pageIndex = event.page;
-    this.loadData();
+    this.paginate();   // phân trang FE: không gọi lại server
   }
 
   add(type: number): void {
@@ -611,13 +637,19 @@ export class DebitNoteComponent implements OnInit {
     });
   }
 
+  // Dòng nháp KHÔNG được tích: id của nháp là DraftEntries.Id, có thể trùng Id debit thật
+  // → Xóa/Cập nhật ngày sẽ đánh nhầm vào phiếu thật.
+  // "Chọn tất cả" chỉ áp cho TRANG đang xem — không tích ngầm các dòng ở trang khác.
   checkAll(ev) {
-    this.listFilter.forEach((x) => (x.checked = ev.target.checked));
+    this.listPage.forEach((x) => (x.checked = !(x as any)._isDraft && ev.target.checked));
     this.icheck();
   }
 
   isAllChecked() {
-    if (this.listDebitNotes) return this.listFilter.every((_) => _.checked);
+    if (this.listDebitNotes) {
+      const realRows = this.listPage.filter((x) => !(x as any)._isDraft);
+      return realRows.length > 0 && realRows.every((_) => _.checked);
+    }
   }
   isSelected = false;
   icheck() {

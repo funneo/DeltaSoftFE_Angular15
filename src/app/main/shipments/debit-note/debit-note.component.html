@@ -156,7 +156,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of listFilter" (click)="clickRow(item)" [class.row-draft]="item._isDraft">
+        <tr *ngFor="let item of listPage" (click)="clickRow(item)" [class.row-draft]="item._isDraft">
           <td class="table-checkbox">
             <label class="custom-checkbox" *ngIf="!item._isDraft">
               <input type="checkbox" value="{{ item.id }}" [checked]="item.checked" disabled />
@@ -210,24 +210,27 @@
   <div class="box-footer no-padding">
     <div *ngIf="listFilter && listFilter.length > 0" class="col-md-12 footer-phantrang">
       <div class="row">
-        <div class="col-md-4">
+        <div class="col-md-3">
           <div class="dataTables_info">
             <span>Tổng số bản ghi: {{ listFilter?.length }}</span>
           </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
           <div class="dataTables_info">
             <span style="font-weight: bold; color: rgba(255, 77, 0, 0.926);">Tổng tiền: {{ totalAmount|VND }}</span>
           </div>
         </div>
-        <!-- <div class="col-md-4 text-right" *ngIf="!isFilter">
-          <div class="page">
-            <pagination [totalItems]="totalRows" [(ngModel)]="pageIndex" [maxSize]="5"
-              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" previousText="&lsaquo;" nextText="&rsaquo;"
-              firstText="&laquo;" lastText="&raquo;">
+        <div class="col-md-6 text-right">
+          <div class="page page-size-wrap">
+            <span class="page-size-label">Số dòng/trang</span>
+            <ng-select class="page-size-select" name="pageSize" [items]="pageSizeOptions" [(ngModel)]="pageSize"
+              [clearable]="false" [searchable]="false" (change)="changedPageSize()"></ng-select>
+            <pagination [totalItems]="listFilter?.length || 0" [(ngModel)]="pageIndex" [maxSize]="5"
+              (pageChanged)="pageChanged($event)" [itemsPerPage]="pageSize" [boundaryLinks]="true"
+              previousText="&lsaquo;" nextText="&rsaquo;" firstText="&laquo;" lastText="&raquo;">
             </pagination>
           </div>
-        </div> -->
+        </div>
       </div>
     </div>
   </div>

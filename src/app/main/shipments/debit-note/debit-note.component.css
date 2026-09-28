@@ -71,3 +71,8 @@ thead tr:nth-child(3) th{background: #dcefe5f6; position: sticky;top: 60px;z-ind
 /* Dòng nháp (draft) — đồng bộ list Payment */
 .row-draft { background-color: #fff8e1 !important; }
 .row-draft td { font-style: italic; }
+/* Phân trang FE — ô chọn số dòng/trang nằm cùng hàng pagination */
+.page-size-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap; }
+.page-size-wrap .page-size-label { white-space: nowrap; }
+.page-size-wrap .page-size-select { width: 80px; }
+.page-size-wrap ::ng-deep .pagination { margin: 4px 0; }
