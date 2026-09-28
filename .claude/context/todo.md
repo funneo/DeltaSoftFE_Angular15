@@ -1,14 +1,32 @@
 # Pending / In-Progress Work
 
-## ▶ Phiên 2026-09-27 — VETC Phase 2 (tự động fetch + lưu) — SQL soạn xong, CHỜ CHẠY — chi tiết done.md
-1. ⬜ **Chạy SQL**: `NewAPI/Migration_FCL_VetcAutoFetch_20260927.sql` (2 bảng mới `Tbl_DispatchOrderFCLVetcQueue`/`Tbl_DispatchOrderFCLVetcActual` + TVP + 3 SP). Không phụ thuộc thứ tự với BE (object hoàn toàn mới, chưa ai gọi).
-2. ⏸ Sau khi SQL chạy: code BE — gate `StartedDate`/`FinishedDate` trong `DispatchOrderFCLController.ChangeStatus` (ActionType=2) trước khi gọi SP hiện hữu (không sửa SP), gọi `SP_DispatchOrderFCLVetcQueue_Upsert` sau khi đổi trạng thái thành công; `HostedService` mới poll `SP_DispatchOrderFCLVetcQueue_GetPending` → gọi VETC (tái dùng logic `VetcApiController.CompareByRefNo`) → `SP_DispatchOrderFCLVetcActual_Save`. CHƯA CODE.
-3. Thay thế mục "VETC Phase 2" ở phiên 2026-09-22 (mục 4) — nay đã lên thiết kế, không còn "chờ Phase 1 ổn" nữa vì đã chốt ý tưởng với anh.
+## ▶ Phiên 2026-09-29 — Debit Note (FE) — chi tiết done.md
+1. ⬜ `ng build --configuration production` + deploy FE (sửa NG02100 ngày nháp, chọn tất cả bỏ nháp, xuất Excel bỏ nháp, phân trang FE).
+2. ⬜ Nếu mở màn vẫn chậm (1 request tải ~6k dòng) → cân nhắc phân trang SERVER (phải chuyển lọc cột vào SP — việc lớn).
+3. ⬜ Anh xác nhận chi nhánh của chị Quế (NV01048, hồ sơ chi nhánh 5=SG) — nháp Debit AI gán cho chị thuộc chi nhánh 4=HN (vd #18302); màn Debit lọc nháp theo chi nhánh đang chọn → chị phải chọn HN/Tất cả mới thấy.
+4. ⏸ (Tùy anh) SP lọc nháp cho user thường dùng `targetEmployeeId` OR `employeeId` — nếu muốn chỉ người được chọn thực hiện mới thấy thì sửa SP chung (ảnh hưởng mọi loại nháp).
+
+## ▶ 2026-09-28 — Thu chi theo yêu cầu PM Xưởng (F051) — ⏸ TẠM GÁC (anh bảo 2026-09-28) — SQL + tài liệu API ĐÃ SOẠN, CHỜ ANH DUYỆT
+Ý tưởng (anh chốt): Xưởng đẩy yêu cầu thu/chi (4 loại: 1 Chi trả trước, 2 Chi trả sau, 3 Thu trả trước, 4 Thu trả sau) qua API Api-Key → màn thủ quỹ 2 tab Chi/Thu, tích 1..n yêu cầu cùng chiều → viết 1 phiếu chi/thu (modal-phieu-chi/thu có sẵn; thủ quỹ tự chọn NCC/KH vì chỉ lưu TÊN) → `SP_Accounts_Create @TypeAccount=8 + @GarageRequestIds` cùng transaction đánh dấu "Đã viết phiếu" + AccountId. Module MỚI (dựa ý tưởng F018, không dùng lại). Nghiệp vụ xưởng (trả trước/sau, TT 1 phần) ERP không quan tâm. RawJson lưu nguyên văn → modal "Xem chi tiết" dựng có cấu trúc + tab JSON gốc. Không API báo ngược (Excel không yêu cầu). Đã viết phiếu thì KHÔNG cho xóa (SP_Accounts_Delete không sửa; khi nào cho xóa xử lý sau).
+1. ⬜ Anh duyệt `NewAPI/Migration_GaragePaymentRequest_20260928.sql` (bảng `Tbl_GaragePaymentRequest` + 4 SP `SP_GaragePaymentRequest_*` + ALTER `SP_Accounts_Create` loại 8 [thân SP chép nguyên văn, đã so khớp 100% với DB] + grant F051 VIEW/ACCOUNT) → chạy TRƯỚC deploy BE.
+2. ⬜ Anh duyệt `NewAPI/Garage_API_PaymentRequest_2026-09-28.md` (mục 13 Upsert, 14 Cancel) → gửi bên Xưởng.
+3. ⬜ BE: enum F051; `GaragesController` + `PaymentRequestUpsert`/`PaymentRequestCancel` (Api-Key `AppSettings:ApiKey`); controller nội bộ GetPaging/GetById (F051_VIEW); `AccountRepository.CreateAsync` truyền `@GarageRequestIds` (+ property model Accounts).
+4. ⬜ FE: trang `/main/accounting/garage-payment-request` (2 tab Chi/Thu, gom theo tên đối tượng, tích chọn → Lập phiếu, tab Đã viết phiếu) + modal xem chi tiết; modal-phieu-chi/thu nhận `typeAccount=8` + `garageRequestIds`.
+5. ✅ Anh chốt: số tiền phiếu = tổng các yêu cầu (FE khóa ô số tiền, SP chặn lệch > 0.01); chi nhánh phiếu = chi nhánh yêu cầu (SP chặn; FE chỉ cho chọn yêu cầu cùng chi nhánh).
+
+## ▶ Phiên 2026-09-28 — VETC Phase 2 — ✅ ĐÃ PUBLISH tối 2026-09-28 — còn test — chi tiết done.md
+1. ✅ SQL `NewAPI/Migration_FCL_VetcAutoFetch_20260927.sql` ĐÃ CHẠY.
+2. ✅ Publish ERP API (tối 2026-09-28).
+3. ⬜ Test: (a) Hoàn thành 1 lệnh thiếu giờ → báo 400; (b) Hoàn thành lệnh đủ giờ → có dòng `Tbl_DispatchOrderFCLVetcQueue`, sau ~60 phút có dữ liệu `Tbl_DispatchOrderFCLVetcActual`; (c) nút "Đối chiếu VETC" lệnh xe 15C32259 (25/09) → 1 dòng trạm mở Phả Lại 196.000đ.
+4. ⬜ Xác nhận app mobile tài xế hoàn thành lệnh qua `api/DispatchOrderFCL/ChangeStatus` (nếu gọi endpoint khác thì lệnh không vào hàng chờ).
+5. ⬜ (Cân nhắc) backfill hàng chờ cho các lệnh đã hoàn thành TRƯỚC khi publish — soạn .sql nếu anh cần.
+6. ⬜ Theo dõi: giao dịch "Không thành công" bị bỏ; nếu VETC thu lại (OTC) NGOÀI khung giờ lệnh thì lệnh thiếu khoản đó (vd 15H-056.83 246.737đ 25/09).
+7. ⏸ Sau: tự động gắn cờ nghi né trạm (so ước tính Vietmap vs thực tế VETC) — chưa làm.
 
 ## ▶ Phiên 2026-09-25 — việc anh cần làm/duyệt (chi tiết done.md)
 1. ⬜ **Chạy SQL** (theo thứ tự tùy ý): `Migration_Accounts_Create_SummarySupplierCost_20260925.sql` (TRƯỚC khi deploy FE summary-supplier-cost), `Migration_Report01_V2_DetailId_20260924.sql`, `Migration_DispatchOrderFCL_RevertToBeforeB1_20260924.sql` (rồi EXEC ví dụ cuối file với @DryRun=1 → 0 cho 4 lệnh FCL cần sửa chi phí), `Fix_DriverFuelApproval_DOVT260916_009929_FixQty_20260925.sql` (@Commit=0 xem trước → 1).
 2. ⬜ Deploy: ERP API (VetcApiController khung thời gian đúng) + `ng build` FE (modal VETC admin, bỏ trang etc-reconciliation, summary-supplier-cost typeAccount=7).
-3. ⬜ VETC: xác nhận tài khoản đã kích hoạt/đúng mật khẩu (gọi thật đang 401); test modal "Đối chiếu VETC" (mọi người dùng thấy nút).
+3. ✅ (2026-09-28) VETC 401 = mật khẩu trong repo sai 1 ký tự (h→H), đã sửa; curl từ server gọi thật OK. ⬜ test modal "Đối chiếu VETC" (mọi người dùng thấy nút).
 4. ⬜ Dọn dữ liệu chi tiền tổng hợp NCC: hủy 3 phiếu chi trùng của 1 phiếu tổng hợp + ~5.485 dòng rác EmployeeDebit TAM_UNG_CK (chờ anh xác nhận, soạn script riêng).
 5. ⬜ (Ghi nhận, chưa sửa) SP_Accounts_Create: dòng chung UPDATE Advances theo @AdvanceId chạy cho cả loại 1-6 → có thể đánh dấu nhầm Advances trùng id.
 
@@ -17,7 +35,7 @@
 2. ⬜ **Anh duyệt** `NewAPI/TollStation_MatchReview_20260922.xlsx` (điền cột `ChonLam`/`GhiChu` từng dòng) → gửi lại để soạn `Migration_TollStation_LinkNewLocations_<date>.sql` (UPDATE `StartLocation`/`EndLocation`).
 3. 🟡 **VETC**: ĐÃ điền Username/Password vào `appsettings.Development.json` + `appsettings.Production.json` (2026-09-24). IP public server ĐÃ gửi VETC whitelist (máy dev KHÔNG gọi được VETC → chỉ test được sau khi publish). CÒN: publish ERP API (VetcApiController; kiểm `appsettings.Production.json` trên server có mục `VetcApi`) + `ng build`/deploy FE → test nút "Đối chiếu VETC" trong modal lệnh FCL (đã chuyển từ list sang modal). Ổn thì bỏ nút EUP.
 3b. ⬜ **BC01 site nháp**: endpoint DraftAPI `/api/draftReport/report01` đã chạy thật (xem done.md 2026-09-24). CÒN: màn BC01 trong draft-web; quyết định kiểm quyền theo user (hiện mọi user login-draft xem hết KH); tối ưu thêm SP_Report01_V2 nếu cần.
-4. ⏸ VETC Phase 2 (polling tự động + lưu DB + tự gắn cờ nghi né trạm) — CHƯA làm, chờ Phase 1 chạy ổn với dữ liệu thật trước.
+4. ➡ VETC Phase 2 — đã code 2026-09-28, xem section phiên 2026-09-28 ở đầu file.
 5. ⬜ `ng build` + deploy FE (badge/filter "Bị từ chối", banner modal, trang `etc-reconciliation`, nút "Đối chiếu VETC") — SQL đã chạy nên có thể deploy FE ngay để test tính năng "sửa lại lệnh bị từ chối" + báo cáo CP03 hết chênh lệch ảo; deploy lại API (VetcApiController mới) khi tiện, chưa gấp vì thiếu creds VETC thì API tự trả lỗi 400 rõ ràng, không crash.
 
 ## ★★ MỐC 2026-09-20 — anh xác nhận ĐÃ DEPLOY HẾT (FE + các mục chờ deploy trước đó)

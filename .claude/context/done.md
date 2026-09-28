@@ -1,6 +1,29 @@
 # Completed Features
 
-## Phiên 2026-09-27 — VETC Phase 2 (tự động fetch VETC khi lái xe hoàn thành lệnh) — thiết kế + SQL soạn xong, CHỜ CHẠY
+## Phiên 2026-09-29 — Debit Note: sửa lỗi hiển thị nháp + phân trang FE (FE-only, chờ ng build)
+File: `src/app/main/shipments/debit-note/debit-note.component.{ts,html,css}`.
+- **Lỗi `NG02100` (InvalidPipeArgument) làm vỡ render cả bảng (nháp lẫn thật)**: 753 nháp Debit lưu `debitDate`/`accountingDate` dạng chuỗi `dd/MM/yyyy` → DatePipe ném lỗi khi ngày > 12. `mapDraftToDebitRow` đổi sang Date qua `parseDraftDate` (moment strict `DD/MM/YYYY`/ISO; sai → null).
+- **Chọn tất cả dính dòng nháp**: dòng nháp mang `id` = DraftEntries.Id (có thể trùng Id debit thật) → Xóa/Cập nhật ngày DT-VH có thể đánh nhầm phiếu thật. `checkAll`/`isAllChecked` bỏ dòng nháp.
+- **Xuất Excel** chỉ xuất debit thật (bỏ dòng nháp).
+- **Phân trang PHÍA FE** (vẫn load-all 1 request để lọc cột client-side giữ nguyên): render `listPage`, mặc định 50 dòng/trang, ng-select 20/50/100/200/500 + `<pagination>` boundary; lọc cột → về trang 1; Tổng số bản ghi/Tổng tiền tính trên toàn bộ kết quả lọc; "chọn tất cả" chỉ áp trang đang xem. `loadData` luôn gửi `pageIndex=1` (trước gửi trang hiện tại + pageSize 99999 → trang ≥2 tải lại ra rỗng).
+- Đã kiểm: lọc nháp Debit dùng CHUNG `SP_DraftEntries_GetForErp_GetPaging` với Lô hàng (Admin thấy hết; user thường = người tạo + `targetEmployeeId`/`employeeId` trên payload). Nháp đã promote có Status=Promoted, SP loại → không trùng nháp/thật.
+- `ng build` sạch.
+
+## Phiên 2026-09-28 — VETC Phase 2 CODE BE XONG (SQL đã chạy) — ✅ ĐÃ PUBLISH tối 2026-09-28 (commit 6061e3d + e9831a9 refactor Services/Dgas3, Services/Vetc)
+- **BE mới**: `Services/VetcClient.cs` (gọi VETC dùng CHUNG cho nút "Đối chiếu VETC" + service tự động — đổi cách gọi VETC chỉ sửa 1 chỗ), `Services/VetcAutoFetchService.cs` (HostedService: 2 phút sau start, mỗi `VetcApi:AutoFetchIntervalMinutes`=10 phút quét `SP_DispatchOrderFCLVetcQueue_GetPending`, lấy lệnh có `FinishedDate + AutoFetchDelayMinutes(60) <= Now` → gọi VETC theo StartedDate→FinishedDate → `SP_DispatchOrderFCLVetcActual_Save`; lỗi → Save(false) tăng đếm), `Repositories/FCL/DispatchOrderFCLVetcRepository.cs` + `Interfaces/FCL/IDispatchOrderFCLVetc.cs` + `Models/FCL/DispatchOrderFCLVetcQueue.cs`. `Program.cs` đăng ký `VetcClient` (scoped) + hosted service. Tắt được bằng `VetcApi:AutoFetchEnabled=false`.
+- **`DispatchOrderFCLController`**: `ChangeStatus` ActionType=2 (Hoàn thành) chặn 400 nếu thiếu StartedDate/FinishedDate (không sửa SP) → thành công thì `EnqueueVetcAsync` → `SP_DispatchOrderFCLVetcQueue_Upsert` (lỗi nuốt, không hỏng thao tác hoàn thành). `DriverUpdate` lệnh mới (IsLegacy=0) Status≥3 cũng upsert lại → SP tự reset khi đổi giờ. Lệnh legacy (UpdateState) không vào hàng chờ.
+- **`VetcApiController`** chuyển sang dùng VetcClient, kết quả trả FE không đổi.
+- **Quyết định với dữ liệu thật** (curl từ server 25/09):
+  - Truyền `plate=<biển bỏ dấu>V` cho VETC (100% xe Delta qua trạm là biển VÀNG → hậu tố V, anh xác nhận) → VETC lọc sẵn, không tải cả đội xe; vẫn lọc lại theo biển phía mình.
+  - BỎ giao dịch `charge_status = "Không thành công"` (ETC trừ tiền thất bại, VETC thu lại bằng giao dịch OTC riêng → giữ thì cộng trùng, vd 15H-056.55 560.801đ ×2). Anh chốt KHÔNG lưu.
+  - `price_amount` → `decimal?` (VETC có trả null — lỗi `$[89].price_amount`), lưu/tính = 0.
+  - Ngày VETC trả dạng `dd/MM/yyyy HH:mm:ss` — `ParseVetcDate` đã hỗ trợ.
+- **Nguyên nhân 401 cũ**: mật khẩu VETC trong appsettings sai 1 ký tự (sai hoa/thường); đã sửa `appsettings.Production.json`/`Development.json` (gitignored — server có bản riêng đúng).
+- `NewAPI/Tools/Vetc_RawCall.ps1` (script gọi VETC thô) để lại local, KHÔNG commit (anh dùng curl).
+- Build sạch (`dotnet build -o scratchpad`). CHƯA test thật.
+
+
+## Phiên 2026-09-27 — VETC Phase 2 (tự động fetch VETC khi lái xe hoàn thành lệnh) — thiết kế + SQL (ĐÃ CHẠY 2026-09-28)
 
 ### Ý tưởng chốt với anh Cường
 - Khi lái xe bấm "Hoàn thành lệnh" (ActionType=2), CHỈ cho hoàn thành khi lệnh đã có đủ `StartedDate` + `FinishedDate` (App mobile đã tự chặn/báo phần này ở tầng UX; BE thêm gate làm lớp chặn phụ, KHÔNG sửa `SP_DispatchOrderFCL_ChangeStatus`).
@@ -8,11 +31,11 @@
 - CHƯA tự động gắn cờ "nghi né trạm" (vẫn do lái xe tự làm) — tên trạm giữa ước tính (Vietmap) và thực tế (VETC `from_toll`/`to_toll`) có thể lệch chút, để dành xử lý khi làm tự động ở giai đoạn sau.
 - VETC lỗi liên tục quá 5 lần/RefNo → dừng tự retry (`FetchStatus=2`, cần can thiệp thủ công). Nếu `StartedDate`/`FinishedDate` bị sửa lại sau khi đã fetch → tự reset để lấy lại theo khung giờ mới.
 
-### SQL đã soạn — `NewAPI/Migration_FCL_VetcAutoFetch_20260927.sql` (CHƯA CHẠY)
+### SQL — `NewAPI/Migration_FCL_VetcAutoFetch_20260927.sql` (ĐÃ CHẠY 2026-09-28)
 - `Tbl_DispatchOrderFCLVetcQueue` (hàng chờ, unique theo RefNo, `FetchStatus`/`FetchAttempts`/`FetchError`) + `Tbl_DispatchOrderFCLVetcActual` (giao dịch thật, `SourceType` 1=trạm kín/2=trạm mở) + TVP `TypeDispatchOrderFCLVetcActual`.
 - 3 SP mới: `SP_DispatchOrderFCLVetcQueue_Upsert` (upsert + auto-reset fetch status khi đổi giờ), `SP_DispatchOrderFCLVetcQueue_GetPending` (lấy RefNo cần fetch), `SP_DispatchOrderFCLVetcActual_Save` (ghi kết quả, idempotent — xóa/ghi lại theo RefNo; hoặc tăng đếm lỗi).
 - Không đụng bảng/SP `DispatchOrderFCL` hay `VetcApiController` hiện có.
-- CHƯA code phần BE (gate + gọi Upsert + HostedService) — chờ anh chạy SQL trước.
+- BE đã code 2026-09-28 — xem phiên 2026-09-28.
 
 ## Phiên 2026-09-25 — VETC modal (admin) + khung thời gian đúng, sửa lỗi chi tiền tổng hợp NCC, SQL sửa dữ liệu
 
