@@ -1,5 +1,10 @@
 # Pending / In-Progress Work
 
+## ▶ Phiên 2026-09-29/30 — FCL v2 giá trạm sửa tay + Lưu mặc định — FE-only, CHỜ ng build + test — chi tiết done.md
+1. ⬜ `ng build` + deploy FE.
+2. ⬜ Test: chọn xe → sửa giá 1 trạm → Lưu mặc định → tạo lệnh mới cùng cung + cùng hạng xe → trạm hiện đúng giá đã sửa; đổi xe qua lại trên lệnh cũ giá sửa không mất.
+3. ⏸ (Tùy anh) thêm cột IsManual vào `Tbl_RouteSegmentDefault_Stations` để giữ màu trạm tay.
+
 ## ▶ Phiên 2026-09-29 (tối) — Vay cá nhân chống duyệt trùng — FE xong, CHỜ chạy SQL + ng build — chi tiết done.md
 1. ⬜ Anh duyệt + chạy `NewAPI/Migration_PersonalLoan_Accept_ChongDuyetTrung_20260929.sql` (trước/sau deploy FE đều được).
 2. ⬜ `ng build` + deploy FE (modal-personal-loan khóa nút).

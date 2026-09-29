@@ -1,5 +1,10 @@
 # Completed Features
 
+## Phiên 2026-09-29/30 — FCL v2: giá trạm sửa tay giữ trên lệnh + "Lưu mặc định" lưu đúng giá (FE-only, chờ ng build)
+- **Lỗi**: ô giá trạm ở khối Thông tin cung đường chỉ sửa `station.price`, không sửa `allPrices` (giá theo hạng xe) → `_applyTollPrices` sau đó (đổi xe / nạp mặc định / mở lại lệnh) đè lại giá cũ; "Lưu mặc định" gửi `allPrices` cũ → lần sau chọn cung đường hiện giá cũ/0.
+- **Fix** `modal-dispatch-order-fcl-v2`: `onSegmentStationPriceChange(i, s)` ghi giá mới vào `allPrices[vietmapVehicleKey]` (chỉ hạng xe đang chọn). BE/SP (`SP_RouteSegmentDefault_Save`, `SP_TransportOrder_GetSegmentHistory`) đã lưu/trả `AllPrices` sẵn — không sửa. tsc 0 lỗi.
+- Lưu ý: phải chọn xe trước khi sửa giá; bảng mặc định không có cột IsManual → trạm tay lưu mặc định lần sau hiện màu như trạm Vietmap (giá vẫn đúng).
+
 ## Phiên 2026-09-29 (tối) — Vay cá nhân: chống duyệt trùng / nhảy bước (FE xong, SQL chờ chạy)
 - **Quy trình**: 2 bước duyệt (AcceptStep 0→1→2, cấp duyệt = `UserRoles.AdvanceConfirmLevel` dùng chung Tạm ứng, quyền `LOAN_ACCEPT`) → chi tiền (`Feedback='Completed'`, IsComplete=1). Từ chối B1=-1, B2=-2.
 - **Lỗi**: FE nút Duyệt không khóa khi đang gửi + `SP_PersonalLoan_Accept` cứ `AcceptStep+1` (không kiểm bước/cấp/trần) → bấm đúp nhảy 0→2. Ca thật **202600139** (trang.minh B1 x2 cùng giây 29/09 11:33:47 → loan.pham chi tiền 14:11, chưa có B2 thật); 202600099/202600035 lên step 3 (B2 bấm 2 lần).
