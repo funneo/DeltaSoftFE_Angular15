@@ -143,10 +143,10 @@
             </div>
             <div class="col-md-6 text-right">
               <button *ngIf="_hasPermissionAdvance" type="button" (click)="changedAccept(true)"
-                class="btn btn-success btn-sm">
+                class="btn btn-success btn-sm" [disabled]="flagSave">
                 <i class="fa fa-check"></i> Duyệt</button>
               <button *ngIf="_hasPermissionAdvance" type="button" (click)="changedAccept(false)"
-                class="btn btn-warning btn-sm">
+                class="btn btn-warning btn-sm" [disabled]="flagSave">
                 <i class="fa fa-exclamation-triangle"></i> Từ chối</button>
               <button *ngIf="!flagXem" type="submit" class="btn btn-primary btn-sm"
                 [disabled]="!addEditForm.form.valid || flagSave">

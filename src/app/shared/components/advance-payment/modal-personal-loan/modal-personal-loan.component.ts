@@ -207,6 +207,7 @@ export class ModalPersonalLoanComponent implements OnInit {
   }
 
   changedAccept(event: boolean) {
+    if (this.flagSave) return; // đang gửi — chặn bấm đúp (SP cộng bước mỗi lần gọi)
     let item: PersonalLoan={
       id :this.entity.id,
       feedback : this.feedback,
