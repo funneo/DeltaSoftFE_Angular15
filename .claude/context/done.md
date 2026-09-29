@@ -1,5 +1,11 @@
 # Completed Features
 
+## Phiên 2026-09-29 (tối) — Vay cá nhân: chống duyệt trùng / nhảy bước (FE xong, SQL chờ chạy)
+- **Quy trình**: 2 bước duyệt (AcceptStep 0→1→2, cấp duyệt = `UserRoles.AdvanceConfirmLevel` dùng chung Tạm ứng, quyền `LOAN_ACCEPT`) → chi tiền (`Feedback='Completed'`, IsComplete=1). Từ chối B1=-1, B2=-2.
+- **Lỗi**: FE nút Duyệt không khóa khi đang gửi + `SP_PersonalLoan_Accept` cứ `AcceptStep+1` (không kiểm bước/cấp/trần) → bấm đúp nhảy 0→2. Ca thật **202600139** (trang.minh B1 x2 cùng giây 29/09 11:33:47 → loan.pham chi tiền 14:11, chưa có B2 thật); 202600099/202600035 lên step 3 (B2 bấm 2 lần).
+- **FE** `modal-personal-loan`: `[disabled]="flagSave"` nút Duyệt/Từ chối + guard `if (this.flagSave) return` trong `changedAccept`. tsc 0 lỗi.
+- **SQL** `NewAPI/Migration_PersonalLoan_Accept_ChongDuyetTrung_20260929.sql` (ALTER SP cũ — anh cho phép; chữ ký giữ nguyên, không sửa BE): UPDLOCK dòng phiếu; duyệt chỉ khi Status=1, chưa chi, step IN (0,1), cấp tại chi nhánh PHIẾU = step+1 (Admin bỏ qua cấp); từ chối cùng chốt; chi tiền chỉ khi step≥2, đã chi → bỏ qua; chỉ ghi ApprovedLog khi có đổi. Đối chiếu lịch sử duyệt từ 03/2026: 100% khớp quy tắc.
+
 ## Phiên 2026-09-29 (chiều) — Thanh toán: fix double dòng chi tiết sau Duyệt B1 (FE-only, chờ ng build) + VETC kiểm dữ liệu/xuất Excel
 - **Triệu chứng**: list Duyệt TT B1 thỉnh thoảng 1 dòng chi tiết thành 2 (1 dòng đã B1 + 1 dòng chuyển duyệt Step=0).
 - **Nguyên nhân (verify dữ liệu thật)**: `payment-detail.component.ts` lưu xong KHÔNG nạp lại lưới `listDetail` (Thêm mới chỉ gán lại `entity`; Cập nhật không nạp gì) → Lưu lần 2 trên form còn mở gửi dòng không Id → `SP_Payments_Update` INSERT dòng mới + chỉ xóa dòng Step<1 → nếu có người duyệt B1 xen giữa 2 lần Lưu thì dòng cũ (Step≥1) được giữ + dòng mới = double. Ví dụ PM-HN260925/016602 (tạo 10:49:22 → B1 10:50:18 → lưu lại 10:56:27 sinh dòng 1350233), PM-SG260928/022333. `SP_Payments_AcceptStep` chỉ UPDATE — không lỗi.

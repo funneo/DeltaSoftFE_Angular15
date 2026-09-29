@@ -1,5 +1,12 @@
 # Pending / In-Progress Work
 
+## ▶ Phiên 2026-09-29 (tối) — Vay cá nhân chống duyệt trùng — FE xong, CHỜ chạy SQL + ng build — chi tiết done.md
+1. ⬜ Anh duyệt + chạy `NewAPI/Migration_PersonalLoan_Accept_ChongDuyetTrung_20260929.sql` (trước/sau deploy FE đều được).
+2. ⬜ `ng build` + deploy FE (modal-personal-loan khóa nút).
+3. ⬜ Test: bấm Duyệt nhanh 2 lần → chỉ lên B1, 1 dòng log.
+4. ⬜ Anh quyết xử lý phiếu **202600139** (đã chi, thiếu B2 thật); soi thêm 1 phiếu AcceptStep=1 mà IsComplete=1, và 202600021 (có log chi tiền, không log duyệt).
+5. ⏸ (Tùy anh) BE trả thông báo lỗi cụ thể từ SP thay "Cập nhật lỗi"; rà cùng kiểu "+1 bước" ở Tạm ứng / Đặt cọc cont / Thanh toán.
+
 ## ▶ Phiên 2026-09-29 (chiều) — Thanh toán double dòng sau Duyệt B1 — FE-only, CHỜ ng build + deploy + test — chi tiết done.md
 1. ⬜ `ng build --configuration production` + deploy FE (`payment-detail.component.ts`: lưu xong gọi `edit(id)` nạp lại lưới).
 2. ⬜ Test: tạo phiếu (giữ form mở) → người khác duyệt B1 1 dòng → bấm Lưu lại → list B1 không bị nhân dòng.
