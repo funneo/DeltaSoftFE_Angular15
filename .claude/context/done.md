@@ -1,5 +1,11 @@
 # Completed Features
 
+## Phiên 2026-09-29 (chiều) — Thanh toán: fix double dòng chi tiết sau Duyệt B1 (FE-only, chờ ng build) + VETC kiểm dữ liệu/xuất Excel
+- **Triệu chứng**: list Duyệt TT B1 thỉnh thoảng 1 dòng chi tiết thành 2 (1 dòng đã B1 + 1 dòng chuyển duyệt Step=0).
+- **Nguyên nhân (verify dữ liệu thật)**: `payment-detail.component.ts` lưu xong KHÔNG nạp lại lưới `listDetail` (Thêm mới chỉ gán lại `entity`; Cập nhật không nạp gì) → Lưu lần 2 trên form còn mở gửi dòng không Id → `SP_Payments_Update` INSERT dòng mới + chỉ xóa dòng Step<1 → nếu có người duyệt B1 xen giữa 2 lần Lưu thì dòng cũ (Step≥1) được giữ + dòng mới = double. Ví dụ PM-HN260925/016602 (tạo 10:49:22 → B1 10:50:18 → lưu lại 10:56:27 sinh dòng 1350233), PM-SG260928/022333. `SP_Payments_AcceptStep` chỉ UPDATE — không lỗi.
+- **Fix**: lưu thành công (cả Thêm mới + Cập nhật) gọi `this.edit(this.entity.id)` — nạp lại phiếu + lưới có Id thật + `_isChuyeduyet` + quyền duyệt, giống mở phiếu từ list (cùng cách `savePaymentDetailed` đã dùng). Không đụng BE/SP. `tsc` 0 lỗi.
+- **VETC**: kiểm Phase 2 đã có dữ liệu (queue 9 lệnh, 7 fetched, 0 lỗi; Actual 3 dòng — 15C-322.59 Phả Lại 196.000đ đúng kỳ vọng). Xuất `NewAPI/VETC_20-26_09_2026.xlsx` (cả đội xe 20–26/09 qua curl `/transport/close|open` không `plate`: 145 xe, 1.952 lượt, 171.976.143đ; 4 sheet theo xe/chi tiết/theo trạm/chặng trạm kín; gộp chặng theo transport_trans_id, bỏ Không thành công/Hủy/null khỏi tổng).
+
 ## Phiên 2026-09-29 — Debit Note: sửa lỗi hiển thị nháp + phân trang FE (FE-only, chờ ng build)
 File: `src/app/main/shipments/debit-note/debit-note.component.{ts,html,css}`.
 - **Lỗi `NG02100` (InvalidPipeArgument) làm vỡ render cả bảng (nháp lẫn thật)**: 753 nháp Debit lưu `debitDate`/`accountingDate` dạng chuỗi `dd/MM/yyyy` → DatePipe ném lỗi khi ngày > 12. `mapDraftToDebitRow` đổi sang Date qua `parseDraftDate` (moment strict `DD/MM/YYYY`/ISO; sai → null).

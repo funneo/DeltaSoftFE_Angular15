@@ -1,5 +1,12 @@
 # Pending / In-Progress Work
 
+## ▶ Phiên 2026-09-29 (chiều) — Thanh toán double dòng sau Duyệt B1 — FE-only, CHỜ ng build + deploy + test — chi tiết done.md
+1. ⬜ `ng build --configuration production` + deploy FE (`payment-detail.component.ts`: lưu xong gọi `edit(id)` nạp lại lưới).
+2. ⬜ Test: tạo phiếu (giữ form mở) → người khác duyệt B1 1 dòng → bấm Lưu lại → list B1 không bị nhân dòng.
+3. ⬜ Dọn dữ liệu đã double (ước ~6 phiếu từ 01/07: PM-HN260925/016602, PM-SG260928/022333, PM-SG260801/016341, PM-SG260824/018375, PM-SG260829/019076, PM-SG260919/021474) — dòng thừa đã B2 đã ghi EmployeeDebit/tbDebt → cần kế toán xác nhận từng phiếu; em soạn script SELECT liệt kê khi anh cần.
+4. ⏸ (Tùy anh) chặn thêm ở `SP_Payments_Update` (SP cũ, nhạy cảm) — hiện chưa cần.
+5. ⬜ VETC: 2 lệnh xe 29C-291.27 (FCL-VT260924/0067, 260928/0092) giờ bắt đầu→hoàn thành cách ~1 giây → VETC luôn rỗng; kiểm lại cách tài xế bấm.
+
 ## ▶ Phiên 2026-09-29 — Debit Note (FE) — chi tiết done.md
 1. ⬜ `ng build --configuration production` + deploy FE (sửa NG02100 ngày nháp, chọn tất cả bỏ nháp, xuất Excel bỏ nháp, phân trang FE).
 2. ⬜ Nếu mở màn vẫn chậm (1 request tải ~6k dòng) → cân nhắc phân trang SERVER (phải chuyển lọc cột vào SP — việc lớn).
