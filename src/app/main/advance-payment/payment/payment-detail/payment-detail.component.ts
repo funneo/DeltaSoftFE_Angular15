@@ -455,13 +455,9 @@ export class PaymentDetailComponent implements OnInit {
             this.flagNew = false;
             this.SaveSuccess.emit(res.data.id);
             this.flagSave = false;
-            this.paymentsService.getDetail(this.entity.id).subscribe((res: ResponseValue<Payments>) => {
-              if (res.code == '200' || res.code == '201') {
-                this.entity = res.data;
-              } else {
-                this.handleCancel();
-              }
-            });
+            // Nạp lại cả phiếu + lưới chi tiết (có Id thật) — nếu không, lần Lưu sau gửi dòng không Id
+            // → SP_Payments_Update INSERT lại → double dòng khi dòng cũ đã duyệt B1
+            this.edit(this.entity.id);
           }
           else {
             this._notificationService.printErrorMessage(MessageContstants.CREATED_ERR_MSG);
@@ -478,6 +474,8 @@ export class PaymentDetailComponent implements OnInit {
             this._notificationService.printSuccessMessage(MessageContstants.UPDATED_OK_MSG);
             this.SaveSuccess.emit(res.data);
             this.flagSave = false;
+            // Nạp lại lưới chi tiết để dòng vừa thêm có Id thật (tránh double dòng khi Lưu tiếp)
+            this.edit(this.entity.id);
           }
           else {
             this._notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG);
