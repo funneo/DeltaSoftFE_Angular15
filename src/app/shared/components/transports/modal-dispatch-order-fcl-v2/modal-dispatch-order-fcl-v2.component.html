@@ -612,7 +612,7 @@
                           <span class="segment-etc-name">{{ s.stationName }}</span>
                           <input type="number" class="segment-etc-price"
                             [(ngModel)]="s.price"
-                            (ngModelChange)="onSegmentStationPriceChange(i)"
+                            (ngModelChange)="onSegmentStationPriceChange(i, s)"
                             [ngModelOptions]="{standalone: true}"
                             [disabled]="routeConfirmed"
                             title="Đơn giá (có thể sửa)">

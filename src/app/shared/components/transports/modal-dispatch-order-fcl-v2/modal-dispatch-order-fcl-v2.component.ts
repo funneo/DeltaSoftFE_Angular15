@@ -2508,7 +2508,16 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   // Sửa tay đơn giá 1 trạm ngay ở khối theo cung → đồng bộ luôn sang dòng tương ứng ở bảng ETC tổng
   // (trước đây chỉ calculateTotal() cho tổng cung, không cập nhật entity.listEtc → bảng tổng đứng yên).
-  onSegmentStationPriceChange(segIndex: number) {
+  // 2026-09-29: ghi giá sửa tay vào allPrices theo loại xe đang chọn — nếu không, lần _applyTollPrices
+  // sau (đổi xe / nạp mặc định / mở lại lệnh) lấy lại giá cũ từ allPrices, và "Lưu mặc định" lưu giá cũ.
+  onSegmentStationPriceChange(segIndex: number, station?: SegmentStation) {
+    const key = this.vietmapVehicleKey;
+    if (station && key) {
+      let prices: { [k: number]: number } = {};
+      try { prices = station.allPrices ? JSON.parse(station.allPrices) : {}; } catch { prices = {}; }
+      prices[key] = +station.price || 0;
+      station.allPrices = JSON.stringify(prices);
+    }
     this.calculateTotal();
     this._syncEtcFromSegment(segIndex);
   }
