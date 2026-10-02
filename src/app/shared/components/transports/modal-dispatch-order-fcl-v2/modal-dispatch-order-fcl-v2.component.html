@@ -890,18 +890,19 @@
               <!-- Trạm thu phí (ETC) — gộp từ tab ETC cũ, dùng TÊN trạm; tự thêm từ Vietmap -->
               <div class="dsg-etc-header">
                 <span class="dsg-etc-title"><i class="fa fa-money text-warning"></i> Trạm thu phí (ETC)</span>
+                <!-- Tạm ẩn 3 nút Check trạm EUP / Đối chiếu VETC / Hành trình GPS-EUP (2026-10-01) — bỏ `false &&` để bật lại -->
                 <button type="button" class="btn btn-xs btn-warning dsg-etc-add"
-                  *ngIf="entity.startedDate && entity.finishedDate"
+                  *ngIf="false && entity.startedDate && entity.finishedDate"
                   (click)="checkEup()">
                   <i class="fa fa-road"></i> Check trạm EUP
                 </button>
                 <button type="button" class="btn btn-xs btn-info dsg-etc-add"
-                  *ngIf="entity.refNo && entity.startedDate"
+                  *ngIf="false && entity.refNo && entity.startedDate"
                   (click)="openVetcTollCheck()">
                   <i class="fa fa-balance-scale"></i> Đối chiếu VETC
                 </button>
                 <button type="button" class="btn btn-xs btn-danger dsg-etc-add"
-                  *ngIf="entity.startedDate && entity.finishedDate"
+                  *ngIf="false && entity.startedDate && entity.finishedDate"
                   (click)="checkEupGps()">
                   <i class="fa fa-map-o"></i> Hành trình GPS-EUP
                 </button>
