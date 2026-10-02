@@ -1,5 +1,23 @@
 # Completed Features
 
+## Phiên 2026-10-02 — FCL v2 khóa ngay khi Lưu, F051 Thu chi yêu cầu Xưởng (BE+FE), SP_GetPayments_Driver theo Type — ĐÃ COMMIT, chờ deploy + test
+### 1. FCL v2 — quay lại yêu cầu ban đầu: khóa NGAY khi Lưu (FE+BE, không SQL)
+- Anh chốt bỏ "sửa tự do tới trước Duyệt B1" (bản 2026-08-24); quy trình đề xuất/duyệt sửa lệnh chờ anh Nghĩa. Khóa TUYỆT ĐỐI: lệnh bị lái xe từ chối nhận cũng khóa (Lưu = gửi lại lái xe cũ; đổi xe/lái xe → xóa lệnh lập mới). Khôi phục cả bắt chọn "Chặng cuối" mới hiện nút Lưu khi tạo mới.
+- **FE** `modal-dispatch-order-fcl-v2`: `routeConfirmed = !!refNo || flagXem`; nút Lưu `status<3 && (refNo || lastSegmentFinal)`.
+- **BE** `DispatchOrderFCLRepository.UpdateWithTOAsync`: lệnh không-legacy luôn phục hồi xe/mooc/lái xe/segments/ETC từ DB (bỏ `&& existing.Status > 2`), trả lại `allowDetailed = Status < 3` — đúng nguyên bản trước commit `e376f74`. BE trả "thành công" dù bỏ qua giá trị client gửi ⇒ FE + BE phải deploy CÙNG LÚC.
+- Sau khi có RefNo chỉ còn sửa: chi phí, bù dầu + lý do, tóm tắt, ghi chú, chi tiết công việc (tới trước B1), cung đường phát sinh. Sửa giá trạm tay / thêm trạm tay / "Lưu mặc định" chỉ làm được TRƯỚC lần Lưu đầu.
+- Kèm: ẩn tạm 3 nút "Check trạm EUP" / "Đối chiếu VETC" / "Hành trình GPS-EUP" trong modal (thêm `false &&` vào `*ngIf`, bỏ ra để bật lại; hàm .ts + 3 modal con giữ nguyên).
+
+### 2. F051 — Thu chi theo yêu cầu PM Xưởng (SQL anh đã chạy 14:17, BE+FE code xong)
+- **BE**: enum `F051`; `Models/Garage/GaragePaymentRequest.cs`, `IGaragePaymentRequest`, `GaragePaymentRequestRepository` (4 SP `SP_GaragePaymentRequest_*`); `GaragesController.PaymentRequestUpsert`/`PaymentRequestCancel` (Api-Key `AppSettings:ApiKey`, đọc body THÔ + `DateParseHandling.None` để lưu nguyên văn `Item` vào RawJson, lỗi validate/SP → HTTP 400 envelope `isAcknowledged/errors/result`); `Controllers/Accounting/GaragePaymentRequestController` (GetPaging/GetById, `F051_VIEW`); `Accounts.GarageRequestIds` + `AccountRepository.CreatedAsync` truyền `@GarageRequestIds` chỉ khi `TypeAccount=8`.
+- **FE**: trang `/main/accounting/garage-payment-request` (nút Cần chi/Cần thu; lọc trạng thái mặc định "Chờ viết phiếu" — không lọc ngày; load-all + lọc cột client; gom nhóm theo tên đối tượng, bấm dòng nhóm chọn cả nhóm; chỉ tích được yêu cầu cùng chi nhánh; nút Lập phiếu gate `F051_ACCOUNT`); `modal-garage-payment-request` (chi tiết + bảng hàng hóa/dịch vụ + tab JSON gốc); `modal-phieu-chi`/`modal-phieu-thu` nhận `typeAccount=8` + `garageRequestIds` + `branchId` + `represent` (phiếu chi loại 8 vẫn cho đổi loại đối tượng). Màu bảng/nút theo list Lô hàng (header xanh `#dcefe5` dính, sọc, dòng chọn vàng).
+- Verify: `dotnet build` 0 lỗi; `tsc` + `ng build` 0 lỗi; tên tham số BE khớp 4 SP (đọc `sys.parameters`), `SP_GaragePaymentRequest_GetPaging` chạy được. CHƯA test chạy thật (bảng 0 dòng).
+- Ghi nhận: BE không kiểm `F051_ACCOUNT` khi tạo phiếu loại 8 (giống loại 7, chỉ gate FE; lưu phiếu cần `THU_CREATE`); `SP_Accounts_Delete` chưa xử lý phiếu loại 8.
+
+### 3. SP_GetPayments_Driver — phiếu bổ sung chi phí ghi nhận theo Type (SQL-only, anh đã chạy 11:43)
+- Nút "Thanh toán" ở list Lệnh vận chuyển: `modal-phieu-chi-lenh` → `api/accounts/GetDriverPayments` → `SP_GetPayments_Driver` (nạp khoản) và `api/accounts/CreateForDriver` → `SP_Accounts_CreateForDriver` (lưu).
+- `NewAPI/Migration_GetPayments_Driver_AdditionalFeeType_20261002.sql`: ALTER, CHỈ đổi điều kiện nhánh `DispatchOrderAdditionalFee` theo `Type` của phiếu (khớp `SP_DispatchOrderAdditionalFee_UpdateState`): 0 → `ISNULL(FuelDriverId, DriverId)`; 1 → `V_Users.EmployeeId` của `CreatedBy`; 2 → không lấy. 4 nhánh còn lại giữ nguyên. Lúc soạn: 57 phiếu Type=2 đang hiện sai, 12/38 phiếu Type=0 có người ghi nhận dầu khác lái xe.
+
 ## Phiên 2026-09-29/30 — FCL v2: giá trạm sửa tay giữ trên lệnh + "Lưu mặc định" lưu đúng giá (FE-only, chờ ng build)
 - **Lỗi**: ô giá trạm ở khối Thông tin cung đường chỉ sửa `station.price`, không sửa `allPrices` (giá theo hạng xe) → `_applyTollPrices` sau đó (đổi xe / nạp mặc định / mở lại lệnh) đè lại giá cũ; "Lưu mặc định" gửi `allPrices` cũ → lần sau chọn cung đường hiện giá cũ/0.
 - **Fix** `modal-dispatch-order-fcl-v2`: `onSegmentStationPriceChange(i, s)` ghi giá mới vào `allPrices[vietmapVehicleKey]` (chỉ hạng xe đang chọn). BE/SP (`SP_RouteSegmentDefault_Save`, `SP_TransportOrder_GetSegmentHistory`) đã lưu/trả `AllPrices` sẵn — không sửa. tsc 0 lỗi.
