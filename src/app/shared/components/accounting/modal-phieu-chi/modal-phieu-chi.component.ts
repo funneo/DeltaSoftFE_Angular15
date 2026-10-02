@@ -180,6 +180,15 @@ export class ModalPhieuChiComponent implements OnInit {
     };
     if (item != undefined && item != null) {
       debugger;
+      // Loại 8 (F051 — yêu cầu thu/chi từ PM Xưởng): chi nhánh phiếu = chi nhánh yêu cầu (SP chặn lệch);
+      // SP_Accounts_Create đánh dấu các yêu cầu "Đã viết phiếu" cùng transaction theo garageRequestIds.
+      if (item?.typeAccount == 8) {
+        this._branchId = item.branchId;
+        this.entity.branchId = item.branchId;
+        this.entity.accountBranchId = item.branchId;
+        this.entity.garageRequestIds = item.garageRequestIds;
+        this.entity.represent = item.represent;
+      }
       this.groupType = item?.groupType;
       this.loadDonVi(item?.groupType);
       this.flagLink = true;

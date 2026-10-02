@@ -1,0 +1,192 @@
+<div class="box box-primary box-chieu-cao">
+    <div class="box-header with-border">
+        <div class="row">
+            <div class="col-md-3">
+                <h3 class="box-title">Thu chi yêu cầu Xưởng</h3>
+            </div>
+            <div class="col-md-9 text-right">
+                <span class="gpr-selected" *ngIf="selected.length > 0">
+                    Đã chọn {{selected.length}} yêu cầu: <strong>{{selectedAmount | number:'1.0-2'}}</strong>
+                </span>
+                <button class="btn btn-success btn-sm" (click)="createAccount()" [disabled]="selected.length == 0"
+                    appPermission appFunction="F051" appAction="ACCOUNT">
+                    <i class="fa fa-money"></i> {{direction == 1 ? 'Lập phiếu chi' : 'Lập phiếu thu'}}
+                </button>
+                <button class="btn btn-info btn-sm" (click)="view()" [disabled]="selected.length != 1">
+                    <i class="fa fa-eye"></i> Xem
+                </button>
+            </div>
+        </div>
+        <div class="row" style="padding-top: 3px;">
+            <div class="col-md-2">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-sm" [class.btn-primary]="direction == 1"
+                        [class.btn-default]="direction != 1" (click)="changeDirection(1)">
+                        <i class="fa fa-arrow-up"></i> Cần chi</button>
+                    <button type="button" class="btn btn-sm" [class.btn-primary]="direction == 0"
+                        [class.btn-default]="direction != 0" (click)="changeDirection(0)">
+                        <i class="fa fa-arrow-down"></i> Cần thu</button>
+                </div>
+            </div>
+            <div class="col-md-1">
+                <ng-select name="chinhanh" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                    [(ngModel)]="branchId" (change)="changedBranch($event)" placeholder="Chi nhánh..."
+                    [disabled]="!adminPermission">
+                </ng-select>
+            </div>
+            <div class="col-md-2">
+                <ng-select name="trangthai" [items]="listStatus" bindLabel="text" bindValue="id" [(ngModel)]="status"
+                    (change)="loadData()" [clearable]="false">
+                </ng-select>
+            </div>
+            <!-- Hàng "Chờ viết phiếu" lấy hết, không lọc theo ngày -->
+            <div class="col-md-2" *ngIf="status != 0">
+                <input type="text" daterangepicker [options]="dateOptions" (selected)="selectedDate($event)"
+                    class="form-control" title="Lọc theo ngày phiếu của Xưởng">
+            </div>
+            <div class="col-md-3">
+                <div class="input-group">
+                    <input type="text" class="form-control" name="filter" (keyup.enter)="timKiem()"
+                        [(ngModel)]="keyword" placeholder="Mã phiếu/Đối tượng/Biển số/Số phiếu ERP..." />
+                    <span class="input-group-btn">
+                        <button class="btn btn-info btn-flat btn-sm" style="height: 28px;" type="button" (click)="timKiem()">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- /.box-header -->
+    <div class="box-body table-responsive no-padding table-wrapper-scroll-y table_wrapper" style="position: relative;"
+        [ngBusy]="busy">
+        <table class="table table-bordered table-striped table-hover">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Trạng thái</th>
+                    <th>Mã phiếu Xưởng</th>
+                    <th>Loại</th>
+                    <th>C/N</th>
+                    <th style="min-width: 250px;">Nội dung</th>
+                    <th style="min-width: 110px;">Số tiền</th>
+                    <th>Hạn TT</th>
+                    <th>Ngày phiếu</th>
+                    <th>Biển số</th>
+                    <th>Số hóa đơn</th>
+                    <th>Phiếu ERP</th>
+                    <th>Người phụ trách</th>
+                </tr>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th>
+                        <input type="text" class="form-control" [(ngModel)]="filterColumns.externalRefNo"
+                            (input)="filter()" name="externalRefNo">
+                    </th>
+                    <th></th>
+                    <th></th>
+                    <th>
+                        <input type="text" class="form-control" [(ngModel)]="filterColumns.contents" (input)="filter()"
+                            name="contents" placeholder="Nội dung">
+                    </th>
+                    <th>
+                        <input type="text" class="form-control" [(ngModel)]="filterColumns.partnerName"
+                            (input)="filter()" name="partnerName"
+                            [placeholder]="direction == 1 ? 'Nhà cung cấp' : 'Khách hàng'">
+                    </th>
+                    <th>
+                        <input type="text" class="form-control" [(ngModel)]="filterColumns.dueDate" (input)="filter()"
+                            name="dueDate">
+                    </th>
+                    <th>
+                        <input type="text" class="form-control" [(ngModel)]="filterColumns.requestDate"
+                            (input)="filter()" name="requestDate">
+                    </th>
+                    <th>
+                        <input type="text" class="form-control" [(ngModel)]="filterColumns.licensePlate"
+                            (input)="filter()" name="licensePlate">
+                    </th>
+                    <th>
+                        <input type="text" class="form-control" [(ngModel)]="filterColumns.invoiceNo"
+                            (input)="filter()" name="invoiceNo">
+                    </th>
+                    <th>
+                        <input type="text" class="form-control" [(ngModel)]="filterColumns.accountRefNo"
+                            (input)="filter()" name="accountRefNo">
+                    </th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <ng-container *ngFor="let group of listGroup">
+                    <!-- Dòng nhóm theo tên đối tượng: bấm để chọn/bỏ chọn cả nhóm -->
+                    <tr class="gpr-group" (click)="clickGroup(group)">
+                        <td class="table-checkbox">
+                            <label class="custom-checkbox">
+                                <input type="checkbox" [checked]="isGroupChecked(group)" disabled />
+                                <span class="helping-el"></span>
+                            </label>
+                        </td>
+                        <td colspan="5">
+                            {{direction == 1 ? 'NCC' : 'KH'}}: <strong>{{group.partnerName}}</strong>
+                            ({{group.items.length}} yêu cầu)
+                        </td>
+                        <td class="text-right"><strong>{{group.total | number:'1.0-2'}}</strong></td>
+                        <td colspan="6"></td>
+                    </tr>
+                    <tr *ngFor="let item of group.items" class="row-pointer" [class.row-checked]="item.checked"
+                        (click)="clickRow($event, item)">
+                        <td class="table-checkbox">
+                            <label class="custom-checkbox" *ngIf="item.status == 0">
+                                <input type="checkbox" [checked]="item.checked" disabled />
+                                <span class="helping-el"></span>
+                            </label>
+                        </td>
+                        <td>
+                            <span class="label" [class.label-warning]="item.status == 0"
+                                [class.label-success]="item.status == 1" [class.label-danger]="item.status == 2"
+                                [title]="item.status == 2 ? (item.cancelReason || '') : (item.externalStatus || '')">
+                                {{statusText(item.status)}}</span>
+                        </td>
+                        <td><a href="javascript:void(0)" (click)="showDetail(item)">{{item.externalRefNo}}</a></td>
+                        <td>{{requestTypeText(item.requestType)}}</td>
+                        <td>{{item.branchCode}}</td>
+                        <td class="col-enter">{{item.contents}}</td>
+                        <td class="text-right">{{item.amount | number:'1.0-2'}}</td>
+                        <td>{{item.dueDate | date:'dd/MM/yyyy'}}</td>
+                        <td>{{item.requestDate | date:'dd/MM/yyyy'}}</td>
+                        <td>{{item.licensePlate}}</td>
+                        <td>
+                            <a *ngIf="item.invoiceFileUrl" [href]="item.invoiceFileUrl" target="_blank"
+                                rel="noopener">{{item.invoiceNo || 'File'}}</a>
+                            <span *ngIf="!item.invoiceFileUrl">{{item.invoiceNo}}</span>
+                        </td>
+                        <td>{{item.accountRefNo}}</td>
+                        <td>{{item.personInCharge}}</td>
+                    </tr>
+                </ng-container>
+                <tr *ngIf="listGroup.length == 0">
+                    <td colspan="100%">Không có bản ghi nào được tìm thấy!</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="box-footer no-padding">
+        <div class="col-md-12 footer-phantrang">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="dataTables_info" style="padding-bottom: 8px;">
+                        <span>Tổng số bản ghi: {{ totalRows }} — Tổng tiền: {{ totalAmount | number:'1.0-2' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<modal-garage-payment-request *ngIf="viewModal" (CloseModal)="closeModal()"></modal-garage-payment-request>
+<modal-phieu-chi *ngIf="viewPhieuChi" (SaveSuccess)="saveSuccessAccounts($event)" (CloseModal)="closePhieuChi()">
+</modal-phieu-chi>
+<modal-phieu-thu *ngIf="viewPhieuThu" (SaveSuccess)="saveSuccessAccounts($event)" (CloseModal)="closePhieuThu()">
+</modal-phieu-thu>

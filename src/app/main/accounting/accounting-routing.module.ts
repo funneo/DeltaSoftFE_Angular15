@@ -17,6 +17,7 @@ const routes: Routes = [
   { path: 'dunonhanvien', loadChildren: () => import('./list-employee-debit-credit/list-employee-debit-credit.module').then(m => m.ListEmployeeDebitCreditModule), data: { functionCode: 'EMPLOYEEDEBIT' }, canActivate: [AuthGuard] },
   { path: 'summary-supplier-cost', loadChildren: () => import('./summary-supplier-cost/summary-supplier-cost.module').then(m => m.SummarySupplierCostModule), data: { functionCode: 'F018' }, canActivate: [AuthGuard] },
   { path: 'on-behalf-payment', loadChildren: () => import('./on-behalf-payment/on-behalf-payment.module').then(m => m.OnBehalfPaymentModule), data: { functionCode: 'F042' }, canActivate: [AuthGuard] },
+  { path: 'garage-payment-request', loadChildren: () => import('./garage-payment-request/garage-payment-request.module').then(m => m.GaragePaymentRequestModule), data: { functionCode: 'F051' }, canActivate: [AuthGuard] },
 ];
 
 @NgModule({

@@ -1,0 +1,30 @@
+.modal-header {
+  cursor: move;
+}
+.modal-body {
+  padding: 8px 12px;
+}
+.gpr-info th {
+  width: 130px;
+  background: #f7f7f7;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.gpr-info td,
+.gpr-info th {
+  padding: 4px 6px;
+}
+.gpr-wrap {
+  white-space: normal;
+  word-break: break-word;
+}
+.gpr-money {
+  font-weight: 700;
+  color: #c0392b;
+}
+.gpr-json {
+  max-height: 60vh;
+  overflow: auto;
+  font-size: 12px;
+  margin: 8px 0 0;
+}

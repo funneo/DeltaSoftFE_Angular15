@@ -32,7 +32,8 @@
                   </ng-select>
                 </div> -->
               </div>
-              <div *ngIf="!flagLink" class="form-group">
+              <!-- Loại 8 (yêu cầu của Xưởng): vẫn cho đổi loại đối tượng vì NCC của Xưởng có thể chưa có trong ERP -->
+              <div *ngIf="!flagLink || entity.typeAccount == 8" class="form-group">
                 <label class="col-sm-3 control-label">Đối tượng
                   <span class="error">*</span>
                 </label>

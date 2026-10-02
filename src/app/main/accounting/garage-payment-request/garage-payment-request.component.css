@@ -1,0 +1,35 @@
+/* Màu sắc + khung bảng theo list Lô hàng (shipment-normal) */
+table {
+  border-collapse: collapse;
+  border: 1px solid rgba(109, 107, 107, 0.445);
+}
+table th {
+  border: 1px solid rgba(99, 97, 97, 0.589);
+  padding: 2px;
+}
+td.col-enter {
+  min-width: 200px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.box-chieu-cao > .box-body {
+  height: calc(100vh - 195px);
+}
+@media (max-width: 650px) {
+  .box-chieu-cao > .box-body {
+    height: calc(100vh - 350px);
+  }
+}
+thead tr:nth-child(1) th { background: #dcefe5f6; position: sticky; top: 0px; z-index: 10; }
+thead tr:nth-child(2) th { background: #dcefe5f6; position: sticky; top: 22px; z-index: 10; }
+
+/* Dòng nhóm theo đối tượng: cùng tông xanh với header */
+tr.gpr-group > td { background-color: #eef7f2 !important; cursor: pointer; }
+tr.gpr-group:hover > td { background-color: #dcefe5 !important; }
+/* Dòng đang chọn: nền vàng giống dòng nháp ở list Lô hàng */
+tr.row-checked > td { background-color: #FFF8E1 !important; color: #6b5d20; }
+tr.row-checked:hover > td { background-color: #FFEFB0 !important; }
+.row-pointer { cursor: pointer; }
+.gpr-selected { margin-right: 10px; }
+/* checkbox chỉ để hiển thị — click xuyên xuống <tr> (tránh bug "lúc được lúc không") */
+.table-checkbox .custom-checkbox { pointer-events: none; }

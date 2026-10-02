@@ -43,6 +43,7 @@ export interface Accounts {
   accountType?: number;
   typeAccount?: number;
   advanceId?: number;
+  garageRequestIds?: string; // typeAccount=8: CSV Id yêu cầu thu/chi của Xưởng (Tbl_GaragePaymentRequest)
   detailedType?: number;
   dispatchOrderFees?: AcountDispatchOrderFees[];
 }

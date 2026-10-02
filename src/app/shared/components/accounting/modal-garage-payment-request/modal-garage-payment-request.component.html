@@ -1,0 +1,168 @@
+<div ngDraggable [handle]="myHandle" class="modal fade" bsModal #modalView="bs-modal" [config]="{ backdrop: 'static' }"
+  tabindex="-1" role="dialog" aria-labelledby="dialog-static-name" (onHidden)="OnHidden()">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" [ngBusy]="busy">
+      <div #myHandle class="modal-header">
+        <h4 class="modal-title pull-left">Chi tiết yêu cầu {{entity?.direction == 1 ? 'chi' : 'thu'}} của Xưởng
+          <span *ngIf="entity"> — {{entity.externalRefNo}}</span>
+        </h4>
+        <button type="button" class="close pull-right" aria-label="Close" (click)="modalView.hide()">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body" *ngIf="entity">
+        <tabset>
+          <tab heading="Thông tin">
+            <table class="table table-bordered table-condensed gpr-info">
+              <tbody>
+                <tr>
+                  <th>Loại yêu cầu</th>
+                  <td>{{requestTypeText(entity.requestType)}}</td>
+                  <th>Trạng thái ERP</th>
+                  <td>
+                    <span class="label" [class.label-warning]="entity.status == 0"
+                      [class.label-success]="entity.status == 1" [class.label-danger]="entity.status == 2">
+                      {{statusText(entity.status)}}</span>
+                    <span *ngIf="entity.accountRefNo"> — phiếu {{entity.accountRefNo}}
+                      ({{entity.accountedDate | date:'dd/MM/yyyy HH:mm'}})</span>
+                  </td>
+                </tr>
+                <tr>
+                  <th>Mã phiếu Xưởng</th>
+                  <td>{{entity.externalRefNo}}</td>
+                  <th>Trạng thái Xưởng</th>
+                  <td>{{entity.externalStatus}}</td>
+                </tr>
+                <tr>
+                  <th>Chi nhánh</th>
+                  <td>{{entity.branchCode}}</td>
+                  <th>Số tiền</th>
+                  <td class="gpr-money">{{entity.amount | number:'1.0-2'}} {{entity.currency}}</td>
+                </tr>
+                <tr>
+                  <th>Ngày phiếu</th>
+                  <td>{{entity.requestDate | date:'dd/MM/yyyy HH:mm'}}</td>
+                  <th>Hạn thanh toán</th>
+                  <td>{{entity.dueDate | date:'dd/MM/yyyy'}}</td>
+                </tr>
+                <tr>
+                  <th>Nội dung</th>
+                  <td colspan="3" class="gpr-wrap">{{entity.contents}}</td>
+                </tr>
+                <tr>
+                  <th>{{entity.direction == 1 ? 'Nhà cung cấp' : 'Khách hàng'}}</th>
+                  <td colspan="3" class="gpr-wrap">
+                    <strong>{{entity.partnerName}}</strong>
+                    <span *ngIf="entity.partnerCode"> (mã Xưởng: {{entity.partnerCode}})</span>
+                    <div *ngIf="entity.partnerTaxCode">MST: {{entity.partnerTaxCode}}</div>
+                    <div *ngIf="entity.partnerPhone || entity.partnerEmail">
+                      {{entity.partnerPhone}} <span *ngIf="entity.partnerEmail">— {{entity.partnerEmail}}</span>
+                    </div>
+                    <div *ngIf="entity.partnerAddress">{{entity.partnerAddress}}</div>
+                  </td>
+                </tr>
+                <tr *ngIf="entity.licensePlate || raw?.vehicle">
+                  <th>Phương tiện</th>
+                  <td colspan="3" class="gpr-wrap">
+                    {{entity.licensePlate}}
+                    <span *ngIf="raw?.vehicle?.vehicleType"> — {{raw.vehicle.vehicleType}}</span>
+                    <span *ngIf="raw?.vehicle?.vehicleCode"> — {{raw.vehicle.vehicleCode}}</span>
+                    <span *ngIf="raw?.vehicle?.driverName"> — lái xe: {{raw.vehicle.driverName}}</span>
+                  </td>
+                </tr>
+                <tr *ngIf="entity.invoiceNo || entity.invoiceFileUrl">
+                  <th>Hóa đơn</th>
+                  <td colspan="3" class="gpr-wrap">
+                    {{entity.invoiceNo}}
+                    <span *ngIf="entity.invoiceDate"> — ngày {{entity.invoiceDate | date:'dd/MM/yyyy'}}</span>
+                    <a *ngIf="entity.invoiceFileUrl" [href]="entity.invoiceFileUrl" target="_blank" rel="noopener">
+                      <i class="fa fa-paperclip"></i> Mở file</a>
+                  </td>
+                </tr>
+                <tr *ngIf="entity.personInCharge || entity.notes">
+                  <th>Người phụ trách</th>
+                  <td>{{entity.personInCharge}}</td>
+                  <th>Ghi chú</th>
+                  <td class="gpr-wrap">{{entity.notes}}</td>
+                </tr>
+                <tr *ngIf="entity.status == 2">
+                  <th>Lý do hủy</th>
+                  <td colspan="3" class="gpr-wrap">{{entity.cancelReason}}
+                    ({{entity.cancelledDate | date:'dd/MM/yyyy HH:mm'}})</td>
+                </tr>
+                <tr>
+                  <th>ERP nhận lúc</th>
+                  <td>{{entity.receivedDate | date:'dd/MM/yyyy HH:mm'}}</td>
+                  <th>Gửi lại lần cuối</th>
+                  <td>{{entity.lastReceivedDate | date:'dd/MM/yyyy HH:mm'}} ({{entity.receiveCount}} lần gửi)</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="table-responsive" *ngIf="lines.length > 0">
+              <table class="table table-bordered table-condensed table-striped">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Loại</th>
+                    <th>Mã</th>
+                    <th>Tên hàng hóa / dịch vụ</th>
+                    <th>ĐVT</th>
+                    <th class="text-right">SL</th>
+                    <th class="text-right">Đơn giá</th>
+                    <th class="text-right">Thuế %</th>
+                    <th class="text-right">Tiền thuế</th>
+                    <th class="text-right">Thành tiền</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let line of lines; let i = index">
+                    <td>{{i + 1}}</td>
+                    <td>{{line.kind == 'service' ? 'Dịch vụ' : (line.kind == 'goods' ? 'Hàng hóa' : line.kind)}}</td>
+                    <td>{{line.code}}</td>
+                    <td class="gpr-wrap">{{line.name}}</td>
+                    <td>{{line.unit}}</td>
+                    <td class="text-right">{{line.quantity | number:'1.0-3'}}</td>
+                    <td class="text-right">{{line.unitPrice | number:'1.0-2'}}</td>
+                    <td class="text-right">{{line.taxRate}}</td>
+                    <td class="text-right">{{line.taxAmount | number:'1.0-2'}}</td>
+                    <td class="text-right">{{line.amountAfterTax | number:'1.0-2'}}</td>
+                  </tr>
+                </tbody>
+                <tfoot *ngIf="raw?.totals">
+                  <tr>
+                    <th colspan="8" class="text-right">Trước thuế</th>
+                    <th colspan="2" class="text-right">{{raw.totals.amountBeforeTax | number:'1.0-2'}}</th>
+                  </tr>
+                  <tr>
+                    <th colspan="8" class="text-right">Tiền thuế</th>
+                    <th colspan="2" class="text-right">{{raw.totals.taxAmount | number:'1.0-2'}}</th>
+                  </tr>
+                  <tr *ngIf="raw.totals.discountAmount || raw.totals.extraDiscountAmount">
+                    <th colspan="8" class="text-right">Chiết khấu</th>
+                    <th colspan="2" class="text-right">
+                      {{(raw.totals.discountAmount || 0) + (raw.totals.extraDiscountAmount || 0) | number:'1.0-2'}}</th>
+                  </tr>
+                  <tr>
+                    <th colspan="8" class="text-right">Tổng thanh toán</th>
+                    <th colspan="2" class="text-right gpr-money">{{raw.totals.totalPayment | number:'1.0-2'}}</th>
+                  </tr>
+                  <tr *ngIf="raw.totals.amountInWords">
+                    <td colspan="10" class="gpr-wrap"><em>Bằng chữ: {{raw.totals.amountInWords}}</em></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </tab>
+          <tab heading="JSON gốc">
+            <pre class="gpr-json">{{rawPretty}}</pre>
+          </tab>
+        </tabset>
+      </div>
+      <div class="modal-footer text-right">
+        <button type="button" class="btn btn-danger btn-sm" (click)="modalView.hide()">
+          <i class="fa fa-close"></i> Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
