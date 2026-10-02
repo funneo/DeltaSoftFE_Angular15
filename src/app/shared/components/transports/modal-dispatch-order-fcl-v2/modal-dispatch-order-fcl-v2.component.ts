@@ -235,17 +235,16 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   // ===== TO refactor (2026-05-15): route builder state + ViewChild =====
   locations: LocationItem[] = [];
-  // 2026-08-24 (anh chốt): sửa tự do TOÀN BỘ thông tin lệnh (xe/mooc/lái xe/giá dầu/
-  // cung đường/ETC...) tới trước khi Duyệt B1, cho quen tay trước khi siết lại sau.
-  // status>2 (>=3) = ĐÃ Duyệt B1 (anh xác nhận) — khóa từ đây.
+  // 2026-10-02 (anh chốt): quay về yêu cầu ban đầu — khóa NGAY khi lập lệnh xong (có RefNo):
+  // xe/mooc/lái xe/giá dầu/cung đường/ETC... không sửa được nữa, kể cả lệnh bị lái xe từ chối
+  // nhận (muốn đổi → xóa lệnh, lập lệnh mới). Muốn chỉnh route → dùng "Cung đường phát sinh".
+  // Quy trình đề xuất/duyệt sửa lệnh (ý anh Nghĩa) làm SAU.
   // status: 0=mới · 1=đã giao lái xe · 2=đã nhận · 3+=đã Duyệt B1
-  // ⚠ MUỐN KHÔI PHỤC khóa NGAY khi Lưu (có RefNo, hành vi trước 2026-08-24) → đổi lại
-  // `!!this.entity?.refNo || this.flagXem`. Đồng thời phải khôi phục điều kiện BE tương ứng
-  // ở DispatchOrderFCLRepository.UpdateWithTOAsync (bỏ `&& existing.Status > 2`, phục hồi
-  // vô điều kiện như cũ) — không thì FE khóa lại nhưng BE vẫn cho ghi đè. Xem memory
-  // project_fcl_route_lock_policy.
+  // ⚠ Khóa THẬT nằm ở BE DispatchOrderFCLRepository.UpdateWithTOAsync (phục hồi từ DB vô điều
+  // kiện) — đổi mốc khóa phải đổi CẢ 2 nơi. Bản "sửa tự do tới trước Duyệt B1" (2026-08-24 →
+  // 2026-10-02) dùng `(status ?? 0) > 2 || flagXem`. Xem memory project_fcl_route_lock_policy.
   get routeConfirmed(): boolean {
-    return (this.entity?.status ?? 0) > 2 || this.flagXem;
+    return !!this.entity?.refNo || this.flagXem;
   }
   showPoolPanel = true;
   lastSegmentFinal = false;

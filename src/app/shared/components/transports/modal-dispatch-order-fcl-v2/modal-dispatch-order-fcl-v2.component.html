@@ -1301,10 +1301,10 @@
         <button *ngIf="entity.canCloseFcl && entity.status==5" type="button" class="btn btn-duyet btn-sm"
           (click)="chotlenh()">
           <i class="fa fa-lock"></i> CHỐT LỆNH</button>
-        <!-- 2026-08-10: bỏ yêu cầu phải chốt "Chặng cuối" mới hiện nút Lưu (trước đây tạo mới
-             bắt buộc lastSegmentFinal=true). Xem memory project_fcl_v2_no_require_last_segment
-             nếu cần bật lại. status<3 = trước Duyệt B1 (status>2 đã Duyệt B1). -->
-        <button *ngIf="!flagXem && entity.status<3" type="submit"
+        <!-- 2026-10-02 (anh chốt): khôi phục yêu cầu ban đầu — tạo mới phải chọn "Chặng cuối"
+             (lastSegmentFinal=true) mới hiện nút Lưu (từng bỏ 2026-08-10). Xem memory
+             project_fcl_v2_no_require_last_segment. status<3 = trước Duyệt B1. -->
+        <button *ngIf="!flagXem && entity.status<3 && (entity.refNo || lastSegmentFinal)" type="submit"
           class="btn btn-primary btn-sm"
           [disabled]=" !addEditForm.form.valid || flagSave ">
           <i class="fa fa-save"></i> Lưu</button>
