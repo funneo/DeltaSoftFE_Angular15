@@ -20,7 +20,7 @@
               <label class="col-sm-1 control-label" *ngIf="entity.isLocal">IGAS: </label>
               <div class="col-sm-1" *ngIf="entity.isLocal">
                 <input class="form-control" [(ngModel)]="entity.igasCode" name="igasCode"
-                [readonly]="flagXem || entity.status>0"/>
+                [readonly]="flagXem || exportLocked"/>
                 <!-- <span style="font-weight: bold; color: blue;"> {{entity.igasCode}}</span> -->
               </div>
               <label class="col-sm-2 control-label">Ngày:</label>
@@ -44,7 +44,7 @@
               <label class="col-sm-2 control-label"></label>
               <div class="col-sm-4">
                 <label class="custom-checkbox">
-                  <input type="checkbox" [(ngModel)]="entity.isLocal" name="isLocal" [disabled]="entity.status>0" />
+                  <input type="checkbox" [(ngModel)]="entity.isLocal" name="isLocal" [disabled]="exportLocked" />
                   <span class="helping-el"></span>
                   Cây dầu Delta
                 </label>
@@ -56,7 +56,7 @@
               </label>
               <div class="col-sm-10">
                 <ng-select name="gasSiteId" [items]="listGasSite" bindLabel="siteName" bindValue="id"
-                  [(ngModel)]="entity.gasSiteId" placeholder="Chọn kho dầu" [disabled]="flagXem  || entity.status>0">
+                  [(ngModel)]="entity.gasSiteId" placeholder="Chọn kho dầu" [disabled]="flagXem  || exportLocked">
                 </ng-select>
               </div>
             </div>
@@ -67,7 +67,7 @@
               <div class="col-sm-10">
                 <ng-select name="supplierId" [items]="listSupplier" bindLabel="supplierName" bindValue="id"
                   [(ngModel)]="entity.supplierId" [required]="!entity.isLocal" placeholder="Chọn nhà cung cấp"
-                  [disabled]="flagXem  || entity.status>0">
+                  [disabled]="flagXem  || exportLocked">
                 </ng-select>
               </div>
             </div>
@@ -89,7 +89,7 @@
               <div class="col-sm-10">
                 <ng-select name="reasonId" [items]="listReason" bindLabel="categoryName" bindValue="id"
                   [(ngModel)]="entity.reasonId" (change)="onReasonChange($event)" required
-                  placeholder="Chọn lý do" [disabled]="flagXem || entity.status>0">
+                  placeholder="Chọn lý do" [disabled]="flagXem || exportLocked">
                 </ng-select>
               </div>
             </div>
@@ -104,24 +104,24 @@
               <label class="col-sm-1 control-label">Km đầu</label>
               <div class="col-sm-2">
                 <input class="form-control" [(ngModel)]="entity.startKm" type="text" name="startKm" [mask]="mask0"
-                  [readonly]="flagXem || entity.status>0" required />
+                  [readonly]="flagXem || exportLocked" required />
               </div>
               <label class="col-sm-1 control-label">Km cuối</label>
               <div class="col-sm-2">
                 <input class="form-control" [(ngModel)]="entity.finishKm" type="text" name="finishKm" [mask]="mask0"
-                  [readonly]="flagXem || entity.status>0" required />
+                  [readonly]="flagXem || exportLocked" required />
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">Số lượng <span class="error">*</span></label>
               <div class="col-sm-2">
                 <input class="form-control" [(ngModel)]="entity.quantity" type="text" name="quantity" [mask]="maskNumber" [allowNegativeNumbers]="true"
-                  [readonly]="flagXem || entity.status>0" required />
+                  [readonly]="flagXem || exportLocked" required />
               </div>
               <label class="col-sm-1 control-label">Giá <span class="error">*</span></label>
               <div class="col-sm-2">
                 <input class="form-control" [(ngModel)]="entity.oilPrice" type="text" name="oilPrice" [mask]="mask0"
-                  [readonly]="flagXem || entity.status>0" required />
+                  [readonly]="flagXem || exportLocked" required />
               </div>
               <label class="col-sm-1 control-label" *ngIf="!flagNew && entity.isLocal">Hạn đổ:
               </label>

@@ -70,6 +70,13 @@ export class ModalDriverFuelApprovalComponent implements OnInit {
   public userLoged: Profile;
   public busy: Subscription;
   public viewModal?: boolean = false;
+
+  // Khóa các ô thông tin phiếu sau khi đã xuất (status>0). 2026-10-03 (anh chốt): Admin vẫn được sửa
+  // phiếu đã xuất miễn là CHƯA chốt dữ liệu (approved). SP_DriverFuelApproval_Update không chặn theo
+  // trạng thái nên chỉ cần mở ở FE.
+  get exportLocked(): boolean {
+    return (this.entity?.status ?? 0) > 0 && !(this.userLoged?.isAdmin && !this.entity?.approved);
+  }
   ngaybatdauOption = this._utilityService.dateTimeOptionDays(new Date(), true);
   @Output() SaveSuccess: EventEmitter<any> = new EventEmitter();
   @Output() CloseModal: EventEmitter<any> = new EventEmitter();
