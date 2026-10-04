@@ -1,5 +1,21 @@
 # Pending / In-Progress Work
 
+## ▶ 2026-10-03 — dGas3 Đợt 2: cắm 3/4 điểm còn lại (Duyệt bổ sung chi phí + Chốt lệnh FCL cũ/mới) — ✅ ĐÃ COMMIT 2026-10-04 (chi tiết done.md), CHƯA deploy/test
+- `DispatchOrderAdditionalFeeController.UpdateState`: Status=3 → `SyncAdditionalFeeAcceptedAsync(RefNo)`.
+- `DispatchOrderFCLController.UpdateState` (Status=6, không phải từ chối) + `ChangeStatus` (ActionType ChotLenh) → `SyncFclClosedAsync(refNo)`. ⚠ Nút "Chốt lệnh" ở list FCL MỚI gọi `UpdateState` cũ (status=6) cho cả lệnh v2 ⇒ `SyncFclClosedAsync` bỏ tham số isLegacy, tự đọc `DispatchOrderFCL.IsLegacy` (SourceType 3/4, tiền tố FCLLGC-/FCL-).
+- Sửa `Dgas3AdditionalFeeSyncService`: chỉ gửi khi `Type=0` (trước chỉ loại Type=1 → Type=2 "Không thanh toán" có dầu vẫn bị gửi; SP gốc không ghi nhận dầu cho Type=2 — năm 2026 có 6 phiếu như vậy).
+- Anh chốt: lệnh/phiếu xe thuê ngoài (IsSubcontractors=1) KHÔNG gửi ở CẢ 4 điểm — FCL + AdditionalFee đã loại sẵn, thêm loại ở `Dgas3DispatchOrderSyncService` (pilot trước đó không loại; kiểm DB: chưa có dòng thầu phụ nào bị gửi).
+- Gọi đồng bộ, nuốt lỗi (không chặn chốt) giống pilot DispatchOrder cũ. `SP_DispatchOrderFCLStatusLog_Add` cũng gọi Chotdau nhưng KHÔNG có BE nào gọi SP này.
+1. ⬜ Tắt API build/publish → chốt thử 1 lệnh FCL v2, 1 lệnh FCL cũ, duyệt 1 phiếu bổ sung có dầu Type=0 → xem màn F047.
+2. ⚠ **CẤU HÌNH ĐANG TRỎ SANDBOX DEV**: `appsettings.json` `Dgas3BaseUrl=https://api-dev-erp.innvie.vn`, TenantId mẫu `362387869790208` (repo; cần kiểm bản trên server). Thực tế `Tbl_FuelDgas3Outbound` (22/09→03/10): 224 OK / 509 lỗi 502 + 13 timeout (chờ gửi lại) / **1577 lỗi 404 "driver or vehicle ... could not be resolved in this tenant"** (137 lái xe lỗi vs 17 thành công — sandbox chỉ có ít dữ liệu mẫu). ⇒ Cần đối tác cấp URL + Tenant + API key PRODUCTION, rồi gửi bù các dòng lỗi qua màn F047.
+3. ⬜ Gỡ action test tạm `FuelDgas3MonitorController.TestSend` (đã đủ 4/4 điểm).
+
+## ▶ 2026-10-03 — Phiếu cấp dầu (modal-driver-fuel-approval): Admin sửa được phiếu ĐÃ XUẤT khi CHƯA chốt — FE-only, ✅ ĐÃ COMMIT 2026-10-04 (chi tiết done.md), CHƯA deploy/test
+- Getter `exportLocked = status>0 && !(isAdmin && !approved)` thay `entity.status>0` ở 9 ô (mã IGAS, Cây dầu Delta, kho dầu, NCC, lý do, Km đầu/cuối, số lượng, giá). Nút/khối hiển thị theo status giữ nguyên. `SP_DriverFuelApproval_Update` không chặn theo trạng thái → không sửa BE/SQL.
+- Phạm vi: chỉ Tạm ứng dầu + Cấp dầu chung (type<2). `modal-fuel-summary` (Cấp dầu theo lệnh) CHƯA đổi.
+1. ⬜ `ng build --configuration production` + deploy FE → test: Admin mở phiếu đã xuất chưa chốt → sửa số lượng/giá → Lưu → mở lại đúng; sau Chốt dữ liệu → khóa lại; user thường vẫn khóa như cũ.
+2. ⚠ Phiếu Cây dầu Delta đã gửi IGAS: sửa số lượng ở ERP KHÔNG gửi lại IGAS.
+
 ## ▶ 2026-10-02 — SP_GetPayments_Driver: phiếu bổ sung chi phí ghi nhận theo Type — ✅ SQL ĐÃ CHẠY (2026-10-02 11:43), CHỜ TEST — chi tiết done.md
 Nút "Thanh toán" ở list Lệnh vận chuyển (modal-phieu-chi-lenh → `SP_GetPayments_Driver` nạp khoản, `SP_Accounts_CreateForDriver` lưu). Nhánh phiếu bổ sung lọc cứng `o.DriverId`, không xét `DispatchOrderAdditionalFee.Type` (0 người ghi nhận dầu / 1 người lập phiếu / 2 không thanh toán). Sửa theo đúng quy tắc của `SP_DispatchOrderAdditionalFee_UpdateState`: Type 0 → `ISNULL(FuelDriverId,DriverId)`, Type 1 → `V_Users.EmployeeId` của CreatedBy, Type 2 → bỏ.
 1. ✅ Anh đã chạy `NewAPI/Migration_GetPayments_Driver_AdditionalFeeType_20261002.sql` (verify `modify_date` 2026-10-02 11:43; không cần deploy BE/FE).

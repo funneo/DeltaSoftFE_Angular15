@@ -1,5 +1,17 @@
 # Completed Features
 
+## Phiên 2026-10-03 — dGas3 đủ 4/4 điểm gửi + loại xe thuê ngoài (BE), Phiếu cấp dầu Admin sửa phiếu đã xuất chưa chốt (FE) — ĐÃ COMMIT, chờ deploy + test
+### 1. dGas3 Đợt 2 — cắm Duyệt bổ sung chi phí + Chốt lệnh FCL cũ/mới (BE-only, không SQL)
+- `DispatchOrderAdditionalFeeController.UpdateState`: Status=3 → `SyncAdditionalFeeAcceptedAsync(RefNo)`.
+- `DispatchOrderFCLController.UpdateState` (Status=6, không phải từ chối) + `ChangeStatus` (ActionType ChotLenh) → `SyncFclClosedAsync(refNo)`. Nút "Chốt lệnh" ở list FCL MỚI gọi `UpdateState` cũ cho cả lệnh v2 ⇒ `SyncFclClosedAsync` bỏ tham số isLegacy, tự đọc `DispatchOrderFCL.IsLegacy` (SourceType 3/4, tiền tố FCLLGC-/FCL-).
+- `Dgas3AdditionalFeeSyncService`: chỉ gửi khi `Type=0` (trước chỉ loại Type=1 → Type=2 "Không thanh toán" có dầu vẫn bị gửi; SP gốc không ghi nhận dầu cho Type=2).
+- Anh chốt: xe thuê ngoài (`IsSubcontractors=1`) KHÔNG gửi ở cả 4 điểm — FCL + AdditionalFee đã loại sẵn, thêm loại ở `Dgas3DispatchOrderSyncService` (pilot đang chạy thật; kiểm DB: chưa có dòng thầu phụ nào từng bị gửi).
+- Gọi đồng bộ, nuốt lỗi (không chặn duyệt/chốt); kết quả ở `Tbl_FuelDgas3Outbound` (màn F047). `dotnet build` 0 lỗi. CHƯA test chạy thật; cấu hình vẫn trỏ sandbox dev (xem todo).
+
+### 2. Phiếu cấp dầu (modal-driver-fuel-approval) — Admin sửa được phiếu ĐÃ XUẤT khi CHƯA chốt (FE-only)
+- Getter `exportLocked = status>0 && !(isAdmin && !approved)` thay `entity.status>0` ở 9 ô (mã IGAS, Cây dầu Delta, kho dầu, NCC, lý do, Km đầu/cuối, số lượng, giá). `SP_DriverFuelApproval_Update` không chặn theo trạng thái → không sửa BE/SQL. tsc + ng build 0 lỗi.
+- Phạm vi: Tạm ứng dầu + Cấp dầu chung (type<2). `modal-fuel-summary` (Cấp dầu theo lệnh) CHƯA đổi.
+
 ## Phiên 2026-10-02 — FCL v2 khóa ngay khi Lưu, F051 Thu chi yêu cầu Xưởng (BE+FE), SP_GetPayments_Driver theo Type — ĐÃ COMMIT, chờ deploy + test
 ### 1. FCL v2 — quay lại yêu cầu ban đầu: khóa NGAY khi Lưu (FE+BE, không SQL)
 - Anh chốt bỏ "sửa tự do tới trước Duyệt B1" (bản 2026-08-24); quy trình đề xuất/duyệt sửa lệnh chờ anh Nghĩa. Khóa TUYỆT ĐỐI: lệnh bị lái xe từ chối nhận cũng khóa (Lưu = gửi lại lái xe cũ; đổi xe/lái xe → xóa lệnh lập mới). Khôi phục cả bắt chọn "Chặng cuối" mới hiện nút Lưu khi tạo mới.
