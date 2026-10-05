@@ -1,5 +1,24 @@
 # Completed Features
 
+## Phiên 2026-10-05 — Nhân viên: Email cá nhân + ẩn Ghi chú theo quyền (SQL+BE+FE); FCL v2 về MỐC B sửa tự do tới trước Duyệt B1 + bỏ hẳn yêu cầu "Chặng cuối" (FE+BE) — ĐÃ COMMIT, chờ chạy SQL + deploy + test
+### 1. Danh mục Nhân viên (modal-employee cũ) — Email cá nhân, Email → "Email công ty", ẩn theo quyền
+- **FE** `modal-employee.component.html`: nhãn "Email" → "Email công ty"; thêm dòng "Email cá nhân" (`entity.personalEmail`); "Email cá nhân" + "Ghi chú" chỉ hiện khi `_hr` (= Admin HOẶC quyền `EMPLOYEE_HR`, cờ có sẵn). Người không quyền lưu vẫn giữ nguyên ghi chú/email cá nhân (entity round-trip). Anh chốt: CHỈ chặn ở FE, không chặn BE.
+- **SQL** `NewAPI/Migration_Employee_CreateUpdate_PersonalEmail_20261005.sql` (ALTER 2 SP CŨ — anh cho phép): `SP_Employee_Create` + `SP_Employee_Update` thêm `@PersonalEmail nvarchar(255) = NULL` cuối chữ ký; Update dùng `ISNULL(@PersonalEmail, PersonalEmail)` (NULL = giữ cũ, vì `EmployeeController` dòng ~706 cũng gọi `UpdateAsync`). `SP_Employee_GetbyId` không sửa (`SELECT m.*`). Cột `Employee.PersonalEmail` có sẵn từ module HR.
+- **BE** `EmployeeRepository.CreatedAsync`/`UpdateAsync` truyền thêm `PersonalEmail`. `dotnet build` 0 lỗi.
+- Ghi nhận (KHÔNG sửa): `SP_Employee_Create` lệch thứ tự cột/giá trị ở INSERT (`@IdNumber`→NationId, `@NationId`→ReligionId, `@ReligionId`→MaritalStatusId, `@MaritalStatusId`→IdNumber) — lỗi có sẵn, giữ nguyên văn. `modal-employee-hr` chưa ẩn 2 trường theo quyền (nút mở modal HR ở list cũng không gắn quyền) — chờ anh quyết.
+
+### 2. FCL v2 — về MỐC B: sửa tự do tới trước Duyệt B1 (FE+BE, không SQL)
+- Anh yêu cầu ghi 2 cột mốc để chuyển qua lại nhanh khi sếp có ý kiến (bảng đối chiếu ở memory `project_fcl_route_lock_policy`):
+  - **MỐC A** — khóa NGAY khi Lưu (02/10→05/10): FE `routeConfirmed = !!refNo || flagXem`; BE if phục hồi `existing != null && existing.IsLegacy != true`. Commit FE `b5dd9c9`, BE `b5fff37`.
+  - **MỐC B** — HIỆN HÀNH từ 05/10: FE `(status ?? 0) > 2 || flagXem`; BE thêm `&& existing.Status > 2`.
+- Chuyển mốc = đổi đúng 1 dòng FE + 1 dòng BE, deploy CÙNG LÚC (khóa thật ở BE `DispatchOrderFCLRepository.UpdateWithTOAsync`). Các dòng `allowDetailed` giữ nguyên trong khối if để về MỐC A chỉ cần bỏ 1 điều kiện.
+- Ở MỐC B: status 0–2 sửa được xe/mooc/lái xe/giá dầu/cung đường/ETC/chi tiết công việc; lệnh bị từ chối nhận đổi được xe/lái xe.
+
+### 3. FCL v2 — bỏ hẳn yêu cầu "Chặng cuối" (FE-only)
+- Nút Lưu về `!flagXem && status<3` (không bắt chọn Chặng cuối khi tạo mới). Nút Duyệt B1 gỡ `[disabled]="!lastSegmentFinal"`, `duyetB1()` gỡ guard.
+- Lý do bỏ gate Duyệt B1: lựa chọn "Chặng cuối" không lưu DB, `edit()` luôn set `lastSegmentFinal=true` khi mở lệnh đã lưu → gate luôn pass; anh quyết bỏ thay vì thêm cột. Dropdown vẫn còn, chỉ còn tác dụng chặn thêm điểm vào lộ trình.
+- Verify: `tsc` + `ng build` (development) 0 lỗi; BE build 0 lỗi. CHƯA test trình duyệt.
+
 ## Phiên 2026-10-03 — dGas3 đủ 4/4 điểm gửi + loại xe thuê ngoài (BE), Phiếu cấp dầu Admin sửa phiếu đã xuất chưa chốt (FE) — ĐÃ COMMIT, chờ deploy + test
 ### 1. dGas3 Đợt 2 — cắm Duyệt bổ sung chi phí + Chốt lệnh FCL cũ/mới (BE-only, không SQL)
 - `DispatchOrderAdditionalFeeController.UpdateState`: Status=3 → `SyncAdditionalFeeAcceptedAsync(RefNo)`.

@@ -1,5 +1,13 @@
 # Pending / In-Progress Work
 
+## ▶ 2026-10-05 — Nhân viên Email cá nhân (SQL+BE+FE) + FCL v2 MỐC B / bỏ Chặng cuối (FE+BE) — ✅ ĐÃ COMMIT+PUSH, CHỜ chạy SQL + deploy + test — chi tiết done.md
+1. ⬜ Chạy `NewAPI/Migration_Employee_CreateUpdate_PersonalEmail_20261005.sql` (login delta.erp) — ⚠ TRƯỚC khi deploy BE (BE truyền `@PersonalEmail`, chưa chạy → lưu nhân viên lỗi "too many arguments").
+2. ⬜ Tắt API → build/publish BE + `ng build --configuration production` deploy FE — lên CÙNG LÚC (mốc khóa FCL phải khớp FE/BE).
+3. ⬜ Test Nhân viên: tài khoản có `EMPLOYEE_HR` nhập Email cá nhân → Lưu → mở lại còn; tài khoản không quyền không thấy Email cá nhân + Ghi chú, lưu xong 2 giá trị vẫn nguyên.
+4. ⬜ Test FCL v2: tạo lệnh không chọn Chặng cuối vẫn Lưu được; lệnh status 1–2 đổi xe/lái xe/cung đường → Lưu → mở lại đúng; lệnh đã Duyệt B1 khóa; nút Duyệt B1 hiện bình thường.
+5. ❓ Chờ anh quyết: `modal-employee-hr` có ẩn Email cá nhân + Ghi chú theo quyền không; có sửa lỗi lệch cột INSERT có sẵn trong `SP_Employee_Create` không (file riêng).
+- Về MỐC A (khóa ngay khi Lưu) khi sếp yêu cầu: xem bảng ở memory `project_fcl_route_lock_policy` — 1 dòng FE + 1 dòng BE.
+
 ## ▶ 2026-10-03 — dGas3 Đợt 2: cắm 3/4 điểm còn lại (Duyệt bổ sung chi phí + Chốt lệnh FCL cũ/mới) — ✅ ĐÃ COMMIT 2026-10-04 (chi tiết done.md), CHƯA deploy/test
 - `DispatchOrderAdditionalFeeController.UpdateState`: Status=3 → `SyncAdditionalFeeAcceptedAsync(RefNo)`.
 - `DispatchOrderFCLController.UpdateState` (Status=6, không phải từ chối) + `ChangeStatus` (ActionType ChotLenh) → `SyncFclClosedAsync(refNo)`. ⚠ Nút "Chốt lệnh" ở list FCL MỚI gọi `UpdateState` cũ (status=6) cho cả lệnh v2 ⇒ `SyncFclClosedAsync` bỏ tham số isLegacy, tự đọc `DispatchOrderFCL.IsLegacy` (SourceType 3/4, tiền tố FCLLGC-/FCL-).
@@ -22,7 +30,7 @@ Nút "Thanh toán" ở list Lệnh vận chuyển (modal-phieu-chi-lenh → `SP_
 2. ⬜ Test: chọn 1 lái xe có phiếu bổ sung Type=2 chưa chi → không còn hiện; lệnh có người ghi nhận dầu khác lái xe → phiếu Type=0 hiện ở người ghi nhận dầu.
 3. ✅ Anh chốt: 4 nhánh còn lại GIỮ NGUYÊN (lọc theo `DriverId`), chỉ chỉnh phần `DispatchOrderAdditionalFee`.
 
-## ▶ 2026-10-02 — FCL v2: quay lại KHÓA NGAY khi Lưu (yêu cầu ban đầu) + ẩn 3 nút GPS/EUP/VETC — FE+BE ĐÃ COMMIT+PUSH, CHỜ deploy + test — chi tiết done.md
+## ⏹ 2026-10-02 — FCL v2: quay lại KHÓA NGAY khi Lưu (yêu cầu ban đầu) + ẩn 3 nút GPS/EUP/VETC — ĐÃ BỊ THAY 2026-10-05 (về MỐC B + bỏ Chặng cuối, xem mục trên; đây = MỐC A, giữ để tham chiếu; 3 nút ẩn vẫn còn hiệu lực)
 Anh chốt: bỏ "sửa tự do tới trước Duyệt B1" (bản 2026-08-24), quay lại khóa ngay khi có RefNo; quy trình đề xuất/duyệt sửa lệnh chờ anh Nghĩa. Khóa TUYỆT ĐỐI (lệnh bị từ chối nhận cũng khóa — muốn đổi xe/lái xe thì xóa lệnh lập mới); khôi phục cả bắt chọn "Chặng cuối" mới hiện nút Lưu khi tạo mới. Chi tiết: memory `project_fcl_route_lock_policy`.
 - FE `modal-dispatch-order-fcl-v2`: `routeConfirmed = !!refNo || flagXem`; nút Lưu `status<3 && (refNo || lastSegmentFinal)`; 3 nút Check trạm EUP / Đối chiếu VETC / Hành trình GPS-EUP ẩn bằng `false &&`. tsc 0 lỗi.
 - BE `DispatchOrderFCLRepository.UpdateWithTOAsync`: phục hồi từ DB vô điều kiện (bỏ `&& existing.Status > 2`), trả lại `allowDetailed = Status < 3`. Compile 0 lỗi. Không SQL.
