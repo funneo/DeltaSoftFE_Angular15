@@ -235,16 +235,15 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   // ===== TO refactor (2026-05-15): route builder state + ViewChild =====
   locations: LocationItem[] = [];
-  // 2026-10-02 (anh chốt): quay về yêu cầu ban đầu — khóa NGAY khi lập lệnh xong (có RefNo):
-  // xe/mooc/lái xe/giá dầu/cung đường/ETC... không sửa được nữa, kể cả lệnh bị lái xe từ chối
-  // nhận (muốn đổi → xóa lệnh, lập lệnh mới). Muốn chỉnh route → dùng "Cung đường phát sinh".
-  // Quy trình đề xuất/duyệt sửa lệnh (ý anh Nghĩa) làm SAU.
+  // 2026-10-05 (anh chốt) — MỐC B: sửa tự do TOÀN BỘ thông tin lệnh (xe/mooc/lái xe/giá dầu/
+  // cung đường/ETC...) tới trước khi Duyệt B1. status>2 (>=3) = ĐÃ Duyệt B1 — khóa từ đây.
   // status: 0=mới · 1=đã giao lái xe · 2=đã nhận · 3+=đã Duyệt B1
-  // ⚠ Khóa THẬT nằm ở BE DispatchOrderFCLRepository.UpdateWithTOAsync (phục hồi từ DB vô điều
-  // kiện) — đổi mốc khóa phải đổi CẢ 2 nơi. Bản "sửa tự do tới trước Duyệt B1" (2026-08-24 →
-  // 2026-10-02) dùng `(status ?? 0) > 2 || flagXem`. Xem memory project_fcl_route_lock_policy.
+  // ⚠ MUỐN VỀ MỐC A (khóa NGAY khi Lưu/có RefNo, bản 2026-10-02 → 2026-10-05) → đổi lại
+  // `!!this.entity?.refNo || this.flagXem`. Phải đổi CÙNG LÚC BE
+  // DispatchOrderFCLRepository.UpdateWithTOAsync (bỏ `&& existing.Status > 2`) — khóa THẬT nằm
+  // ở BE, không thì FE khóa lại nhưng BE vẫn cho ghi đè. Xem memory project_fcl_route_lock_policy.
   get routeConfirmed(): boolean {
-    return !!this.entity?.refNo || this.flagXem;
+    return (this.entity?.status ?? 0) > 2 || this.flagXem;
   }
   showPoolPanel = true;
   lastSegmentFinal = false;
@@ -2093,12 +2092,9 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
       });
   }
   // Điều vận: Duyệt B1 (3→5) — lưu chỉnh sửa (updateWithTo) rồi đổi trạng thái. Quyền FCL_ACCEPT (BE kiểm).
-  // 2026-08-10: bắt buộc đã xác nhận "Chặng cuối" mới cho Duyệt B1 (thay vì chặn ở Lưu như trước).
+  // 2026-10-05 (anh chốt): bỏ yêu cầu "Chặng cuối" khi Duyệt B1 (gate cũ 2026-08-10 vô tác dụng vì
+  // edit() luôn set lastSegmentFinal=true cho lệnh đã lưu).
   duyetB1() {
-    if (!this.lastSegmentFinal) {
-      this.notificationService.printErrorMessage('Cần xác nhận Chặng cuối ở Cung đường vận tải trước khi Duyệt B1.');
-      return;
-    }
     var item = Object.assign({}, this.entity);
     this.notificationService.printConfirmationYesNo(
       "Chốt duyệt B1 lệnh vận chuyển hay không?",

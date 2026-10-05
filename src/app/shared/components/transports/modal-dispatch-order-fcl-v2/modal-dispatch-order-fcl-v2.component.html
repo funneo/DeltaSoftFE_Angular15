@@ -1285,10 +1285,9 @@
         <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-mau1 btn-sm"
           (click)="updateEtcFee()">
           <i class="fa fa-refresh"></i> Cập nhật chi phí</button>
-        <!-- 2026-08-10: yêu cầu "Chặng cuối" chuyển từ nút Lưu (tạo lệnh) sang nút Duyệt B1 —
-             xem memory project_fcl_v2_no_require_last_segment. -->
+        <!-- 2026-10-05 (anh chốt): bỏ hẳn yêu cầu "Chặng cuối" ở cả nút Lưu lẫn nút Duyệt B1.
+             Xem memory project_fcl_v2_no_require_last_segment. -->
         <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-duyet btn-sm"
-          [disabled]="!lastSegmentFinal" [title]="!lastSegmentFinal ? 'Cần xác nhận Chặng cuối ở Cung đường vận tải trước khi Duyệt B1' : ''"
           (click)="duyetB1()">
           <i class="fa fa-check"></i> Duyệt B1</button>
         <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-danger btn-sm"
@@ -1301,10 +1300,11 @@
         <button *ngIf="entity.canCloseFcl && entity.status==5" type="button" class="btn btn-duyet btn-sm"
           (click)="chotlenh()">
           <i class="fa fa-lock"></i> CHỐT LỆNH</button>
-        <!-- 2026-10-02 (anh chốt): khôi phục yêu cầu ban đầu — tạo mới phải chọn "Chặng cuối"
-             (lastSegmentFinal=true) mới hiện nút Lưu (từng bỏ 2026-08-10). Xem memory
+        <!-- 2026-10-05 (anh chốt): KHÔNG bắt chọn "Chặng cuối" mới hiện nút Lưu (Duyệt B1 cũng
+             không còn yêu cầu). Bản bắt chọn (2026-10-02) dùng
+             thêm `&& (entity.refNo || lastSegmentFinal)`. Xem memory
              project_fcl_v2_no_require_last_segment. status<3 = trước Duyệt B1. -->
-        <button *ngIf="!flagXem && entity.status<3 && (entity.refNo || lastSegmentFinal)" type="submit"
+        <button *ngIf="!flagXem && entity.status<3" type="submit"
           class="btn btn-primary btn-sm"
           [disabled]=" !addEditForm.form.valid || flagSave ">
           <i class="fa fa-save"></i> Lưu</button>
