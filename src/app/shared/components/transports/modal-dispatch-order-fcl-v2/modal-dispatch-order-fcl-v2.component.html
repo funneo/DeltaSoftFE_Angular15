@@ -890,19 +890,19 @@
               <!-- Trạm thu phí (ETC) — gộp từ tab ETC cũ, dùng TÊN trạm; tự thêm từ Vietmap -->
               <div class="dsg-etc-header">
                 <span class="dsg-etc-title"><i class="fa fa-money text-warning"></i> Trạm thu phí (ETC)</span>
-                <!-- Tạm ẩn 3 nút Check trạm EUP / Đối chiếu VETC / Hành trình GPS-EUP (2026-10-01) — bỏ `false &&` để bật lại -->
+                <!-- 3 nút Check trạm EUP / Đối chiếu VETC / Hành trình GPS-EUP: tạm ẩn 2026-10-01, bật lại 2026-10-06 (anh chốt) -->
                 <button type="button" class="btn btn-xs btn-warning dsg-etc-add"
-                  *ngIf="false && entity.startedDate && entity.finishedDate"
+                  *ngIf="entity.startedDate && entity.finishedDate"
                   (click)="checkEup()">
                   <i class="fa fa-road"></i> Check trạm EUP
                 </button>
                 <button type="button" class="btn btn-xs btn-info dsg-etc-add"
-                  *ngIf="false && entity.refNo && entity.startedDate"
+                  *ngIf="entity.refNo && entity.startedDate"
                   (click)="openVetcTollCheck()">
                   <i class="fa fa-balance-scale"></i> Đối chiếu VETC
                 </button>
                 <button type="button" class="btn btn-xs btn-danger dsg-etc-add"
-                  *ngIf="false && entity.startedDate && entity.finishedDate"
+                  *ngIf="entity.startedDate && entity.finishedDate"
                   (click)="checkEupGps()">
                   <i class="fa fa-map-o"></i> Hành trình GPS-EUP
                 </button>
@@ -1285,8 +1285,8 @@
         <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-mau1 btn-sm"
           (click)="updateEtcFee()">
           <i class="fa fa-refresh"></i> Cập nhật chi phí</button>
-        <!-- 2026-10-05 (anh chốt): bỏ hẳn yêu cầu "Chặng cuối" ở cả nút Lưu lẫn nút Duyệt B1.
-             Xem memory project_fcl_v2_no_require_last_segment. -->
+        <!-- 2026-10-05 (anh chốt): nút Duyệt B1 không yêu cầu "Chặng cuối" (nút Lưu thì có lại từ
+             2026-10-06). Xem memory project_fcl_v2_no_require_last_segment. -->
         <button *ngIf="accept_permission && entity.status==3" type="button" class="btn btn-duyet btn-sm"
           (click)="duyetB1()">
           <i class="fa fa-check"></i> Duyệt B1</button>
@@ -1300,11 +1300,10 @@
         <button *ngIf="entity.canCloseFcl && entity.status==5" type="button" class="btn btn-duyet btn-sm"
           (click)="chotlenh()">
           <i class="fa fa-lock"></i> CHỐT LỆNH</button>
-        <!-- 2026-10-05 (anh chốt): KHÔNG bắt chọn "Chặng cuối" mới hiện nút Lưu (Duyệt B1 cũng
-             không còn yêu cầu). Bản bắt chọn (2026-10-02) dùng
-             thêm `&& (entity.refNo || lastSegmentFinal)`. Xem memory
-             project_fcl_v2_no_require_last_segment. status<3 = trước Duyệt B1. -->
-        <button *ngIf="!flagXem && entity.status<3" type="submit"
+        <!-- 2026-10-06 (anh chốt) — về MỐC A: tạo mới phải chọn "Chặng cuối" (lastSegmentFinal=true)
+             mới hiện nút Lưu. Bản không bắt chọn (2026-10-05) là `!flagXem && entity.status<3`.
+             Xem memory project_fcl_v2_no_require_last_segment. status<3 = trước Duyệt B1. -->
+        <button *ngIf="!flagXem && entity.status<3 && (entity.refNo || lastSegmentFinal)" type="submit"
           class="btn btn-primary btn-sm"
           [disabled]=" !addEditForm.form.valid || flagSave ">
           <i class="fa fa-save"></i> Lưu</button>

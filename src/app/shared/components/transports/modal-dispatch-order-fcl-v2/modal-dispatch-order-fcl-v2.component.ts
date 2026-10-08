@@ -235,15 +235,15 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   // ===== TO refactor (2026-05-15): route builder state + ViewChild =====
   locations: LocationItem[] = [];
-  // 2026-10-05 (anh chốt) — MỐC B: sửa tự do TOÀN BỘ thông tin lệnh (xe/mooc/lái xe/giá dầu/
-  // cung đường/ETC...) tới trước khi Duyệt B1. status>2 (>=3) = ĐÃ Duyệt B1 — khóa từ đây.
+  // 2026-10-06 (anh chốt) — MỐC A: khóa NGAY khi lập lệnh xong (có RefNo): xe/mooc/lái xe/
+  // giá dầu/cung đường/ETC... không sửa được nữa. Muốn chỉnh route → "Cung đường phát sinh".
   // status: 0=mới · 1=đã giao lái xe · 2=đã nhận · 3+=đã Duyệt B1
-  // ⚠ MUỐN VỀ MỐC A (khóa NGAY khi Lưu/có RefNo, bản 2026-10-02 → 2026-10-05) → đổi lại
-  // `!!this.entity?.refNo || this.flagXem`. Phải đổi CÙNG LÚC BE
-  // DispatchOrderFCLRepository.UpdateWithTOAsync (bỏ `&& existing.Status > 2`) — khóa THẬT nằm
-  // ở BE, không thì FE khóa lại nhưng BE vẫn cho ghi đè. Xem memory project_fcl_route_lock_policy.
+  // ⚠ MUỐN VỀ MỐC B (sửa tự do tới trước Duyệt B1, bản 2026-10-05) → đổi lại
+  // `(this.entity?.status ?? 0) > 2 || this.flagXem`. Phải đổi CÙNG LÚC BE
+  // DispatchOrderFCLRepository.UpdateWithTOAsync (thêm `&& existing.Status > 2`) — khóa THẬT
+  // nằm ở BE. Xem memory project_fcl_route_lock_policy.
   get routeConfirmed(): boolean {
-    return (this.entity?.status ?? 0) > 2 || this.flagXem;
+    return !!this.entity?.refNo || this.flagXem;
   }
   showPoolPanel = true;
   lastSegmentFinal = false;
