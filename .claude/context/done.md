@@ -1,5 +1,27 @@
 # Completed Features
 
+## Phiên 2026-10-06 → 2026-10-08 — FCL v2 về lại MỐC A + bật lại 3 nút EUP/VETC (FE+BE); báo cáo lệnh chờ chốt tháng 9; rà dGas3; kế hoạch VIS/VETC (docx); cài SSL mới — ĐÃ COMMIT, chờ deploy FE + test
+### 1. FCL v2 — về lại MỐC A: khóa NGAY khi Lưu + bắt chọn "Chặng cuối" mới Lưu (FE+BE, không SQL)
+- Anh chốt 06/10. **FE** `modal-dispatch-order-fcl-v2`: `routeConfirmed = !!refNo || flagXem`; nút Lưu `!flagXem && status<3 && (refNo || lastSegmentFinal)`. Nút Duyệt B1 KHÔNG khôi phục yêu cầu Chặng cuối (lựa chọn không lưu DB).
+- **BE** `DispatchOrderFCLRepository.UpdateWithTOAsync`: bỏ `&& existing.Status > 2` → lệnh không-legacy luôn phục hồi xe/mooc/lái xe/segments/ETC từ DB.
+- Ghi nhận: DLL đang chạy trên server build 04/10 07:14 = vốn đã là MỐC A (bản MỐC B 05/10 chưa từng deploy) ⇒ chỉ cần deploy FE là khớp; BE commit để source đúng với bản đang chạy.
+- Bật lại 3 nút "Check trạm EUP" / "Đối chiếu VETC" / "Hành trình GPS-EUP" (gỡ `false &&`).
+- Verify: `tsc --noEmit` 0 lỗi; `dotnet build` 0 lỗi. CHƯA `ng build`/test trình duyệt.
+
+### 2. Báo cáo lệnh FCL chờ chốt tháng 9 (chỉ đọc DB) — `docs/fcl-cho-chot-thang-9-2026.md`
+- Chị Trang báo "nhiều lệnh chờ chốt biến mất" → không mất lệnh nào: 07/9–02/10 có 1.167 lệnh được chốt (trang.nguyen 868, vu.to 299) + 297 lượt từ chối chốt. Còn 7 lệnh chờ chốt, 57 lệnh bị từ chối chưa gửi lại.
+- Bẫy: đếm chốt theo `ClosingDate/ClosingBy`, KHÔNG theo log (47 lần chốt thiếu dòng log 5→6). Playbook ở memory `reference_fcl_closing_queue_check_playbook`.
+
+### 3. Rà dGas3 (chỉ đọc DB, không sửa code)
+- Gửi đi: 303/2.993 thành công; 2.168 lỗi 404 (lái xe/xe không có trong tenant — cấu hình vẫn trỏ sandbox); 522 dòng "chờ gửi lại" đứng từ 01/10 vì KHÔNG có worker tự gửi lại; 1.167 lệnh FCL chốt trước 06/10 15:00 chưa từng gửi; mã gửi bị lặp tiền tố `FCL-FCL-...`.
+- Nhận về từ Innvie: 0 dòng completion, 0 yêu cầu thu chi F051 (dù BE đã deploy).
+
+### 4. Kế hoạch VIS / quản lý vé VETC — `NewAPI/KeHoach_VIS_VETC_20261008.docx` (8 trang, chưa code)
+- Đọc `VIS_Oct 8 2026.docx` của sếp; đề xuất "Sổ giao dịch VETC" (lấy cả đội xe hằng ngày, mỗi giao dịch lưu 1 lần, phân bổ về đúng 1 lệnh → vé mồ côi tìm được hằng ngày), 11 đề nghị với VETC, 7 điểm cần lãnh đạo chốt, lộ trình GĐ0–GĐ6. Số liệu nền ở memory `project_toll_avoidance_driver_reimbursement`.
+
+### 5. SSL server 115.84.178.66 — đã cài chứng chỉ mới lên IIS (08/10)
+- Chứng chỉ Sectigo cấp cho IP, qua PA Việt Nam, hết hạn **12/04/2027**. File + hướng dẫn + script tách ở `D:\Delta\DeltaSoft\ssl-cert\` (NGOÀI git — anh dặn không bao giờ đưa vào git). Playbook ở memory `reference_ssl_cert_renewal_playbook`.
+
 ## Phiên 2026-10-05 — Nhân viên: Email cá nhân + ẩn Ghi chú theo quyền (SQL+BE+FE); FCL v2 về MỐC B sửa tự do tới trước Duyệt B1 + bỏ hẳn yêu cầu "Chặng cuối" (FE+BE) — ĐÃ COMMIT, chờ chạy SQL + deploy + test
 ### 1. Danh mục Nhân viên (modal-employee cũ) — Email cá nhân, Email → "Email công ty", ẩn theo quyền
 - **FE** `modal-employee.component.html`: nhãn "Email" → "Email công ty"; thêm dòng "Email cá nhân" (`entity.personalEmail`); "Email cá nhân" + "Ghi chú" chỉ hiện khi `_hr` (= Admin HOẶC quyền `EMPLOYEE_HR`, cờ có sẵn). Người không quyền lưu vẫn giữ nguyên ghi chú/email cá nhân (entity round-trip). Anh chốt: CHỈ chặn ở FE, không chặn BE.

@@ -1,5 +1,14 @@
 # Pending / In-Progress Work
 
+## ▶ 2026-10-06 → 10-08 — FCL v2 về lại MỐC A + bật 3 nút EUP/VETC; dGas3; VIS/VETC; SSL — ✅ ĐÃ COMMIT+PUSH (FE+BE), CHỜ deploy FE + test — chi tiết done.md
+1. ⬜ `ng build --configuration production` + deploy FE. BE trên server (DLL 04/10) vốn đã là MỐC A → không bắt buộc deploy BE cho việc này; lần publish BE tới sẽ kèm `PersonalEmail` (nhớ chạy SQL 05/10 TRƯỚC).
+2. ⬜ Test FCL v2: tạo mới chưa chọn Chặng cuối → không có nút Lưu; Lưu xong mở lại → xe/lái xe/cung đường/trạm khóa; 3 nút Check trạm EUP / Đối chiếu VETC / Hành trình GPS-EUP hiện lại.
+3. ❓ dGas3 — chờ anh quyết: (a) gửi bù 1.167 lệnh FCL chốt trước 06/10 15:00? (b) làm worker tự gửi lại dòng lỗi tạm thời (522 dòng đang đứng)? (c) hỏi Innvie vì sao chưa gọi về (0 completion, 0 yêu cầu thu chi; đường dẫn `api/Garages/completions` khác tài liệu của họ)? (d) sửa mã lặp tiền tố `FCL-FCL-`. Vẫn chờ URL/Tenant/API key production.
+4. ❓ VIS/VETC — chờ kết quả gặp Thắng/TGĐ VETC + anh chốt 7 điểm (mục 3.7 của `NewAPI/KeHoach_VIS_VETC_20261008.docx`) rồi mới thiết kế SQL "Sổ giao dịch VETC". CHƯA code.
+5. ⬜ Chị Trang: 57 lệnh bị từ chối chốt chưa gửi lại + 7 lệnh đang chờ chốt (danh sách trong `docs/fcl-cho-chot-thang-9-2026.md`).
+6. ⏰ SSL 115.84.178.66 hết hạn 12/04/2027 → gia hạn với PA Việt Nam cuối tháng 3/2027.
+- Mục "2026-10-05 … MỐC B / bỏ Chặng cuối" bên dưới: phần FCL đã bị thay bởi mục này (hiện hành = MỐC A); phần Nhân viên Email cá nhân vẫn còn hiệu lực.
+
 ## ▶ 2026-10-05 — Nhân viên Email cá nhân (SQL+BE+FE) + FCL v2 MỐC B / bỏ Chặng cuối (FE+BE) — ✅ ĐÃ COMMIT+PUSH, CHỜ chạy SQL + deploy + test — chi tiết done.md
 1. ⬜ Chạy `NewAPI/Migration_Employee_CreateUpdate_PersonalEmail_20261005.sql` (login delta.erp) — ⚠ TRƯỚC khi deploy BE (BE truyền `@PersonalEmail`, chưa chạy → lưu nhân viên lỗi "too many arguments").
 2. ⬜ Tắt API → build/publish BE + `ng build --configuration production` deploy FE — lên CÙNG LÚC (mốc khóa FCL phải khớp FE/BE).
