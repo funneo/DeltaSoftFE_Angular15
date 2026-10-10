@@ -1,5 +1,26 @@
 # Pending / In-Progress Work
 
+## ▶ 2026-10-10 — FCL Export (tổng hợp + chi tiết): Tổng km = 0 với lệnh MỚI — SQL ĐÃ SOẠN, CHỜ anh chạy
+- `SP_DispatchOrderFCL_GetExport` cộng 12 cột km kiểu lệnh cũ → lệnh mới (IsLegacy=0) ra 0 (tháng 9: 1.508 lệnh mới, km thật 244.018). Sửa: bọc CASE theo IsLegacy ở cả 2 nhánh, lệnh mới đọc `TongKm`; lệnh cũ giữ nguyên công thức.
+1. ⬜ Anh chạy `NewAPI/Migration_DispatchOrderFCL_GetExport_TongKmIsLegacy_20261010.sql` (ALTER 1 SP, không cần deploy BE/FE) → export lại tháng 9 kiểm cột TongKm.
+2. ⏸ Chưa làm (chờ anh gọi): lọc cũ/mới theo trang đang đứng (SP hiện trả cả hai); cột km từng chặng/tên cảng-nhà máy trống với lệnh mới.
+
+## ❓ 2026-10-10 — FCL v2: sau "Từ chối B2" (5→3) không ai sửa được cờ tránh trạm — CHỜ anh chọn hướng (chưa code)
+- Hiện phải bấm thêm Từ chối B1 (3→2) lái xe mới sửa được. Hướng: (1) giữ 2 bước; (2) cho điều vận tích tránh trạm ở status 3 (cần kiểm SP UpdateWithTO có ghi IsPassed không); (3) từ chối B2 về thẳng 2 (sửa SP ChangeStatus — không khuyến nghị). Chi tiết done.md.
+
+## ▶ 2026-10-10 — FCL v2 về MỐC B + khóa lái xe sau khi đã nhận lệnh (FE+BE) — ✅ ĐÃ COMMIT+PUSH (tsc + dotnet build 0 lỗi), CHỜ deploy + test — chi tiết done.md
+- Sửa tự do tới trước Duyệt B1 (status 0–2); riêng Lái xe 1 + SĐT khóa từ status>=2 (FE `driverLocked`, BE `UpdateWithTOAsync` nhánh `else if`). Không SQL. Chi tiết: memory `project_fcl_route_lock_policy`.
+1. ⬜ Tắt API → build/publish BE + `ng build --configuration production` deploy FE — lên CÙNG LÚC.
+2. ⬜ Test: lệnh status 1 đổi xe/lái xe/cung đường → Lưu → mở lại đúng; lệnh status 2 đổi xe/cung đường được, ô lái xe khóa, đổi xe không kéo đổi lái xe; lệnh đã Duyệt B1 khóa hết.
+3. ❓ Chờ anh xác nhận: "Lái xe ghi nhận dầu" có khóa theo lái xe không (hiện KHÔNG khóa); nút Lưu vẫn bắt chọn Chặng cuối khi tạo mới (giữ nguyên bản 06/10).
+- Mục "2026-10-06 → 10-08 … MỐC A" bên dưới: phần mốc khóa FCL đã bị thay bởi mục này; các phần khác còn hiệu lực.
+
+## ▶ 2026-10-08 — Chốt dầu: SP_DriverFuelClosing_Update bỏ kiểm tra chồng ngày + tính thiếu mua dầu ngoài (Source 7) — SQL ĐÃ SOẠN, CHỜ anh chạy
+- Lỗi "Khoảng … bị chồng với phiếu chốt khác của cùng xe" khi Sửa/Duyệt: Create không so khoảng ngày, Update có so → 23 phiếu nháp kẹt (FE bấm Duyệt cũng gọi Update trước). Update còn quên Source=7 trong `@SupOper` (Create + FE có).
+1. ⬜ Anh chạy `NewAPI/Migration_DriverFuelClosing_Update_BoChongNgay_Source7_20261008.sql` (ALTER 1 SP, không cần deploy BE/FE; cuối file có 2 SELECT kiểm tra).
+2. ❓ 3 phiếu ĐÃ DUYỆT lệch số vì thiếu Source 7 (Id 146 `DFC-202607-096`, 178 `DFC-202608-027`, 179 `DFC-202608-028`): header lưu công ty CHI lái xe trong khi đúng là THU — chờ anh quyết cách sửa (file UPDATE riêng / hủy duyệt làm lại) + kiểm đã chi tiền theo số sai chưa.
+3. ⬜ Sau khi chạy: 3 phiếu nháp có Source 7 (Id 329/330/331) duyệt bình thường là đúng.
+
 ## ▶ 2026-10-06 → 10-08 — FCL v2 về lại MỐC A + bật 3 nút EUP/VETC; dGas3; VIS/VETC; SSL — ✅ ĐÃ COMMIT+PUSH (FE+BE), CHỜ deploy FE + test — chi tiết done.md
 1. ⬜ `ng build --configuration production` + deploy FE. BE trên server (DLL 04/10) vốn đã là MỐC A → không bắt buộc deploy BE cho việc này; lần publish BE tới sẽ kèm `PersonalEmail` (nhớ chạy SQL 05/10 TRƯỚC).
 2. ⬜ Test FCL v2: tạo mới chưa chọn Chặng cuối → không có nút Lưu; Lưu xong mở lại → xe/lái xe/cung đường/trạm khóa; 3 nút Check trạm EUP / Đối chiếu VETC / Hành trình GPS-EUP hiện lại.

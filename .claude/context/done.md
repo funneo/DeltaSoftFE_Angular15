@@ -1,5 +1,25 @@
 # Completed Features
 
+## Phiên 2026-10-08 → 2026-10-10 — FCL v2 về MỐC B + khóa lái xe sau khi nhận lệnh (FE+BE); Export FCL Tổng km theo IsLegacy (SQL); Chốt dầu bỏ chồng ngày + Source 7 (SQL); rà VETC mã trạm, luồng từ chối B1/B2 — ĐÃ COMMIT, chờ chạy SQL + deploy + test
+### 1. FCL v2 — về MỐC B + ngoại lệ lái xe (FE+BE, không SQL)
+- Anh chốt 10/10: sửa được mọi thứ tới trước Duyệt B1, TRỪ thông tin lái xe sau khi lái xe đã nhận lệnh.
+- **FE** `modal-dispatch-order-fcl-v2`: `routeConfirmed = (status ?? 0) > 2 || flagXem`; getter mới `driverLocked = routeConfirmed || status >= 2` gắn vào Lái xe 1 + SĐT (cả nhánh xe thuê ngoài); `changeVihicle` khi `driverLocked` không tự đổi lái xe / lái xe ghi nhận dầu theo xe. Nút Lưu GIỮ `status<3 && (refNo || lastSegmentFinal)`.
+- **BE** `DispatchOrderFCLRepository.UpdateWithTOAsync`: thêm lại `&& existing.Status > 2`; thêm `else if (… Status >= 2)` giữ `DriverId/Name/Tel` + `SecondDriver*` theo DB.
+- Em tự diễn giải, chờ anh xác nhận: "đã nhận lệnh" = status>=2 (lệnh bị từ chối nhận ở status 1 vẫn đổi lái xe được); "Lái xe ghi nhận dầu" KHÔNG khóa theo.
+- Verify: `tsc --noEmit` 0 lỗi; `dotnet build` 0 lỗi. CHƯA `ng build`/test trình duyệt. Bảng mốc ở memory `project_fcl_route_lock_policy`.
+
+### 2. Export FCL (tổng hợp + chi tiết) — Tổng km = 0 với lệnh MỚI (SQL, chờ anh chạy)
+- `SP_DispatchOrderFCL_GetExport` cộng 12 cột km kiểu lệnh cũ ở CẢ 2 nhánh → lệnh mới ra 0 (tháng 9: 1.508 lệnh mới, km thật 244.018, export 0). `DispatchOrderFCL.TongKm` của lệnh mới khớp tổng chặng + cung đường phát sinh (0 lệnh lệch).
+- `NewAPI/Migration_DispatchOrderFCL_GetExport_TongKmIsLegacy_20261010.sql`: ALTER, thân SP nguyên văn bản live, delta duy nhất = bọc TongKm trong `CASE WHEN ISNULL(s.IsLegacy,0)=1 THEN <công thức cũ> ELSE ISNULL(s.TongKm,0) END` ở 2 nhánh. Không đổi tham số/BE/FE.
+- Ghi nhận (chưa làm): SP không lọc cũ/mới (export ở list nào cũng ra cả hai); cột km từng chặng + tên cảng/nhà máy trống với lệnh mới.
+
+### 3. Chốt dầu — `SP_DriverFuelClosing_Update` bỏ kiểm tra chồng ngày + tính thiếu Source 7 (SQL 08/10, chờ anh chạy)
+- `NewAPI/Migration_DriverFuelClosing_Update_BoChongNgay_Source7_20261008.sql` — chi tiết + 3 phiếu đã duyệt lệch số ở todo.md.
+
+### 4. Rà soát chỉ đọc (không sửa code)
+- **VETC không trả mã/id trạm**: quét `vetc_open_20-26.json` (1.671 dòng) + `vetc_close_20-26.json` (404 dòng) — chỉ có tên trạm dạng chữ (`toll_name` / `from_toll`,`to_toll`,`stage_name`); `lane_id` là số làn, `boo` chỉ 1/2/3. Model BE `VetcApiModels.cs` chưa khai báo `price_ticket_type`, `lane_id`, `checkin_lane_id`/`checkout_lane_id`.
+- **Từ chối B1/B2** (`SP_DispatchOrderFCL_ChangeStatus`): từ chối B1 = 3→2 (lái xe sửa tránh trạm được); từ chối B2 (từ chối chốt) = 5→3 → ở status 3 KHÔNG ai sửa được cờ tránh trạm (màn lái xe chỉ mở khi status≤2; ô tránh trạm màn điều vận khóa theo `routeConfirmed`); BE/SP `DriverUpdate` không chặn theo trạng thái. Hiện phải Từ chối B1 thêm 1 bước. Chờ anh chọn hướng.
+
 ## Phiên 2026-10-06 → 2026-10-08 — FCL v2 về lại MỐC A + bật lại 3 nút EUP/VETC (FE+BE); báo cáo lệnh chờ chốt tháng 9; rà dGas3; kế hoạch VIS/VETC (docx); cài SSL mới — ĐÃ COMMIT, chờ deploy FE + test
 ### 1. FCL v2 — về lại MỐC A: khóa NGAY khi Lưu + bắt chọn "Chặng cuối" mới Lưu (FE+BE, không SQL)
 - Anh chốt 06/10. **FE** `modal-dispatch-order-fcl-v2`: `routeConfirmed = !!refNo || flagXem`; nút Lưu `!flagXem && status<3 && (refNo || lastSegmentFinal)`. Nút Duyệt B1 KHÔNG khôi phục yêu cầu Chặng cuối (lựa chọn không lưu DB).
