@@ -125,14 +125,14 @@
                   </label>
                   <div class="col-sm-4" *ngIf="!entity.isSubcontractors">
                     <ng-select name="driverId" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
-                      [disabled]="routeConfirmed" [(ngModel)]="entity.driverId"
+                      [disabled]="driverLocked" [(ngModel)]="entity.driverId"
                       [required]="!entity.isSubcontractors" (change)="driver1Change($event)">
                     </ng-select>
                   </div>
                   <div class="col-sm-4" *ngIf="entity.isSubcontractors">
                     <div class="input-group position-relative">
                       <input type="text" class="form-control" [(ngModel)]="entity.driverName" name="driverName"
-                        (change)="driverNameChange()" [readonly]="routeConfirmed" />
+                        (change)="driverNameChange()" [readonly]="driverLocked" />
                       <span class="input-group-addon" style="height: 28px; color: rgb(121, 52, 212);"
                         (click)="toggleDriverList()">
                         <i class="fa fa-eye" title="Lái xe"></i>
@@ -140,7 +140,7 @@
                     </div>
                     <div *ngIf="showDriverList" class="dropdown-container">
                       <ng-select #driverSelect name="driverId" [items]="selectedSupplier.listSupplierDrivers"
-                        bindLabel="driverName" bindValue="id" [disabled]="routeConfirmed"
+                        bindLabel="driverName" bindValue="id" [disabled]="driverLocked"
                         [(ngModel)]="entity.driverId"
                         (change)="driverSupplierChange($event); updateSelectedDriverName()">
                       </ng-select>
@@ -149,7 +149,7 @@
                   <label class="col-sm-2 control-label">SĐT</label>
                   <div class="col-sm-4">
                     <input class="form-control" [(ngModel)]="entity.driverTel" type="text" name="driverTel"
-                      [readonly]="routeConfirmed" />
+                      [readonly]="driverLocked" />
                   </div>
                 </div>
                 <div class="form-group" *ngIf="!entity.isSubcontractors">
@@ -1300,7 +1300,7 @@
         <button *ngIf="entity.canCloseFcl && entity.status==5" type="button" class="btn btn-duyet btn-sm"
           (click)="chotlenh()">
           <i class="fa fa-lock"></i> CHỐT LỆNH</button>
-        <!-- 2026-10-06 (anh chốt) — về MỐC A: tạo mới phải chọn "Chặng cuối" (lastSegmentFinal=true)
+        <!-- 2026-10-06 (anh chốt; GIỮ NGUYÊN khi về MỐC B 2026-10-10): tạo mới phải chọn "Chặng cuối" (lastSegmentFinal=true)
              mới hiện nút Lưu. Bản không bắt chọn (2026-10-05) là `!flagXem && entity.status<3`.
              Xem memory project_fcl_v2_no_require_last_segment. status<3 = trước Duyệt B1. -->
         <button *ngIf="!flagXem && entity.status<3 && (entity.refNo || lastSegmentFinal)" type="submit"

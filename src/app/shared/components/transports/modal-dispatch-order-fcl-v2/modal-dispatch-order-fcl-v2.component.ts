@@ -235,15 +235,21 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   // ===== TO refactor (2026-05-15): route builder state + ViewChild =====
   locations: LocationItem[] = [];
-  // 2026-10-06 (anh chốt) — MỐC A: khóa NGAY khi lập lệnh xong (có RefNo): xe/mooc/lái xe/
-  // giá dầu/cung đường/ETC... không sửa được nữa. Muốn chỉnh route → "Cung đường phát sinh".
+  // 2026-10-10 (anh chốt) — MỐC B: sửa tự do tới TRƯỚC Duyệt B1 (status 0-2): xe/mooc/giá dầu/
+  // cung đường/ETC... Từ status>2 (đã Duyệt B1) mới khóa. Riêng thông tin lái xe khóa sớm hơn,
+  // ngay khi lái xe đã nhận lệnh (driverLocked bên dưới).
   // status: 0=mới · 1=đã giao lái xe · 2=đã nhận · 3+=đã Duyệt B1
-  // ⚠ MUỐN VỀ MỐC B (sửa tự do tới trước Duyệt B1, bản 2026-10-05) → đổi lại
-  // `(this.entity?.status ?? 0) > 2 || this.flagXem`. Phải đổi CÙNG LÚC BE
-  // DispatchOrderFCLRepository.UpdateWithTOAsync (thêm `&& existing.Status > 2`) — khóa THẬT
+  // ⚠ MUỐN VỀ MỐC A (khóa NGAY khi có RefNo, bản 2026-10-06) → đổi lại
+  // `!!this.entity?.refNo || this.flagXem`. Phải đổi CÙNG LÚC BE
+  // DispatchOrderFCLRepository.UpdateWithTOAsync (bỏ `&& existing.Status > 2`) — khóa THẬT
   // nằm ở BE. Xem memory project_fcl_route_lock_policy.
   get routeConfirmed(): boolean {
-    return !!this.entity?.refNo || this.flagXem;
+    return (this.entity?.status ?? 0) > 2 || this.flagXem;
+  }
+  // Lái xe 1 + SĐT: khóa từ khi lái xe ĐÃ NHẬN lệnh (status>=2). Lệnh bị từ chối nhận vẫn ở
+  // status 1 nên đổi lái xe được. BE UpdateWithTOAsync giữ lái xe theo DB cùng mốc này.
+  get driverLocked(): boolean {
+    return this.routeConfirmed || (this.entity?.status ?? 0) >= 2;
   }
   showPoolPanel = true;
   lastSegmentFinal = false;
@@ -273,7 +279,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
 
   // 2026-08-10: sau khi Duyệt B1 (status>=5) lệnh chỉ còn chờ CHỐT LỆNH — khóa mọi ô/nút
   // thêm-bớt-sửa còn lại (dầu, chi phí, tóm tắt/ghi chú...) BẤT KỂ flagXem hay không.
-  // Route/ETC/xe/lái xe đã khóa từ trước qua routeConfirmed (ngay khi có refNo, sớm hơn).
+  // Route/ETC/xe đã khóa từ trước qua routeConfirmed (status>2), lái xe qua driverLocked (status>=2).
   get postB1Locked(): boolean {
     return this.flagXem || (this.entity?.status ?? 0) >= 5;
   }
@@ -1153,11 +1159,13 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   changeVihicle(event: Vihicle) {
     this.entity.vehiclelLicensePlates = event?.licensePlates;
     this.loadVehicle(event?.id);
+    this.updateOilQuota();
+    // Lái xe đã nhận lệnh → đổi xe KHÔNG kéo theo đổi lái xe / lái xe ghi nhận dầu
+    if (this.driverLocked) return;
     this.entity.driverId = event?.employeeId;
     let driver = this.listEmployee.find((it) => it.id == event?.employeeId);
     this.entity.driverName = driver?.employeeFullName;
     this.entity.driverTel = driver?.telephone;
-    this.updateOilQuota();
     if (this.userLoged.branchId.toString() != "5")
       this.entity.fuelDriverId = event?.employeeId;
   }
