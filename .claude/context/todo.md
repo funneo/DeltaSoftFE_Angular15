@@ -1,5 +1,10 @@
 # Pending / In-Progress Work
 
+## ▶ 2026-10-13 — FCL getPerformance: trả số container của công việc gán vào lệnh (cho app mobile) — SQL ĐÃ SOẠN + COMMIT, CHỜ anh chạy
+- `SP_DispatchOrderFCL_GetPerformance` chưa trả số container → thêm cột `ContainerNumbers` (từ `ShippingTask.ContainerNumber` qua `DispatchOrderFclDetailed`, bỏ trùng/rỗng, cách nhau dấu phẩy). BE ViewModel đã có sẵn property → không deploy BE/FE.
+1. ⬜ Anh chạy `NewAPI/Migration_DispatchOrderFCL_GetPerformance_ContainerNumbers_20261013.sql` (ALTER 1 SP, login delta.erp) → app gọi `api/DispatchOrderFcl/getPerformance` kiểm field `containerNumbers` (vd lệnh `FCL-VT261012/0077` → `SKLU2307770, TCLU3352831`).
+- Ghi nhận: màn web "Thực hiện lệnh" sẽ tự hiện số cont ở cột Container (chung 1 dòng, không sửa FE — anh chốt không cần); vài công việc nhập cả số seal vào ô số cont → SP trả nguyên văn.
+
 ## ▶ 2026-10-10 — FCL Export (tổng hợp + chi tiết): Tổng km = 0 với lệnh MỚI — SQL ĐÃ SOẠN, CHỜ anh chạy
 - `SP_DispatchOrderFCL_GetExport` cộng 12 cột km kiểu lệnh cũ → lệnh mới (IsLegacy=0) ra 0 (tháng 9: 1.508 lệnh mới, km thật 244.018). Sửa: bọc CASE theo IsLegacy ở cả 2 nhánh, lệnh mới đọc `TongKm`; lệnh cũ giữ nguyên công thức.
 1. ⬜ Anh chạy `NewAPI/Migration_DispatchOrderFCL_GetExport_TongKmIsLegacy_20261010.sql` (ALTER 1 SP, không cần deploy BE/FE) → export lại tháng 9 kiểm cột TongKm.

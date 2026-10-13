@@ -1,5 +1,12 @@
 # Completed Features
 
+## Phiên 2026-10-13 — FCL getPerformance trả số container cho app mobile (SQL) — ĐÃ COMMIT, chờ anh chạy SQL
+- Anh hỏi `SP_DispatchOrderFCL_GetPerformance` đã lấy số container từ ShippingTask gán vào lệnh chưa → kiểm bản live (modify_date 2026-09-08): CHƯA, chỉ lấy tên khách hàng vào `Locations`.
+- Anh chốt: sửa thẳng SP, nhiều cont cách nhau dấu phẩy, dùng cho app mobile (không cần hiển thị ở FE web).
+- `NewAPI/Migration_DispatchOrderFCL_GetPerformance_ContainerNumbers_20261013.sql`: ALTER, thân SP nguyên văn bản live, delta duy nhất = cột `ContainerNumbers` sau `Locations` (`STUFF ... FOR XML PATH`, `DISTINCT`, bỏ rỗng; nối `DispatchOrderFclDetailed.ShippingTaskId = ShippingTask.Id` giống `SP_DispatchOrderFCL_GetAll`). Không đổi tham số/bộ lọc.
+- Không sửa BE/FE: `DispatchOrderFCLViewModel.ContainerNumbers` đã có sẵn; màn web `perform-dispatch-order` vốn đọc sẵn `containerNumbers` (tách theo `;`/xuống dòng → với dấu phẩy hiện chung 1 dòng).
+- Verify: chạy riêng câu SELECT con (chỉ đọc) trên lệnh tháng 10 có 2 công việc → ra đúng dạng `SKLU2307770, TCLU3352831`. CHƯA chạy ALTER (anh chạy).
+
 ## Phiên 2026-10-08 → 2026-10-10 — FCL v2 về MỐC B + khóa lái xe sau khi nhận lệnh (FE+BE); Export FCL Tổng km theo IsLegacy (SQL); Chốt dầu bỏ chồng ngày + Source 7 (SQL); rà VETC mã trạm, luồng từ chối B1/B2 — ĐÃ COMMIT, chờ chạy SQL + deploy + test
 ### 1. FCL v2 — về MỐC B + ngoại lệ lái xe (FE+BE, không SQL)
 - Anh chốt 10/10: sửa được mọi thứ tới trước Duyệt B1, TRỪ thông tin lái xe sau khi lái xe đã nhận lệnh.
