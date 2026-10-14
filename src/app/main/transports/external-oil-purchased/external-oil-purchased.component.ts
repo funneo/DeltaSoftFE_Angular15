@@ -45,6 +45,7 @@ export class ExternalOilPurchasedComponent implements OnInit {
   ngaySearch = '';
   bksSearch = '';
   laixeSearch = '';
+  nguoitaoSearch = '';
   soluongSearch = '';
   tongtienSearch = '';
   invoicenoSearch = '';
@@ -147,6 +148,10 @@ export class ExternalOilPurchasedComponent implements OnInit {
     if (this.laixeSearch?.length > 0)
       this.listFilter = this.listFilter.filter((data) => {
         return data.employeeFullName?.toLowerCase().includes(this.laixeSearch.trim().toLocaleLowerCase());
+      });
+    if (this.nguoitaoSearch?.length > 0)
+      this.listFilter = this.listFilter.filter((data) => {
+        return data.createdByName?.toLowerCase().includes(this.nguoitaoSearch.trim().toLocaleLowerCase());
       });
     if (this.invoicenoSearch?.length > 0)
       this.listFilter = this.listFilter.filter((data) => {

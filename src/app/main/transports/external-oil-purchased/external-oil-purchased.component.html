@@ -55,6 +55,7 @@
                     <th>Ngày tạo</th>
                     <th>Biển số xe</th>
                     <th>Lái xe</th>
+                    <th>Người tạo</th>
                     <th>Số lượng</th>
                     <th>Tổng tiền</th>
                     <th>Số hóa đơn</th>
@@ -75,6 +76,8 @@
                             type="text" name="bksSearch" /></th>
                     <th><input class="form-control" #refNoSearchInput3 [(ngModel)]="laixeSearch" (input)="filter()"
                             type="text" name="laixeSearch" /></th>
+                    <th><input class="form-control" #refNoSearchInput12 [(ngModel)]="nguoitaoSearch" (input)="filter()"
+                            type="text" name="nguoitaoSearch" /></th>
                     <th><input class="form-control" #refNoSearchInput4 [(ngModel)]="soluongSearch" (input)="filter()"
                             type="text" name="soluongSearch" /></th>
                     <th><input class="form-control" #refNoSearchInput5 [(ngModel)]="tongtienSearch" (input)="filter()"
@@ -119,6 +122,9 @@
                     </td>
                     <td>
                         <span>{{item.employeeFullName}}</span>
+                    </td>
+                    <td>
+                        <span>{{item.createdByName}}</span>
                     </td>
                     <td style="text-align: end;">{{item.quantity}}
                     </td>
