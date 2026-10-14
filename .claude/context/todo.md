@@ -1,8 +1,19 @@
 # Pending / In-Progress Work
 
-## ▶ 2026-10-13 — FCL getPerformance: trả số container của công việc gán vào lệnh (cho app mobile) — SQL ĐÃ SOẠN + COMMIT, CHỜ anh chạy
+## ★★ MỐC 2026-10-14 — anh xác nhận ĐÃ CHẠY SQL + DEPLOY HẾT các mục cũ (trước phiên 13/10)
+⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
+
+## ▶ 2026-10-13 — CHƯA deploy (việc của phiên 13/10)
+1. ⬜ FE (ĐÃ COMMIT 14/10, tsc 0 lỗi, chưa `ng build`): modal Dầu mua ngoài tiền mặt — sửa ô Số hóa đơn trùng `name="taxNumber"` với ô MST (gõ ô này nhảy ô kia); list Dầu mua ngoài tiền mặt — thêm cột Người tạo + ô lọc (`createdByName` SP trả sẵn). ⏸ List Dầu mua ngoài CBT chưa thêm cột; chưa tra phiếu cũ có lẫn Số HĐ/MST.
+2. ⬜ DraftAPI (KHÔNG phải git repo, build 0 lỗi): 5 action chuyển tiếp mới trong `DraftReportController` — `debitNoteDetail`, `workflowReport01`, `dispatchOrderReport03`, `dispatchOrderFclReport03`, `dispatchOrderFclExport` (anh chốt: AI KHÔNG gọi thẳng ERP, mọi thứ qua DraftAPI giống BC01). ⚠ Anh đã publish 14/10 06:14 = bản TRƯỚC khi sửa `dispatchOrderFclReport03` (06:18, luôn gửi gType "0" vì `SP_DispatchOrderFCL_Report03_02` không tồn tại) → AI báo lỗi "Could not find stored procedure" → **publish lại DraftAPI**. Hướng dẫn cho AI: `DraftAPI/docs/BaoCao-KeToan-API.md`. ❓ DraftAPI chưa có git — chờ anh cho repo remote để init + push.
+3. ⬜ ERP API: thêm `"/api/workflow/report01"` vào `Draft:ReadAllowlist` trong `appsettings.json` TRÊN SERVER + restart API (repo đã sửa + ĐÃ COMMIT 14/10).
+4. ⬜ Anh phân quyền tài khoản AI: `REPORTDEBITDETAIL_VIEW` (dòng menu tên "Chi tiết Debit-Note BỎ", không phải REPORTDEBITDETAILFILTER), `DISPATCHORDER_VIEW`, `FCL_VIEW`, `FCL_EXPORT` → đăng nhập lại → gọi thử 5 endpoint. Lưu ý BC chi tiết debit lọc KH theo AuthorisationLevel (>1 = chỉ KH được gán).
+5. ❓ Báo cáo định kỳ tối chủ nhật cho kế toán (anh Tri/Thủy, 6 báo cáo × 3 chi nhánh): chờ chốt khoảng ngày, nơi nhận file, gộp/tách file. ❓ Có chặn cứng token nháp gọi thẳng ERP không (hiện chỉ là quy ước; draft-web còn gọi thẳng ERP lấy danh mục).
+6. ❓ Lệnh `FCL-VT261008/0047`: bị tính 2 KH vì có điểm "Lô CN02, KCN Quang Minh" (địa điểm của Hercules, Id 31) dù chỉ gán công việc của Đường sắt (Bắc) → `vu.to` không chốt được; chờ anh quyết (trang.nguyen chốt / đổi quy tắc tính KH theo công việc).
+
+## ✅ 2026-10-13 — FCL getPerformance: trả số container của công việc gán vào lệnh (cho app mobile) — SQL ĐÃ CHẠY (13/10 10:46), chờ app test
 - `SP_DispatchOrderFCL_GetPerformance` chưa trả số container → thêm cột `ContainerNumbers` (từ `ShippingTask.ContainerNumber` qua `DispatchOrderFclDetailed`, bỏ trùng/rỗng, cách nhau dấu phẩy). BE ViewModel đã có sẵn property → không deploy BE/FE.
-1. ⬜ Anh chạy `NewAPI/Migration_DispatchOrderFCL_GetPerformance_ContainerNumbers_20261013.sql` (ALTER 1 SP, login delta.erp) → app gọi `api/DispatchOrderFcl/getPerformance` kiểm field `containerNumbers` (vd lệnh `FCL-VT261012/0077` → `SKLU2307770, TCLU3352831`).
+1. ✅ Anh đã chạy `NewAPI/Migration_DispatchOrderFCL_GetPerformance_ContainerNumbers_20261013.sql` → app gọi `api/DispatchOrderFcl/getPerformance` kiểm field `containerNumbers` (vd lệnh `FCL-VT261012/0077` → `SKLU2307770, TCLU3352831`).
 - Ghi nhận: màn web "Thực hiện lệnh" sẽ tự hiện số cont ở cột Container (chung 1 dòng, không sửa FE — anh chốt không cần); vài công việc nhập cả số seal vào ô số cont → SP trả nguyên văn.
 
 ## ▶ 2026-10-10 — FCL Export (tổng hợp + chi tiết): Tổng km = 0 với lệnh MỚI — SQL ĐÃ SOẠN, CHỜ anh chạy

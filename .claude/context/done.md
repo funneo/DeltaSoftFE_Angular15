@@ -1,5 +1,23 @@
 # Completed Features
 
+## Phiên 2026-10-13 → 2026-10-14 — Dầu mua ngoài (FE) + 5 báo cáo kế toán qua DraftAPI cho AI + tra quyền chốt FCL — FE/NewAPI ĐÃ COMMIT, DraftAPI chưa có git
+### 1. Dầu mua ngoài tiền mặt (FE-only)
+- `modal-external-oil-purchased`: ô Số hóa đơn đặt trùng `name="taxNumber"` với ô MST đơn vị bán → 2 ô dùng chung 1 FormControl, gõ ô này nhảy ô kia. Đổi thành `name="invoiceNo"`. Modal dùng chung 4 chỗ (list tiền mặt, list CBT, list + modal lệnh CBT). Chưa tra phiếu cũ có bị lẫn Số HĐ/MST.
+- List `external-oil-purchased`: thêm cột "Người tạo" (`createdByName`, `SP_ExternalOilPurchased_GetPaging` đã trả sẵn) + ô lọc `nguoitaoSearch`. List CBT chưa thêm.
+- Verify: `tsc --noEmit` 0 lỗi. CHƯA `ng build`.
+
+### 2. 5 báo cáo kế toán cho AI qua DraftAPI (anh chốt: AI KHÔNG gọi thẳng ERP, mọi thứ qua DraftAPI giống BC01)
+- `DraftAPI/Controllers/DraftReportController.cs`: 5 action chuyển tiếp nguyên token (helper `ForwardToErp`/`ForwardRange`, action `report01` cũ giữ nguyên): `debitNoteDetail` → `reports/get-debit-note-detail`; `workflowReport01` → `workflow/report01`; `dispatchOrderReport03` → `dispatchorder/report03`; `dispatchOrderFclReport03` → `dispatchorderfcl/report03`; `dispatchOrderFclExport` → `dispatchorderfcl/getexport`. DTO `DraftReportRangeRequest`. gType mặc định "1" (chi tiết).
+- ⚠ Sửa 14/10: `SP_DispatchOrderFCL_Report03_02` KHÔNG tồn tại (màn ERP khóa cứng type=0) → `dispatchOrderFclReport03` luôn gửi gType "0". Bản publish 06:14 của anh là bản TRƯỚC sửa (06:18) → AI báo lỗi "Could not find stored procedure" → cần publish lại.
+- NewAPI `appsettings.json`: thêm `/api/workflow/report01` vào `Draft:ReadAllowlist` (endpoint không có ClaimRequirement → token nháp bị 403).
+- Rà: chỉ báo cáo Chi tiết debit lọc KH theo user (`SP_ReportDebitNoteDetail`: AuthorisationLevel tại chi nhánh >1 → chỉ KH trong PermissionCS); cả 5 nhận branchId từ tham số → 1 lần đăng nhập lấy đủ HN(4)/SG(5)/VT(6). 4 quyền cho tài khoản AI: `REPORTDEBITDETAIL_VIEW` (dòng menu tên "Chi tiết Debit-Note BỎ"), `DISPATCHORDER_VIEW`, `FCL_VIEW`, `FCL_EXPORT`.
+- Hướng dẫn cho AI: `DraftAPI/docs/BaoCao-KeToan-API.md` (cạnh `BC01-API.md`). Điểm dễ sai: 5 báo cáo này lấy TRỌN ngày toDate (khác BC01 phải +1 ngày); BC2/BC3 dòng ở `data.items`, BC4-6 ở `data`; export FCL trả cả xe nhà lẫn thầu phụ (lọc `xethue`).
+- Verify: `dotnet build` DraftAPI 0 lỗi. CHƯA gọi thử thật.
+
+### 3. Rà soát chỉ đọc
+- `vu.to` không thấy nút Chốt lệnh `FCL-VT261008/0047`: có FCL_CLOSING nhưng `FN_FclScopeOk`=0 — lệnh tính 2 KH (theo điểm cung đường) vì điểm "Lô CN02, KCN Quang Minh" (CustomerLocations Id 31, mã 03) thuộc Hercules, dù chỉ gán 1 công việc của Đường sắt (Bắc); `vu.to` chỉ được gán KH 511 → chỉ nhóm "Chốt tất cả" (trang.nguyen) chốt được.
+- Báo cáo định kỳ tối chủ nhật cho kế toán (anh Tri/Thủy): đã đề xuất hướng (job nền API + trang tải file), chờ chốt 5 điểm.
+
 ## Phiên 2026-10-13 — FCL getPerformance trả số container cho app mobile (SQL) — ĐÃ COMMIT, chờ anh chạy SQL
 - Anh hỏi `SP_DispatchOrderFCL_GetPerformance` đã lấy số container từ ShippingTask gán vào lệnh chưa → kiểm bản live (modify_date 2026-09-08): CHƯA, chỉ lấy tên khách hàng vào `Locations`.
 - Anh chốt: sửa thẳng SP, nhiều cont cách nhau dấu phẩy, dùng cho app mobile (không cần hiển thị ở FE web).
