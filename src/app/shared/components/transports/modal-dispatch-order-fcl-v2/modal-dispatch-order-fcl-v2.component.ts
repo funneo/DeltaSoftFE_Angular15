@@ -96,6 +96,7 @@ import {
   DispatchOrderFclDetail,
 } from "@app/shared/models/fcl/dispatch-order-fcl";
 import { DispatchOrderFclService } from "@app/shared/services/fcl/dispatch-order-fcl.service";
+import { DispatchordersService } from "@app/shared/services/transports/dispatchorders.service";
 import { Ports } from "@app/shared/models/danhmuc/ports.model";
 import { ModalListShippingTaskComponent } from "../modal-list-shipping-task/modal-list-shipping-task.component";
 import { ModalShippingTaskCsComponent } from "../modal-shipping-task-cs/modal-shipping-task-cs.component";
@@ -389,6 +390,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     private vehicleService: VihicleService,
     private portsService: PortsService,
     private dispatchOrderService: DispatchOrderFclService,
+    private dispatchordersService: DispatchordersService, // đọc POD/Ảnh hiện trường (DispatchOrderAttachFiles, chung BE với màn Thực hiện)
     private _groupPortsService: PortsService,
     private feeService: FeeService,
     private _customerLocationsService: CustomerLocationsService,
@@ -1132,20 +1134,28 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
   @ViewChild(ModalListShippingTaskComponent, { static: false })
   modalList: ModalListShippingTaskComponent;
 
-  // loadAttackFiles() {
-  //   let p: DispatchOrderAttachfiles = {
-  //     refNo: this.entity.refNo,
-  //     isPod: false
-  //   }
-  //   this.dispatchOrderService.getAttachFile(p).subscribe((res: ResponseValue<DispatchOrderAttachfiles[]>) => {
-  //     if (res.code == '200' || res.code == '201'|| res.code == '204') {
-  //       this.listAttachFile = res.data;
-  //     }
-  //     else {
-  //       this.notificationService.printErrorMessage(MessageContstants.SYSTEM_ERROR_MSG);
-  //     }
-  //   });
-  // }
+  // POD (isPod=true) & Ảnh hiện trường (isPod=false) do lái xe up từ app / màn Thực hiện — ở đây CHỈ XEM.
+  loadPod() {
+    this.listPod = [];
+    if (!this.entity.refNo) return;
+    const p: DispatchOrderAttachfiles = { refNo: this.entity.refNo, isPod: true };
+    this.dispatchordersService.getAttachFile(p).subscribe((res: ResponseValue<DispatchOrderAttachfiles[]>) => {
+      if (res.code == '200' || res.code == '201' || res.code == '204') {
+        this.listPod = res.data ?? [];
+      }
+    });
+  }
+
+  loadAttackFiles() {
+    this.listAttachFile = [];
+    if (!this.entity.refNo) return;
+    const p: DispatchOrderAttachfiles = { refNo: this.entity.refNo, isPod: false };
+    this.dispatchordersService.getAttachFile(p).subscribe((res: ResponseValue<DispatchOrderAttachfiles[]>) => {
+      if (res.code == '200' || res.code == '201' || res.code == '204') {
+        this.listAttachFile = res.data ?? [];
+      }
+    });
+  }
 
   clickLink(item: DispatchOrderAttachfiles) {
     let url = environment.apiUrl + item.pathFile.replace("~", "");
@@ -1452,6 +1462,8 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
           this.flagXem = flag;
           this.flagSave = false;
           this.loadStatusLog(refNo);
+          this.loadPod();
+          this.loadAttackFiles();
           this.modalDispatchOrderFcl.show();
         } else {
           this.notificationService.printErrorMessage(
@@ -1962,21 +1974,24 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     });
   }
 
+  // Upload POD / Ảnh hiện trường bổ sung: nút CHỈ hiện với admin/người chốt (closing_permission đã gồm isAdmin);
+  // bình thường lái xe up từ app. BE Create chỉ trả file vừa up → tải lại cả list.
   onFileChanged(event) {
-    // if (event.target.files.length > 0) {
-    //   let p: DispatchOrderAttachfiles = {
-    //     refNo: this.entity.refNo,
-    //     isPod: true
-    //   }
-    //   const file = event.target.files[0];
-    //   this.busy = this.dispatchOrderService.addAttachFile(p, file).subscribe((res: ResponseValue<DispatchOrderAttachfiles[]>) => {
-    //     if (res.code == '200' || res.code == '201') {
-    //       this.listPod = res.data;
-    //     } else {
-    //       this.notificationService.printErrorMessage(MessageContstants.UPLOAD_ERR_MSG + '\n' + res.code);
-    //     }
-    //   });
-    // }
+    this._uploadDispatchAttach(event, true);
+  }
+  private _uploadDispatchAttach(event, isPod: boolean) {
+    if (!this.closing_permission || !event?.target?.files?.length || !this.entity.refNo) return;
+    const p: DispatchOrderAttachfiles = { refNo: this.entity.refNo, isPod: isPod };
+    const file = event.target.files[0];
+    this.busy = this.dispatchordersService.addAttachFile(p, file).subscribe((res: ResponseValue<DispatchOrderAttachfiles[]>) => {
+      if (res.code == '200' || res.code == '201') {
+        isPod ? this.loadPod() : this.loadAttackFiles();
+        this.notificationService.printSuccessMessage(MessageContstants.UPDATED_OK_MSG);
+      } else {
+        this.notificationService.printErrorMessage(MessageContstants.UPLOAD_ERR_MSG + '\n' + res.code);
+      }
+      event.target.value = ''; // reset input để up lại được file cùng tên
+    });
   }
   deleteAttachFile(item: DispatchOrderAttachfiles) {
     // this.busy = this.dispatchOrderService.deleteAttachFile(item).subscribe((res: ResponseValue<DispatchOrderAttachfiles[]>) => {
@@ -1988,20 +2003,7 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     // });
   }
   onAttachFileChanged(event) {
-    // if (event.target.files.length > 0) {
-    //   let p: DispatchOrderAttachfiles = {
-    //     refNo: this.entity.refNo,
-    //     isPod: false
-    //   }
-    //   const file = event.target.files[0];
-    //   this.busy = this.dispatchOrderService.addAttachFile(p, file).subscribe((res: ResponseValue<DispatchOrderAttachfiles[]>) => {
-    //     if (res.code == '200' || res.code == '201') {
-    //       this.listAttachFile = res.data;
-    //     } else {
-    //       this.notificationService.printErrorMessage(MessageContstants.UPLOAD_ERR_MSG + '\n' + res.code);
-    //     }
-    //   });
-    // }
+    this._uploadDispatchAttach(event, false);
   }
 
   updateTotalCost(item: any) {

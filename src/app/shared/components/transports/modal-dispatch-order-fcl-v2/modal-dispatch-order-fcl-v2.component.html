@@ -1193,13 +1193,13 @@
                   </div>
                 </div>
               </tab>
-              <!-- <tab *ngIf="entity.status>1" heading="POD">
-                <div class="form-group">
+              <!-- POD + Ảnh hiện trường: lái xe up từ app; nút upload bổ sung CHỈ hiện với admin/người chốt -->
+              <tab *ngIf="entity.status>1" heading="POD">
+                <div class="form-group" *ngIf="closing_permission">
                   <div class="col-sm-2">
                     <input style="display: none" type="file" class="custom-file-input" id="pod" #filePod
                       (change)="onFileChanged($event)" accept=".jpg,.png,.gif,.pdf">
-                    <button type="button" class="btn btn-sm btn-primary" (click)="filePod.click()"
-                      [disabled]="entity.status>=5 || job_locked ||flagXem">
+                    <button type="button" class="btn btn-sm btn-primary" (click)="filePod.click()">
                       <i class="fa fa-upload" aria-hidden="true"></i> Tải POD
                     </button>
                   </div>
@@ -1227,14 +1227,13 @@
                     </table>
                   </div>
                 </div>
-              </tab> -->
+              </tab>
               <tab *ngIf="entity.status>1" heading="Hình ảnh hiện trường">
-                <div class="form-group">
+                <div class="form-group" *ngIf="closing_permission">
                   <div class="col-sm-2">
                     <input style="display: none" type="file" class="custom-file-input" id="attackFile" #fileUpload
                       (change)="onAttachFileChanged($event)" accept=".jpg,.png,.gif,.pdf">
-                    <button type="button" class="btn btn-sm btn-primary" (click)="fileUpload.click()"
-                      [disabled]="entity.status>=5 || job_locked ||flagXem">
+                    <button type="button" class="btn btn-sm btn-primary" (click)="fileUpload.click()">
                       <i class="fa fa-upload" aria-hidden="true"></i> Tải Ảnh hiện trường
                     </button>
                   </div>

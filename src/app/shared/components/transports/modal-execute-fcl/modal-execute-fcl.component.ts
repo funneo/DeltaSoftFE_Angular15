@@ -191,7 +191,7 @@ export class ModalExecuteFclComponent implements OnInit {
     const p: DispatchOrderAttachfiles = { refNo: this.entity.refNo, isPod: true };
     this.busy = this.dispatchordersService.addAttachFile(p, file).subscribe((res: ResponseValue<DispatchOrderAttachfiles[]>) => {
       if (res.code === '200' || res.code === '201') {
-        this.listPod = res.data ?? [];
+        this.loadPod(); // BE Create chỉ trả file vừa up → tải lại cả list
         this.notificationService.printSuccessMessage(MessageContstants.UPDATED_OK_MSG);
       } else {
         this.notificationService.printErrorMessage(MessageContstants.UPLOAD_ERR_MSG + '\n' + res.code);
@@ -206,7 +206,7 @@ export class ModalExecuteFclComponent implements OnInit {
     const p: DispatchOrderAttachfiles = { refNo: this.entity.refNo, isPod: false };
     this.busy = this.dispatchordersService.addAttachFile(p, file).subscribe((res: ResponseValue<DispatchOrderAttachfiles[]>) => {
       if (res.code === '200' || res.code === '201') {
-        this.listAttachFile = res.data ?? [];
+        this.loadAttackFiles(); // BE Create chỉ trả file vừa up → tải lại cả list
         this.notificationService.printSuccessMessage(MessageContstants.UPDATED_OK_MSG);
       } else {
         this.notificationService.printErrorMessage(MessageContstants.UPLOAD_ERR_MSG + '\n' + res.code);
