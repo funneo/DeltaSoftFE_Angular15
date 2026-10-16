@@ -1,5 +1,12 @@
 # Completed Features
 
+## Phiên 2026-10-15 — FCL v2: xem POD + Ảnh hiện trường do lái xe up từ app (FE-only) — ĐÃ COMMIT+PUSH, chờ ng build + deploy
+- Nguyên nhân: `modal-dispatch-order-fcl-v2` có tab POD bị comment; tab "Hình ảnh hiện trường" hiện nhưng `loadAttackFiles` bị comment + không ai gọi → luôn trống.
+- Sửa: inject `DispatchordersService`, thêm `loadPod()`/`loadAttackFiles()` (`DispatchOrderAttachFiles/GetByRefNo`, isPod true/false — cùng nguồn với màn Thực hiện `modal-execute-fcl`), gọi trong `edit()`; bật lại tab POD (giữ điều kiện `status>1`).
+- Anh chốt: nút "Tải POD"/"Tải Ảnh hiện trường" CHỈ hiện với `closing_permission` (FCL_CLOSING || isAdmin), hiện là up được (bỏ khóa status>=5/job_locked/flagXem vì người chốt thao tác ở status 5). Upload qua helper `_uploadDispatchAttach(event, isPod)` rồi tải lại list (BE `Create` chỉ trả file vừa up). Chưa có nút xóa file.
+- `modal-execute-fcl`: sau upload POD/ảnh hiện trường đổi gán `res.data` (chỉ file vừa up) → tải lại cả list.
+- Verify: `tsc --noEmit` 0 lỗi. CHƯA `ng build`/test trình duyệt.
+
 ## Phiên 2026-10-13 → 2026-10-14 — Dầu mua ngoài (FE) + 5 báo cáo kế toán qua DraftAPI cho AI + tra quyền chốt FCL — FE/NewAPI ĐÃ COMMIT, DraftAPI chưa có git
 ### 1. Dầu mua ngoài tiền mặt (FE-only)
 - `modal-external-oil-purchased`: ô Số hóa đơn đặt trùng `name="taxNumber"` với ô MST đơn vị bán → 2 ô dùng chung 1 FormControl, gõ ô này nhảy ô kia. Đổi thành `name="invoiceNo"`. Modal dùng chung 4 chỗ (list tiền mặt, list CBT, list + modal lệnh CBT). Chưa tra phiếu cũ có bị lẫn Số HĐ/MST.
