@@ -3,6 +3,12 @@
 ## ★★ MỐC 2026-10-14 — anh xác nhận ĐÃ CHẠY SQL + DEPLOY HẾT các mục cũ (trước phiên 13/10)
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 
+## ▶ 2026-10-16 — Nhật ký đổi mật khẩu (SQL+BE) — ✅ ĐÃ COMMIT+PUSH (build 0 lỗi), CHỜ chạy SQL + deploy — chi tiết done.md
+1. ⬜ Anh chạy `NewAPI/Migration_Sys_PasswordChangeHistory_20261016.sql` (delta.erp) — TRƯỚC khi deploy BE (deploy trước thì đổi mk vẫn chạy, chỉ không ghi log).
+2. ⬜ Tắt API → build/publish BE.
+3. ⬜ Test: reset mk 1 user test ở màn Quản lý user → `SELECT TOP 20 * FROM dbo.PasswordChangeHistory ORDER BY ChangedDate DESC` thấy dòng `ADMIN_RESET`, ChangedByName = anh.
+4. ❓ Chờ anh: vá `garages/changedpass` (chỉ cho user IsExternal) + `account/resetpass` (thêm ClaimRequirement USER_UPDATE); FE chặn bấm Đăng nhập dồn; nới rate limit login. Hỏi Innvie có đồng bộ/đổi mk 13–16/10 không; khối 7–8 của file Diag chưa có kết quả.
+
 ## ▶ 2026-10-15 — FCL v2: xem POD + Ảnh hiện trường lái xe up từ app (FE-only) — ✅ ĐÃ COMMIT+PUSH (tsc 0 lỗi), CHỜ `ng build` + deploy + test — chi tiết done.md
 1. ⬜ `ng build` + deploy FE → mở 1 lệnh mới (status>1) mà lái xe đã up ảnh: tab POD + "Hình ảnh hiện trường" phải có file. ❓ Chưa xác minh app up vào `DispatchOrderAttachFiles` (skill fcl-mobile-api chỉ ghi ảnh dòng phí) — nếu vẫn trống thì truy endpoint app dùng.
 2. ⬜ Test nút upload: chỉ admin/`FCL_CLOSING` thấy, up được ở mọi status; người khác chỉ xem.

@@ -1,5 +1,15 @@
 # Completed Features
 
+## Phiên 2026-10-16 — Điều tra "thỉnh thoảng không đăng nhập được, như bị đổi mật khẩu" + Nhật ký đổi mật khẩu (SQL+BE) — ĐÃ COMMIT+PUSH, chờ chạy SQL + deploy
+- Điều tra (đọc SP + LoginHistory 14 ngày, file chỉ-đọc `NewAPI/Diag_LoginPassword_20261016.sql`):
+  - `SP_sys_User_Update` KHÔNG SET `Password` → sửa user không làm mất/ghi đè mật khẩu (loại nghi phạm cũ).
+  - Ca nặng (Tuan.nq 60 lần 15/10, hai.tt, huong.vv, diep.nt) đều là **app mobile (Dart)**: trước đó login OK đều 1–3 ngày/lần → 13–16/10 sai liên tục (gõ tay, đổi hoa/thường) → vào lại được; hai.tt + huong.vv vào lại lần đầu từ cùng máy `14.235.165.164` (Chrome 109, nghi máy người reset hộ). anh.pham: bấm Enter dồn (0,3s/lần).
+  - Không có nhật ký đổi mật khẩu → KHÔNG phân biệt được "bị đổi" hay "quên".
+  - Lỗ hổng phát hiện (CHƯA vá, chờ anh): `garages/changedpass` (Api-Key Innvie) reset được mk BẤT KỲ user, không kiểm `IsExternal`; `account/resetpass` chỉ `[Authorize]`, không ClaimRequirement. Rate limit login 10/60s/IP tính cả lần đúng.
+- Làm (anh duyệt thiết kế): bảng `dbo.PasswordChangeHistory` + `SP_Sys_PasswordChangeHistory_Insert` (`NewAPI/Migration_Sys_PasswordChangeHistory_20261016.sql`). Source `SELF` / `ADMIN_RESET` / `GARAGE_API`; ChangedBy lấy từ token; IsSuccess = kết quả Identity thật; không lưu mk/hash.
+- BE: model `PasswordChangeHistory`, `ILogs/LogsRepository.AddPasswordChange` (nuốt lỗi, không làm hỏng đổi mk); `AccountController` ghi ở `changedpass` + `resetpass` (thêm dòng khi Innvie lỗi sau khi ERP đã đổi); `GaragesController.changedpass` ghi + note `[User KHONG phai IsExternal]`. Không đổi hành vi đổi mk.
+- Verify: `dotnet build` 0 lỗi (build ra thư mục tạm, không đụng DLL đang chạy).
+
 ## Phiên 2026-10-15 — FCL v2: xem POD + Ảnh hiện trường do lái xe up từ app (FE-only) — ĐÃ COMMIT+PUSH, chờ ng build + deploy
 - Nguyên nhân: `modal-dispatch-order-fcl-v2` có tab POD bị comment; tab "Hình ảnh hiện trường" hiện nhưng `loadAttackFiles` bị comment + không ai gọi → luôn trống.
 - Sửa: inject `DispatchordersService`, thêm `loadPod()`/`loadAttackFiles()` (`DispatchOrderAttachFiles/GetByRefNo`, isPod true/false — cùng nguồn với màn Thực hiện `modal-execute-fcl`), gọi trong `edit()`; bật lại tab POD (giữ điều kiện `status>1`).
