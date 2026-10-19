@@ -1,5 +1,10 @@
 # Completed Features
 
+## Phiên 2026-10-19 — FE: web.config IIS vào repo (F5 báo 404 sau deploy) — ĐÃ COMMIT+PUSH
+- Sau 1 lần deploy FE (xóa sạch thư mục rồi chép dist) F5 ở route sâu `/main/...` báo IIS "404 - File or directory not found": `web.config` (rewrite về index.html) trước nay đặt tay trên server, không có trong repo/dist → bị mất. Anh đã tạo lại trên server.
+- Đưa vào repo: `src/web.config` (rule "Angular Routes" + `<location path="index.html">` DisableCache — giảm `ChunkLoadError` sau deploy) + khai báo `"src/web.config"` trong `angular.json` build.options.assets → `ng build` tự chép vào gốc dist. Verify: build thử ra thư mục tạm có `web.config` cạnh `index.html`.
+- Lưu ý: sửa tay web.config trên server thì phải sửa cả `src/web.config`, không deploy sau sẽ đè. FE chưa có ErrorHandler tự reload khi `ChunkLoadError` (người dùng Ctrl+F5).
+
 ## Phiên 2026-10-16 — Điều tra "thỉnh thoảng không đăng nhập được, như bị đổi mật khẩu" + Nhật ký đổi mật khẩu (SQL+BE) — ĐÃ COMMIT+PUSH, chờ chạy SQL + deploy
 - Điều tra (đọc SP + LoginHistory 14 ngày, file chỉ-đọc `NewAPI/Diag_LoginPassword_20261016.sql`):
   - `SP_sys_User_Update` KHÔNG SET `Password` → sửa user không làm mất/ghi đè mật khẩu (loại nghi phạm cũ).
