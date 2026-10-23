@@ -77,9 +77,10 @@ export class OvertimeComponent implements OnInit {
     const params = new HttpParams()
       .set('pageIndex', this.pageIndex.toString())
       .set('pageSize', "99999")
-      .set('branchid',this.userLoged.branchId)
+      .set('branchid',this.branchId.toString())
       .set('fromDate', tuNgay)
       .set('toDate', denNgay)
+      .set('keyword',this.keyword)
      // .set('usergroupid')
       this.busy = this.overTimeService.getPaging(params).subscribe((res: ResponseValue<Pagination<OverTime>>) => {
         if (res.code == '200' || res.code == '201') {

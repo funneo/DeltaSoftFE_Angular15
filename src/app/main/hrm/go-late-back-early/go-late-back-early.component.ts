@@ -94,7 +94,7 @@ export class GoLateBackEarlyComponent implements OnInit {
     const params = new HttpParams()
       .set("pageIndex", this.pageIndex.toString())
       .set("pageSize", '99999')
-      .set("branchid", this.userLoged.branchId)
+      .set("branchid", this.branchId.toString())
       .set("fromDate", tuNgay)
       .set("toDate", denNgay)
       .set("keyword", this.keyword);

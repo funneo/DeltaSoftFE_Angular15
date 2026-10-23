@@ -9,8 +9,8 @@
             class="form-control">
         </div>
       <div class="col-md-2">
-        <ng-select name="supplier" [items]="listBranch" bindLabel="branchName" bindValue="id" [(ngModel)]="branchId"
-        placeholder="Chọn chi nhánh..." [disabled]="!adminPermission" change="changedBranch($event)" >
+        <ng-select name="supplier" [items]="listBranch" bindLabel="branchName" bindValue="id" [(ngModel)]="branchId" [clearable]="false"
+        placeholder="Chọn chi nhánh..." [disabled]="!adminPermission" (change)="changedBranch($event)" >
         </ng-select>
       </div>
       <div class="col-md-2">

@@ -71,7 +71,7 @@ export class OnleaveComponent implements OnInit {
     let tuNgay = moment(this.ngayBatDau).format('YYYYMMDD');
     let denNgay = moment(this.ngayKetThuc).format('YYYYMMDD');
     const params = new HttpParams()
-      .set('branchid',this.userLoged.branchId)
+      .set('branchid',this.branchId.toString())
       .set('fromDate', tuNgay)
       .set('toDate', denNgay)
       .set('keyword',this.keyword)
@@ -90,7 +90,7 @@ export class OnleaveComponent implements OnInit {
     const params = new HttpParams()
       .set('pageIndex', this.pageIndex.toString())
       .set('pageSize', this.pageSize.toString())
-      .set('branchid',this.userLoged.branchId)
+      .set('branchid',this.branchId.toString())
       .set('fromDate', tuNgay)
       .set('toDate', denNgay)
       .set('keyword',this.keyword)
