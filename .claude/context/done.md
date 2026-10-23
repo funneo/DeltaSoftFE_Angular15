@@ -1,5 +1,24 @@
 # Completed Features
 
+## Phiên 2026-10-19 → 2026-10-23 — HRM: chọn chi nhánh/xuất Excel đúng chi nhánh (FE) + rà phân quyền HR + SP lệnh FCL kèm LocationDetails/DK05 + VisBot — FE ĐÃ COMMIT+PUSH
+### 1. HRM — chọn chi nhánh không có tác dụng / xuất Excel sai chi nhánh (FE-only)
+- Ngoài giờ: `export()` gửi `userLoged.branchId` (chi nhánh đăng nhập) thay vì `this.branchId` → đổi sang chi nhánh đang chọn + thêm `keyword` cho khớp list.
+- Nghỉ phép: CẢ `loadData()` lẫn `exportExcel()` dùng `userLoged.branchId` → chọn chi nhánh khác vô tác dụng; đổi sang `this.branchId`.
+- Đi muộn về sớm: `loadData()` dùng `userLoged.branchId` (xuất Excel lấy từ list nên sai theo) → đổi sang `this.branchId`.
+- 4 màn (Ngoài giờ, Nghỉ phép, Đi muộn về sớm, Chấm công): ng-select chi nhánh viết `change="changedBranch($event)"` (attribute thường, KHÔNG phải event Angular) → đổi chi nhánh không tải lại list. Sửa `(change)=` + `[clearable]="false"` (tránh `changedBranch(undefined)` crash).
+- Verify: `tsc --noEmit` 0 lỗi. CHƯA `ng build`. Người dùng thường vẫn bị khóa ô chi nhánh như cũ (Admin/cấp 0 mới đổi được; Chấm công chỉ role Admin).
+### 2. Rà phân quyền HR (CHỈ báo cáo, CHƯA sửa)
+- Không có check cứng "HR"/phòng ban. Khóa cứng theo cấp/role ở FE: ô chi nhánh 4 màn `isAdmin || authorisationLevel < 1`; Chấm công `roles.indexOf('Admin')`; modal Tài liệu đào tạo trộn người tạo/assignee/quyền.
+- Hồ sơ NV (route F045) + HĐLĐ (route F046) nhưng nút + API (`Employee/AddHR|UpdateHR|GetByIdHR`, 8 API `EmployeeContract`) dùng mã `EMPLOYEE` → gán F045/F046 vào được trang nhưng thao tác 403; ngược lại ai có `EMPLOYEE_*` gọi được API HR. HĐLĐ FE không gắn appPermission.
+- API HR KHÔNG có ClaimRequirement: `ApproverPermissionCustomers` (cả Create/Update/Delete), `ApproverPermissions` GetAll/GetApprover/GetById/Delete, `OverTime` StartStop/UpdateState, `OnLeave/GetExport` (không truyền userId → xuất nghỉ phép mọi chi nhánh), `OnLeaveManagement/Get`, `TrainingDocuments` Downloadword/DownloadPdf, `TrainingTemplates/GetAll`.
+- BE nhận `BranchId` do FE gửi ở mọi GetPaging HR → khóa chi nhánh chỉ ở UI. `TimeKeeping/GetPaging` không truyền userId.
+- Ngoài giờ phân quyền theo nhóm qua `PermissionOvertime` (BranchId/UserId/DepartmentId, màn Hệ thống) — chưa đọc được `SP_OverTime_GetPaging` (DB bị chặn) → anh tự xem.
+### 3. SP `SP_DispatchOrderFCL_GetLocationDetails` (NewAPI, file SQL — CHƯA chạy, NewAPI chưa commit)
+- `NewAPI/Migration_DispatchOrderFCL_GetLocationDetails_20261022.sql`: input @FromDate/@ToDate (ngày TẠO lệnh, trọn ngày) + @BranchId (NULL/0 = tất cả); CHỈ lệnh mới (IsLegacy=0). Trả BranchCode + `f.*` + `LocationDetails` (chặng chính theo OrderIndex rồi phát sinh theo SeqNo, điểm nối liền chỉ ghi 1 lần, nối " -> "; tên: Cảng = `Ports.Name`, KH = `CustomerLocations.Address`, fallback tên lưu trên chặng; không có chặng → FullRoute) + `DK05` (CustomerCode các công việc qua DispatchOrderFclDetailed→ShippingTask→Customer, bỏ trùng, nối ", ").
+- Lỗi lần 1 `Invalid object name 'dbo.Tbl_Ports'` → bảng thật tên `dbo.Ports` (đã sửa).
+### 4. VisBot — chatbot vé ETC mồ côi (thư mục riêng `D:\Delta\DeltaSoft\VisBot`, git init chưa commit)
+- Kế hoạch docx `VisBot/docs/KeHoach_VIS_Chatbot_VeMoCoi_20261019.docx`; lõi bot dựng thử .NET 9 + SQLite + kịch bản JSON + Gemini (chưa có key) + trang giả lập (port 5090) + xuất Excel. Anh Nghĩa: được chọn tính năng VIS làm trước trên ERP hiện tại (không ảnh hưởng việc đang chạy, ít nguồn lực), deadline 31/3/2027. ERP đã có `VetcClient` + `VetcAutoFetchService` chạy thật → vé mồ côi chỉ cần 1 job nhỏ cùng khuôn. Chờ anh chọn phương án A (tất cả trong NewAPI) / B (job+màn trong ERP, bot process riêng).
+
 ## Phiên 2026-10-19 — FE: web.config IIS vào repo (F5 báo 404 sau deploy) — ĐÃ COMMIT+PUSH
 - Sau 1 lần deploy FE (xóa sạch thư mục rồi chép dist) F5 ở route sâu `/main/...` báo IIS "404 - File or directory not found": `web.config` (rewrite về index.html) trước nay đặt tay trên server, không có trong repo/dist → bị mất. Anh đã tạo lại trên server.
 - Đưa vào repo: `src/web.config` (rule "Angular Routes" + `<location path="index.html">` DisableCache — giảm `ChunkLoadError` sau deploy) + khai báo `"src/web.config"` trong `angular.json` build.options.assets → `ng build` tự chép vào gốc dist. Verify: build thử ra thư mục tạm có `web.config` cạnh `index.html`.
