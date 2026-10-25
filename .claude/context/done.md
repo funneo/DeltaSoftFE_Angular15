@@ -1,5 +1,10 @@
 # Completed Features
 
+## Phiên 2026-10-24 → 2026-10-25 — Xuất Excel phiếu thu/chi thêm cột Ghi chú (BE-only) — ĐÃ COMMIT+PUSH NewAPI
+- `AccountsController.ExportExcel` (`api/accounts/export-excel`, dùng chung màn Phiếu thu + Phiếu chi): thêm cột J "Ghi chú" (= `item.Notes`, header J6 chép style + độ rộng cột I). Không sửa template `bangkethuchi.xlsx`, không SQL, không FE.
+- Verify: `dotnet build` 0 lỗi.
+- Đã nghiên cứu nhưng anh BỎ (không làm): đổi mã phiếu Vay `V…`/Trả vay `T…`/Tạm ứng NCC `NCC-…` (sinh mã trong `SP_PersonalLoan_Create`/`SP_Repayment_Create`/`SP_Deposit_Create`/`SP_Advances_Create2`; Tạm ứng NCC = `Advances.IsTransfer=1`, chung dãy số `AD-<CN><yyMMdd>/xxxxx` với TƯ cá nhân; không code nào phụ thuộc tiền tố `AD-`).
+
 ## Phiên 2026-10-19 → 2026-10-23 — HRM: chọn chi nhánh/xuất Excel đúng chi nhánh (FE) + rà phân quyền HR + SP lệnh FCL kèm LocationDetails/DK05 + VisBot — FE ĐÃ COMMIT+PUSH
 ### 1. HRM — chọn chi nhánh không có tác dụng / xuất Excel sai chi nhánh (FE-only)
 - Ngoài giờ: `export()` gửi `userLoged.branchId` (chi nhánh đăng nhập) thay vì `this.branchId` → đổi sang chi nhánh đang chọn + thêm `keyword` cho khớp list.
