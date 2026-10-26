@@ -1,5 +1,12 @@
 # Completed Features
 
+## Phiên 2026-10-26 — DraftAPI: phân quyền báo cáo theo tài khoản + chi nhánh (tách tài khoản ai.report) — DraftAPI KHÔNG có git, CHƯA publish
+- Bối cảnh: chị Hiền xin IT tài khoản riêng `ai.report` chỉ để lấy báo cáo, gỡ quyền báo cáo của `ai.delta` (đang dùng chung cho nhiều AI). Đã rà và thấy chỉ gỡ quyền ERP thì KHÔNG đủ: `get-report-01-draft` + `workflow/report01` không có `ClaimRequirement` (nằm trong `Draft:ReadAllowlist`) → token nháp nào cũng gọi được; mọi báo cáo lấy chi nhánh từ BODY (`obj.BranchId`), không từ token → giới hạn chi nhánh bằng role ERP không chặn được dữ liệu.
+- `DraftAPI/Controllers/DraftReportController.cs`: thêm `CheckReportAccess(reportKey, branchId)` chạy trước khi chuyển tiếp, ở cả 6 action (report01, debitNoteDetail, workflowReport01, dispatchOrderReport03, dispatchOrderFclReport03, dispatchOrderFclExport; `ForwardRange` nhận thêm `reportKey`). Đọc `Draft:ReportAccess:{userName}:{reportKey}` = mảng branchId; mặc định CHẶN → 403 kèm message.
+- `DraftAPI/appsettings.json`: thêm `Draft:ReportAccess` — `ai.report` + `ai.delta` (tạm, giai đoạn chuyển tiếp) cùng phạm vi: report01 CN 4-8; debitNoteDetail/workflowReport01/dispatchOrderReport03 CN 4,5,6; 2 báo cáo FCL CN 6.
+- `DraftAPI/docs/BaoCao-KeToan-API.md`: thêm dòng bảng lỗi "403 do DraftAPI chặn" (khác 403 `source:"erp"`).
+- Verify: `dotnet build` 0 lỗi. Chưa test với token thật.
+
 ## Phiên 2026-10-24 → 2026-10-25 — Xuất Excel phiếu thu/chi thêm cột Ghi chú (BE-only) — ĐÃ COMMIT+PUSH NewAPI
 - `AccountsController.ExportExcel` (`api/accounts/export-excel`, dùng chung màn Phiếu thu + Phiếu chi): thêm cột J "Ghi chú" (= `item.Notes`, header J6 chép style + độ rộng cột I). Không sửa template `bangkethuchi.xlsx`, không SQL, không FE.
 - Verify: `dotnet build` 0 lỗi.

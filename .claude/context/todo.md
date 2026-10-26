@@ -3,6 +3,14 @@
 ## ★★ MỐC 2026-10-14 — anh xác nhận ĐÃ CHẠY SQL + DEPLOY HẾT các mục cũ (trước phiên 13/10)
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 
+## ▶ 2026-10-26 — DraftAPI phân quyền báo cáo theo tài khoản + chi nhánh (`Draft:ReportAccess`) — build 0 lỗi, DraftAPI KHÔNG có git — chi tiết done.md
+1. ⬜ Publish DraftAPI. Nếu deploy không ghi đè `appsettings.json` → chép tay mục `Draft:ReportAccess` lên server (thiếu = mọi báo cáo 403).
+2. ⬜ IT tạo `ai.report`: role ở 1 chi nhánh (vd CN 6) với `REPORTDEBITDETAIL_VIEW`, `DISPATCHORDER_VIEW`, `FCL_VIEW`, `FCL_EXPORT`. Giới hạn chi nhánh từng báo cáo nằm ở config DraftAPI, không cần role ở cả 5 CN.
+3. ⬜ Test: ai.report gọi `dispatchOrderFclReport03` với branchId 4 → 403; branchId 6 → có dữ liệu.
+4. ⬜ Skill báo cáo chạy ổn bằng ai.report → xóa khối `"ai.delta"` trong `Draft:ReportAccess` + restart DraftAPI; (tùy) gỡ 4 quyền ERP trên của ai.delta ở MỌI chi nhánh nó có role — làm SAU, gỡ sớm thì skill đang chạy bằng ai.delta lỗi 403.
+5. ❓ ai.delta vẫn gọi THẲNG được ERP `get-report-01-draft` + `workflow/report01` (không gắn quyền). Muốn bịt hẳn phải sửa BE ERP (chặn theo username/quyền) — chờ anh quyết.
+6. ❓ DraftAPI chưa có git — chờ anh cho repo remote để init + push.
+
 ## ▶ 2026-10-25 — Xuất Excel phiếu thu/chi thêm cột Ghi chú (BE-only) — ✅ ĐÃ COMMIT+PUSH NewAPI (build 0 lỗi) — chi tiết done.md
 1. ⬜ Tắt API → build/publish BE → xuất thử Excel Phiếu thu + Phiếu chi: cột J "Ghi chú" có dữ liệu.
 
