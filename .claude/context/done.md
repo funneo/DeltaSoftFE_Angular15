@@ -1,5 +1,9 @@
 # Completed Features
 
+## Phiên 2026-10-30 (chiều) — FCL v2: xóa vé ETC có xác nhận + chỉ người tạo lệnh/Admin — FE ĐÃ COMMIT+PUSH `3f88e5d`
+- `modal-dispatch-order-fcl-v2`: `deleteEtc` thêm `printConfirmationDialog` ("áp dụng khi bấm Lưu lệnh" — bảng Trạm thu phí chỉ ghi DB khi Lưu/Duyệt B1 qua UpdateWithTO); getter `isFclCreator` (flagNew || Admin || createdBy==user) + `canDeleteEtc(item)` (dòng chưa có id ai cũng bỏ được); nút thùng rác `*ngIf="canDeleteEtc(item)"`. Chỉ chặn FE (anh chốt không chặn BE).
+- Soạn sẵn SQL log thay đổi FCL mới (chưa chạy) — xem todo.md mục 2026-10-31.
+
 ## Phiên 2026-10-30 — DraftAPI cụm C Nghiệp vụ (XONG mức 1 KSNB: 25 endpoint) + gộp tài liệu A–D
 - Cụm C: `exportInvoice` (INVOICE, `isPayment` 0/1/2 → gType), `revenue` (REPORTREVENUE, `groupBy` 0 lô/1 KH → gType), `shipmentNotDebit` (NOTDEBIT). 3 SP lọc KH theo PermissionCS chỉ khi AuthorisationLevel > 1 → `ai.report` (cấp 1) thấy mọi KH. Ghi chú: `SP_ReportRevFee` cột `ChiPhiVat` null khi lô thiếu 1 trong 3 loại chi phí (không sửa SP).
 - Gộp `KeToan-API.md`, `TamUng-ThanhToan-API.md`, `NhanSu-API.md`, `NghiepVu-API.md` → **`DraftAPI/docs/BaoCao-KSNB-API.md`** (phần chung 1 lần + mục 6–9 từng cụm); `BaoCao-KeToan-API.md` mục 9 chỉ trỏ sang. Giữ `BC01-API.md` + 5 báo cáo vận hành trong `BaoCao-KeToan-API.md`.

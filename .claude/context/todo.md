@@ -3,6 +3,16 @@
 ## ★★ MỐC 2026-10-14 — anh xác nhận ĐÃ CHẠY SQL + DEPLOY HẾT các mục cũ (trước phiên 13/10)
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 
+## ▶ 2026-10-30 — FCL v2: xóa vé ETC (bảng Trạm thu phí) có xác nhận + chỉ người tạo lệnh/Admin (FE-only) — ✅ ĐÃ COMMIT+PUSH `3f88e5d` (tsc 0 lỗi), CHỜ `ng build` + deploy + test
+- [ ] Test: người KHÁC người tạo (không Admin) không thấy nút xóa vé ĐÃ LƯU; dòng mới thêm chưa lưu vẫn bỏ được; hộp xác nhận hiện.
+- Không chặn BE UpdateWithTO (anh chốt). Bảng "Vé ETC ngoài kế hoạch" (ghi thẳng DB) KHÔNG đổi.
+
+## ⏭ 2026-10-31 — Log thay đổi lệnh FCL mới (không phải log duyệt) — SQL ĐÃ SOẠN, CHỜ anh duyệt + chạy, CHƯA code BE/FE
+- File: `NewAPI/Migration_DispatchOrderFCL_ChangeLog_20261030.sql` (bảng `DispatchOrderFCLChangeLog` + type `TypeDispatchOrderFCLChangeLog` + `SP_DispatchOrderFCLChangeLog_Insert/_GetByRefNo`, toàn object mới).
+- Đã chốt: log TỪNG TRƯỜNG, KHÔNG log lệnh cũ (IsLegacy=1), diff ở BE C# (không trigger), lỗi ghi log không làm hỏng lưu lệnh.
+- [ ] Anh chốt danh sách trường header cần log (đề xuất: xe/mooc, lái xe 1-2, KH, ngày BĐ/KT, km, định mức/số lít dầu, bù dầu+lý do, thuê ngoài/NCC/chi phí thuê ngoài, ghi chú, tóm tắt) hay log mọi trường.
+- [ ] Pilot: UpdateWithTO (header + ETC) + CreateWithTO 1 dòng "Tạo lệnh" + nút "Lịch sử thay đổi" modal FCL v2 → anh duyệt → nhân rộng (Fee, Segment, ExtraSegment, EtcPenalty, Generator, DriverUpdate mobile).
+
 ## ▶ 2026-10-30 — DraftAPI cụm C Nghiệp vụ (3 endpoint) → XONG mức 1 KSNB — build 0 lỗi — tài liệu `DraftAPI/docs/BaoCao-KSNB-API.md` (đã gộp A–D 1 file)
 Endpoint: `exportInvoice` (INVOICE), `revenue` (REPORTREVENUE), `shipmentNotDebit` (NOTDEBIT). 3 SP lọc KH theo PermissionCS chỉ khi AuthorisationLevel > 1 → `ai.report` (cấp 1) thấy mọi KH.
 **Checklist publish 1 lượt (cụm A+B+C+D):**
