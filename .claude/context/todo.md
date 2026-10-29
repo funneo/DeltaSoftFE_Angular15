@@ -3,7 +3,7 @@
 ## ★★ MỐC 2026-10-14 — anh xác nhận ĐÃ CHẠY SQL + DEPLOY HẾT các mục cũ (trước phiên 13/10)
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 
-## ▶ 2026-10-29 — DraftAPI cụm D Nhân sự (6 endpoint) — build 0 lỗi, CHƯA commit DraftAPI — tài liệu `DraftAPI/docs/NhanSu-API.md`
+## ▶ 2026-10-29 — DraftAPI cụm D Nhân sự (6 endpoint) — build 0 lỗi, ✅ commit+push DraftAPI `d18c882` — tài liệu `DraftAPI/docs/NhanSu-API.md`
 Endpoint: `overtime` (OVERTIME), `onLeave` (ONLEAVE), `onLeaveBalance` (không quyền → ERP allowlist), `timeKeeping` (TIMEKEEPING), `laborContract` (EMPLOYEE), `officeAttendance` (F044). Bỏ `onleave/getonleave` (theo user đang login) + `officeattendance/getdetail` (theo id, không kiểm được chi nhánh).
 1. ⬜ Publish DraftAPI (appsettings.json local ĐÃ có 6 khóa mới, CN 4-8 tạm) + **deploy ERP API** vì `NewAPI/API/appsettings.json` thêm `/api/onleavemanagement/get` vào `Draft:ReadAllowlist` (hoặc chỉ sửa appsettings trên server rồi restart).
 2. ⬜ IT cấp `ai.report` Xem: `OVERTIME`, `ONLEAVE`, `TIMEKEEPING`, `EMPLOYEE`, `F044` → đăng nhập lại.
