@@ -1,5 +1,9 @@
 # Completed Features
 
+## Phiên 2026-10-30 — DraftAPI cụm C Nghiệp vụ (XONG mức 1 KSNB: 25 endpoint) + gộp tài liệu A–D
+- Cụm C: `exportInvoice` (INVOICE, `isPayment` 0/1/2 → gType), `revenue` (REPORTREVENUE, `groupBy` 0 lô/1 KH → gType), `shipmentNotDebit` (NOTDEBIT). 3 SP lọc KH theo PermissionCS chỉ khi AuthorisationLevel > 1 → `ai.report` (cấp 1) thấy mọi KH. Ghi chú: `SP_ReportRevFee` cột `ChiPhiVat` null khi lô thiếu 1 trong 3 loại chi phí (không sửa SP).
+- Gộp `KeToan-API.md`, `TamUng-ThanhToan-API.md`, `NhanSu-API.md`, `NghiepVu-API.md` → **`DraftAPI/docs/BaoCao-KSNB-API.md`** (phần chung 1 lần + mục 6–9 từng cụm); `BaoCao-KeToan-API.md` mục 9 chỉ trỏ sang. Giữ `BC01-API.md` + 5 báo cáo vận hành trong `BaoCao-KeToan-API.md`.
+
 ## Phiên 2026-10-29 — DraftAPI: git + cụm B Tạm ứng–Thanh toán + cụm D Nhân sự (12 endpoint)
 - DraftAPI lên git `funneo/DeltaSoftDraftAPI` (`d15c2f7`): `appsettings.json` (AWS key, JWT key) gitignore, ship `appsettings.example.json` (CHANGE_ME) — đổi cấu trúc config thì đồng bộ file example.
 - Cụm B (`0a22d5e`, tài liệu `docs/TamUng-ThanhToan-API.md`): `payments`, `paymentDetail`, `employeeDebitBalance` (ERP đọc mốc ở fromDate dạng yyyyMMddHHmmss → gửi `toDate+"235959"`), `employeeDebitSummary`, `employeeDebitDetail` (không lọc chi nhánh — đúng nghiệp vụ, anh xác nhận), `employeeDebitClosing`.
