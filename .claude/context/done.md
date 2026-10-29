@@ -1,5 +1,11 @@
 # Completed Features
 
+## Phiên 2026-10-29 — DraftAPI: git + cụm B Tạm ứng–Thanh toán + cụm D Nhân sự (12 endpoint)
+- DraftAPI lên git `funneo/DeltaSoftDraftAPI` (`d15c2f7`): `appsettings.json` (AWS key, JWT key) gitignore, ship `appsettings.example.json` (CHANGE_ME) — đổi cấu trúc config thì đồng bộ file example.
+- Cụm B (`0a22d5e`, tài liệu `docs/TamUng-ThanhToan-API.md`): `payments`, `paymentDetail`, `employeeDebitBalance` (ERP đọc mốc ở fromDate dạng yyyyMMddHHmmss → gửi `toDate+"235959"`), `employeeDebitSummary`, `employeeDebitDetail` (không lọc chi nhánh — đúng nghiệp vụ, anh xác nhận), `employeeDebitClosing`.
+- Cụm D (tài liệu `docs/NhanSu-API.md`): `overtime`, `onLeave`, `onLeaveBalance`, `timeKeeping`, `laborContract`, `officeAttendance`. ERP `appsettings.json` thêm `/api/onleavemanagement/get` vào `Draft:ReadAllowlist` (endpoint không gắn quyền; SP chỉ ghi #tmp nên an toàn). Phát hiện: SP OverTime/OnLeave GetPaging giới hạn theo role/PermissionOverTime → `ai.report` (IT-TEST) ra 0 dòng.
+- Quy ước chung: mọi endpoint bắt `branchId` > 0 + `CheckReportAccess` (default-deny); bỏ các endpoint getById/theo user đang login vì không kiểm được chi nhánh.
+
 ## Phiên 2026-10-28 — Rà 71 chức năng KSNB + DraftAPI 10 báo cáo Kế toán + SP báo cáo lệnh FCL cũ — DraftAPI KHÔNG có git, CHƯA publish
 - Rà file `NewAPI/FUNCTIONS DELTAERP2.0.xlsx` (danh sách chức năng + mức ưu tiên KSNB): bỏ mảng CBT, còn 71 mục chưa API. Đã map từng mục → route FE → endpoint ERP → `ClaimRequirement` (script tạm, dò từ source vì không query DB được). Phát hiện: mã quyền BE ≠ mã màn ở nhiều chỗ (Phiếu chi dùng `THU_VIEW`, Công nợ phải trả + Báo cáo công nợ dùng `DEBT1_VIEW`, HĐLĐ `EMPLOYEE_VIEW`, BC02/BC04 `REPORT01_VIEW`, Cập nhật HĐ `F001_VIEW`…); ~21 endpoint đọc KHÔNG gắn quyền (gần hết mảng dầu + danh mục) → muốn cho token nháp phải thêm `Draft:ReadAllowlist`. Lệnh điều xe (F041) = export FCL → đã có, bỏ.
 - `SP_DispatchOrderFCL_GetExport` (nút Export Tổng hợp/Chi tiết màn FCL): FE `export(type)` → `DispatchOrderFcl/getExport` (`FCL_EXPORT`) → SP `@Type` 0/1, lọc theo NGÀY TẠO, không lọc trạng thái. Lỗi cũ (KHÔNG sửa): 4 cột tên nhà máy cùng join alias `o7`.

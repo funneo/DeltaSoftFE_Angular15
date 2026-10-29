@@ -3,14 +3,28 @@
 ## ★★ MỐC 2026-10-14 — anh xác nhận ĐÃ CHẠY SQL + DEPLOY HẾT các mục cũ (trước phiên 13/10)
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 
+## ▶ 2026-10-29 — DraftAPI cụm D Nhân sự (6 endpoint) — build 0 lỗi, CHƯA commit DraftAPI — tài liệu `DraftAPI/docs/NhanSu-API.md`
+Endpoint: `overtime` (OVERTIME), `onLeave` (ONLEAVE), `onLeaveBalance` (không quyền → ERP allowlist), `timeKeeping` (TIMEKEEPING), `laborContract` (EMPLOYEE), `officeAttendance` (F044). Bỏ `onleave/getonleave` (theo user đang login) + `officeattendance/getdetail` (theo id, không kiểm được chi nhánh).
+1. ⬜ Publish DraftAPI (appsettings.json local ĐÃ có 6 khóa mới, CN 4-8 tạm) + **deploy ERP API** vì `NewAPI/API/appsettings.json` thêm `/api/onleavemanagement/get` vào `Draft:ReadAllowlist` (hoặc chỉ sửa appsettings trên server rồi restart).
+2. ⬜ IT cấp `ai.report` Xem: `OVERTIME`, `ONLEAVE`, `TIMEKEEPING`, `EMPLOYEE`, `F044` → đăng nhập lại.
+3. ❓ `SP_OverTime_GetPaging`/`SP_OnLeave_GetPaging` chỉ cho xem mọi phòng ban khi role ở CN ∈ {Admin, HR, HR-M, GĐ, ACC, ACC-VT, ACC-VTM, TQ-TC} hoặc có dòng `PermissionOverTime`; `ai.report` đang role IT-TEST, 0 dòng PermissionOverTime → hiện ra **0 dòng**. Anh chọn: đổi role / cấp PermissionOverTime các phòng ban cho `ai.report` (KHÔNG sửa SP).
+4. ⬜ Ghi chú: nhánh ELSE của `SP_OnLeaveManagement_Get` (khi năm đã lưu bảng OnLeaveManagement) chọn lặp `Month01` → Month02-12 null. Hiện chưa năm nào ≥2025 lưu nên không ảnh hưởng; KHÔNG sửa SP cũ.
+
+## ▶ 2026-10-29 — DraftAPI cụm B Tạm ứng–Thanh toán (6 endpoint) — build 0 lỗi, ✅ commit+push DraftAPI `0a22d5e` — tài liệu `DraftAPI/docs/TamUng-ThanhToan-API.md`
+Endpoint: `payments` (PAYMENT), `paymentDetail` (REPORTPAYMENT), `employeeDebitBalance`/`Summary`/`Detail` (EMPLOYEEDEBIT), `employeeDebitClosing` (ADVANCE). Bỏ các getById (id không kiểm được chi nhánh).
+1. ⬜ Anh publish DraftAPI (appsettings.json local ĐÃ có 6 khóa mới, CN 4-8 tạm) — nếu deploy không ghi đè appsettings thì chép 6 khóa lên server.
+2. ⬜ IT cấp `ai.report` Xem: `PAYMENT`, `REPORTPAYMENT`, `EMPLOYEEDEBIT`, `ADVANCE` → đăng nhập lại.
+3. ⬜ Test `employeeDebitBalance` CN 6 ngày 30/09 + `paymentDetail` tháng 9; đối chiếu cột thật với tài liệu (cột `paymentDetail` chưa liệt kê đủ).
+4. ✅ `employeeDebitDetail` không lọc chi nhánh là ĐÚNG nghiệp vụ (anh xác nhận 2026-10-29) — giữ nguyên, không kiểm thêm.
+
 ## ▶ 2026-10-28 — DraftAPI 10 báo cáo Kế toán + SP báo cáo lệnh FCL cũ — chi tiết done.md
-1. ⬜ Chạy lại `NewAPI/Migration_DispatchOrderFCL_GetLegacyReport_20261028.sql` (bản đã sửa Ambiguous column) + 2 câu EXEC test; so TongKm vài lệnh với Export Tổng hợp.
-2. ⬜ Publish DraftAPI (10 action mới) + chép 10 khóa mới `Draft:ReportAccess:ai.report` nếu deploy không ghi đè appsettings.
+1. ✅ Đã chạy `NewAPI/Migration_DispatchOrderFCL_GetLegacyReport_20261028.sql` (bản đã sửa Ambiguous column) — anh xác nhận 2026-10-28.
+2. ✅ Anh đã build/publish DraftAPI mới (2026-10-29). Nếu deploy không ghi đè appsettings thì vẫn phải kiểm 10 khóa mới `Draft:ReportAccess:ai.report` có trên server.
 3. ⬜ IT cấp `ai.report` quyền Xem: `THU`, `FUNDS`, `FUNDRESERVE`, `TKNOCO`, `DEBT1` → đăng nhập lại.
 4. ⬜ Test `fundReserve` CN 6 tháng 9; đối chiếu tên cột thật với `KeToan-API.md`. Nếu đúng quyền mà 0 dòng → kiểm SP kế toán có lọc theo `@UserId` (gán quỹ/phạm vi).
 5. ❓ Chi nhánh cho 10 báo cáo kế toán đang tạm CN 4-8 — chờ anh chốt.
 6. ⬜ Sau khi cụm Kế toán chạy ổn: cụm B Tạm ứng–Thanh toán (PAYMENT, EMPLOYEEDEBIT, REPORTPAYMENT, ADVANCE), C Nghiệp vụ (INVOICE, REPORTREVENUE, NOTDEBIT), D Nhân sự (+1 allowlist `onleavemanagement/get`), rồi mức 2/3 (nhiều endpoint không gắn quyền → cần `Draft:ReadAllowlist`).
-7. ❓ SP GetLegacyReport có cần endpoint ERP + DraftAPI cho AI không — chưa quyết.
+7. ✅ SP GetLegacyReport KHÔNG làm endpoint — anh chỉ tự chạy SP lấy kết quả (chốt 2026-10-29).
 
 ## ▶ 2026-10-26 — DraftAPI phân quyền báo cáo theo tài khoản + chi nhánh (`Draft:ReportAccess`) — build 0 lỗi, DraftAPI KHÔNG có git — chi tiết done.md
 1. ⬜ Publish DraftAPI. Nếu deploy không ghi đè `appsettings.json` → chép tay mục `Draft:ReportAccess` lên server (thiếu = mọi báo cáo 403).
@@ -18,7 +32,7 @@
 3. ⬜ Test: ai.report gọi `dispatchOrderFclReport03` với branchId 4 → 403; branchId 6 → có dữ liệu.
 4. ⬜ Skill báo cáo chạy ổn bằng ai.report → xóa khối `"ai.delta"` trong `Draft:ReportAccess` + restart DraftAPI; (tùy) gỡ 4 quyền ERP trên của ai.delta ở MỌI chi nhánh nó có role — làm SAU, gỡ sớm thì skill đang chạy bằng ai.delta lỗi 403.
 5. ❓ ai.delta vẫn gọi THẲNG được ERP `get-report-01-draft` + `workflow/report01` (không gắn quyền). Muốn bịt hẳn phải sửa BE ERP (chặn theo username/quyền) — chờ anh quyết.
-6. ❓ DraftAPI chưa có git — chờ anh cho repo remote để init + push.
+6. ✅ DraftAPI đã có git: github.com/funneo/DeltaSoftDraftAPI (commit d15c2f7, 2026-10-28). `appsettings.json` KHÔNG commit — mẫu ở `appsettings.example.json`.
 
 ## ▶ 2026-10-25 — Xuất Excel phiếu thu/chi thêm cột Ghi chú (BE-only) — ✅ ĐÃ COMMIT+PUSH NewAPI (build 0 lỗi) — chi tiết done.md
 1. ⬜ Tắt API → build/publish BE → xuất thử Excel Phiếu thu + Phiếu chi: cột J "Ghi chú" có dữ liệu.
