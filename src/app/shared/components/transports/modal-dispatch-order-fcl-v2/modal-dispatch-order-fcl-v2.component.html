@@ -950,7 +950,7 @@
                         [ngModelOptions]="{standalone:true}" [readonly]="routeConfirmed" placeholder="Ghi chú">
                     </td>
                     <td class="dsg-etc-act text-center" *ngIf="!routeConfirmed">
-                      <button type="button" class="btn-esb-icon btn-esb-delete" title="Xóa" (click)="deleteEtc(i)">
+                      <button type="button" class="btn-esb-icon btn-esb-delete" title="Xóa" *ngIf="canDeleteEtc(item)" (click)="deleteEtc(i)">
                         <i class="fa fa-trash"></i>
                       </button>
                     </td>

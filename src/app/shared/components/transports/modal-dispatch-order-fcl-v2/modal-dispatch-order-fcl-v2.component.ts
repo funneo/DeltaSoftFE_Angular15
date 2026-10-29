@@ -1759,8 +1759,26 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     this.entity.listEtc.push(item);
   }
 
+  // Vé ETC đã lưu (có id) chỉ người tạo lệnh hoặc Admin được xóa; dòng mới thêm chưa lưu thì ai cũng bỏ được.
+  // Chỉ chặn FE (anh chốt 2026-10-30 không chặn BE UpdateWithTO).
+  get isFclCreator(): boolean {
+    return this.flagNew || !!this.userLoged?.isAdmin
+      || (!!this.entity?.createdBy && String(this.entity.createdBy).toLowerCase() === String(this.userLoged?.id).toLowerCase());
+  }
+  canDeleteEtc(item: DispatchOrderEtc): boolean {
+    return !item.id || this.isFclCreator;
+  }
+
   deleteEtc(index: number) {
-    this.entity.listEtc.splice(index, 1);
+    const item = this.entity.listEtc[index];
+    if (!this.canDeleteEtc(item)) {
+      this.notificationService.printErrorMessage('Chỉ người tạo lệnh hoặc Admin mới được xóa vé ETC.');
+      return;
+    }
+    const name = item.tollStationName || 'chưa đặt tên';
+    this.notificationService.printConfirmationDialog(`Xóa vé ETC trạm "${name}"? (áp dụng khi bấm Lưu lệnh)`, () => {
+      this.entity.listEtc.splice(index, 1);
+    });
   }
 
   // ===== Vé ETC ngoài kế hoạch (2026-09-08) — trừ lương lái xe =====
