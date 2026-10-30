@@ -11,6 +11,8 @@
 - File: `NewAPI/Migration_DispatchOrderFCL_ChangeLog_20261030.sql` (bảng `DispatchOrderFCLChangeLog` + type `TypeDispatchOrderFCLChangeLog` + `SP_DispatchOrderFCLChangeLog_Insert/_GetByRefNo`, toàn object mới).
 - Đã chốt: log TỪNG TRƯỜNG, KHÔNG log lệnh cũ (IsLegacy=1), diff ở BE C# (không trigger), lỗi ghi log không làm hỏng lưu lệnh.
 - [ ] Anh chốt danh sách trường header cần log (đề xuất: xe/mooc, lái xe 1-2, KH, ngày BĐ/KT, km, định mức/số lít dầu, bù dầu+lý do, thuê ngoài/NCC/chi phí thuê ngoài, ghi chú, tóm tắt) hay log mọi trường.
+- Cung đường (anh chốt 2026-10-30, mục đích chỉ để truy trách nhiệm): mỗi lần Lưu mà tuyến đổi → 1 dòng Section=Segment, Old/New = "Điểm1 → Điểm2 → ... (N km)" (nối tên location theo thứ tự chặng + tổng km), chỉ ghi khi chuỗi khác. Cung đường phát sinh: 1 dòng tóm tắt/lần thêm-sửa-xóa (Section=ExtraSegment). KHÔNG log waypoint/tọa độ/trạm Vietmap/từng chặng.
+- Xem log (anh chốt 2026-10-30): nút "Lịch sử cập nhật" ở LIST lệnh FCL mới (`dispatch-order-fcl-new`), CHỈ Admin thấy; BE endpoint `GetChangeLog` cũng chặn Admin; modal mới `modal-fcl-change-log` read-only, gom theo BatchId. Thứ tự: SQL → BE → FE.
 - [ ] Pilot: UpdateWithTO (header + ETC) + CreateWithTO 1 dòng "Tạo lệnh" + nút "Lịch sử thay đổi" modal FCL v2 → anh duyệt → nhân rộng (Fee, Segment, ExtraSegment, EtcPenalty, Generator, DriverUpdate mobile).
 
 ## ▶ 2026-10-30 — DraftAPI cụm C Nghiệp vụ (3 endpoint) → XONG mức 1 KSNB — build 0 lỗi — tài liệu `DraftAPI/docs/BaoCao-KSNB-API.md` (đã gộp A–D 1 file)
