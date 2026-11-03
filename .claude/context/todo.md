@@ -18,7 +18,7 @@
 ## ▶ 2026-10-30 — DraftAPI cụm C Nghiệp vụ (3 endpoint) → XONG mức 1 KSNB — build 0 lỗi — tài liệu `DraftAPI/docs/BaoCao-KSNB-API.md` (đã gộp A–D 1 file)
 Endpoint: `exportInvoice` (INVOICE), `revenue` (REPORTREVENUE), `shipmentNotDebit` (NOTDEBIT). 3 SP lọc KH theo PermissionCS chỉ khi AuthorisationLevel > 1 → `ai.report` (cấp 1) thấy mọi KH.
 **Checklist publish 1 lượt (cụm A+B+C+D):**
-1. ⬜ Publish DraftAPI. appsettings.json trên server phải có đủ khóa `ReportAccess:ai.report` của 4 cụm (A 10, B 6, C 3, D 6) — chép từ appsettings.json local nếu deploy không ghi đè.
+1. ✅ Anh đã build + publish DraftAPI (cụm A+B+C+D) — 2026-11-03. Nếu deploy không ghi đè appsettings thì vẫn phải kiểm đủ khóa `ReportAccess:ai.report` của 4 cụm (A 10, B 6, C 3, D 6) trên server.
 2. ⬜ ERP: thêm `/api/onleavemanagement/get` vào `Draft:ReadAllowlist` (appsettings server) → restart ERP API.
 3. ⬜ IT cấp `ai.report` Xem — A: `THU`, `FUNDS`, `FUNDRESERVE`, `TKNOCO`, `DEBT1`; B: `PAYMENT`, `REPORTPAYMENT`, `EMPLOYEEDEBIT`, `ADVANCE`; C: `INVOICE`, `REPORTREVENUE`, `NOTDEBIT`; D: `OVERTIME`, `ONLEAVE`, `TIMEKEEPING`, `EMPLOYEE`, `F044` → đăng nhập lại.
 4. ❓ Cụm D mục 3 (role/PermissionOverTime cho ngoài giờ + phép) + chốt chi nhánh từng báo cáo (đang tạm 4–8).
@@ -26,14 +26,14 @@ Endpoint: `exportInvoice` (INVOICE), `revenue` (REPORTREVENUE), `shipmentNotDebi
 
 ## ▶ 2026-10-29 — DraftAPI cụm D Nhân sự (6 endpoint) — build 0 lỗi, ✅ commit+push DraftAPI `d18c882` — tài liệu `DraftAPI/docs/BaoCao-KSNB-API.md`
 Endpoint: `overtime` (OVERTIME), `onLeave` (ONLEAVE), `onLeaveBalance` (không quyền → ERP allowlist), `timeKeeping` (TIMEKEEPING), `laborContract` (EMPLOYEE), `officeAttendance` (F044). Bỏ `onleave/getonleave` (theo user đang login) + `officeattendance/getdetail` (theo id, không kiểm được chi nhánh).
-1. ⬜ Publish DraftAPI (appsettings.json local ĐÃ có 6 khóa mới, CN 4-8 tạm) + **deploy ERP API** vì `NewAPI/API/appsettings.json` thêm `/api/onleavemanagement/get` vào `Draft:ReadAllowlist` (hoặc chỉ sửa appsettings trên server rồi restart).
+1. ✅ DraftAPI đã publish (2026-11-03). ⬜ Còn **deploy ERP API** vì `NewAPI/API/appsettings.json` thêm `/api/onleavemanagement/get` vào `Draft:ReadAllowlist` (hoặc chỉ sửa appsettings trên server rồi restart).
 2. ⬜ IT cấp `ai.report` Xem: `OVERTIME`, `ONLEAVE`, `TIMEKEEPING`, `EMPLOYEE`, `F044` → đăng nhập lại.
 3. ❓ `SP_OverTime_GetPaging`/`SP_OnLeave_GetPaging` chỉ cho xem mọi phòng ban khi role ở CN ∈ {Admin, HR, HR-M, GĐ, ACC, ACC-VT, ACC-VTM, TQ-TC} hoặc có dòng `PermissionOverTime`; `ai.report` đang role IT-TEST, 0 dòng PermissionOverTime → hiện ra **0 dòng**. Anh chọn: đổi role / cấp PermissionOverTime các phòng ban cho `ai.report` (KHÔNG sửa SP).
 4. ⬜ Ghi chú: nhánh ELSE của `SP_OnLeaveManagement_Get` (khi năm đã lưu bảng OnLeaveManagement) chọn lặp `Month01` → Month02-12 null. Hiện chưa năm nào ≥2025 lưu nên không ảnh hưởng; KHÔNG sửa SP cũ.
 
 ## ▶ 2026-10-29 — DraftAPI cụm B Tạm ứng–Thanh toán (6 endpoint) — build 0 lỗi, ✅ commit+push DraftAPI `0a22d5e` — tài liệu `DraftAPI/docs/BaoCao-KSNB-API.md`
 Endpoint: `payments` (PAYMENT), `paymentDetail` (REPORTPAYMENT), `employeeDebitBalance`/`Summary`/`Detail` (EMPLOYEEDEBIT), `employeeDebitClosing` (ADVANCE). Bỏ các getById (id không kiểm được chi nhánh).
-1. ⬜ Anh publish DraftAPI (appsettings.json local ĐÃ có 6 khóa mới, CN 4-8 tạm) — nếu deploy không ghi đè appsettings thì chép 6 khóa lên server.
+1. ✅ Anh đã publish DraftAPI (2026-11-03) — nếu deploy không ghi đè appsettings thì chép 6 khóa lên server.
 2. ⬜ IT cấp `ai.report` Xem: `PAYMENT`, `REPORTPAYMENT`, `EMPLOYEEDEBIT`, `ADVANCE` → đăng nhập lại.
 3. ⬜ Test `employeeDebitBalance` CN 6 ngày 30/09 + `paymentDetail` tháng 9; đối chiếu cột thật với tài liệu (cột `paymentDetail` chưa liệt kê đủ).
 4. ✅ `employeeDebitDetail` không lọc chi nhánh là ĐÚNG nghiệp vụ (anh xác nhận 2026-10-29) — giữ nguyên, không kiểm thêm.
@@ -48,7 +48,7 @@ Endpoint: `payments` (PAYMENT), `paymentDetail` (REPORTPAYMENT), `employeeDebitB
 7. ✅ SP GetLegacyReport KHÔNG làm endpoint — anh chỉ tự chạy SP lấy kết quả (chốt 2026-10-29).
 
 ## ▶ 2026-10-26 — DraftAPI phân quyền báo cáo theo tài khoản + chi nhánh (`Draft:ReportAccess`) — build 0 lỗi, DraftAPI KHÔNG có git — chi tiết done.md
-1. ⬜ Publish DraftAPI. Nếu deploy không ghi đè `appsettings.json` → chép tay mục `Draft:ReportAccess` lên server (thiếu = mọi báo cáo 403).
+1. ✅ Đã publish DraftAPI (2026-11-03). Nếu deploy không ghi đè `appsettings.json` → chép tay mục `Draft:ReportAccess` lên server (thiếu = mọi báo cáo 403).
 2. ⬜ IT tạo `ai.report`: role ở 1 chi nhánh (vd CN 6) với `REPORTDEBITDETAIL_VIEW`, `DISPATCHORDER_VIEW`, `FCL_VIEW`, `FCL_EXPORT`. Giới hạn chi nhánh từng báo cáo nằm ở config DraftAPI, không cần role ở cả 5 CN.
 3. ⬜ Test: ai.report gọi `dispatchOrderFclReport03` với branchId 4 → 403; branchId 6 → có dữ liệu.
 4. ⬜ Skill báo cáo chạy ổn bằng ai.report → xóa khối `"ai.delta"` trong `Draft:ReportAccess` + restart DraftAPI; (tùy) gỡ 4 quyền ERP trên của ai.delta ở MỌI chi nhánh nó có role — làm SAU, gỡ sớm thì skill đang chạy bằng ai.delta lỗi 403.
