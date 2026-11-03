@@ -21,14 +21,14 @@ Endpoint: `exportInvoice` (INVOICE), `revenue` (REPORTREVENUE), `shipmentNotDebi
 1. ✅ Anh đã build + publish DraftAPI (cụm A+B+C+D) — 2026-11-03. Nếu deploy không ghi đè appsettings thì vẫn phải kiểm đủ khóa `ReportAccess:ai.report` của 4 cụm (A 10, B 6, C 3, D 6) trên server.
 2. ⬜ ERP: thêm `/api/onleavemanagement/get` vào `Draft:ReadAllowlist` (appsettings server) → restart ERP API.
 3. ⬜ IT cấp `ai.report` Xem — A: `THU`, `FUNDS`, `FUNDRESERVE`, `TKNOCO`, `DEBT1`; B: `PAYMENT`, `REPORTPAYMENT`, `EMPLOYEEDEBIT`, `ADVANCE`; C: `INVOICE`, `REPORTREVENUE`, `NOTDEBIT`; D: `OVERTIME`, `ONLEAVE`, `TIMEKEEPING`, `EMPLOYEE`, `F044` → đăng nhập lại.
-4. ❓ Cụm D mục 3 (role/PermissionOverTime cho ngoài giờ + phép) + chốt chi nhánh từng báo cáo (đang tạm 4–8).
+4. ⬜ Cụm D mục 3 → anh chốt 2026-11-03 sửa SP: chạy `NewAPI/Migration_OverTime_OnLeave_AiReport_20261103.sql` (rollback `_Rollback.sql`). ❓ Còn chốt chi nhánh từng báo cáo (đang tạm 4–8).
 5. ⬜ Test mỗi cụm 1 báo cáo + gửi mẫu `paymentDetail`.
 
 ## ▶ 2026-10-29 — DraftAPI cụm D Nhân sự (6 endpoint) — build 0 lỗi, ✅ commit+push DraftAPI `d18c882` — tài liệu `DraftAPI/docs/BaoCao-KSNB-API.md`
 Endpoint: `overtime` (OVERTIME), `onLeave` (ONLEAVE), `onLeaveBalance` (không quyền → ERP allowlist), `timeKeeping` (TIMEKEEPING), `laborContract` (EMPLOYEE), `officeAttendance` (F044). Bỏ `onleave/getonleave` (theo user đang login) + `officeattendance/getdetail` (theo id, không kiểm được chi nhánh).
 1. ✅ DraftAPI đã publish (2026-11-03). ⬜ Còn **deploy ERP API** vì `NewAPI/API/appsettings.json` thêm `/api/onleavemanagement/get` vào `Draft:ReadAllowlist` (hoặc chỉ sửa appsettings trên server rồi restart).
 2. ⬜ IT cấp `ai.report` Xem: `OVERTIME`, `ONLEAVE`, `TIMEKEEPING`, `EMPLOYEE`, `F044` → đăng nhập lại.
-3. ❓ `SP_OverTime_GetPaging`/`SP_OnLeave_GetPaging` chỉ cho xem mọi phòng ban khi role ở CN ∈ {Admin, HR, HR-M, GĐ, ACC, ACC-VT, ACC-VTM, TQ-TC} hoặc có dòng `PermissionOverTime`; `ai.report` đang role IT-TEST, 0 dòng PermissionOverTime → hiện ra **0 dòng**. Anh chọn: đổi role / cấp PermissionOverTime các phòng ban cho `ai.report` (KHÔNG sửa SP).
+3. ❓ `SP_OverTime_GetPaging`/`SP_OnLeave_GetPaging` chỉ cho xem mọi phòng ban khi role ở CN ∈ {Admin, HR, HR-M, GĐ, ACC, ACC-VT, ACC-VTM, TQ-TC} hoặc có dòng `PermissionOverTime`; `ai.report` đang role IT-TEST, 0 dòng PermissionOverTime → hiện ra **0 dòng**. → ✅ Anh chốt 2026-11-03: SỬA 2 SP (ALTER, chỉ thêm `OR @UserId = '<ai.report FEFE2FA9-…>'` vào nhánh xem mọi phòng ban; KHÔNG dùng PermissionOverTime để IsApprove giữ 0). ⬜ Chạy `NewAPI/Migration_OverTime_OnLeave_AiReport_20261103.sql` → test `overtime`/`onLeave` CN 6 có dữ liệu. Rollback: `Migration_OverTime_OnLeave_AiReport_20261103_Rollback.sql`.
 4. ⬜ Ghi chú: nhánh ELSE của `SP_OnLeaveManagement_Get` (khi năm đã lưu bảng OnLeaveManagement) chọn lặp `Month01` → Month02-12 null. Hiện chưa năm nào ≥2025 lưu nên không ảnh hưởng; KHÔNG sửa SP cũ.
 
 ## ▶ 2026-10-29 — DraftAPI cụm B Tạm ứng–Thanh toán (6 endpoint) — build 0 lỗi, ✅ commit+push DraftAPI `0a22d5e` — tài liệu `DraftAPI/docs/BaoCao-KSNB-API.md`
