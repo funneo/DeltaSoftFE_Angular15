@@ -3,6 +3,10 @@
 ## ★★ MỐC 2026-10-14 — anh xác nhận ĐÃ CHẠY SQL + DEPLOY HẾT các mục cũ (trước phiên 13/10)
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 
+## ▶ 2026-11-03 — FCL v2: tab Chi phí, đổi Số lượng không còn nhân Tổng (FE-only, tsc 0 lỗi) — ✅ commit+push, chờ `ng build` + deploy
+- Chốt: "Số tiền" = thành tiền, Tổng = Số tiền + VAT (khớp app lái xe/`modal-execute-fcl`); `changeQuantity` gọi `changeCost`. Modal FCL cũ KHÔNG sửa.
+- Dữ liệu: lệnh mới 0 dòng lệch; 3 dòng lệnh cũ lệch (vd FCL-VT251204/0049 Tổng 46tr) → anh chốt ĐỂ NGUYÊN.
+
 ## ▶ 2026-10-30 — FCL v2: xóa vé ETC (bảng Trạm thu phí) có xác nhận + chỉ người tạo lệnh/Admin (FE-only) — ✅ ĐÃ COMMIT+PUSH `3f88e5d` (tsc 0 lỗi), CHỜ `ng build` + deploy + test
 - [ ] Test: người KHÁC người tạo (không Admin) không thấy nút xóa vé ĐÃ LƯU; dòng mới thêm chưa lưu vẫn bỏ được; hộp xác nhận hiện.
 - Không chặn BE UpdateWithTO (anh chốt). Bảng "Vé ETC ngoài kế hoạch" (ghi thẳng DB) KHÔNG đổi.
@@ -20,7 +24,7 @@ Endpoint: `exportInvoice` (INVOICE), `revenue` (REPORTREVENUE), `shipmentNotDebi
 **Checklist publish 1 lượt (cụm A+B+C+D):**
 1. ✅ Anh đã build + publish DraftAPI (cụm A+B+C+D) — 2026-11-03. Nếu deploy không ghi đè appsettings thì vẫn phải kiểm đủ khóa `ReportAccess:ai.report` của 4 cụm (A 10, B 6, C 3, D 6) trên server.
 2. ⬜ ERP: thêm `/api/onleavemanagement/get` vào `Draft:ReadAllowlist` (appsettings server) → restart ERP API.
-3. ⬜ IT cấp `ai.report` Xem — A: `THU`, `FUNDS`, `FUNDRESERVE`, `TKNOCO`, `DEBT1`; B: `PAYMENT`, `REPORTPAYMENT`, `EMPLOYEEDEBIT`, `ADVANCE`; C: `INVOICE`, `REPORTREVENUE`, `NOTDEBIT`; D: `OVERTIME`, `ONLEAVE`, `TIMEKEEPING`, `EMPLOYEE`, `F044` → đăng nhập lại.
+3. ⬜ IT cấp `ai.report` Xem — ⚠ 2026-11-05: 3 báo cáo công nợ 403 vì role IT-TEST có `DEBT2`+`DEBTREPORT` nhưng THIẾU `DEBT1` ("Công nợ phải thu") — ERP DebtController gắn DEBT1_VIEW cho mọi action → IT tick Xem DEBT1 cho IT-TEST. A: `THU`, `FUNDS`, `FUNDRESERVE`, `TKNOCO`, `DEBT1`; B: `PAYMENT`, `REPORTPAYMENT`, `EMPLOYEEDEBIT`, `ADVANCE`; C: `INVOICE`, `REPORTREVENUE`, `NOTDEBIT`; D: `OVERTIME`, `ONLEAVE`, `TIMEKEEPING`, `EMPLOYEE`, `F044` → đăng nhập lại.
 4. ⬜ Cụm D mục 3 → anh chốt 2026-11-03 sửa SP: chạy `NewAPI/Migration_OverTime_OnLeave_AiReport_20261103.sql` (rollback `_Rollback.sql`). ❓ Còn chốt chi nhánh từng báo cáo (đang tạm 4–8).
 5. ⬜ Test mỗi cụm 1 báo cáo + gửi mẫu `paymentDetail`.
 

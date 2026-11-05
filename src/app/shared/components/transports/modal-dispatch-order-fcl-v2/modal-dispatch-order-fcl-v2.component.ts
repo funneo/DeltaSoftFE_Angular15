@@ -2173,8 +2173,8 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     item.totalCost = item.cost! + item.vat!;
   }
   changeQuantity(item: DispatchOrderFee) {
-    //Kiểm tra xem loại phí có phải chi phí đổ dầu hay không, nếu đúng thì ghi nhận thêm dầu vào tổng dầu
-    item.totalCost = item.cost! * item.quantity!;
+    // 2026-11-03: "Số tiền" là thành tiền (giống app lái xe/modal-execute-fcl) — SL chỉ ghi nhận, không nhân
+    this.changeCost(item);
   }
 
   deleteFee(item: DispatchOrderFee) {
