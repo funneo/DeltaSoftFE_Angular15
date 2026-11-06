@@ -1390,7 +1390,9 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
           this.entity = res.data;
           // Lệnh đã lưu → cung đường đã hoàn chỉnh, chặng cuối luôn là "Chặng cuối"
           // (đặc biệt khi chỉ có 1 chặng: chặng đó CHÍNH LÀ chặng cuối, không phải "Chặng đầu")
-          this.lastSegmentFinal = true;
+          // 2026-11-06: lệnh đã lưu mà 0 chặng (vd xóa job cũ + bỏ hết điểm rồi Lưu) → KHÔNG khóa,
+          // nếu không addToRoute bị chặn và ô "Chặng cuối" (nằm trong bảng chặng) không hiện để bỏ tick.
+          this.lastSegmentFinal = (this.entity.segments?.length ?? 0) > 0;
           // 2026-08-24: gắn lại cờ FE-only _auto/_segIndex cho listEtc sau khi load từ BE
           // (cờ này KHÔNG lưu DB, mất khi reload) — nếu không, lần đầu tiên _syncEtcFromSegment
           // chạy trên lệnh đã lưu (vd bấm "Thêm trạm") sẽ không lọc được dòng auto cũ → NHÂN ĐÔI
