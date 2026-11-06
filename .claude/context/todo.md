@@ -3,11 +3,11 @@
 ## ★★ MỐC 2026-10-14 — anh xác nhận ĐÃ CHẠY SQL + DEPLOY HẾT các mục cũ (trước phiên 13/10)
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 
-## ▶ 2026-11-03 — FCL v2: tab Chi phí, đổi Số lượng không còn nhân Tổng (FE-only, tsc 0 lỗi) — ✅ commit+push, chờ `ng build` + deploy
+## ▶ 2026-11-03 — FCL v2: tab Chi phí, đổi Số lượng không còn nhân Tổng (FE-only, tsc 0 lỗi) — ✅ commit+push, ✅ ĐÃ BUILD+DEPLOY 2026-11-07
 - Chốt: "Số tiền" = thành tiền, Tổng = Số tiền + VAT (khớp app lái xe/`modal-execute-fcl`); `changeQuantity` gọi `changeCost`. Modal FCL cũ KHÔNG sửa.
 - Dữ liệu: lệnh mới 0 dòng lệch; 3 dòng lệnh cũ lệch (vd FCL-VT251204/0049 Tổng 46tr) → anh chốt ĐỂ NGUYÊN.
 
-## ▶ 2026-10-30 — FCL v2: xóa vé ETC (bảng Trạm thu phí) có xác nhận + chỉ người tạo lệnh/Admin (FE-only) — ✅ ĐÃ COMMIT+PUSH `3f88e5d` (tsc 0 lỗi), CHỜ `ng build` + deploy + test
+## ▶ 2026-10-30 — FCL v2: xóa vé ETC (bảng Trạm thu phí) có xác nhận + chỉ người tạo lệnh/Admin (FE-only) — ✅ ĐÃ COMMIT+PUSH `3f88e5d` (tsc 0 lỗi), ✅ ĐÃ BUILD+DEPLOY 2026-11-07, còn test
 - [ ] Test: người KHÁC người tạo (không Admin) không thấy nút xóa vé ĐÃ LƯU; dòng mới thêm chưa lưu vẫn bỏ được; hộp xác nhận hiện.
 - Không chặn BE UpdateWithTO (anh chốt). Bảng "Vé ETC ngoài kế hoạch" (ghi thẳng DB) KHÔNG đổi.
 
