@@ -1,5 +1,9 @@
 # Completed Features
 
+## Phiên 2026-11-06 — FCL v2: lệnh đã lưu 0 chặng bị kẹt không chọn được cung đường — FE ĐÃ COMMIT+PUSH `c3f4d02`
+- Ca thật FCL-VT261008/0079 (status 2): đổi job → bỏ hết điểm job cũ → Lưu (lệnh có RefNo không bị kiểm "tối thiểu 2 chặng") → TO-VT261008/0076 còn 0 chặng. Mở lại: `edit()` luôn set `lastSegmentFinal=true` → `addToRoute` return sớm, ô "Chặng cuối" nằm trong bảng chặng nên không hiện để bỏ tick.
+- Sửa FE `modal-dispatch-order-fcl-v2` `edit()`: `lastSegmentFinal = segments.length > 0`. Chưa chặn Lưu lệnh đã có RefNo mà 0 chặng (chờ anh chốt).
+
 ## Phiên 2026-10-30 (chiều) — FCL v2: xóa vé ETC có xác nhận + chỉ người tạo lệnh/Admin — FE ĐÃ COMMIT+PUSH `3f88e5d`
 - `modal-dispatch-order-fcl-v2`: `deleteEtc` thêm `printConfirmationDialog` ("áp dụng khi bấm Lưu lệnh" — bảng Trạm thu phí chỉ ghi DB khi Lưu/Duyệt B1 qua UpdateWithTO); getter `isFclCreator` (flagNew || Admin || createdBy==user) + `canDeleteEtc(item)` (dòng chưa có id ai cũng bỏ được); nút thùng rác `*ngIf="canDeleteEtc(item)"`. Chỉ chặn FE (anh chốt không chặn BE).
 - Soạn sẵn SQL log thay đổi FCL mới (chưa chạy) — xem todo.md mục 2026-10-31.
