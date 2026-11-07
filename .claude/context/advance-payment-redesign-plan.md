@@ -1,6 +1,6 @@
 # Kế hoạch tái thiết kế Tạm ứng / Thanh toán (theo "Quy trình Tạm ứng Thanh toán_June 25 2026")
 
-> Nguồn: `NewAPI/Quy trình Tạm ứng  Thanh toán_June 25 2026.docx` (1 comment của anh Nghĩa: không quản hạn mức CK ⇒ trách nhiệm người duyệt rất lớn).
+> Nguồn: `NewAPI/docs/Quy trình Tạm ứng  Thanh toán_June 25 2026.docx` (1 comment của anh Nghĩa: không quản hạn mức CK ⇒ trách nhiệm người duyệt rất lớn).
 > Tài liệu này = phân tích gap + kế hoạch + giải pháp kỹ thuật. **CHƯA CODE.** Mọi SQL chỉ soạn để anh duyệt + tự chạy (quy tắc [[feedback-no-auto-db-writes]]).
 > Bản đồ module nền: [[reference-advance-payment-module]]. Flow F043: [[project-pending-invoice-groupfee]].
 > Lập 2026-06-25.

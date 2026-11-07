@@ -5,7 +5,7 @@ description: How to author a SQL Server migration .sql file for DeltaSoft ERP �
 
 # DeltaSoft — Authoring a SQL Migration File
 
-Every schema/SP change in this project ships as a **hand-written `.sql` file the user runs themselves** — there are 50+ of them under `D:\Delta\DeltaSoft\NewAPI\Migration_*.sql`. This skill is the recipe for writing one that fits the house style and is safe to apply to a **live production DB**.
+Every schema/SP change in this project ships as a **hand-written `.sql` file the user runs themselves** — there are 50+ of them under `D:\Delta\DeltaSoft\NewAPI\migrations\Migration_*.sql` (tài liệu docx/xlsx/pdf ở `NewAPI\docs\`). This skill is the recipe for writing one that fits the house style and is safe to apply to a **live production DB**.
 
 ## The one rule that overrides everything
 
@@ -23,7 +23,7 @@ Two more hard rules from deltasoft-stack §11 that bite migrations specifically:
    ```
    Run it read-only (PowerShell snippet in deltasoft-stack §10). For a table column add, check `sys.columns`. **Reproducing the body verbatim and only adding the new bits is the whole game** — a paraphrased SP silently drops logic.
 2. **Decide additive vs recreate** (see next section).
-3. **Write the file** to `D:\Delta\DeltaSoft\NewAPI\` with the naming + header below.
+3. **Write the file** to `D:\Delta\DeltaSoft\NewAPI\migrations\` (KHÔNG để ở gốc NewAPI) with the naming + header below.
 4. **Make every statement idempotent** so re-running is harmless.
 5. **Write the run-order + "Anh cần" note** (what to run, in what order, before/after deploy).
 6. **Hand it over.** Update `.claude/context/done.md` + `todo.md` per project habit. Do not run it.

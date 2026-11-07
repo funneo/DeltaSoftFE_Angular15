@@ -1,6 +1,6 @@
 # Phát hành & điều chỉnh hóa đơn điện tử qua MISA meInvoice OpenAPI
 
-Nguồn yêu cầu: `NewAPI/Phát hành hóa đơn_Sep 18 2026.docx` (18/09/2026).
+Nguồn yêu cầu: `NewAPI/docs/Phát hành hóa đơn_Sep 18 2026.docx` (18/09/2026).
 Trạng thái: **PHÂN TÍCH & ĐỊNH HƯỚNG — chưa duyệt thiết kế, chưa code, chưa SQL.**
 
 ## 1. Tóm tắt yêu cầu gốc (từ docx)

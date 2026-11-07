@@ -52,7 +52,7 @@ Restructuring relationship between Transport Order (TO) and FCL Dispatch Order:
 - **Flow**: tạo FCL bắt buộc tạo TO cùng lúc (transactional); không có nhân bản FCL
 - **Trạm thu phí (ETC)**: bỏ tab ETC riêng, gộp vào section "Thông tin cung đường" (bảng editable `entity.listEtc`); dùng `TollStationName` thay `TollStationId`; auto-thêm từ route Vietmap; khóa khi đã có `refNo`. SQL: cột `DispatchOrderFCLEtc.TollStationName` + type `TypeDispatchOrderFCLEtcV2`.
 - **Cung đường phát sinh**: thêm SAU khi tạo lệnh, qua modal riêng `modal-add-extra-segment` (Vietmap/Compare nằm bên trong). Bảng `Tbl_TransportOrder_ExtraSegments`, 5 SP `SP_TransportOrder_ExtraSegments_*`.
-- **Migration files** at `D:\Delta\DeltaSoft\NewAPI\`:
+- **Migration files** at `D:\Delta\DeltaSoft\NewAPI\migrations\` (mọi file .sql mới đặt ở đây; tài liệu ở `NewAPI\docs\`):
   - `Migration_TO_FCL_Phase1A_20260514.sql` — non-breaking column adds (run first)
   - `Migration_TO_FCL_Phase1C_20260514.sql` — DROP ~59 cột TO + 2 bảng phụ (run AFTER BE/FE refactor + 1-2 tuần thử nghiệm)
 - **Full design + checklist**: `.claude/context/todo.md` section đầu

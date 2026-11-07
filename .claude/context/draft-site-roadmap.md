@@ -278,7 +278,7 @@ Trọng tâm — xây trọn vẹn trước khi đụng ERP.
 ## Trạng thái
 
 - 2026-05-23: chốt thiết kế + lộ trình + **toàn bộ 11 quyết định**.
-- 2026-05-24: **Phase 0 XONG** (user đã chạy). Schema `draft` + `draft.DraftEntries` + 6 SP `SP_DraftEntries_*` (Insert/Update/GetPaging/GetById/Delete-mềm/UpdateStatus) + login `draft_app` (GRANT schema draft / DENY schema dbo). Script: `NewAPI/Migration_DraftSite_Phase0_20260524.sql` (db_owner chạy) + `..._Login_20260524.sql` (sa chạy).
+- 2026-05-24: **Phase 0 XONG** (user đã chạy). Schema `draft` + `draft.DraftEntries` + 6 SP `SP_DraftEntries_*` (Insert/Update/GetPaging/GetById/Delete-mềm/UpdateStatus) + login `draft_app` (GRANT schema draft / DENY schema dbo). Script: `NewAPI/migrations/Migration_DraftSite_Phase0_20260524.sql` (db_owner chạy) + `..._Login_20260524.sql` (sa chạy).
   - **Phát hiện môi trường:** DB là **SQL Server 2014** (v12) → KHÔNG có `ISJSON`/JSON functions → validate JSON + trích cột phẳng (CustomerName/TotalAmount/RefHint) làm ở **Draft API (C#)**, không ở SQL. Login ERP `delta.erp` là **db_owner (không sysadmin)** → đã sẵn full quyền schema draft, Phase 5 promote KHÔNG cần grant thêm.
 - 2026-05-24: **Phase 1 CODE XONG** (branch `feature/draft-site-phase1` ở repo NewAPI, build 0 error — **chờ user chạy checklist hồi quy + test login-draft trước khi merge**). Thay đổi (cộng thêm):
   - `Program.cs`: `ValidAudiences = { Issuer, "draft" }` + đăng ký global `DraftAudienceGuardFilter` qua `AddControllers(options.Filters.Add<>)`.

@@ -2,7 +2,7 @@
 
 **Ngày lập:** 2026-07-16 · **Trạng thái:** CHỜ ANH CHỐT 5 điểm → soạn SQL. CHƯA CODE.
 **Phương án:** A (quản lý danh mục thuần) — **KHÔNG tính khấu hao** (anh chốt 2026-07-16, bỏ phương án B).
-**Nguồn:** `D:\Delta\DeltaSoft\NewAPI\Danh sách máy phát điện chuẩn.xlsx` (sheet "Generators", 29 máy, B5:S34).
+**Nguồn:** `D:\Delta\DeltaSoft\NewAPI\docs\Danh sách máy phát điện chuẩn.xlsx` (sheet "Generators", 29 máy, B5:S34).
 
 ## Bối cảnh
 File Excel gốc là **sổ khấu hao TSCĐ** cho 29 máy phát điện gắn trên đầu kéo cont lạnh (Owner=VT).

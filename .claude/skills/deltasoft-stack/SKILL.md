@@ -322,5 +322,5 @@ $cn.Close()
 | FE main groups | `src/app/main/{home,systems,danhmuc,shipments,transports,cbts,advance-payment,accounting,workflows,sales-marketing,hrm,canon,garage}/` |
 | FE auth guard | `src/app/shared/guard/auth.guard.ts` |
 | FE base service | `src/app/shared/services/base.service.ts` |
-| Migrations | `D:\Delta\DeltaSoft\NewAPI\Migration_*.sql` |
+| Migrations | `D:\Delta\DeltaSoft\NewAPI\migrations\Migration_*.sql` (tài liệu: `NewAPI\docs\`) |
 | Context docs | `.claude/context/{modules.md,auth.md,api-map.md,conventions.md,done.md,todo.md}` |

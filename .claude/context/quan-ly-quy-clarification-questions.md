@@ -1,7 +1,7 @@
 # Bộ câu hỏi làm rõ — "Quy trình quản lý quỹ và thanh toán" (July 6 2026)
 
 > **Mục đích:** làm rõ yêu cầu TRƯỚC khi viết SRS + code. Mỗi câu nêu **hiện trạng (Cũ)** trên hệ thống Delta hiện tại, **yêu cầu mới (July 6)**, rồi **Câu hỏi** cho người ra yêu cầu.
-> **Nguồn:** `NewAPI/Quy trình quản lý quỹ và thanh toán_July 6 2026.docx` (đối chiếu `Tạm ứng Thanh toán_June 25 2026` + [[advance-payment-redesign-plan]]).
+> **Nguồn:** `NewAPI/docs/Quy trình quản lý quỹ và thanh toán_July 6 2026.docx` (đối chiếu `Tạm ứng Thanh toán_June 25 2026` + [[advance-payment-redesign-plan]]).
 > **Cách dùng:** người ra yêu cầu trả lời trực tiếp vào từng câu → em tổng hợp thành **SRS** → anh duyệt SRS → mới code.
 > **Ký hiệu ưu tiên:** 🔴 = quyết định nền tảng (phải chốt trước, chặn thiết kế) · 🟡 = quan trọng · ⚪ = chi tiết (chốt khi tới phần).
 > Lập 2026-07-08.
