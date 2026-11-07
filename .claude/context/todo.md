@@ -3,6 +3,21 @@
 ## ★★ MỐC 2026-10-14 — anh xác nhận ĐÃ CHẠY SQL + DEPLOY HẾT các mục cũ (trước phiên 13/10)
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 
+## ⏭ 2026-11-07 — Lệnh LCL + CBT dựa trên FCL v2 — CHỐT Ý TƯỞNG (docx), CHƯA thiết kế SQL / CHƯA code
+Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 07/11; script build docx-js ở scratchpad phiên, không lưu repo).
+- Đã chốt:
+  - Dùng chung `DispatchOrderFCL` + "Loại lệnh" theo loại hàng hóa ở Job (anh tự bổ sung ở Job).
+  - Địa điểm dùng chung `CustomerLocations` theo KH như FCL; điểm mới gửi duyệt theo luồng sẵn có, chưa duyệt thì KHÔNG dùng. Cảng, Sân bay, kho CFS chung danh mục Cảng.
+  - Thêm/đổi điểm sau tạo lệnh = sửa lộ trình FCL (điều vận, tới trước B1), KHÔNG làm thao tác "Đổi điểm giao" riêng.
+  - Dầu LCL = lít/100km của xe; CBT = định mức xe (hiện có = hàng nóng) + THÊM trường định mức hàng lạnh ở Danh mục phương tiện; CS chọn nóng/lạnh trên công việc.
+  - Máy phát CBT 40ft 3,5 L/h, 45ft 4 L/h; giờ cắm/rút do điều vận nhập, lái xe xác nhận trên app.
+  - LCL chỉ giữ Kho CFS (ẩn Số chì, nâng/hạ, hãng tàu, Booking, HĐ ngoài/phụ phí); hàng xuất (theo loại hình Job) thêm T/g có mặt kho CFS do CS nhập + cut-off, hiện trên app.
+  - CBT: T/g KH yêu cầu không bắt buộc; mốc cửa khẩu do CS ghi, không bắt buộc.
+  - Duyệt B1 và chốt phân quyền như FCL.
+- [ ] Anh duyệt đề xuất mục 6 docx: tách MENU + quyền theo loại (dùng chung component); số lệnh tiền tố `LCL-`/`CBT-`; `Tbl_FclClosingScope` thêm cột loại lệnh; app lái xe 1 màn chung hiện/ẩn theo loại.
+- [ ] CS CBT trả lời: lái xe thấy sai giờ máy phát (đề xuất nút "Đúng / Báo sai" trên app sau hoàn thành, cờ cho điều vận, chặn B1).
+- [ ] Sau đó: trình thiết kế phần nền (SQL) cho anh duyệt → pilot LCL → CBT → app lái xe.
+
 ## ▶ 2026-11-03 — FCL v2: tab Chi phí, đổi Số lượng không còn nhân Tổng (FE-only, tsc 0 lỗi) — ✅ commit+push, ✅ ĐÃ BUILD+DEPLOY 2026-11-07
 - Chốt: "Số tiền" = thành tiền, Tổng = Số tiền + VAT (khớp app lái xe/`modal-execute-fcl`); `changeQuantity` gọi `changeCost`. Modal FCL cũ KHÔNG sửa.
 - Dữ liệu: lệnh mới 0 dòng lệch; 3 dòng lệnh cũ lệch (vd FCL-VT251204/0049 Tổng 46tr) → anh chốt ĐỂ NGUYÊN.
@@ -12,7 +27,7 @@
 - Không chặn BE UpdateWithTO (anh chốt). Bảng "Vé ETC ngoài kế hoạch" (ghi thẳng DB) KHÔNG đổi.
 
 ## ⏭ 2026-10-31 — Log thay đổi lệnh FCL mới (không phải log duyệt) — SQL ĐÃ SOẠN, CHỜ anh duyệt + chạy, CHƯA code BE/FE
-- File: `NewAPI/Migration_DispatchOrderFCL_ChangeLog_20261030.sql` (bảng `DispatchOrderFCLChangeLog` + type `TypeDispatchOrderFCLChangeLog` + `SP_DispatchOrderFCLChangeLog_Insert/_GetByRefNo`, toàn object mới).
+- File: `NewAPI/migrations/Migration_DispatchOrderFCL_ChangeLog_20261030.sql` (bảng `DispatchOrderFCLChangeLog` + type `TypeDispatchOrderFCLChangeLog` + `SP_DispatchOrderFCLChangeLog_Insert/_GetByRefNo`, toàn object mới).
 - Đã chốt: log TỪNG TRƯỜNG, KHÔNG log lệnh cũ (IsLegacy=1), diff ở BE C# (không trigger), lỗi ghi log không làm hỏng lưu lệnh.
 - [ ] Anh chốt danh sách trường header cần log (đề xuất: xe/mooc, lái xe 1-2, KH, ngày BĐ/KT, km, định mức/số lít dầu, bù dầu+lý do, thuê ngoài/NCC/chi phí thuê ngoài, ghi chú, tóm tắt) hay log mọi trường.
 - Cung đường (anh chốt 2026-10-30, mục đích chỉ để truy trách nhiệm): mỗi lần Lưu mà tuyến đổi → 1 dòng Section=Segment, Old/New = "Điểm1 → Điểm2 → ... (N km)" (nối tên location theo thứ tự chặng + tổng km), chỉ ghi khi chuỗi khác. Cung đường phát sinh: 1 dòng tóm tắt/lần thêm-sửa-xóa (Section=ExtraSegment). KHÔNG log waypoint/tọa độ/trạm Vietmap/từng chặng.
@@ -25,14 +40,14 @@ Endpoint: `exportInvoice` (INVOICE), `revenue` (REPORTREVENUE), `shipmentNotDebi
 1. ✅ Anh đã build + publish DraftAPI (cụm A+B+C+D) — 2026-11-03. Nếu deploy không ghi đè appsettings thì vẫn phải kiểm đủ khóa `ReportAccess:ai.report` của 4 cụm (A 10, B 6, C 3, D 6) trên server.
 2. ⬜ ERP: thêm `/api/onleavemanagement/get` vào `Draft:ReadAllowlist` (appsettings server) → restart ERP API.
 3. ⬜ IT cấp `ai.report` Xem — ⚠ 2026-11-05: 3 báo cáo công nợ 403 vì role IT-TEST có `DEBT2`+`DEBTREPORT` nhưng THIẾU `DEBT1` ("Công nợ phải thu") — ERP DebtController gắn DEBT1_VIEW cho mọi action → IT tick Xem DEBT1 cho IT-TEST. A: `THU`, `FUNDS`, `FUNDRESERVE`, `TKNOCO`, `DEBT1`; B: `PAYMENT`, `REPORTPAYMENT`, `EMPLOYEEDEBIT`, `ADVANCE`; C: `INVOICE`, `REPORTREVENUE`, `NOTDEBIT`; D: `OVERTIME`, `ONLEAVE`, `TIMEKEEPING`, `EMPLOYEE`, `F044` → đăng nhập lại.
-4. ⬜ Cụm D mục 3 → anh chốt 2026-11-03 sửa SP: chạy `NewAPI/Migration_OverTime_OnLeave_AiReport_20261103.sql` (rollback `_Rollback.sql`). ❓ Còn chốt chi nhánh từng báo cáo (đang tạm 4–8).
+4. ⬜ Cụm D mục 3 → anh chốt 2026-11-03 sửa SP: chạy `NewAPI/migrations/Migration_OverTime_OnLeave_AiReport_20261103.sql` (rollback `_Rollback.sql`). ❓ Còn chốt chi nhánh từng báo cáo (đang tạm 4–8).
 5. ⬜ Test mỗi cụm 1 báo cáo + gửi mẫu `paymentDetail`.
 
 ## ▶ 2026-10-29 — DraftAPI cụm D Nhân sự (6 endpoint) — build 0 lỗi, ✅ commit+push DraftAPI `d18c882` — tài liệu `DraftAPI/docs/BaoCao-KSNB-API.md`
 Endpoint: `overtime` (OVERTIME), `onLeave` (ONLEAVE), `onLeaveBalance` (không quyền → ERP allowlist), `timeKeeping` (TIMEKEEPING), `laborContract` (EMPLOYEE), `officeAttendance` (F044). Bỏ `onleave/getonleave` (theo user đang login) + `officeattendance/getdetail` (theo id, không kiểm được chi nhánh).
 1. ✅ DraftAPI đã publish (2026-11-03). ⬜ Còn **deploy ERP API** vì `NewAPI/API/appsettings.json` thêm `/api/onleavemanagement/get` vào `Draft:ReadAllowlist` (hoặc chỉ sửa appsettings trên server rồi restart).
 2. ⬜ IT cấp `ai.report` Xem: `OVERTIME`, `ONLEAVE`, `TIMEKEEPING`, `EMPLOYEE`, `F044` → đăng nhập lại.
-3. ❓ `SP_OverTime_GetPaging`/`SP_OnLeave_GetPaging` chỉ cho xem mọi phòng ban khi role ở CN ∈ {Admin, HR, HR-M, GĐ, ACC, ACC-VT, ACC-VTM, TQ-TC} hoặc có dòng `PermissionOverTime`; `ai.report` đang role IT-TEST, 0 dòng PermissionOverTime → hiện ra **0 dòng**. → ✅ Anh chốt 2026-11-03: SỬA 2 SP (ALTER, chỉ thêm `OR @UserId = '<ai.report FEFE2FA9-…>'` vào nhánh xem mọi phòng ban; KHÔNG dùng PermissionOverTime để IsApprove giữ 0). ⬜ Chạy `NewAPI/Migration_OverTime_OnLeave_AiReport_20261103.sql` → test `overtime`/`onLeave` CN 6 có dữ liệu. Rollback: `Migration_OverTime_OnLeave_AiReport_20261103_Rollback.sql`.
+3. ❓ `SP_OverTime_GetPaging`/`SP_OnLeave_GetPaging` chỉ cho xem mọi phòng ban khi role ở CN ∈ {Admin, HR, HR-M, GĐ, ACC, ACC-VT, ACC-VTM, TQ-TC} hoặc có dòng `PermissionOverTime`; `ai.report` đang role IT-TEST, 0 dòng PermissionOverTime → hiện ra **0 dòng**. → ✅ Anh chốt 2026-11-03: SỬA 2 SP (ALTER, chỉ thêm `OR @UserId = '<ai.report FEFE2FA9-…>'` vào nhánh xem mọi phòng ban; KHÔNG dùng PermissionOverTime để IsApprove giữ 0). ⬜ Chạy `NewAPI/migrations/Migration_OverTime_OnLeave_AiReport_20261103.sql` → test `overtime`/`onLeave` CN 6 có dữ liệu. Rollback: `Migration_OverTime_OnLeave_AiReport_20261103_Rollback.sql`.
 4. ⬜ Ghi chú: nhánh ELSE của `SP_OnLeaveManagement_Get` (khi năm đã lưu bảng OnLeaveManagement) chọn lặp `Month01` → Month02-12 null. Hiện chưa năm nào ≥2025 lưu nên không ảnh hưởng; KHÔNG sửa SP cũ.
 
 ## ▶ 2026-10-29 — DraftAPI cụm B Tạm ứng–Thanh toán (6 endpoint) — build 0 lỗi, ✅ commit+push DraftAPI `0a22d5e` — tài liệu `DraftAPI/docs/BaoCao-KSNB-API.md`
@@ -43,7 +58,7 @@ Endpoint: `payments` (PAYMENT), `paymentDetail` (REPORTPAYMENT), `employeeDebitB
 4. ✅ `employeeDebitDetail` không lọc chi nhánh là ĐÚNG nghiệp vụ (anh xác nhận 2026-10-29) — giữ nguyên, không kiểm thêm.
 
 ## ▶ 2026-10-28 — DraftAPI 10 báo cáo Kế toán + SP báo cáo lệnh FCL cũ — chi tiết done.md
-1. ✅ Đã chạy `NewAPI/Migration_DispatchOrderFCL_GetLegacyReport_20261028.sql` (bản đã sửa Ambiguous column) — anh xác nhận 2026-10-28.
+1. ✅ Đã chạy `NewAPI/migrations/Migration_DispatchOrderFCL_GetLegacyReport_20261028.sql` (bản đã sửa Ambiguous column) — anh xác nhận 2026-10-28.
 2. ✅ Anh đã build/publish DraftAPI mới (2026-10-29). Nếu deploy không ghi đè appsettings thì vẫn phải kiểm 10 khóa mới `Draft:ReportAccess:ai.report` có trên server.
 3. ⬜ IT cấp `ai.report` quyền Xem: `THU`, `FUNDS`, `FUNDRESERVE`, `TKNOCO`, `DEBT1` → đăng nhập lại.
 4. ⬜ Test `fundReserve` CN 6 tháng 9; đối chiếu tên cột thật với `BaoCao-KSNB-API.md`. Nếu đúng quyền mà 0 dòng → kiểm SP kế toán có lọc theo `@UserId` (gán quỹ/phạm vi).
@@ -64,12 +79,12 @@ Endpoint: `payments` (PAYMENT), `paymentDetail` (REPORTPAYMENT), `employeeDebitB
 
 ## ▶ 2026-10-19 → 10-23 — HRM chi nhánh/xuất Excel (FE) + SP LocationDetails + rà quyền HR + VisBot — FE ✅ ĐÃ COMMIT+PUSH (tsc 0 lỗi) — chi tiết done.md
 1. ⬜ `ng build` + deploy FE → Admin/cấp 0 chọn chi nhánh khác ở Ngoài giờ / Nghỉ phép / Đi muộn về sớm / Chấm công: list đổi ngay + Xuất Excel đúng chi nhánh.
-2. ⬜ Anh chạy `NewAPI/Migration_DispatchOrderFCL_GetLocationDetails_20261022.sql` (đã sửa `Tbl_Ports`→`Ports`, đã thêm DK05) → `EXEC dbo.SP_DispatchOrderFCL_GetLocationDetails '2026-09-01','2026-09-30',0`. File NewAPI CHƯA commit (cùng `Query_LG_DauBinhQuan_T09_20261019.sql` — truy vấn LG anh bảo gác).
+2. ⬜ Anh chạy `NewAPI/migrations/Migration_DispatchOrderFCL_GetLocationDetails_20261022.sql` (đã sửa `Tbl_Ports`→`Ports`, đã thêm DK05) → `EXEC dbo.SP_DispatchOrderFCL_GetLocationDetails '2026-09-01','2026-09-30',0`. File NewAPI CHƯA commit (cùng `Query_LG_DauBinhQuan_T09_20261019.sql` — truy vấn LG anh bảo gác).
 3. ❓ Quyền HR chờ anh quyết: thêm ClaimRequirement cho API HR đang thiếu (ưu tiên `ApproverPermission*`, `OnLeave/GetExport`, `OnLeaveManagement/Get`); BE chặn đổi chi nhánh với user không phải Admin/cấp 0; thống nhất mã quyền F045/F046 cho Hồ sơ NV/HĐLĐ (hiện API dùng EMPLOYEE). Ngoài giờ: anh tự đọc `SP_OverTime_GetPaging`.
 4. ❓ VisBot: chọn phương án A/B; key Gemini; góp ý lời thoại; chốt phần B (quy tắc nghiệp vụ) + D (giọng điệu); cho commit repo VisBot.
 
 ## ▶ 2026-10-16 — Nhật ký đổi mật khẩu (SQL+BE) — ✅ ĐÃ COMMIT+PUSH (build 0 lỗi), CHỜ chạy SQL + deploy — chi tiết done.md
-1. ⬜ Anh chạy `NewAPI/Migration_Sys_PasswordChangeHistory_20261016.sql` (delta.erp) — TRƯỚC khi deploy BE (deploy trước thì đổi mk vẫn chạy, chỉ không ghi log).
+1. ⬜ Anh chạy `NewAPI/migrations/Migration_Sys_PasswordChangeHistory_20261016.sql` (delta.erp) — TRƯỚC khi deploy BE (deploy trước thì đổi mk vẫn chạy, chỉ không ghi log).
 2. ⬜ Tắt API → build/publish BE.
 3. ⬜ Test: reset mk 1 user test ở màn Quản lý user → `SELECT TOP 20 * FROM dbo.PasswordChangeHistory ORDER BY ChangedDate DESC` thấy dòng `ADMIN_RESET`, ChangedByName = anh.
 4. ❓ Chờ anh: vá `garages/changedpass` (chỉ cho user IsExternal) + `account/resetpass` (thêm ClaimRequirement USER_UPDATE); FE chặn bấm Đăng nhập dồn; nới rate limit login. Hỏi Innvie có đồng bộ/đổi mk 13–16/10 không; khối 7–8 của file Diag chưa có kết quả.
@@ -88,12 +103,12 @@ Endpoint: `payments` (PAYMENT), `paymentDetail` (REPORTPAYMENT), `employeeDebitB
 
 ## ✅ 2026-10-13 — FCL getPerformance: trả số container của công việc gán vào lệnh (cho app mobile) — SQL ĐÃ CHẠY (13/10 10:46), chờ app test
 - `SP_DispatchOrderFCL_GetPerformance` chưa trả số container → thêm cột `ContainerNumbers` (từ `ShippingTask.ContainerNumber` qua `DispatchOrderFclDetailed`, bỏ trùng/rỗng, cách nhau dấu phẩy). BE ViewModel đã có sẵn property → không deploy BE/FE.
-1. ✅ Anh đã chạy `NewAPI/Migration_DispatchOrderFCL_GetPerformance_ContainerNumbers_20261013.sql` → app gọi `api/DispatchOrderFcl/getPerformance` kiểm field `containerNumbers` (vd lệnh `FCL-VT261012/0077` → `SKLU2307770, TCLU3352831`).
+1. ✅ Anh đã chạy `NewAPI/migrations/Migration_DispatchOrderFCL_GetPerformance_ContainerNumbers_20261013.sql` → app gọi `api/DispatchOrderFcl/getPerformance` kiểm field `containerNumbers` (vd lệnh `FCL-VT261012/0077` → `SKLU2307770, TCLU3352831`).
 - Ghi nhận: màn web "Thực hiện lệnh" sẽ tự hiện số cont ở cột Container (chung 1 dòng, không sửa FE — anh chốt không cần); vài công việc nhập cả số seal vào ô số cont → SP trả nguyên văn.
 
 ## ▶ 2026-10-10 — FCL Export (tổng hợp + chi tiết): Tổng km = 0 với lệnh MỚI — SQL ĐÃ SOẠN, CHỜ anh chạy
 - `SP_DispatchOrderFCL_GetExport` cộng 12 cột km kiểu lệnh cũ → lệnh mới (IsLegacy=0) ra 0 (tháng 9: 1.508 lệnh mới, km thật 244.018). Sửa: bọc CASE theo IsLegacy ở cả 2 nhánh, lệnh mới đọc `TongKm`; lệnh cũ giữ nguyên công thức.
-1. ⬜ Anh chạy `NewAPI/Migration_DispatchOrderFCL_GetExport_TongKmIsLegacy_20261010.sql` (ALTER 1 SP, không cần deploy BE/FE) → export lại tháng 9 kiểm cột TongKm.
+1. ⬜ Anh chạy `NewAPI/migrations/Migration_DispatchOrderFCL_GetExport_TongKmIsLegacy_20261010.sql` (ALTER 1 SP, không cần deploy BE/FE) → export lại tháng 9 kiểm cột TongKm.
 2. ⏸ Chưa làm (chờ anh gọi): lọc cũ/mới theo trang đang đứng (SP hiện trả cả hai); cột km từng chặng/tên cảng-nhà máy trống với lệnh mới.
 
 ## ❓ 2026-10-10 — FCL v2: sau "Từ chối B2" (5→3) không ai sửa được cờ tránh trạm — CHỜ anh chọn hướng (chưa code)
@@ -108,7 +123,7 @@ Endpoint: `payments` (PAYMENT), `paymentDetail` (REPORTPAYMENT), `employeeDebitB
 
 ## ▶ 2026-10-08 — Chốt dầu: SP_DriverFuelClosing_Update bỏ kiểm tra chồng ngày + tính thiếu mua dầu ngoài (Source 7) — SQL ĐÃ SOẠN, CHỜ anh chạy
 - Lỗi "Khoảng … bị chồng với phiếu chốt khác của cùng xe" khi Sửa/Duyệt: Create không so khoảng ngày, Update có so → 23 phiếu nháp kẹt (FE bấm Duyệt cũng gọi Update trước). Update còn quên Source=7 trong `@SupOper` (Create + FE có).
-1. ⬜ Anh chạy `NewAPI/Migration_DriverFuelClosing_Update_BoChongNgay_Source7_20261008.sql` (ALTER 1 SP, không cần deploy BE/FE; cuối file có 2 SELECT kiểm tra).
+1. ⬜ Anh chạy `NewAPI/migrations/Migration_DriverFuelClosing_Update_BoChongNgay_Source7_20261008.sql` (ALTER 1 SP, không cần deploy BE/FE; cuối file có 2 SELECT kiểm tra).
 2. ❓ 3 phiếu ĐÃ DUYỆT lệch số vì thiếu Source 7 (Id 146 `DFC-202607-096`, 178 `DFC-202608-027`, 179 `DFC-202608-028`): header lưu công ty CHI lái xe trong khi đúng là THU — chờ anh quyết cách sửa (file UPDATE riêng / hủy duyệt làm lại) + kiểm đã chi tiền theo số sai chưa.
 3. ⬜ Sau khi chạy: 3 phiếu nháp có Source 7 (Id 329/330/331) duyệt bình thường là đúng.
 
@@ -116,13 +131,13 @@ Endpoint: `payments` (PAYMENT), `paymentDetail` (REPORTPAYMENT), `employeeDebitB
 1. ⬜ `ng build --configuration production` + deploy FE. BE trên server (DLL 04/10) vốn đã là MỐC A → không bắt buộc deploy BE cho việc này; lần publish BE tới sẽ kèm `PersonalEmail` (nhớ chạy SQL 05/10 TRƯỚC).
 2. ⬜ Test FCL v2: tạo mới chưa chọn Chặng cuối → không có nút Lưu; Lưu xong mở lại → xe/lái xe/cung đường/trạm khóa; 3 nút Check trạm EUP / Đối chiếu VETC / Hành trình GPS-EUP hiện lại.
 3. ❓ dGas3 — chờ anh quyết: (a) gửi bù 1.167 lệnh FCL chốt trước 06/10 15:00? (b) làm worker tự gửi lại dòng lỗi tạm thời (522 dòng đang đứng)? (c) hỏi Innvie vì sao chưa gọi về (0 completion, 0 yêu cầu thu chi; đường dẫn `api/Garages/completions` khác tài liệu của họ)? (d) sửa mã lặp tiền tố `FCL-FCL-`. Vẫn chờ URL/Tenant/API key production.
-4. ❓ VIS/VETC — chờ kết quả gặp Thắng/TGĐ VETC + anh chốt 7 điểm (mục 3.7 của `NewAPI/KeHoach_VIS_VETC_20261008.docx`) rồi mới thiết kế SQL "Sổ giao dịch VETC". CHƯA code.
+4. ❓ VIS/VETC — chờ kết quả gặp Thắng/TGĐ VETC + anh chốt 7 điểm (mục 3.7 của `NewAPI/docs/KeHoach_VIS_VETC_20261008.docx`) rồi mới thiết kế SQL "Sổ giao dịch VETC". CHƯA code.
 5. ⬜ Chị Trang: 57 lệnh bị từ chối chốt chưa gửi lại + 7 lệnh đang chờ chốt (danh sách trong `docs/fcl-cho-chot-thang-9-2026.md`).
 6. ⏰ SSL 115.84.178.66 hết hạn 12/04/2027 → gia hạn với PA Việt Nam cuối tháng 3/2027.
 - Mục "2026-10-05 … MỐC B / bỏ Chặng cuối" bên dưới: phần FCL đã bị thay bởi mục này (hiện hành = MỐC A); phần Nhân viên Email cá nhân vẫn còn hiệu lực.
 
 ## ▶ 2026-10-05 — Nhân viên Email cá nhân (SQL+BE+FE) + FCL v2 MỐC B / bỏ Chặng cuối (FE+BE) — ✅ ĐÃ COMMIT+PUSH, CHỜ chạy SQL + deploy + test — chi tiết done.md
-1. ⬜ Chạy `NewAPI/Migration_Employee_CreateUpdate_PersonalEmail_20261005.sql` (login delta.erp) — ⚠ TRƯỚC khi deploy BE (BE truyền `@PersonalEmail`, chưa chạy → lưu nhân viên lỗi "too many arguments").
+1. ⬜ Chạy `NewAPI/migrations/Migration_Employee_CreateUpdate_PersonalEmail_20261005.sql` (login delta.erp) — ⚠ TRƯỚC khi deploy BE (BE truyền `@PersonalEmail`, chưa chạy → lưu nhân viên lỗi "too many arguments").
 2. ⬜ Tắt API → build/publish BE + `ng build --configuration production` deploy FE — lên CÙNG LÚC (mốc khóa FCL phải khớp FE/BE).
 3. ⬜ Test Nhân viên: tài khoản có `EMPLOYEE_HR` nhập Email cá nhân → Lưu → mở lại còn; tài khoản không quyền không thấy Email cá nhân + Ghi chú, lưu xong 2 giá trị vẫn nguyên.
 4. ⬜ Test FCL v2: tạo lệnh không chọn Chặng cuối vẫn Lưu được; lệnh status 1–2 đổi xe/lái xe/cung đường → Lưu → mở lại đúng; lệnh đã Duyệt B1 khóa; nút Duyệt B1 hiện bình thường.
@@ -147,7 +162,7 @@ Endpoint: `payments` (PAYMENT), `paymentDetail` (REPORTPAYMENT), `employeeDebitB
 
 ## ▶ 2026-10-02 — SP_GetPayments_Driver: phiếu bổ sung chi phí ghi nhận theo Type — ✅ SQL ĐÃ CHẠY (2026-10-02 11:43), CHỜ TEST — chi tiết done.md
 Nút "Thanh toán" ở list Lệnh vận chuyển (modal-phieu-chi-lenh → `SP_GetPayments_Driver` nạp khoản, `SP_Accounts_CreateForDriver` lưu). Nhánh phiếu bổ sung lọc cứng `o.DriverId`, không xét `DispatchOrderAdditionalFee.Type` (0 người ghi nhận dầu / 1 người lập phiếu / 2 không thanh toán). Sửa theo đúng quy tắc của `SP_DispatchOrderAdditionalFee_UpdateState`: Type 0 → `ISNULL(FuelDriverId,DriverId)`, Type 1 → `V_Users.EmployeeId` của CreatedBy, Type 2 → bỏ.
-1. ✅ Anh đã chạy `NewAPI/Migration_GetPayments_Driver_AdditionalFeeType_20261002.sql` (verify `modify_date` 2026-10-02 11:43; không cần deploy BE/FE).
+1. ✅ Anh đã chạy `NewAPI/migrations/Migration_GetPayments_Driver_AdditionalFeeType_20261002.sql` (verify `modify_date` 2026-10-02 11:43; không cần deploy BE/FE).
 2. ⬜ Test: chọn 1 lái xe có phiếu bổ sung Type=2 chưa chi → không còn hiện; lệnh có người ghi nhận dầu khác lái xe → phiếu Type=0 hiện ở người ghi nhận dầu.
 3. ✅ Anh chốt: 4 nhánh còn lại GIỮ NGUYÊN (lọc theo `DriverId`), chỉ chỉnh phần `DispatchOrderAdditionalFee`.
 
@@ -164,7 +179,7 @@ Rà code: bản 30/09 (18c6193) chỉ sửa giá, không đụng lấy danh sác
 1. ⬜ Anh gửi 1–2 số lệnh bị lỗi (hoặc chạy SELECT `Tbl_RouteSegmentDefault*`) để khoanh vùng.
 
 ## ⏸ EUP & Điều vận (GPS + VETC, tránh trạm/tắc/idling/dầu) — TẠM GÁC (anh bảo 2026-09-30), CHỜ ANH GỌI
-Đã giao báo cáo khả thi `NewAPI/PhanTich_KhaThi_EUP_DieuVan_20260930.docx` (2 PA có/không Webhook, lộ trình GĐ0–GĐ5, câu hỏi EUP/VETC, việc anh cần chốt). Chưa thiết kế SQL/code. Nền nghiệp vụ: memory `project_toll_avoidance_driver_reimbursement`.
+Đã giao báo cáo khả thi `NewAPI/docs/PhanTich_KhaThi_EUP_DieuVan_20260930.docx` (2 PA có/không Webhook, lộ trình GĐ0–GĐ5, câu hỏi EUP/VETC, việc anh cần chốt). Chưa thiết kế SQL/code. Nền nghiệp vụ: memory `project_toll_avoidance_driver_reimbursement`.
 
 ## ✅ MỐC 2026-09-30 — anh xác nhận XONG HẾT: deploy FE (giá trạm sửa tay + Lưu mặc định, Thanh toán double dòng, Vay cá nhân chống duyệt trùng, Debit Note), chạy SQL phiên 25/09 + PersonalLoan, test VETC Phase 2, xử lý dữ liệu (phiếu double, 202600139, chi tiền tổng hợp NCC), duyệt TollStation_MatchReview — chi tiết done.md
 Còn lại dạng tùy chọn (⏸, chỉ làm khi anh gọi):
@@ -172,13 +187,13 @@ Còn lại dạng tùy chọn (⏸, chỉ làm khi anh gọi):
 - BE trả lỗi cụ thể từ SP thay "Cập nhật lỗi"; rà kiểu "+1 bước" ở Tạm ứng / Đặt cọc cont / Thanh toán.
 - Chặn double dòng thêm ở `SP_Payments_Update`.
 - Debit Note phân trang SERVER nếu vẫn chậm; SP lọc nháp targetEmployeeId OR employeeId.
-- VETC: backfill hàng chờ lệnh cũ; tự gắn cờ nghi né trạm (Vietmap vs VETC) — xem thêm phân tích EUP `NewAPI/PhanTich_KhaThi_EUP_DieuVan_20260930.docx`.
+- VETC: backfill hàng chờ lệnh cũ; tự gắn cờ nghi né trạm (Vietmap vs VETC) — xem thêm phân tích EUP `NewAPI/docs/PhanTich_KhaThi_EUP_DieuVan_20260930.docx`.
 - SP_Accounts_Create: UPDATE Advances theo @AdvanceId chạy cho cả loại 1-6 (ghi nhận, chưa sửa).
 
 ## ▶ Thu chi theo yêu cầu PM Xưởng (F051) — SQL ĐÃ CHẠY (2026-10-02), BE+FE ĐÃ COMMIT+PUSH (build 0 lỗi), CHỜ deploy + test với Xưởng — mục tiêu chốt cuối tuần — chi tiết done.md
 Ý tưởng (anh chốt): Xưởng đẩy yêu cầu thu/chi (4 loại: 1 Chi trả trước, 2 Chi trả sau, 3 Thu trả trước, 4 Thu trả sau) qua API Api-Key → màn thủ quỹ 2 tab Chi/Thu, tích 1..n yêu cầu cùng chiều → viết 1 phiếu chi/thu (modal-phieu-chi/thu có sẵn; thủ quỹ tự chọn NCC/KH vì chỉ lưu TÊN) → `SP_Accounts_Create @TypeAccount=8 + @GarageRequestIds` cùng transaction đánh dấu "Đã viết phiếu" + AccountId. Module MỚI (dựa ý tưởng F018, không dùng lại). Nghiệp vụ xưởng (trả trước/sau, TT 1 phần) ERP không quan tâm. RawJson lưu nguyên văn → modal "Xem chi tiết" dựng có cấu trúc + tab JSON gốc. Không API báo ngược (Excel không yêu cầu). Đã viết phiếu thì KHÔNG cho xóa (SP_Accounts_Delete không sửa; khi nào cho xóa xử lý sau).
-1. ✅ Anh đã chạy `NewAPI/Migration_GaragePaymentRequest_20260928.sql` (2026-10-02 14:17, verify read-only: bảng + 4 SP + `@GarageRequestIds` ở `SP_Accounts_Create` + F051 VIEW/ACCOUNT).
-2. ⬜ Gửi `NewAPI/Garage_API_PaymentRequest_2026-09-28.md` (mục 13 Upsert, 14 Cancel) cho bên Xưởng.
+1. ✅ Anh đã chạy `NewAPI/migrations/Migration_GaragePaymentRequest_20260928.sql` (2026-10-02 14:17, verify read-only: bảng + 4 SP + `@GarageRequestIds` ở `SP_Accounts_Create` + F051 VIEW/ACCOUNT).
+2. ⬜ Gửi `NewAPI/docs/Garage_API_PaymentRequest_2026-09-28.md` (mục 13 Upsert, 14 Cancel) cho bên Xưởng.
 3. ✅ BE (2026-10-02, `dotnet build` 0 lỗi, đã commit): enum `F051`; `Models/Garage/GaragePaymentRequest.cs` + `IGaragePaymentRequest` + `GaragePaymentRequestRepository`; `GaragesController.PaymentRequestUpsert`/`PaymentRequestCancel` (Api-Key, đọc body thô để lưu nguyên văn `Item` vào RawJson, lỗi → 400 envelope); `Controllers/Accounting/GaragePaymentRequestController` GetPaging/GetById (F051_VIEW); `Accounts.GarageRequestIds` + `AccountRepository.CreatedAsync` truyền `@GarageRequestIds` (chỉ khi TypeAccount=8).
 4. ✅ FE (2026-10-02, tsc + `ng build` 0 lỗi, đã commit): trang `/main/accounting/garage-payment-request` (nút Cần chi/Cần thu, lọc trạng thái mặc định "Chờ viết phiếu" không lọc ngày, gom nhóm theo tên đối tượng, tích nhiều dòng cùng chi nhánh → Lập phiếu chi/thu gate `F051_ACCOUNT`); `modal-garage-payment-request` (xem chi tiết + tab JSON gốc); `modal-phieu-chi`/`modal-phieu-thu` nhận `typeAccount=8` + `garageRequestIds` + `branchId` + `represent` (phiếu chi loại 8 vẫn cho đổi loại đối tượng).
 5. ✅ Anh chốt: số tiền phiếu = tổng các yêu cầu (FE khóa ô số tiền, SP chặn lệch > 0.01); chi nhánh phiếu = chi nhánh yêu cầu (SP chặn; FE chỉ cho chọn yêu cầu cùng chi nhánh).
@@ -188,7 +203,7 @@ Còn lại dạng tùy chọn (⏸, chỉ làm khi anh gọi):
 
 ## ▶ Phiên 2026-09-22 — TollStation match review chờ duyệt, VETC Phase 1 chờ tài khoản — chi tiết done.md
 1. ✅ Đã chạy cả 3 SQL (2026-09-22, verify qua `sys.objects.modify_date` read-only): `Migration_Reports_CP03_FixDiffAnchor_20260922.sql` (`SP_ReportCP03` sửa 10:52), `Migration_Reports_CP03Detail_20260922.sql` (`SP_ReportCP03Detail` tạo 10:17 — riêng `SP_ReportCP03Diff` cùng file không thấy tồn tại, có thể chỉ chạy phần đầu; không sao vì SP này chỉ là bản tham khảo phụ, hướng chính đã dùng ALTER `SP_ReportCP03`), `Migration_FCL_UnlockAfterDeny_20260922.sql` (`SP_DispatchOrderFCL_UpdateWithTO` sửa 15:09).
-2. 🟡 Anh báo ĐÃ DUYỆT (2026-09-30) `NewAPI/TollStation_MatchReview_20260922.xlsx` → CÒN: em đọc cột `ChonLam`/`GhiChu` bản đã duyệt để soạn `Migration_TollStation_LinkNewLocations_<date>.sql` (UPDATE `StartLocation`/`EndLocation`).
+2. 🟡 Anh báo ĐÃ DUYỆT (2026-09-30) `NewAPI/docs/TollStation_MatchReview_20260922.xlsx` → CÒN: em đọc cột `ChonLam`/`GhiChu` bản đã duyệt để soạn `Migration_TollStation_LinkNewLocations_<date>.sql` (UPDATE `StartLocation`/`EndLocation`).
 3. 🟡 **VETC**: ĐÃ điền Username/Password vào `appsettings.Development.json` + `appsettings.Production.json` (2026-09-24). IP public server ĐÃ gửi VETC whitelist (máy dev KHÔNG gọi được VETC → chỉ test được sau khi publish). CÒN: publish ERP API (VetcApiController; kiểm `appsettings.Production.json` trên server có mục `VetcApi`) + `ng build`/deploy FE → test nút "Đối chiếu VETC" trong modal lệnh FCL (đã chuyển từ list sang modal). Ổn thì bỏ nút EUP.
 3b. ⬜ **BC01 site nháp**: endpoint DraftAPI `/api/draftReport/report01` đã chạy thật (xem done.md 2026-09-24). CÒN: màn BC01 trong draft-web; quyết định kiểm quyền theo user (hiện mọi user login-draft xem hết KH); tối ưu thêm SP_Report01_V2 nếu cần.
 4. ➡ VETC Phase 2 — đã code 2026-09-28, xem section phiên 2026-09-28 ở đầu file.
@@ -231,7 +246,7 @@ Process .NET 9 độc lập tại `D:\Delta\DeltaSoft\GpsAPI\` (tiền lệ Draf
 - ✅ **Giai đoạn 3 ĐÃ CODE (2026-09-21)** — dùng ĐÚNG 5 SP đã có sẵn trong `gps` schema (không cần SQL mới):
   - BE (NewAPI): `Models/Gps/GpsCustomerVehicle.cs`+`GpsCustomerToken.cs`, `Interfaces/Gps/IGpsCustomer.cs`, `Repositories/Gps/GpsCustomerRepository.cs`, `Controllers/Gps/GpsCustomerController.cs` (GetVehicles/AddVehicle/DeleteVehicle/GetToken/CreateToken). Token sinh ở BE dạng `delta-{customerId}-{random 32 ký tự}` (KHÔNG lookup tên/mã KH để làm đẹp — theo nguyên tắc Simplicity First). Chuẩn hóa biển số clone ĐÚNG `NormalizeForMatch` của `EupfinController.cs`. Permission mới **F050** (VIEW/CREATE/DELETE) — đã thêm vào `FunctionCode.cs`, **CHƯA có SQL grant** (Functions/ActionInFunctions/Permissions) — cần soạn + anh chạy trước khi phân quyền được. `dotnet build` 0 lỗi.
   - FE: `shared/models/danhmuc/gps-customer.model.ts`, `shared/services/danhmuc/gps-customer.service.ts`, thêm tab "GPS" vào `modal-customer.component.html/ts` (đúng khuôn `<tabset>` có sẵn, giống tab "Địa điểm giao nhận hàng") — bảng biển số (thêm/xóa) + ô token che bớt (nút Hiện/Ẩn) + nút Tạo token mới (confirm vì thu hồi token cũ ngay). Chỉ hiện khi `entity.id>0` + có quyền `F050_VIEW`. `ng build` 0 lỗi.
-1. ⬜ **SQL đã soạn, CHỜ ANH DUYỆT + CHẠY**: `NewAPI/Migration_GpsAPI_F050_Grant_20260921.sql` (Functions IsMenu=0 + ActionInFunctions + Permissions Admin, VIEW/CREATE/DELETE) — chưa chạy, chưa ai có quyền test tab GPS thật. Cần RELOGIN sau khi chạy.
+1. ⬜ **SQL đã soạn, CHỜ ANH DUYỆT + CHẠY**: `NewAPI/migrations/Migration_GpsAPI_F050_Grant_20260921.sql` (Functions IsMenu=0 + ActionInFunctions + Permissions Admin, VIEW/CREATE/DELETE) — chưa chạy, chưa ai có quyền test tab GPS thật. Cần RELOGIN sau khi chạy.
 2. ⬜ Test E2E: gán biển số qua tab GPS → gọi GpsAPI đúng biển số/token → nhận vị trí; tạo token mới → token cũ bị thu hồi (gọi lại 401).
 3. ⬜ Tắt API build lại (khóa DLL) + `ng build` production + deploy.
 4. ⬜ Xử lý hạ tầng DDoS + **đổi mật khẩu `gps_app` thật** trước khi go-live KH thật.
@@ -250,7 +265,7 @@ Nhà mạng ETC (VETC/ePass) tự gửi email khi xe qua trạm (mailbox Gmail c
 
 ## ▶ FCL v2 — Tách VAT 8% cho vé ETC — FE đã sửa, SQL soạn xong, CHỜ anh chạy SQL + deploy + test (2026-09-11) — chi tiết done.md
 Giá Vietmap trả (`route-tolls`) không có cấu trúc trước-VAT/VAT/tổng — FE cũ hardcode `Vat=0, Cost=TotalCost`. Đã sửa FE (`_splitVat()` trong `_syncEtcFromSegment`/`_recomputeAutoEtcPrices`): Sau VAT giữ nguyên (giá trạm thật) → `VAT=floor(SauVAT×8/108+0.5)` → `TrướcVAT=SauVAT−VAT`.
-1. ⬜ Anh chạy `NewAPI/Migration_DispatchOrderFCLEtc_Vat8Percent_20260911.sql` (login delta.erp) — soát block `[0] PREVIEW` trước, chỉ sửa 585 dòng ETC lệnh FCL v2 đang Vat=0, KHÔNG đụng lệnh legacy. Không cần deploy BE.
+1. ⬜ Anh chạy `NewAPI/migrations/Migration_DispatchOrderFCLEtc_Vat8Percent_20260911.sql` (login delta.erp) — soát block `[0] PREVIEW` trước, chỉ sửa 585 dòng ETC lệnh FCL v2 đang Vat=0, KHÔNG đụng lệnh legacy. Không cần deploy BE.
 2. ✅ `ng build --configuration production` verify sạch tại máy dev (2026-09-14, exit code 0, chỉ warning cũ có sẵn — jsqr CommonJS + CSS nesting `modal-route-compare`). ⬜ **Anh tự đẩy `dist/web-app/` lên server thật** (máy dev không có quyền/đường lên server production) + restart.
 3. ⬜ Test E2E: cung có trạm 196.000đ → bảng ETC hiện Trước VAT ~181.481 / VAT ~14.519 / Tổng 196.000.
 
@@ -263,7 +278,7 @@ Bảng "Cung đường vận tải" cắt ngắn `locationName` còn 15 ký tự
 
 ## ▶ FCL v2 — Cờ "Tránh trạm" (IsPassed) bị xóa khi điều vận lưu lệnh — ✅ SQL + reset đã chạy hết (2026-09-10), CHỜ ng build + test E2E — chi tiết done.md
 `SP_DispatchOrderFCL_UpdateWithTO` xóa + chèn lại toàn bộ `DispatchOrderFCLEtc` không kèm `IsPassed` → mỗi lần điều vận Duyệt B1 (gọi `updateWithTo`) xóa cờ "Tránh trạm" lái xe đã tick. Fix: đổi khối ETC sang khuôn `SP_Payments_Update` (TVP→#temp → UPDATE/DELETE/INSERT, không đụng `IsPassed`) + index `IX_DispatchOrderFCLEtc_RefNo`.
-1. ✅ Đã chạy `NewAPI/Migration_FCL_WithTO_EtcIsPassed_20260910.sql` (verify live OK: `_UpdateWithTO` block `#Etc`, `_CreateWithTO` có `IsPassed`, index tồn tại). Không cần redeploy BE.
+1. ✅ Đã chạy `NewAPI/migrations/Migration_FCL_WithTO_EtcIsPassed_20260910.sql` (verify live OK: `_UpdateWithTO` block `#Etc`, `_CreateWithTO` có `IsPassed`, index tồn tại). Không cần redeploy BE.
 2. ✅ Đã chạy `Fix_FCL_ResetRejectedClosing_ToStatus2_20260910.sql` (22 lệnh Status=3) + `Fix_FCL_ResetChoChot_ToStatus2_20260910.sql` (16 lệnh Status=5 có ETC chưa tick) với `@Commit=1`.
 3. ⬜ `ng build` + deploy FE (đổi nhãn "Trốn vé"→"Tránh trạm", nút Hành trình GPS-EUP, ẩn Km đầu/cuối — commit `87dfb0b`/`14528ef`/`1e3c37f`).
 4. ⬜ Test E2E: lệnh vừa reset (Status=2) → tick "Tránh trạm" → Hoàn thành → điều vận Duyệt B1 → mở lại cờ vẫn còn ✅ → chốt cờ vẫn nguyên.
@@ -277,7 +292,7 @@ Anh yêu cầu rà lại workflow Từ chối B1/Từ chối chốt của lệnh
 
 ## ▶ FCL v2 — Vé ETC ngoài kế hoạch (trừ lương lái xe) — SQL soạn xong, BE+FE build 0 lỗi mới, CHỜ anh chạy SQL + deploy + test (2026-09-08) — chi tiết done.md
 Gắn thẳng vào lệnh FCL v2 (không tách module riêng): bảng mới `DispatchOrderFCLEtcPenalty` + 4 SP + 3 endpoint BE + bảng mới trong modal-dispatch-order-fcl-v2 (dưới bảng ETC hiện có), KHÔNG cộng vào Tổng ETC, khóa theo `postB1Locked`.
-1. ⬜ Anh review + chạy `NewAPI/Migration_DispatchOrderFCL_EtcPenalty_20260908.sql` (login delta.erp).
+1. ⬜ Anh review + chạy `NewAPI/migrations/Migration_DispatchOrderFCL_EtcPenalty_20260908.sql` (login delta.erp).
 2. ⬜ Tắt API → `dotnet build`/publish + `ng build` deploy FE.
 3. ⬜ Test E2E: mở lệnh FCL v2 đã có refNo → "Thêm dòng" → chọn trạm phụ + nhập ngày giờ/số tiền/ghi chú → Lưu → tải lại lệnh còn đúng dòng, Tổng ETC không đổi; sau Duyệt B1 → không còn nút Thêm/Lưu/Xóa; tick "Đã trừ lương" + Lưu → set đúng ngày.
 
@@ -292,9 +307,9 @@ Anh hỏi nút "CHỐT LỆNH" hiện theo quyền gì → rà `SP_DispatchOrder
 - **Khi mở lại "Phân ca điều vận"**: đổi mã dự kiến từ F047 → **F048 hoặc F049** (F048 hiện cũng đang có 1 dự định khác từ advance-payment — ai code trước lấy F048, người sau lấy F049 để tránh trùng tiếp). Danh sách `F0xx` đã dùng trong DB (2026-09-14): F001-F008, F010-F012, F014-F022, F024-F027, F030-F033, F035-F047 (F009/F013/F023/F028/F029/F034 KHÔNG dùng, có thể tái chọn nếu muốn liền mạch).
 
 ## ★★ Tích hợp dGas3/TransportERP thay IGAS (toàn bộ quản lý dầu) — KẾ HOẠCH DUYỆT + SQL ĐÃ SOẠN, CHỜ ANH REVIEW + CHẠY (2026-09-07, CHƯA CODE BE/FE)
-Đối tác cung cấp `tai-lieu-ket-noi-delta-erp-transport-order-dgas3.docx` (`NewAPI/`) — thay IGAS bằng tích hợp 2 chiều với TransportERP/dGas3. Anh chốt scope RỘNG: bỏ hẳn toàn bộ quản lý dầu nội bộ (Tạm ứng/Cấp dầu chung/Cấp dầu theo lệnh/Mua dầu ngoài/Chốt dầu tháng F039), không chỉ "cấp dầu theo lệnh". DeltaERP chỉ còn: gửi nhu cầu (§2, khi 1 trong 4 nguồn lệnh chốt) + nhận kết quả (§3, webhook MỚI) + API tra cứu lại theo DriverId+khoảng ngày (§4, đối tác tự gọi khi cần đồng bộ lại). Cắt hẳn IGAS 1 lần, không chạy song song. Chi tiết đầy đủ + kiến trúc bảng/SP/trigger/retry: memory `project_dgas3_fuel_integration` + kế hoạch [NewAPI/dgas3-fuel-integration-plan.md](../../../NewAPI/dgas3-fuel-integration-plan.md).
+Đối tác cung cấp `tai-lieu-ket-noi-delta-erp-transport-order-dgas3.docx` (`NewAPI/`) — thay IGAS bằng tích hợp 2 chiều với TransportERP/dGas3. Anh chốt scope RỘNG: bỏ hẳn toàn bộ quản lý dầu nội bộ (Tạm ứng/Cấp dầu chung/Cấp dầu theo lệnh/Mua dầu ngoài/Chốt dầu tháng F039), không chỉ "cấp dầu theo lệnh". DeltaERP chỉ còn: gửi nhu cầu (§2, khi 1 trong 4 nguồn lệnh chốt) + nhận kết quả (§3, webhook MỚI) + API tra cứu lại theo DriverId+khoảng ngày (§4, đối tác tự gọi khi cần đồng bộ lại). Cắt hẳn IGAS 1 lần, không chạy song song. Chi tiết đầy đủ + kiến trúc bảng/SP/trigger/retry: memory `project_dgas3_fuel_integration` + kế hoạch [NewAPI/docs/dgas3-fuel-integration-plan.md](../../../NewAPI/docs/dgas3-fuel-integration-plan.md).
 - **Đã chốt**: 4 nguồn lệnh (`DispatchOrder` cũ/`DispatchOrderAdditionalFee`/`DispatchOrderFCL` legacy/`DispatchOrderFCL` v2 `Status=6`) · `eligibleFuelLiters` = định mức vận hành + dầu máy phát gộp 1 số · field `driverCode` trong payload = **`Employee.EmployeeCode`** (mã NV chuỗi vd "NV001" — ĐỔI 2026-09-15, KHÔNG còn là `DriverId` nội bộ như chốt cũ 2026-09-04; AdditionalFee lấy driverId/employeeCode từ lệnh cha qua `DispatchOrderRefNo`) · 3 bảng mới song song (`Tbl_FuelDgas3Outbound`/`Completion`/`CompletionDetail`, không đụng bảng cũ) · tra ngược 2 chiều lệnh↔phiếu qua chuỗi Completion→CompletionDetail→Outbound→bảng nguồn (giới hạn đã biết: số lít thực đổ chỉ có ở mức TỔNG theo phiếu, không tách riêng theo từng lệnh vì payload đối tác không chia nhỏ).
-1. ✅ Kế hoạch duyệt (2026-09-07). ✅ SQL đã chạy: `NewAPI/Migration_FuelDgas3_Integration_20260907.sql` — 3 bảng (`Tbl_FuelDgas3Outbound`/`Completion`/`CompletionDetail`) + 1 TVP `TypeFuelDgas3CompletionDetail` + 7 SP. 100% ADDITIVE, không đụng object cũ.
+1. ✅ Kế hoạch duyệt (2026-09-07). ✅ SQL đã chạy: `NewAPI/migrations/Migration_FuelDgas3_Integration_20260907.sql` — 3 bảng (`Tbl_FuelDgas3Outbound`/`Completion`/`CompletionDetail`) + 1 TVP `TypeFuelDgas3CompletionDetail` + 7 SP. 100% ADDITIVE, không đụng object cũ.
 2. ✅ `Migration_FuelDgas3_F047_Grant_20260911.sql` đã chạy — Function F047 "Theo dõi tích hợp dGas3" + ActionInFunctions (VIEW/UPDATE) + Permissions Admin.
 3. ✅ Đợt 1 BE (2026-09-13, build 0 lỗi, ĐÃ COMMIT+PUSH repo NewAPI `127352e` 2026-09-15): model/repo (`FuelDgas3Outbound`/`Completion`) + adapter HttpClient `IDgas3ApiClient`/`Dgas3ApiClient` gọi §2 + `FuelDgas3MonitorController` (JWT, gate F047, `GetPaging`+`Resend`). `appsettings.json` thêm `Dgas3BaseUrl`/`Dgas3ApiKey` (outbound, điền sau khi có từ đối tác). ✅ `Migration_FuelDgas3_GetById_20260913.sql` đã chạy (SP additive `SP_FuelDgas3Outbound_GetById` cho nút "Gửi lại" với dòng Failed-NoRetry).
 6. ✅ Test tay §2 với sandbox dev đối tác (2026-09-14) qua Scalar `https://api-dev-erp.innvie.vn` (spec thật ở `/openapi/v1.json`, path `/scalar/...` chỉ là SPA shell không dùng được). Phát hiện + fix 2 bug trong `Dgas3ApiClient.cs` so với spec thật: (1) thiếu hẳn header `X-Tenant-Id` (required) — đã thêm, đọc từ `AppSettings:Dgas3TenantId` mới; (2) parse response sai vị trí — payload thật nằm trong `data.{transportOrderId,transportOrderCode,outcome}`, không phải root — đã sửa `ResponseEnvelopeDto`. Auth xác nhận đúng là header `X-API-Key` (không phải `Authorization: Bearer` như security scheme khai trong spec — thử Bearer bị 401, đổi qua X-API-Key thông ngay). Đã điền tạm `appsettings.json`: `Dgas3ApiKey=sk-transport-erp-abc` (đối tác cho để test), `Dgas3TenantId=362387869790208` (giá trị "default" trong spec — **CHƯA xác nhận có phải Tenant ID cố định của Delta hay chỉ mẫu**). Build 0 lỗi.
@@ -314,7 +329,7 @@ Anh hỏi nút "CHỐT LỆNH" hiện theo quyền gì → rà `SP_DispatchOrder
    - ⬜ Gỡ action test tạm `FuelDgas3MonitorController.TestSend` (gọi thẳng `IDgas3ApiClient`, không ghi DB — chỉ dùng để test tay 2026-09-15) khi Đợt 2 cắm xong hết 4 điểm.
    Đợt 3: FE màn theo dõi mới thay `modal-fuel-summary` (thêm filter SentStatus đúng lúc này, xem gotcha BValue/TValue) → ẩn menu module dầu cũ (giữ dữ liệu lịch sử) → test E2E 2 chiều với đối tác → go-live cắt hẳn IGAS.
 5. ⬜ Việc cần chốt cùng đối tác (ngoài phạm vi quyết định nội bộ): tên header xác thực + path cuối cùng cho §3/§4, danh sách enum đầy đủ của `fulfillmentMethod`.
-7. ✅ SP mới `SP_DriverFuel_GetByDateRange(@DriverId,@FromDate,@ToDate)` đã SOẠN, CHỜ CHẠY — `NewAPI/Migration_DriverFuel_GetByDateRange_20260914.sql`. Đọc TRỰC TIẾP 3 bảng nguồn (không qua `Tbl_FuelDgas3Outbound`, không phụ thuộc đã gửi dGas3 hay chưa), tái dùng công thức đã verify ở mục 4. Chốt với anh Cường 2026-09-14: KHÔNG loại Type=1/thầu phụ ở AdditionalFee lẫn DispatchOrder thường (lệnh thường vẫn có thầu phụ, xử lý dầu bình thường); thêm cột `LinkedOrderRefNo` (AdditionalFee → RefNo lệnh cha). 100% additive, không đụng object nào.
+7. ✅ SP mới `SP_DriverFuel_GetByDateRange(@DriverId,@FromDate,@ToDate)` đã SOẠN, CHỜ CHẠY — `NewAPI/migrations/Migration_DriverFuel_GetByDateRange_20260914.sql`. Đọc TRỰC TIẾP 3 bảng nguồn (không qua `Tbl_FuelDgas3Outbound`, không phụ thuộc đã gửi dGas3 hay chưa), tái dùng công thức đã verify ở mục 4. Chốt với anh Cường 2026-09-14: KHÔNG loại Type=1/thầu phụ ở AdditionalFee lẫn DispatchOrder thường (lệnh thường vẫn có thầu phụ, xử lý dầu bình thường); thêm cột `LinkedOrderRefNo` (AdditionalFee → RefNo lệnh cha). 100% additive, không đụng object nào.
 8. ✅ 2026-09-15: đổi `driverCode` gửi/nhận = `Employee.EmployeeCode` (không phải `DriverId`) — code xong, `Migration_FuelDgas3_DriverCode_20260915.sql` + `Migration_FuelDgas3_GetById_20260913.sql` **ĐÃ CHẠY**, BE **ĐÃ COMMIT+PUSH** repo NewAPI (`127352e`). Đã phát hiện + sửa luôn 2 chỗ trong `GaragesController` (§3 `Completions`, §4 `SearchTransportOrderCompletions`) đang `int.TryParse(driverCode)` — cùng lỗi với quyết định cũ.
    - ✅ Test thật qua sandbox dev Innvie: `driverCode="NV046"` → HTTP 200 `outcome=created` (xem mục 3 ở trên).
    - ✅ Pilot Đợt 2 (1/4 điểm, DispatchOrder cũ) cắm cùng lúc — xem mục 5.
@@ -462,7 +477,7 @@ Kiến trúc **PA-A hàng chờ đề xuất song song**: 1 bảng generic `Tbl_
 
 ## ✅ Phiên 2026-07-27 — EUP API v3 (BE) + Duyệt nhiều Workflow (FE) — ĐÃ DEPLOY + TEST OK (2026-07-28) — chi tiết ở done.md
 **1. EUP v3 (BE NewAPI master `b525a19`)** — adapter Innvie↔EUP v3.0.2. `GetRealtimeByCars` sang `/gps/realtime`; thêm `GetCars` + `GetHistory`; `VehicleGetDistance` đọc creds từ config (bỏ hardcode + host cũ). **✅ Đã deploy + test OK** (server đã có `appsettings.Production.json` 3 key EUP).
-- ✅ **Tài liệu API cho Innvie**: `NewAPI/Garage_API_Documentation_APImoi_2026-07-27.docx` (mục 9–12). ⬜ **Gửi Innvie** (điền base URL host thật vào tài liệu nếu cần).
+- ✅ **Tài liệu API cho Innvie**: `NewAPI/docs/Garage_API_Documentation_APImoi_2026-07-27.docx` (mục 9–12). ⬜ **Gửi Innvie** (điền base URL host thật vào tài liệu nếu cần).
 
 **2. Duyệt nhiều Workflow (FE main `b46d854`)** — loại nháp 4/6. Thuần FE. **✅ Đã deploy + test OK.**
 
@@ -484,13 +499,13 @@ Host = màn CS `shipping-task-cs` (KHÔNG opman). CS mở nháp SỬA ĐƯỢC +
 2. **Chốt dầu phương tiện — Sửa phiếu nháp**: hiện lại nút Tải/xóa dòng + khóa đổi xe + "Tải dữ liệu" chạy MERGE (giữ dòng cũ). FE-only. ⬜ CÒN: **test** mở phiếu nháp → "Bổ sung dữ liệu mới" không mất dòng cũ. **SP `GetCandidatesForUpdate` DEFERRED** (chỉ làm nếu phát hiện dòng nguồn vô hiệu lọt phiếu).
 
 ## ⏸ Danh mục Máy phát điện (Generator Catalog) — Phương án A, KHÔNG khấu hao (2026-07-16, TẠM GÁC — CHỜ ANH GỌI; chưa chốt 5 điểm, CHƯA CODE, CHƯA SQL)
-Thay file Excel `NewAPI\Danh sách máy phát điện chuẩn.xlsx` (29 máy) bằng màn Danh mục trong nhóm `danhmuc/`. Chỉ quản lý **lý lịch máy** (thêm/sửa/xóa/xem/tìm/xuất Excel) — bỏ toàn bộ khấu hao (anh chốt). Bảng `Tbl_Generator` MỚI song song; "Số xe" chỉ text tham chiếu (không link Vihicle, không nối dầu FCL). FunctionCode dự kiến **F046**.
+Thay file Excel `NewAPI\docs\Danh sách máy phát điện chuẩn.xlsx` (29 máy) bằng màn Danh mục trong nhóm `danhmuc/`. Chỉ quản lý **lý lịch máy** (thêm/sửa/xóa/xem/tìm/xuất Excel) — bỏ toàn bộ khấu hao (anh chốt). Bảng `Tbl_Generator` MỚI song song; "Số xe" chỉ text tham chiếu (không link Vihicle, không nối dầu FCL). FunctionCode dự kiến **F046**.
 - **Kế hoạch đầy đủ + 5 câu hỏi chờ chốt**: [generator-catalog-plan.md](generator-catalog-plan.md).
 - Chốt xong 5 điểm (mô tả tách/gộp · giữ/bỏ nguyên giá+ngày SD · hãng nvarchar/OtherCategories · xác nhận F046 · seed 29 dòng) → soạn `Migration_Generator_Schema` trình duyệt → BE → FE.
 
 ## ⏸ JobID nghiệp vụ N01–N11 — phân tích dữ liệu + thiết kế đề xuất (2026-07-14, TẠM GÁC — CHỜ ANH GỌI; chưa chốt 4 câu, CHƯA CODE, CHƯA SQL)
 
-Nguồn: `D:\Delta\DeltaSoft\NewAPI\JOBID.docx` (26/6/2026) — xem [[reference_jobid_appendix]] trong memory. Yêu cầu của anh: **xây chức năng quản lý thông tin định danh Job nghiệp vụ + thêm 1 trường mới vào `Shipment`**, sao cho vừa test được job mới vừa **không đụng job cũ đang chạy**.
+Nguồn: `D:\Delta\DeltaSoft\NewAPI\docs\JOBID.docx` (26/6/2026) — xem [[reference_jobid_appendix]] trong memory. Yêu cầu của anh: **xây chức năng quản lý thông tin định danh Job nghiệp vụ + thêm 1 trường mới vào `Shipment`**, sao cho vừa test được job mới vừa **không đụng job cũ đang chạy**.
 
 ### Thống kê dữ liệu thật (12 tháng: 76.072 lô, `Shipment`, Deleted=0)
 | Loại (`OtherCategories.SHIPMENT_T02`) | Số lô | Booking | HBL/MBL | Tờ khai | Cont | Kiện | CBM | GW |
@@ -543,7 +558,7 @@ Anh báo *"duyệt xong số liệu ở NGOÀI phiếu bị thay đổi"*. Truy:
 - **Ngược dấu**: Update `Sup − Dem` (A−C) trong khi Create/FE là `Dem − Sup` (C−A).
 - **Bỏ quên B**: không cộng dầu còn thừa (source 6) vào `NetLiters`; `NetAmount` cũng thiếu tiền của B.
 ⇒ Phiếu tạo-một-lần thì đúng; phiếu bị Update (nhất là lúc duyệt) bị ghi đè sai. Modal tính client-side theo công thức đúng nên **trong phiếu vẫn hiển thị đúng** — chỉ **list** (đọc header đã lưu) mới lộ số lệch.
-- ✅ **ĐÃ CHẠY** `NewAPI/Migration_DriverFuelClosing_FixUpdateFormula_20260713.sql` (verify read-only 2026-07-24: `_Update` modify 07-13 15:50, thân có `@Leftover` + `NET = B + C − A`; query [3] trả **0 dòng** ⇒ 5 phiếu lệch đã tính lại đúng). Không cần deploy BE/FE (chữ ký SP không đổi).
+- ✅ **ĐÃ CHẠY** `NewAPI/migrations/Migration_DriverFuelClosing_FixUpdateFormula_20260713.sql` (verify read-only 2026-07-24: `_Update` modify 07-13 15:50, thân có `@Leftover` + `NET = B + C − A`; query [3] trả **0 dòng** ⇒ 5 phiếu lệch đã tính lại đúng). Không cần deploy BE/FE (chữ ký SP không đổi).
 - **5 phiếu lệch (rà 2026-07-13)**: Id 8 `DFC-202607-004` (ĐÃ DUYỆT) −19,47 → **+20,75** ⚠ đảo chiều thu↔chi · Id 4 +120,01 → −39,13 ⚠ · Id 3 +161,68 → −92,67 ⚠ · Id 2 +163,41 → +132,47 · Id 1 (ĐÃ DUYỆT) 0 → +9,68. **Nếu số cũ đã dùng trừ/chi lương → báo kế toán đối chiếu.**
 - Không sửa được qua UI: 5 phiếu đều do người khác tạo (`dien.hoang`, `tuyet.nguyen`) + 2 phiếu đã duyệt (SP chặn *"Phiếu đã chốt"*). Gate nút Sửa/Xóa = **chủ tạo + phiếu nháp** — anh chốt **GIỮ NGUYÊN** (Admin không được ưu tiên).
 
@@ -552,7 +567,7 @@ Anh báo *"duyệt xong số liệu ở NGOÀI phiếu bị thay đổi"*. Truy:
 - **thead cố định** 2 hàng sticky nền `#dcefe5f6` (tiêu đề `top:0`, hàng lọc `top:22px`) + **hàng lọc theo cột** (Số phiếu/Biển số/Lái xe/Lý do/Trạng thái/Người tạo — client-side trên TRANG đang tải vì list là server-paging).
 - **Toolbar Thêm/Sửa/Xóa/Xem** ở header + chọn dòng bằng checkbox (`clickRow`+`icheck`), thay cho nút icon từng dòng.
 - **5 cột luôn rỗng đã thay**: `closeReasonName`, `approvalDiffQty`, `dispatchOrderQty`, `additionalFeeQty`, `topUpLiters` là field của thiết kế chốt-theo-LÁI-XE cũ, SP mới không trả. Nay: Lý do chốt map từ enum FE (`closeReasonText`), 4 cột số = **Cấp VH (A) · Định mức VH (C) · Cấp MP (A) · Định mức MP (C)**.
-- ✅ **ĐÃ CHẠY** `NewAPI/Migration_DriverFuelClosing_GetPaging_CreatedByName_20260713.sql` (verify 2026-07-24: SP modify 07-13 21:50, thân có `CreatedByName`). Không cần deploy BE.
+- ✅ **ĐÃ CHẠY** `NewAPI/migrations/Migration_DriverFuelClosing_GetPaging_CreatedByName_20260713.sql` (verify 2026-07-24: SP modify 07-13 21:50, thân có `CreatedByName`). Không cần deploy BE.
 - ⬜ `ng build` + deploy FE.
 
 ## ▶ Phiên 2026-07-13 — Draft trong ERP (job-canon / công việc) + cảng theo chi nhánh — FE xong (tsc 0 lỗi mới), CHỜ deploy + 2 SQL
@@ -566,7 +581,7 @@ Anh báo *"duyệt xong số liệu ở NGOÀI phiếu bị thay đổi"*. Truy:
 
 ### ANH CẦN
 1. ⬜ `ng build` + deploy FE.
-2. ✅ **ĐÃ CHẠY (2026-07-14)** `NewAPI/Migration_GetAllLocations_BranchId_20260710.sql`. **Đây chính là thủ phạm** anh báo *"thêm location cảng/bãi ở FCL v2 không lên dữ liệu"*: `SP_GetAllLocations` trên DB chỉ có `@ListCust`, trong khi BE ([TransportOrderRepository.cs:177](../../../NewAPI/API/Repositories/Transports/TransportOrderRepository.cs#L177)) **luôn** `Add("@BranchId", branchId)` ⇒ SQL ném *"too many arguments specified"* ⇒ API 500 ⇒ `listAllLocations = []` → **rỗng SẠCH** cả 86 cảng lẫn kho/nhà máy KH (không phải "thiếu cảng chi nhánh"). Verify sau khi chạy: SP có 2 param, `EXEC SP_GetAllLocations` → 678 điểm (86 cảng). Không cần deploy BE.
+2. ✅ **ĐÃ CHẠY (2026-07-14)** `NewAPI/migrations/Migration_GetAllLocations_BranchId_20260710.sql`. **Đây chính là thủ phạm** anh báo *"thêm location cảng/bãi ở FCL v2 không lên dữ liệu"*: `SP_GetAllLocations` trên DB chỉ có `@ListCust`, trong khi BE ([TransportOrderRepository.cs:177](../../../NewAPI/API/Repositories/Transports/TransportOrderRepository.cs#L177)) **luôn** `Add("@BranchId", branchId)` ⇒ SQL ném *"too many arguments specified"* ⇒ API 500 ⇒ `listAllLocations = []` → **rỗng SẠCH** cả 86 cảng lẫn kho/nhà máy KH (không phải "thiếu cảng chi nhánh"). Verify sau khi chạy: SP có 2 param, `EXEC SP_GetAllLocations` → 678 điểm (86 cảng). Không cần deploy BE.
 3. ✅ **ĐÃ CHẠY** `Migration_Ports_ResetBranchId_20260713.sql` — DB hiện: **88 cảng `BranchId = NULL`** (dùng chung) + **4 cảng `BranchId = 5`** (HCM: Cát Lái, SINOVNL Tân Vạn, Bãi Delta Bình Thung, Ga Trảng Bom). FE truyền `branchId = 0` (đã bỏ lọc) ⇒ ra hết, gồm cả 4 cảng CN5.
 
 ### ✅ XONG — list Công việc: lấy hết theo dải ngày + phân trang FE (anh chốt: KHÔNG tách BE/FE cho đơn giản)
@@ -582,13 +597,13 @@ Bỏ phương án "tách tab nháp + sửa BE". Cách đã làm (FE-only, `ng bu
 ### 1) Chốt dầu — bỏ Type=0 khỏi nguồn B (dầu còn thừa) — ✅ ĐÃ CHẠY (2026-07-11)
 Bug: `SP_DriverFuelClosing_GetCandidates` đang chạy (deploy) có source 6 (B "dầu còn thừa") lọc `WHERE (a.[Type]=0 OR a.Type=2)` — **gồm cả Type=0** (tạm ứng xe nhà), sai thiết kế (comment + file `LeftoverB_20260707` đều ghi Type=2). Hậu quả: 11.170/43.855 phiếu Type=0 lệch Duyệt≠IGAS bị **cộng ngược** (Quantity−QuantityIgas) vào NET (vd 007262: A=−19.27 + B=+80.73 = +61.46 thay vì −19.27). SP đã bị **sửa tay lệch migration** (thêm Type=0, `ValidTime→CreatedDate`, `>0→<>0`).
 - **Chốt với anh (2026-07-11):** Type=0 tạm ứng CHỈ vào nguồn A (source 1, trừ theo IGAS thực đổ); bỏ khỏi nguồn B. Phiếu Type=0 **IGAS trống** → **không** vào chốt (phương án a, đúng "số tạm ứng = số IGAS thực đổ").
-- **File** `NewAPI/Migration_DriverFuelClosing_FixLeftoverType_20260711.sql` (đã đồng bộ bản đang chạy): DROP+CREATE `_GetCandidates`, (a) source 6 `(Type=0 OR Type=2)→Type=2`; (b) source 1 lọc ngày `ValidTime→CreatedDate` (vì ValidTime lệch 2-4 ngày sau CreatedDate → tạm ứng rớt khỏi phiếu chốt; anh tự đổi khi chạy).
+- **File** `NewAPI/migrations/Migration_DriverFuelClosing_FixLeftoverType_20260711.sql` (đã đồng bộ bản đang chạy): DROP+CREATE `_GetCandidates`, (a) source 6 `(Type=0 OR Type=2)→Type=2`; (b) source 1 lọc ngày `ValidTime→CreatedDate` (vì ValidTime lệch 2-4 ngày sau CreatedDate → tạm ứng rớt khỏi phiếu chốt; anh tự đổi khi chạy).
 - ✅ **ĐÃ CHẠY 2026-07-11** — tạm ứng Type=0 hiện đúng ở nguồn A (trừ theo IGAS thực đổ), không còn ở B. KHÔNG deploy API/FE.
 - ⚠ Phiếu chốt **đã lưu** trước đây (dính dòng B Type=0 sai) không tự sửa — cần file dọn riêng nếu muốn tính lại kỳ cũ. ⚠ Phiếu Type=0 **IGAS trống** vẫn không vào chốt (đúng phương án đã chốt).
 
 ### 2) F039 Chốt dầu phương tiện — GRANT đủ action (fix 403 Create) — ✅ ĐÃ CHẠY (2026-07-11)
 Tạo phiếu chốt dầu tháng bị **403** tại `POST /api/DriverFuelClosing/Create`. Gốc: `ActionInFunctions` F039 CHỈ có VIEW; Permissions chỉ role `ACC-VT` có VIEW → không role nào có `F039_CREATE`. File grant gốc 2026-06-04 chưa chạy trọn.
-- **File** `NewAPI/Migration_F039_GrantActions_20260711.sql` (idempotent): đăng ký đủ 5 action + cấp CREATE/UPDATE/ACCEPT/DELETE cho mọi role đang có F039_VIEW (=ACC-VT) + Admin đủ 5.
+- **File** `NewAPI/migrations/Migration_F039_GrantActions_20260711.sql` (idempotent): đăng ký đủ 5 action + cấp CREATE/UPDATE/ACCEPT/DELETE cho mọi role đang có F039_VIEW (=ACC-VT) + Admin đủ 5.
 - ✅ **ĐÃ CHẠY 2026-07-11.** User cần **relogin** (quyền trong JWT) → hết 403. Role khác cần tạo phiếu thì báo em thêm.
 
 ### 3) PCCV (Job draft) — sửa hiển thị ngày khi đọc nháp qua ERP — FE+BE code xong, CHỜ DEPLOY
@@ -610,7 +625,7 @@ Chi tiết: done.md section đầu. Gồm: (a) `StartedDate/FinishedDate` (web d
 - ⬜ Test E2E sau deploy: ảnh dòng "có hóa đơn" bắt buộc; giờ bắt đầu/kết thúc web nhập + app auto; màu Net xanh/đỏ list chốt dầu.
 
 ## ★★ BÚT TOÁN ĐỐI ỨNG (P5) — SQL P5.0 soạn xong, CHỜ DUYỆT + CHẠY (2026-07-10)
-Chi tiết + số liệu verify DB: done.md section đầu. File: `NewAPI/Migration_AccountingEntry_P50_20260710.sql` (3 bảng + TVP + 6 SP + seed 19 rule). Đã chốt: bảng mới song song · không hồi tố · bút toán đảo.
+Chi tiết + số liệu verify DB: done.md section đầu. File: `NewAPI/migrations/Migration_AccountingEntry_P50_20260710.sql` (3 bảng + TVP + 6 SP + seed 19 rule). Đã chốt: bảng mới song song · không hồi tố · bút toán đảo.
 
 **Anh cần (theo thứ tự):**
 1. ⬜ Duyệt + chạy `Migration_AccountingEntry_P50_20260710.sql` (login `delta.erp`). Additive 100%, không đụng object cũ. ⚠ **Verify 2026-07-24: CHƯA CHẠY** (`Tbl_AccountingRule`/`Tbl_AccountingEntry` chưa tồn tại) — đúng với quyết định ⏸ TẠM DỪNG bên dưới, không phải sót.
@@ -756,15 +771,15 @@ Thêm `POST /api/Garages/GetEmployees` vào GaragesController (chi tiết done.m
 - **Anh cần:** ⬜ deploy API → app garage gọi `GetEmployees` (header `Api-Key`) lấy full field NV. Báo nếu cần lấy cả NV nghỉ (bỏ filter Status).
 
 ## ★★ Quản lý quỹ & thanh toán (Quy trình July 6 2026) — MỞ RỘNG từ June 25, đang gom yêu cầu → SRS, CHƯA CODE (2026-07-09)
-Tài liệu mới `NewAPI/Quy trình quản lý quỹ và thanh toán_July 6 2026.docx` **mở rộng phạm vi** từ "Tạm ứng/Thanh toán" (June 25) lên "Quản lý quỹ": 8 quy trình, 3 rổ nợ, ghi chép đối ứng (double-entry), 5 mục đích chi + đặt cọc/phiếu thu/phiếu chi. Đặt cọc (N1) = **ContBets** ở PM cũ.
-- **Bộ câu hỏi làm rõ** đã soạn: [quan-ly-quy-clarification-questions.md](quan-ly-quy-clarification-questions.md) (11 mục A–K, phân tích Cũ/Mới + đánh dấu blocker 🔴). Bản .docx trình người ra YC: `NewAPI/Bo cau hoi lam ro - Quan ly quy va thanh toan (July 6).docx`.
-- **✅ Gỡ blocker A2 — Phụ lục JobID** đã nhận: `NewAPI/JOBID.docx` (memory `reference_jobid_appendix`). Phân loại JobID **nghiệp vụ N01–N11** (theo loại hình lô) vs **kế toán K01–K07** (hàng tháng/chi nhánh/nhóm phí cấp 1) + 3 cơ chế thoát **DK05 / Thẻ tài sản / mã nhân viên**.
+Tài liệu mới `NewAPI/docs/Quy trình quản lý quỹ và thanh toán_July 6 2026.docx` **mở rộng phạm vi** từ "Tạm ứng/Thanh toán" (June 25) lên "Quản lý quỹ": 8 quy trình, 3 rổ nợ, ghi chép đối ứng (double-entry), 5 mục đích chi + đặt cọc/phiếu thu/phiếu chi. Đặt cọc (N1) = **ContBets** ở PM cũ.
+- **Bộ câu hỏi làm rõ** đã soạn: [quan-ly-quy-clarification-questions.md](quan-ly-quy-clarification-questions.md) (11 mục A–K, phân tích Cũ/Mới + đánh dấu blocker 🔴). Bản .docx trình người ra YC: `NewAPI/docs/Bo cau hoi lam ro - Quan ly quy va thanh toan (July 6).docx`.
+- **✅ Gỡ blocker A2 — Phụ lục JobID** đã nhận: `NewAPI/docs/JOBID.docx` (memory `reference_jobid_appendix`). Phân loại JobID **nghiệp vụ N01–N11** (theo loại hình lô) vs **kế toán K01–K07** (hàng tháng/chi nhánh/nhóm phí cấp 1) + 3 cơ chế thoát **DK05 / Thẻ tài sản / mã nhân viên**.
 - **Phân tích JobId cũ ↔ mới** (đã làm, verify từ DB): JobId ERP hiện = `S+BranchCode+YY+MM+RIGHT(CustomerCode,5)+seq5` (SP `SP_Shipment_CreateNew`), **1 loại/lô, KHÔNG mã hóa loại hình**, sinh mọi chi nhánh (6). GAP lớn: (1) thêm họ **JobID kế toán** hoàn toàn mới; (2) chuẩn hóa `SHIPMENT_T02` (~22 mục lộn xộn) → **N01–N11**; (3) chỉ 3 pháp nhân tạo JobID (HN/HCM=SG/VT) vs 6; (4) quyết định **có nhúng mã N vào chuỗi hay thêm cột `JobIDType`** (tránh đụng SP lõi). Câu hỏi để ngỏ cho người ra YC: bắt buộc nhúng mã N vào chuỗi JobId không.
 - **CÒN thiếu (phụ lục khác chưa có):** phân quyền khởi tạo JobID · hạn mức tạm ứng · ghi chép đối ứng (bút toán Nợ/Có) · phân quyền duyệt chi tiết.
 - **Bước tiếp:** người ra YC trả lời bộ câu hỏi → **viết SRS** (bắt buộc trước khi code) → duyệt → code. Kế hoạch kỹ thuật nền: [advance-payment-redesign-plan.md](advance-payment-redesign-plan.md) (P0→P5, phương án SP mới song song không sửa SP cũ). Memory `project_advance_payment_redesign`.
 
 ## ★ Tái thiết kế Tạm ứng/Thanh toán (Quy trình June 25 2026) — KẾ HOẠCH XONG, CHƯA CODE (2026-06-25)
-Kế hoạch + giải pháp kỹ thuật đầy đủ: [advance-payment-redesign-plan.md](advance-payment-redesign-plan.md) (gap verify từ source + 6 phase P0→P5 + phương án "tiến hóa có kiểm soát"). Memory `project_advance_payment_redesign`. Nguồn: `NewAPI/Quy trình Tạm ứng  Thanh toán_June 25 2026.docx`. **← đã được July 6 mở rộng (mục ★★ trên).**
+Kế hoạch + giải pháp kỹ thuật đầy đủ: [advance-payment-redesign-plan.md](advance-payment-redesign-plan.md) (gap verify từ source + 6 phase P0→P5 + phương án "tiến hóa có kiểm soát"). Memory `project_advance_payment_redesign`. Nguồn: `NewAPI/docs/Quy trình Tạm ứng  Thanh toán_June 25 2026.docx`. **← đã được July 6 mở rộng (mục ★★ trên).**
 - **P0** Nhóm phí (GroupFeeCode Lv1) trên Tạm ứng + rule kê khai theo nhóm — nền tảng, làm trước.
 - **P1** Hạn mức enforce + Thời hạn TƯ + khóa quá hạn + gia hạn. **P2** TT đối ứng N tạm ứng + auto phiếu chi/thu + duyệt theo nhóm. **P3** Nợ HĐ đầy đủ rule. **P4** Phiếu chi/thu Thủ quỹ + chặn quỹ thiếu. **P5** Bút toán đối ứng + báo cáo (workshop KT, spec chưa chốt).
 - **Anh cần**: chốt thứ tự ưu tiên + 7 điểm để ngỏ (mục 5 trong plan) → em đọc SP/schema liên quan, soạn SQL trình duyệt cho phase đầu.
@@ -802,7 +817,7 @@ Nối tiếp mục dưới (cùng ngày). 3 chỉnh FE-only, KHÔNG đụng BE/S
 3. **Modal đọc HĐ — gán mặc định theo bộ phận (suy từ Role)**: role bắt đầu `OPS*` → mặc định **Công việc**; `CS*` → **Lô hàng**; còn lại → Lô hàng. Vẫn đổi tay được (`defaultAssignTypeByRole()` trong `show()`).
 
 **Anh cần:**
-1. ✅ ĐÃ CHẠY (2026-06-24) `NewAPI/Migration_FeeCodes_AddGroup0506_20260622.sql` (đổi tên 05 + thêm 06, idempotent, chỉ master data).
+1. ✅ ĐÃ CHẠY (2026-06-24) `NewAPI/migrations/Migration_FeeCodes_AddGroup0506_20260622.sql` (đổi tên 05 + thêm 06, idempotent, chỉ master data).
 2. ⬜ Stop IIS Express → deploy API mới (controller +UpdateInvoice) + `ng build` FE (đã build 0 lỗi).
 3. ⬜ **Test E2E:**
    - List HĐ AI: nút 👁 mở modal chi tiết màu giống đọc AI; người tạo thấy nút "Sửa" → sửa NCC/KH/HĐ/tiền/line items → Lưu → list reload; người KHÁC không có nút Sửa; HĐ đã dùng cho Payment (Status≠0) không sửa được.
@@ -819,7 +834,7 @@ FE đổi (build sạch): list `pending-invoice` group **chỉ Cấp 1** (bỏ t
 - Nhóm **hàng bán (02)** hiện thêm radio **Loại chi phí hàng bán**: `reinvoice` (trả hộ xuất lại HĐ cho khách) | `other` (hàng bán khác). Bắt buộc chọn 1 trước upload. Snapshot nhãn lưu vào `subFeeName` (subFeeCode vẫn NULL) để truy vết — **chưa có cột riêng**; nếu cần lưu mã/cột riêng + báo cáo theo loại này thì báo để thêm SQL.
 
 **Anh cần:**
-1. ✅ ĐÃ CHẠY (2026-06-24) `NewAPI/Migration_PendingInvoice_GetPaging_CustomerJoin_20260621.sql` — `CREATE OR ALTER SP_PendingInvoice_GetPaging` LEFT JOIN `ShipmentId→Shipment→Customer`, trả thêm `AssignCustomerCode/AssignCustomerName`. Logic filter/paging giữ NGUYÊN.
+1. ✅ ĐÃ CHẠY (2026-06-24) `NewAPI/migrations/Migration_PendingInvoice_GetPaging_CustomerJoin_20260621.sql` — `CREATE OR ALTER SP_PendingInvoice_GetPaging` LEFT JOIN `ShipmentId→Shipment→Customer`, trả thêm `AssignCustomerCode/AssignCustomerName`. Logic filter/paging giữ NGUYÊN.
 2. ⬜ Stop IIS Express → deploy API mới (ViewModel +2 prop) + `ng build` FE (đã build 0 lỗi).
 3. ⬜ **Test E2E:** list chỉ còn group Cấp 1; gõ filter từng cột lọc đúng; cột JobId hiện badge + cột KH hiện "mã - tên" của Lô/CV đã gán; modal dropdown đúng thứ tự trả hộ→hàng bán→quản lý chung→đầu tư→khác; chọn nhóm trả hộ bắt buộc Lô/CV; nhóm 02 hiện 2 lựa chọn + chỉ `reinvoice` mới bắt buộc Job.
 
@@ -827,8 +842,8 @@ FE đổi (build sạch): list `pending-invoice` group **chỉ Cấp 1** (bỏ t
 Chi tiết: done.md + plan `rustling-exploring-wilkes.md`. Quyết định chốt: Công việc = Workflow (PCCV); gán cấp **batch**, chỉ lưu PendingInvoice (không sang Payment); không chặn quyền.
 
 **Anh cần (theo thứ tự):**
-1. ✅ ĐÃ CHẠY (2026-06-21) `NewAPI/Migration_PendingInvoice_JobShipment_20260619.sql` — ALTER `Tbl_PendingInvoice` +`JobId/ShipmentId/WorkflowId`; DROP+CREATE `SP_PendingInvoice_Create` (tái tạo y thân bản SubFee 06-15 + 3 param mới).
-2. ✅ ĐÃ CHẠY (2026-06-21) `NewAPI/Migration_Workflow_GetForPicker_20260619.sql` — `SP_Workflow_GetForPicker` MỚI (KHÔNG đụng GetPagingByOp/ByCs_New). Lọc `JobAssignedUserId=@UserId` + `Shipment.IsFinish=0`.
+1. ✅ ĐÃ CHẠY (2026-06-21) `NewAPI/migrations/Migration_PendingInvoice_JobShipment_20260619.sql` — ALTER `Tbl_PendingInvoice` +`JobId/ShipmentId/WorkflowId`; DROP+CREATE `SP_PendingInvoice_Create` (tái tạo y thân bản SubFee 06-15 + 3 param mới).
+2. ✅ ĐÃ CHẠY (2026-06-21) `NewAPI/migrations/Migration_Workflow_GetForPicker_20260619.sql` — `SP_Workflow_GetForPicker` MỚI (KHÔNG đụng GetPagingByOp/ByCs_New). Lọc `JobAssignedUserId=@UserId` + `Shipment.IsFinish=0`.
 3. ⬜ Stop IIS Express → deploy API mới + `ng build` FE.
 4. ⬜ **Test E2E:**
    - Radio **Gán cho**: chọn **Lô hàng** → nút 🔍 ở ô Job; chọn **Công việc** → ô Job **disable + ẩn 🔍**, hiện ô **Công việc + 🔍**; Job/Công việc xuống hàng riêng.
@@ -840,7 +855,7 @@ Chi tiết: done.md + plan `rustling-exploring-wilkes.md`. Quyết định chố
 ## ✅ Draft — Lọc chi nhánh (ERP) + Site nháp hiện JobId/ShipmentId sau promote — XONG, ĐÃ DEPLOY (2026-06-19)
 SQL chạy + verify DB; 4 build sạch; user đã build + deploy. Chi tiết: done.md section đầu.
 - YC1 (draft-web hiện JobId/shipmentId): SQL `DraftAPI/Migration_DraftSite_ShowPromotedRef_20260618.sql` + DraftAPI model + draft-web `shipment-list`/`canon-job-list`.
-- YC2 (lọc chi nhánh, mọi user kể cả admin): SQL `NewAPI/Migration_DraftErp_BranchFilter_20260618.sql` + ERP BE (model→interface→repo→controller) + ERP FE (`draft.service` + 2 list truyền `branchId`).
+- YC2 (lọc chi nhánh, mọi user kể cả admin): SQL `NewAPI/migrations/Migration_DraftErp_BranchFilter_20260618.sql` + ERP BE (model→interface→repo→controller) + ERP FE (`draft.service` + 2 list truyền `branchId`).
 - **Đã chốt** câu hỏi "list nháp biến mất": KHÔNG phải bug (dải ngày 7 ngày + quyền xem theo NV `targetEmployeeId`); nay bồi thêm filter chi nhánh.
 
 ## ▶ FCL cung đường phát sinh — fix nhỏ FE (2026-06-18)
@@ -928,14 +943,14 @@ Module tổng hợp công tháng + tiền phạt NV văn phòng (xem done.md). *
 
 ### ✳ Nữ nuôi con nhỏ +60p — SQL ĐÃ CHẠY + BE/FE XONG (2026-07-03), chờ tắt API build + ng build + test
 Hướng: **thuộc tính hồ sơ NV** (không dùng loại lịch F047 đang hoãn). Chi tiết: done.md section đầu. Chốt pháp lý: chỉ nữ nuôi con <12 tháng +60p; mang thai KHÔNG hưởng.
-1. ✅ ĐÃ CHẠY `NewAPI/Migration_OfficeAttendance_NursingChild_20260703.sql` (ALTER Employee +2 cột + DROP+CREATE engine +quỹ 60p + 3 SP HR mang 2 field).
+1. ✅ ĐÃ CHẠY `NewAPI/migrations/Migration_OfficeAttendance_NursingChild_20260703.sql` (ALTER Employee +2 cột + DROP+CREATE engine +quỹ 60p + 3 SP HR mang 2 field).
 2. ✅ BE (Employee.cs/repo AddHRParams) + FE (employee.model + modal-employee-hr section G) — tsc sạch, C# compile sạch (chỉ khóa API.dll do IIS chạy).
 3. ⬜ **Tắt API** → `dotnet build`/publish → chạy lại (khóa DLL); `ng build` + deploy FE.
 4. ⬜ **Test E2E**: Danh mục NV → Hồ sơ HR 1 NV → Tab Thông tin chung mục **G. Chế độ chấm công** → tick "Đang nuôi con nhỏ" + ngày sinh con → Lưu → mở lại giữ đúng; **Tính** tháng có ngày con<12th → NV miễn tối đa 60'/ngày (muộn trước, dư tới sớm); bỏ tick → xóa ngày → tính lại không còn +60p.
 - ⚠ Khi nào mở lại F047 (ca kíp): engine F047 phải GIỮ nhánh đọc Employee nuôi con nhỏ (đừng ghi đè mất); F047 dùng CREATE OR ALTER — SQL 2014 KHÔNG có, phải đổi sang IF EXISTS DROP+CREATE. Loại `NUOICON` trong seed F047 giờ thừa (nguồn đã chuyển sang Employee) — bỏ khi mở lại.
 
 ### ⏸ F044 PHẦN 1 — Lịch đặc biệt + Phân ca điều vận (ĐÃ THIẾT KẾ SQL, HOÃN — làm sau)
-File SQL đề xuất (CHỜ DUYỆT, chưa chạy): `NewAPI/Migration_OfficeAttendance_Schedule_20260623.sql`. Quyết định đã chốt với anh Cường:
+File SQL đề xuất (CHỜ DUYỆT, chưa chạy): `NewAPI/migrations/Migration_OfficeAttendance_Schedule_20260623.sql`. Quyết định đã chốt với anh Cường:
 - **Cá nhân → phân theo LOẠI** (không hardcode): `Tbl_OfficeWorkScheduleType` (seed HC default / BAC mode ½ngày mốc 10:30 / XUONG 7:30-17:30 / LY 8:00-16:30 / **NUOICON** flex 60p chung muộn-sớm = "Nữ nuôi con < 12 tháng +60p") + `Tbl_OfficeEmployeeSchedule` gán NV↔loại có EffectiveFrom/To (đặt EffectiveTo = ngày con tròn 12 tháng). ⚠ Chốt 2026-07-03: chỉ **nữ nuôi con < 12 tháng** được +60p (luật rõ); **phụ nữ mang thai KHÔNG** mặc nhiên hưởng → đã bỏ chữ "thai sản" khỏi seed (Code cũ THAISAN → **NUOICON**).
 - **Điều vận → phân ca theo CHI NHÁNH**: `Tbl_OfficeShiftType` (BranchId NULL=chung; seed CA1 6-14 / CA2 14-22 / CA3 22-6 overnight / **OFF IsDayOff=1 = nghỉ luân phiên KHÔNG trừ phép**) + `Tbl_OfficeShiftAssignment` (NV/ngày, OpMan phân tuần, `ChangeReason` bắt buộc khi đổi ca, `IsLocked` chốt cuối tháng). Function mới **F047** "Phân ca điều vận" (menu Nhân sự) — grant để file riêng mirror F046, CHƯA soạn.
 - **Engine** `SP_OfficeAttendance_Calculate` đã viết bản CREATE OR ALTER: phân giải ca→loại→mặc định; ngày có ca = làm full (kể cả T7/CN/**Lễ vẫn chấm muộn/sớm theo ca**); NV mặc định kết quả y hệt engine cũ.
