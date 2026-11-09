@@ -4,7 +4,7 @@
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 
 ## ⏭ 2026-11-07 — Lệnh LCL + CBT dựa trên FCL v2 — CHỐT Ý TƯỞNG (docx), CHƯA thiết kế SQL / CHƯA code
-Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 07/11; script build docx-js ở scratchpad phiên, không lưu repo).
+Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 09/11: +Số chì LCL theo công việc, bắt buộc trước B1, +Lịch sử cập nhật lệnh; script build docx-js ở scratchpad phiên, không lưu repo).
 - Đã chốt:
   - Dùng chung `DispatchOrderFCL` + "Loại lệnh" theo loại hàng hóa ở Job (anh tự bổ sung ở Job).
   - Địa điểm dùng chung `CustomerLocations` theo KH như FCL; điểm mới gửi duyệt theo luồng sẵn có, chưa duyệt thì KHÔNG dùng. Cảng, Sân bay, kho CFS chung danh mục Cảng.
