@@ -1,5 +1,11 @@
 # Completed Features
 
+## Phiên 2026-11-09 — FCL v2: log thay đổi lệnh — BE nền + pilot CreateWithTO/UpdateWithTO — NewAPI ĐÃ COMMIT+PUSH `8cc307f` (build 0 lỗi), ⬜ CHỜ publish tối 09/11
+- SQL KHÔNG cần chạy thêm: 4 object `DispatchOrderFCLChangeLog` / type / `_Insert` / `_GetByRefNo` đã có trên DB từ 30/10 (verify read-only).
+- BE mới: model + repo + `Services/FclChangeLog/` (Queue Channel singleton, Worker BackgroundService, Diff, Builder whitelist) + controller riêng `DispatchOrderFCLChangeLog/GetByRefNo` (chỉ Admin). `Program.cs` +2 dòng đăng ký.
+- `DispatchOrderFCLController`: inject `FclChangeLogQueue`; `CreateWithTO` ghi 1 dòng "Tạo lệnh"; `UpdateWithTO` đọc bản trước (đồng bộ, lỗi thì bỏ qua) → lưu như cũ → diff + ghi chạy nền. Lệnh cũ IsLegacy=1 không log. Response 2 endpoint không đổi.
+- Bối cảnh: làm log TRƯỚC theo yêu cầu anh, rồi mới tới lệnh LCL/CBT (Số chì LCL theo công việc — xem memory LCL/CBT).
+
 ## Phiên 2026-11-06 — FCL v2: lệnh đã lưu 0 chặng bị kẹt không chọn được cung đường — FE ĐÃ COMMIT+PUSH `c3f4d02` — ✅ ĐÃ BUILD+DEPLOY 2026-11-07
 - Ca thật FCL-VT261008/0079 (status 2): đổi job → bỏ hết điểm job cũ → Lưu (lệnh có RefNo không bị kiểm "tối thiểu 2 chặng") → TO-VT261008/0076 còn 0 chặng. Mở lại: `edit()` luôn set `lastSegmentFinal=true` → `addToRoute` return sớm, ô "Chặng cuối" nằm trong bảng chặng nên không hiện để bỏ tick.
 - Sửa FE `modal-dispatch-order-fcl-v2` `edit()`: `lastSegmentFinal = segments.length > 0`. Chưa chặn Lưu lệnh đã có RefNo mà 0 chặng (chờ anh chốt).
