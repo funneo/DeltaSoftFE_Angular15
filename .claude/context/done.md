@@ -1,6 +1,6 @@
 # Completed Features
 
-## Phiên 2026-11-09 — FCL v2: log thay đổi lệnh — BE nền + pilot CreateWithTO/UpdateWithTO — NewAPI ĐÃ COMMIT+PUSH `8cc307f` (build 0 lỗi), ⬜ CHỜ publish tối 09/11
+## Phiên 2026-11-09 — FCL v2: log thay đổi lệnh — BE nền + pilot CreateWithTO/UpdateWithTO — NewAPI ĐÃ COMMIT+PUSH `8cc307f` (build 0 lỗi), ✅ ĐÃ PUBLISH 10/11
 - SQL KHÔNG cần chạy thêm: 4 object `DispatchOrderFCLChangeLog` / type / `_Insert` / `_GetByRefNo` đã có trên DB từ 30/10 (verify read-only).
 - BE mới: model + repo + `Services/FclChangeLog/` (Queue Channel singleton, Worker BackgroundService, Diff, Builder whitelist) + controller riêng `DispatchOrderFCLChangeLog/GetByRefNo` (chỉ Admin). `Program.cs` +2 dòng đăng ký.
 - `DispatchOrderFCLController`: inject `FclChangeLogQueue`; `CreateWithTO` ghi 1 dòng "Tạo lệnh"; `UpdateWithTO` đọc bản trước (đồng bộ, lỗi thì bỏ qua) → lưu như cũ → diff + ghi chạy nền. Lệnh cũ IsLegacy=1 không log. Response 2 endpoint không đổi.

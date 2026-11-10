@@ -26,11 +26,11 @@ Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 09/1
 - [ ] Test: người KHÁC người tạo (không Admin) không thấy nút xóa vé ĐÃ LƯU; dòng mới thêm chưa lưu vẫn bỏ được; hộp xác nhận hiện.
 - Không chặn BE UpdateWithTO (anh chốt). Bảng "Vé ETC ngoài kế hoạch" (ghi thẳng DB) KHÔNG đổi.
 
-## ⏭ 2026-10-31 — Log thay đổi lệnh FCL mới (không phải log duyệt) — SQL ĐÃ CHẠY (verify 09/11: 4 object tạo 30/10, 0 dòng); 09/11 BE nền + pilot Create/UpdateWithTO ĐÃ COMMIT+PUSH NewAPI `8cc307f`, ⬜ chờ publish tối 09/11
+## ⏭ 2026-10-31 — Log thay đổi lệnh FCL mới (không phải log duyệt) — SQL ĐÃ CHẠY (verify 09/11: 4 object tạo 30/10, 0 dòng); 09/11 BE nền + pilot Create/UpdateWithTO ĐÃ COMMIT+PUSH NewAPI `8cc307f`, ✅ ĐÃ PUBLISH 10/11 (verify: 20 dòng log/7 lệnh trong buổi sáng, nội dung đúng)
 - 2026-11-09 BE nền (file mới, không sửa endpoint cũ): `Models/FCL/DispatchOrderFCLChangeLog.cs` (+Entry theo thứ tự cột TVP, +FclChangeLogConst), `Interfaces/FCL/IDispatchOrderFCLChangeLog.cs`, `Repositories/FCL/DispatchOrderFCLChangeLogRepository.cs`, `Services/FclChangeLog/` (Queue = Channel singleton, Worker = BackgroundService FIFO scope riêng, Diff = Fields/Rows/Summary whitelist), `Controllers/FCL/DispatchOrderFCLChangeLogController.cs` (`GetByRefNo`, chỉ Admin), `Program.cs` +2 dòng đăng ký.
 - Anh chốt 09/11: ghi log CHẠY NỀN sau khi trả kết quả (đọc "trước" vẫn đồng bộ); chấp nhận mất log nếu restart đúng lúc; CÓ log khi Xóa lệnh; áp dụng cả FCL v2; làm log TRƯỚC rồi mới LCL/CBT.
 - 09/11 PILOT BE (build 0 lỗi, chưa deploy): `Services/FclChangeLog/FclChangeLogBuilder.cs` (whitelist header 26 trường + máy phát 5 + cung đường chuỗi + công việc thêm/bớt + vé ETC/chi phí khóa theo TÊN#thứ tự vì SP ghi đè Id) · `DispatchOrderFCLController` +inject `FclChangeLogQueue`, +helper `EnqueueChangeLog`, `CreateWithTO` (1 dòng "Tạo lệnh") + `UpdateWithTO` (đọc trước đồng bộ → lưu → diff nền).
-- [ ] Anh deploy BE → sửa thử 1 lệnh v2 → `SELECT * FROM DispatchOrderFCLChangeLog ORDER BY Id DESC` → duyệt nội dung log.
+- [x] 10/11 anh publish BE; log chạy thật (Tạo lệnh, Tổng km/dầu, Cung đường, vé ETC thêm/xóa, Tóm tắt). Điểm cần cải thiện: công việc thêm/bớt chỉ hiện "Công việc #Id" (bản đọc lệnh không kèm JobId/Số cont) → sửa khi làm FE xem log.
 - [ ] FE: nút "Lịch sử cập nhật" ở list `dispatch-order-fcl-new` (chỉ Admin) + modal `modal-fcl-change-log` gom BatchId.
 - [ ] Gắn tiếp 9 endpoint còn lại: DriverUpdate, UpdateGenerator, Create/Update/DeleteFeeV2, Add/Update/DeleteEtcPenalty, Add/Update/DeleteExtraSegment (TransportOrderController), Delete.
 - [ ] ❓ Xung đột: 30/10 chốt xem log = nút ở LIST, chỉ Admin; 09/11 em đề xuất timeline gộp trong modal FCL v2 → chờ anh chọn.
