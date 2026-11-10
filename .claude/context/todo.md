@@ -14,7 +14,7 @@ Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 10/1
   - LCL chỉ giữ Kho CFS (ẩn Số chì, nâng/hạ, hãng tàu, Booking, HĐ ngoài/phụ phí); hàng xuất (theo loại hình Job) thêm T/g có mặt kho CFS do CS nhập + cut-off, hiện trên app.
   - CBT: T/g KH yêu cầu không bắt buộc; mốc cửa khẩu do CS ghi, không bắt buộc.
   - Duyệt B1 và chốt phân quyền như FCL.
-- [x] 10/11 anh chốt: Công việc = list chung + nhãn màu; Thực hiện việc + Lệnh = TAB riêng theo loại theo quyền (không dựa Nhóm thực hiện); thêm Function LCL, CBT; B1 = quyền ACCEPT theo loại; B2 = quyền CLOSING theo loại + `Tbl_FclClosingScope` thêm Loại lệnh; Loại vận chuyển ở Job (không bắt buộc) + công việc (bắt buộc, KHÓA theo Job, dùng lại `ShippingTask.TaskType` 0/1/2). Còn chờ: tên cột Job, cột Loại lệnh mới trên lệnh.
+- [x] 10/11 anh chốt: Công việc = list chung + nhãn màu; Thực hiện việc + Lệnh = TAB riêng theo loại theo quyền (không dựa Nhóm thực hiện); thêm Function LCL, CBT; B1 = quyền ACCEPT theo loại; B2 = quyền CLOSING theo loại + `Tbl_FclClosingScope` thêm Loại lệnh; Loại vận chuyển ở Job (không bắt buộc) + công việc (bắt buộc, KHÓA theo Job, dùng lại `ShippingTask.TaskType`: 0/NULL = cũ chưa phân loại coi là FCL, 1=FCL, 2=LCL, 3=CBT; sửa cùng đợt 3 chỗ FE cũ hiểu 0=FCL/1=LCL). Còn chờ: tên cột Job, cột Loại lệnh mới trên lệnh.
 - [ ] CS CBT trả lời: lái xe thấy sai giờ máy phát (đề xuất nút "Đúng / Báo sai" trên app sau hoàn thành, cờ cho điều vận, chặn B1).
 - [ ] Sau đó: trình thiết kế phần nền (SQL) cho anh duyệt → pilot LCL → CBT → app lái xe.
 
