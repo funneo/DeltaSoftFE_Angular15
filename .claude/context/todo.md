@@ -4,7 +4,7 @@
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 
 ## ⏭ 2026-11-07 — Lệnh LCL + CBT dựa trên FCL v2 — CHỐT Ý TƯỞNG (docx), CHƯA thiết kế SQL / CHƯA code
-Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 09/11: +Số chì LCL theo công việc, bắt buộc trước B1, +Lịch sử cập nhật lệnh; script build docx-js ở scratchpad phiên, không lưu repo).
+Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 10/11: +Số chì LCL, +Lịch sử cập nhật, +giao diện tab theo loại, +phân quyền B1/B2 theo loại, +Loại vận chuyển ở Job/công việc) + kế hoạch `docs/lcl-cbt/Ke-hoach-trien-khai-LCL-CBT.docx` (bản 10/11; script build docx-js ở scratchpad phiên, không lưu repo).
 - Đã chốt:
   - Dùng chung `DispatchOrderFCL` + "Loại lệnh" theo loại hàng hóa ở Job (anh tự bổ sung ở Job).
   - Địa điểm dùng chung `CustomerLocations` theo KH như FCL; điểm mới gửi duyệt theo luồng sẵn có, chưa duyệt thì KHÔNG dùng. Cảng, Sân bay, kho CFS chung danh mục Cảng.
@@ -14,7 +14,7 @@ Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 09/1
   - LCL chỉ giữ Kho CFS (ẩn Số chì, nâng/hạ, hãng tàu, Booking, HĐ ngoài/phụ phí); hàng xuất (theo loại hình Job) thêm T/g có mặt kho CFS do CS nhập + cut-off, hiện trên app.
   - CBT: T/g KH yêu cầu không bắt buộc; mốc cửa khẩu do CS ghi, không bắt buộc.
   - Duyệt B1 và chốt phân quyền như FCL.
-- [ ] Anh duyệt đề xuất mục 6 docx: tách MENU + quyền theo loại (dùng chung component); số lệnh tiền tố `LCL-`/`CBT-`; `Tbl_FclClosingScope` thêm cột loại lệnh; app lái xe 1 màn chung hiện/ẩn theo loại.
+- [x] 10/11 anh chốt: Công việc = list chung + nhãn màu; Thực hiện việc + Lệnh = TAB riêng theo loại theo quyền (không dựa Nhóm thực hiện); thêm Function LCL, CBT; B1 = quyền ACCEPT theo loại; B2 = quyền CLOSING theo loại + `Tbl_FclClosingScope` thêm Loại lệnh; Loại vận chuyển ở Job (không bắt buộc) + công việc (bắt buộc, KHÓA theo Job, dùng lại `ShippingTask.TaskType` 0/1/2). Còn chờ: tên cột Job, cột Loại lệnh mới trên lệnh.
 - [ ] CS CBT trả lời: lái xe thấy sai giờ máy phát (đề xuất nút "Đúng / Báo sai" trên app sau hoàn thành, cờ cho điều vận, chặn B1).
 - [ ] Sau đó: trình thiết kế phần nền (SQL) cho anh duyệt → pilot LCL → CBT → app lái xe.
 
