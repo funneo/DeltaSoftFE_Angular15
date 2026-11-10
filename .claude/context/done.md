@@ -1,5 +1,12 @@
 # Completed Features
 
+## Phiên 2026-11-10 — LCL/CBT: chốt giao diện, phân quyền, loại vận chuyển — chỉ tài liệu (CHƯA SQL / CHƯA code)
+- Tài liệu bản 10/11: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (mục 3, 4, 6, 7) + `docs/lcl-cbt/Ke-hoach-trien-khai-LCL-CBT.docx` (5 giai đoạn, đã chốt, Q1–Q4, rủi ro). Commit `cc3a4b8`, `aa8de2a`.
+- Chốt: Công việc = list chung + nhãn màu (FCL xanh dương/LCL xanh lá/CBT cam); Thực hiện việc + Lệnh = TAB riêng theo loại theo quyền, không dựa Nhóm thực hiện; Function mới LCL, CBT; B1 = ACCEPT theo loại; B2 = CLOSING theo loại + `Tbl_FclClosingScope` thêm Loại lệnh.
+- Loại vận chuyển: Job (không bắt buộc, anh làm) + công việc (bắt buộc, KHÓA theo Job). Dùng lại `ShippingTask.TaskType` (rà 10/11: chỉ hiển thị/ẩn-hiện, không logic). Quy ước: 0/NULL = cũ coi là FCL, 1 FCL, 2 LCL, 3 CBT.
+- Rà SP: có TaskType ở Create/Update/Update_Logs/Duplicate + 6 SP Get của CS/điều vận/Receiving/GetById; THIẾU ở `SP_ShippingTask_GetBySearch`, `_UpdateOpMan`, SP lệnh FCL → SP mới song song ở GĐ1. 1.527 dòng NULL do màn tạo hàng loạt (que.le, mã RTC…) không gửi TaskType → BE truyền NULL đè mặc định 0.
+- Khác: tra lỗi lệnh VT2611/0778 mất lái xe khi đổi xe (xe 29C-150.84 EmployeeId=0, `changeVihicle` ghi đè; lệnh status 3 khóa ô Lái xe 1) — chờ anh duyệt sửa FE.
+
 ## Phiên 2026-11-09 — FCL v2: log thay đổi lệnh — BE nền + pilot CreateWithTO/UpdateWithTO — NewAPI ĐÃ COMMIT+PUSH `8cc307f` (build 0 lỗi), ✅ ĐÃ PUBLISH 10/11
 - SQL KHÔNG cần chạy thêm: 4 object `DispatchOrderFCLChangeLog` / type / `_Insert` / `_GetByRefNo` đã có trên DB từ 30/10 (verify read-only).
 - BE mới: model + repo + `Services/FclChangeLog/` (Queue Channel singleton, Worker BackgroundService, Diff, Builder whitelist) + controller riêng `DispatchOrderFCLChangeLog/GetByRefNo` (chỉ Admin). `Program.cs` +2 dòng đăng ký.
