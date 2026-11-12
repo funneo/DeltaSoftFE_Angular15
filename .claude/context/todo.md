@@ -3,6 +3,15 @@
 ## ★★ MỐC 2026-10-14 — anh xác nhận ĐÃ CHẠY SQL + DEPLOY HẾT các mục cũ (trước phiên 13/10)
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 
+## ▶ 2026-11-12 — Phiếu cấp dầu: Chốt dữ liệu lưu Giá thực tế (FE-only) — ✅ commit `e008d82` (tsc 0 lỗi) — chi tiết done.md
+- ⬜ `ng build` + deploy FE; test: nhập Giá thực tế → Chốt → mở lại còn giá, `TotalCostIgas` = SL × giá.
+- ❓ PA B (BE, chưa làm): job IGAS mặc định `RealOilPrice = OilPrice` thay vì 0.
+- ❓ PA C (chưa làm): SQL điền `RealOilPrice = OilPrice` + tính lại `TotalCostIgas` cho ~1.300 phiếu đã chốt giá 0 — anh gọi mới soạn.
+
+## ❓ 2026-11-12 — Phiếu thu/chi: lưu vết sửa/xóa + khóa sửa theo kỳ — CHỈ MỚI PHÂN TÍCH, chờ anh quyết có làm không
+- Hiện không có lưu vết (chi tiết done.md). Hướng nếu làm: bảng log mới song song (cũ → mới theo trường + định khoản, ghi người/giờ xóa), không đụng `SP_Accounts_Update`; bàn bằng lời trước.
+- Lệch quyền: API Accounts dùng `THU_*` cho cả phiếu chi, FE phiếu chi gate `CHI_*`.
+
 ## ⏭ 2026-11-07 — Lệnh LCL + CBT dựa trên FCL v2 — CHỐT Ý TƯỞNG (docx), CHƯA thiết kế SQL / CHƯA code
 Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 10/11: +Số chì LCL, +Lịch sử cập nhật, +giao diện tab theo loại, +phân quyền B1/B2 theo loại, +Loại vận chuyển ở Job/công việc) + kế hoạch `docs/lcl-cbt/Ke-hoach-trien-khai-LCL-CBT.docx` (bản 10/11; script build docx-js ở scratchpad phiên, không lưu repo).
 - Đã chốt:

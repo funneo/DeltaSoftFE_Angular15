@@ -1,5 +1,10 @@
 # Completed Features
 
+## Phiên 2026-11-12 — Phiếu cấp dầu: Giá thực tế mất khi Chốt (FE fix) + rà sửa/lưu vết phiếu thu-chi (chỉ phân tích)
+- **Giá dầu thực tế = 0** (cấp dầu xe nhà/chung/theo lệnh, modal dùng chung `modal-driver-fuel-approval`): người dùng nhập "Giá thực tế" rồi bấm thẳng **Chốt dữ liệu** → `SP_DriverFuelApproval_Approved` không có tham số giá → mất. Chỉ nút "Cập nhật Igas" (`UpdateRefuelingIgas`) mới lưu giá. Thêm: job đồng bộ IGAS (`IgasController` ~dòng 263) tạo object mới không gán `RealOilPrice` → ghi 0 lúc đầu (chỉ 1 lần/phiếu vì `GetNonUpdateIgas` lọc `RefuelingTimeIgas IS NULL`). Số liệu từ 01/10: ~1.300 phiếu đã chốt có giá 0.
+- Sửa FE (anh chọn PA A): `chotPhieu()` gọi `updateRefuelingIgas(copy)` trước, OK mới `approved` (tách `approvedAfterSave()`). tsc 0 lỗi file sửa. Commit `e008d82`. KHÔNG sửa BE/SQL; dữ liệu cũ vẫn 0.
+- **Phiếu thu/chi sau tạo** (chỉ trả lời, không code): sửa được người trả/nhận, đại diện, quỹ, ngày chứng từ, số CT, nội dung, ghi chú, thủ quỹ, định khoản; khóa số tiền, loại tiền, chi nhánh, số phiếu, ngày lập, đối tượng; phiếu chi không đổi chi tiết thanh toán. `SP_Accounts_Update` ghi đè + MERGE định khoản (xóa hẳn). Không khóa theo kỳ/trạng thái. **Không lưu vết**: chỉ `UpdatedBy/UpdatedDate` lần cuối, không trigger, `ChangeLogs` trống; xóa chỉ `Deleted=1` không ghi người xóa. API thu+chi đều gắn quyền `THU_*` trong khi FE phiếu chi gate `CHI_*`.
+
 ## Phiên 2026-11-10 — LCL/CBT: chốt giao diện, phân quyền, loại vận chuyển — chỉ tài liệu (CHƯA SQL / CHƯA code)
 - Tài liệu bản 10/11: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (mục 3, 4, 6, 7) + `docs/lcl-cbt/Ke-hoach-trien-khai-LCL-CBT.docx` (5 giai đoạn, đã chốt, Q1–Q4, rủi ro). Commit `cc3a4b8`, `aa8de2a`.
 - Chốt: Công việc = list chung + nhãn màu (FCL xanh dương/LCL xanh lá/CBT cam); Thực hiện việc + Lệnh = TAB riêng theo loại theo quyền, không dựa Nhóm thực hiện; Function mới LCL, CBT; B1 = ACCEPT theo loại; B2 = CLOSING theo loại + `Tbl_FclClosingScope` thêm Loại lệnh.
