@@ -139,6 +139,18 @@ export class ModalDriverFuelApprovalComponent implements OnInit {
     this._notificationService.printConfirmationDialog(
       MessageContstants.CLOSING_FUEL_DRIVER,
       () => {
+        // SP_Approved không nhận RealOilPrice -> lưu S/L, giờ đổ, giá thực tế trước rồi mới chốt
+        this.driverFuelApprovalService.updateRefuelingIgas(Object.assign({}, this.entity)).subscribe(
+          (resUpd: ResponseValue<any>) => {
+            if (resUpd.code == '200' || resUpd.code == '201') this.approvedAfterSave();
+            else this._notificationService.printErrorMessage(MessageContstants.UPDATED_ERR_MSG + resUpd.code);
+          }
+        );
+      }
+    );
+  }
+
+  private approvedAfterSave() {
         this.driverFuelApprovalService.approved(this.entity).subscribe(
           (res: ResponseValue<any>) => {
             if (res.code == '200' || res.code == '201') {
@@ -158,10 +170,8 @@ export class ModalDriverFuelApprovalComponent implements OnInit {
             this.flagSave = false;
           }
         );
-      }
-    );
   }
-  
+
   loadEmployee() {
     const params = new HttpParams().set(
       'branchId',
