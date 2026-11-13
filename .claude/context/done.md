@@ -1,5 +1,9 @@
 # Completed Features
 
+## Phiên 2026-11-13 — Đề nghị xuất hóa đơn: Xuất Excel lỗi 500 "Nullable object must have a value" — NewAPI ĐÃ COMMIT+PUSH `6d76f3d` (build 0 lỗi), CHỜ PUBLISH
+- Ca thật HCM3321 (Id 19039): 2 dòng diễn giải chỉ chữ (TT 11, 12) lưu `Amount = NULL` (hóa đơn cũ lưu 0) → `ReportsController.Export_Invoice` ép `(decimal)item.Amount` nổ.
+- Sửa: cột J (tiền VAT) = `Math.Ceiling((item.Amount ?? 0) * (result.VatRate ?? 0) / 100)`. Không sửa FE/SQL. Cần tắt API → build → deploy, rồi bấm Excel HCM3321 để kiểm.
+
 ## Phiên 2026-11-12 — Phiếu cấp dầu: Giá thực tế mất khi Chốt (FE fix) + rà sửa/lưu vết phiếu thu-chi (chỉ phân tích)
 - **Giá dầu thực tế = 0** (cấp dầu xe nhà/chung/theo lệnh, modal dùng chung `modal-driver-fuel-approval`): người dùng nhập "Giá thực tế" rồi bấm thẳng **Chốt dữ liệu** → `SP_DriverFuelApproval_Approved` không có tham số giá → mất. Chỉ nút "Cập nhật Igas" (`UpdateRefuelingIgas`) mới lưu giá. Thêm: job đồng bộ IGAS (`IgasController` ~dòng 263) tạo object mới không gán `RealOilPrice` → ghi 0 lúc đầu (chỉ 1 lần/phiếu vì `GetNonUpdateIgas` lọc `RefuelingTimeIgas IS NULL`). Số liệu từ 01/10: ~1.300 phiếu đã chốt có giá 0.
 - Sửa FE (anh chọn PA A): `chotPhieu()` gọi `updateRefuelingIgas(copy)` trước, OK mới `approved` (tách `approvedAfterSave()`). tsc 0 lỗi file sửa. Commit `e008d82`. KHÔNG sửa BE/SQL; dữ liệu cũ vẫn 0.
