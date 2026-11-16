@@ -1,5 +1,10 @@
 # Completed Features
 
+## Phiên 2026-11-16 — LCL/CBT: chốt máy phát CBT — chỉ tài liệu (CHƯA SQL / CHƯA code)
+- Anh chốt: điều vận nhập máy phát CBT, sửa mọi thông tin tới trước Duyệt B1; lái xe thắc mắc → Zalo, điều vận nhập lại; không nút Đúng/Báo sai, không chặn B1, không lưu trao đổi.
+- Rà CBT cũ (`DispatchOrderCBT`, 82 lệnh): 52 lệnh nhập `GeneratorHours` (105–146h, định mức 3,5/4), `StartPluggingInTime` 2, `UnpluggingTime` 0 ⇒ nhập SỐ GIỜ, dùng nguyên section máy phát FCL v2 + điền sẵn định mức theo 40/45ft.
+- 2 docx `docs/lcl-cbt/` lên bản 16/11 (bỏ Q3, bỏ mục 3.5 xác nhận giờ máy phát, mục 8 hết câu chờ).
+
 ## Phiên 2026-11-13 — Đề nghị xuất hóa đơn: Xuất Excel lỗi 500 "Nullable object must have a value" — NewAPI ĐÃ COMMIT+PUSH `6d76f3d` (build 0 lỗi), CHỜ PUBLISH
 - Ca thật HCM3321 (Id 19039): 2 dòng diễn giải chỉ chữ (TT 11, 12) lưu `Amount = NULL` (hóa đơn cũ lưu 0) → `ReportsController.Export_Invoice` ép `(decimal)item.Amount` nổ.
 - Sửa: cột J (tiền VAT) = `Math.Ceiling((item.Amount ?? 0) * (result.VatRate ?? 0) / 100)`. Không sửa FE/SQL. Cần tắt API → build → deploy, rồi bấm Excel HCM3321 để kiểm.

@@ -13,18 +13,18 @@
 - Lệch quyền: API Accounts dùng `THU_*` cho cả phiếu chi, FE phiếu chi gate `CHI_*`.
 
 ## ⏭ 2026-11-07 — Lệnh LCL + CBT dựa trên FCL v2 — CHỐT Ý TƯỞNG (docx), CHƯA thiết kế SQL / CHƯA code
-Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 10/11: +Số chì LCL, +Lịch sử cập nhật, +giao diện tab theo loại, +phân quyền B1/B2 theo loại, +Loại vận chuyển ở Job/công việc) + kế hoạch `docs/lcl-cbt/Ke-hoach-trien-khai-LCL-CBT.docx` (bản 10/11; script build docx-js ở scratchpad phiên, không lưu repo).
+Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 16/11: +Số chì LCL, +Lịch sử cập nhật, +giao diện tab theo loại, +phân quyền B1/B2 theo loại, +Loại vận chuyển ở Job/công việc, +máy phát CBT) + kế hoạch `docs/lcl-cbt/Ke-hoach-trien-khai-LCL-CBT.docx` (bản 16/11, sửa trực tiếp XML; script build docx-js ở scratchpad phiên, không lưu repo).
 - Đã chốt:
   - Dùng chung `DispatchOrderFCL` + "Loại lệnh" theo loại hàng hóa ở Job (anh tự bổ sung ở Job).
   - Địa điểm dùng chung `CustomerLocations` theo KH như FCL; điểm mới gửi duyệt theo luồng sẵn có, chưa duyệt thì KHÔNG dùng. Cảng, Sân bay, kho CFS chung danh mục Cảng.
   - Thêm/đổi điểm sau tạo lệnh = sửa lộ trình FCL (điều vận, tới trước B1), KHÔNG làm thao tác "Đổi điểm giao" riêng.
   - Dầu LCL = lít/100km của xe; CBT = định mức xe (hiện có = hàng nóng) + THÊM trường định mức hàng lạnh ở Danh mục phương tiện; CS chọn nóng/lạnh trên công việc.
-  - Máy phát CBT 40ft 3,5 L/h, 45ft 4 L/h; giờ cắm/rút do điều vận nhập, lái xe xác nhận trên app.
+  - Máy phát CBT (chốt 16/11): dùng nguyên section máy phát FCL v2 — điều vận nhập SỐ GIỜ (không giờ cắm/rút: CBT cũ 52/82 lệnh nhập `GeneratorHours`, giờ cắm 2, giờ rút 0), định mức điền sẵn 40ft 3,5 L/h / 45ft 4 L/h; điều vận sửa MỌI thông tin tới trước Duyệt B1 (giữ khóa `postB1Locked`). Lái xe chỉ xem trên app, thắc mắc → Zalo, điều vận nhập lại; KHÔNG nút Đúng/Báo sai, KHÔNG chặn B1, KHÔNG lưu trao đổi.
   - LCL chỉ giữ Kho CFS (ẩn Số chì, nâng/hạ, hãng tàu, Booking, HĐ ngoài/phụ phí); hàng xuất (theo loại hình Job) thêm T/g có mặt kho CFS do CS nhập + cut-off, hiện trên app.
   - CBT: T/g KH yêu cầu không bắt buộc; mốc cửa khẩu do CS ghi, không bắt buộc.
   - Duyệt B1 và chốt phân quyền như FCL.
 - [x] 10/11 anh chốt: Công việc = list chung + nhãn màu; Thực hiện việc + Lệnh = TAB riêng theo loại theo quyền (không dựa Nhóm thực hiện); thêm Function LCL, CBT; B1 = quyền ACCEPT theo loại; B2 = quyền CLOSING theo loại + `Tbl_FclClosingScope` thêm Loại lệnh; Loại vận chuyển ở Job (không bắt buộc) + công việc (bắt buộc, KHÓA theo Job, dùng lại `ShippingTask.TaskType`: 0/NULL = cũ chưa phân loại coi là FCL, 1=FCL, 2=LCL, 3=CBT; sửa cùng đợt 3 chỗ FE cũ hiểu 0=FCL/1=LCL). Còn chờ: tên cột Job, cột Loại lệnh mới trên lệnh.
-- [ ] CS CBT trả lời: lái xe thấy sai giờ máy phát (đề xuất nút "Đúng / Báo sai" trên app sau hoàn thành, cờ cho điều vận, chặn B1).
+- [x] 16/11 chốt câu cuối (sai giờ máy phát → Zalo, điều vận nhập lại). 2 docx cập nhật bản 16/11: bỏ Q3 + mục 3.5 "Xác nhận giờ máy phát", 4.2 chỉ còn hiện giờ máy phát (chỉ xem); docx so sánh mục 8 không còn câu chờ.
 - [ ] Sau đó: trình thiết kế phần nền (SQL) cho anh duyệt → pilot LCL → CBT → app lái xe.
 
 ## ▶ 2026-11-03 — FCL v2: tab Chi phí, đổi Số lượng không còn nhân Tổng (FE-only, tsc 0 lỗi) — ✅ commit+push, ✅ ĐÃ BUILD+DEPLOY 2026-11-07
