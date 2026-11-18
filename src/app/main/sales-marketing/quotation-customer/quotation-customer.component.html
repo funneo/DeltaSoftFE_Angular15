@@ -145,6 +145,10 @@
               (click)="showFiles(item)">
               <i class="fa fa-file-pdf-o" aria-hidden="true"></i> File báo giá...
             </button>
+            <button *ngIf="_isAdmin && item.status && item.step > 2" type="button" class="btn btn-warning btn-sm action-file"
+              title="Gia hạn báo giá" (click)="$event.stopPropagation(); showExtend(item)">
+              <i class="fa fa-calendar-plus-o" aria-hidden="true"></i> Gia hạn
+            </button>
           </td>
         </tr>
         <tr *ngIf="listFilter?.length == 0">
@@ -185,6 +189,8 @@
 </modal-quotation-customer>
 <modal-digitization-quotation-customer *ngIf="viewModalDigital" (SaveSuccess)="saveSuccess()" (CloseModal)="closeModal()">
 </modal-digitization-quotation-customer>
+<modal-quotation-customer-extend *ngIf="viewModalExtend" (SaveSuccess)="saveSuccess()" (CloseModal)="viewModalExtend = false">
+</modal-quotation-customer-extend>
 <modal-attachfile *ngIf="viewAttachFiles" (SaveSuccess)="saveSuccessFile($event)" (CloseModal)="closeModalFile()">
 </modal-attachfile>
 <!-- <div [ngBusy]="busy"></div> -->

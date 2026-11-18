@@ -4,6 +4,7 @@ import { Component, OnInit, ViewChild } from "@angular/core";
 import { ActivatedRoute } from "@angular/router";
 import { ModalDigitizationQuotationCustomerComponent } from "@app/shared/components/sales-marketing/modal-digitization-quotation-customer/modal-digitization-quotation-customer.component";
 import { ModalQuotationCustomerComponent } from "@app/shared/components/sales-marketing/modal-quotation-customer/modal-quotation-customer.component";
+import { ModalQuotationCustomerExtendComponent } from "@app/shared/components/sales-marketing/modal-quotation-customer-extend/modal-quotation-customer-extend.component";
 import { ModalAttachfileComponent } from "@app/shared/components/systems/modal-attachfile/modal-attachfile.component";
 import { MessageContstants } from "@app/shared/constants";
 import { SystemContstants } from "@app/shared/constants/SystemConstants";
@@ -91,6 +92,17 @@ export class QuotationCustomerComponent implements OnInit {
     this._branchId = Number.parseInt(user.branchId);
     this._accept = this.authService.hasPermission("QUOTATIONCUSTOMER_ACCEPT");
     this._auth = Number.parseInt(user.authorisationLevel);
+    this._isAdmin = !!user.isAdmin;
+  }
+
+  // ===== Gia hạn báo giá (chỉ Admin) =====
+  _isAdmin = false;
+  viewModalExtend = false;
+  @ViewChild(ModalQuotationCustomerExtendComponent, { static: false })
+  modalExtend: ModalQuotationCustomerExtendComponent;
+  showExtend(item: QuotationCustomer): void {
+    this.viewModalExtend = true;
+    setTimeout(() => this.modalExtend?.show(item), 50);
   }
 
   ngOnInit(): void {

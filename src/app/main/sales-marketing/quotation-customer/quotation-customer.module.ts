@@ -12,6 +12,7 @@ import { QuotationCustomerComponent } from './quotation-customer.component';
 import { ModalAttachfileModule } from '@app/shared/components/systems/modal-attachfile/modal-attachfile.module';
 import { ModalDigitizationQuotationCustomerModule } from '@app/shared/components/sales-marketing/modal-digitization-quotation-customer/modal-digitization-quotation-customer.module';
 import { NgxSpinnerModule } from 'ngx-spinner';
+import { ModalQuotationCustomerExtendModule } from '@app/shared/components/sales-marketing/modal-quotation-customer-extend/modal-quotation-customer-extend.module';
 
 @NgModule({
   declarations: [QuotationCustomerComponent],
@@ -27,7 +28,8 @@ import { NgxSpinnerModule } from 'ngx-spinner';
     ModalQuotationCustomerModule,
     ModalAttachfileModule,
     ModalDigitizationQuotationCustomerModule,
-    NgxSpinnerModule
+    NgxSpinnerModule,
+    ModalQuotationCustomerExtendModule
   ],
   providers:[
     DatePipe,

@@ -122,6 +122,18 @@ export class QuotationCustomerService extends BaseService {
       else return response;
     }), catchError(this.handleError));
   }
+  /** Gia hạn báo giá (chỉ Admin). fDate dạng yyyyMMdd */
+  extend(id: number, fDate: string, reason: string) {
+    let p: FromBodyBase<QuotationCustomer> = { item: { id: id, fDate: fDate, reason: reason } };
+    p.tokenKey = this.token;
+    return this.http.post(`${environment.apiUrl}/api/QuotationCustomer/extend`, p)
+    .pipe(map((response: any) => {
+      if (response.code == '401')
+        this.authService.logout();
+      else return response;
+    }), catchError(this.handleError));
+  }
+
   acceptStep(item:QuotationCustomer) {
     let p: FromBodyBase<QuotationCustomer> = {item:{}};
     p.item = item;
