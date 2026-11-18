@@ -7,8 +7,9 @@
 - ❓ Có cần màn xem lịch sử gia hạn (`Tbl_QuotationCustomerExtendLog`) không — chờ anh.
 
 ## ▶ 2026-11-18 — BẢO MẬT: còn lại sau khi vá đợt đầu — NewAPI đã commit+push `f14169f`, chi tiết done.md + `NewAPI/docs/security/`
-- ⬜ **Chạy SQL hardening** `Security_UserRole_InlineSQL_to_SP_20261118.sql` (16 SP) + `Security_Fix_SP_AttachFiles_GetAll_20261118.sql` TRƯỚC → redeploy API → test E2E (đăng nhập, đổi/reset mật khẩu, gán/gỡ role, xem chi tiết user).
-- ⬜ **Chạy SQL ứng cứu (local, không commit)**: `Security_Incident` (khóa arx*), `Security_ResetDefaultPassword` (đổi mật khẩu chung bị lộ, trừ arx*).
+- ✅ **ĐÃ CHẠY CẢ 4 SQL** (18/11): `Security_UserRole_InlineSQL_to_SP` (16 SP) + `Security_Fix_SP_AttachFiles` (hardening) + `Security_Incident` (khóa arx*) + `Security_ResetDefaultPassword` (đổi mật khẩu chung).
+- ⬜ **REDEPLOY API `f14169f`** → test E2E: đăng nhập; đổi mật khẩu người khác → 403; non-Admin reset Admin → 403; gán/gỡ role; xem chi tiết user (không còn hash). Bản vá phân quyền CHỈ hiệu lực sau redeploy.
+- ⬜ **Rà quét SP còn dynamic SQL** (`EXEC(@...)`) tìm injection khác — làm trước khi hạ quyền DB.
 - ⬜ **Chuyển nốt 5 file inline SQL → SP** (để hạ quyền DB về EXEC-only): CountryRepository (SELECT Country), FeeCodeRepository (SELECT FeeCodes), Dgas3AdditionalFeeSyncService, Dgas3DispatchOrderSyncService, Dgas3FclSyncService. Rồi mới soạn .sql revoke db_owner/datareader/writer/ddladmin + GRANT EXECUTE ON SCHEMA::dbo cho `delta.erp`.
 - ⬜ **Xoay secret còn lại**: DB password, Api-Key, AWS, FCM; cập nhật Tokens:Key ở `PublishNet9/appsettings.json`; restart cả 2 API; chặn IP 180.178.51.186.
 - ⬜ **Đợt 1 còn lại**: FallbackPolicy + khóa ~19 controller mở (danh sách trong plan doc).
