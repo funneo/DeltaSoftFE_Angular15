@@ -1,5 +1,11 @@
 # Pending / In-Progress Work
 
+## ▶ 2026-11-18 — Báo giá KH: Gia hạn (chỉ Admin) + dropdown báo giá Lô hàng appendTo body — FE+BE ĐÃ COMMIT+PUSH, chi tiết done.md
+- ⬜ Chạy `NewAPI/migrations/Migration_QuotationCustomer_Extend_20261118.sql` (delta.erp) — ⚠ TRƯỚC khi deploy BE.
+- ⬜ Tắt API → build → deploy BE; `ng build` FE → deploy.
+- ⬜ Test: Admin gia hạn HN2610222 (khách 589) → kiểm tra hiện lại trong dropdown Lô hàng của khách 589; tài khoản không phải Admin không thấy nút / API trả 403.
+- ❓ Có cần màn xem lịch sử gia hạn (`Tbl_QuotationCustomerExtendLog`) không — chờ anh.
+
 ## ▶ 2026-11-18 — BẢO MẬT: còn lại sau khi vá đợt đầu — NewAPI đã commit+push `f14169f`, chi tiết done.md + `NewAPI/docs/security/`
 - ⬜ **Chạy SQL hardening** `Security_UserRole_InlineSQL_to_SP_20261118.sql` (16 SP) + `Security_Fix_SP_AttachFiles_GetAll_20261118.sql` TRƯỚC → redeploy API → test E2E (đăng nhập, đổi/reset mật khẩu, gán/gỡ role, xem chi tiết user).
 - ⬜ **Chạy SQL ứng cứu (local, không commit)**: `Security_Incident` (khóa arx*), `Security_ResetDefaultPassword` (đổi mật khẩu chung bị lộ, trừ arx*).

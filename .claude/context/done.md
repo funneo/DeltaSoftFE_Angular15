@@ -1,5 +1,14 @@
 # Completed Features
 
+## Phiên 2026-11-18 (chiều) — Báo giá KH: dropdown bị che + Gia hạn báo giá (chỉ Admin) — FE+BE ĐÃ COMMIT+PUSH (tsc/build 0 lỗi), CHỜ CHẠY SQL + DEPLOY
+- **Tra lỗi "không thấy HN2611233" ở Lô hàng (duoc.tran, CN VT):** không phải lỗi dữ liệu — `SP_QuotationCustomer_GetAll` KHÔNG lọc chi nhánh, chỉ lọc `Deleted=0, Status>=1, Step>2, IsFinish=0, Type IN(0,1), CustomerId`; HN2611233 (khách 576) có trong 26 dòng trả về, nằm cuối list → dropdown bị khung modal che. Sửa FE `modal-shipment` ng-select báo giá `appendTo="body"`.
+- **HN2610222 (Id 2677):** khách 589, hạn 20→31/10/2026, `IsFinish=1` (bấm "Kết thúc" = `SP_QuotationCustomer_Accept` KeyWord='Finish'). Không có job tự hết hạn; FDate KHÔNG ảnh hưởng dropdown, chỉ IsFinish. Không có SP gia hạn báo giá KH (chỉ `SP_CanonQuotationSubcontractors_Extend` cho NTP Canon).
+- **Gia hạn báo giá (mới):**
+  - SQL `NewAPI/migrations/Migration_QuotationCustomer_Extend_20261118.sql`: bảng `Tbl_QuotationCustomerExtendLog` (OldFDate/NewFDate/OldIsFinish/Reason/CreatedBy) + `SP_QuotationCustomer_Extend(@Id,@FDate,@Reason,@UserId)` — chặn chưa duyệt (Step<=2), ngày mới <= hạn cũ, thiếu lý do; set FDate + `IsFinish=0` + UpdatedBy/Date + ghi log, 1 transaction. Nhận Id (QuotationNo có 34 trống + 6 trùng).
+  - BE: `POST /api/QuotationCustomer/Extend` — TokenKey + `User.IsInRole("Admin")` (403), FDate `yyyyMMdd`, trả message RAISERROR về FE.
+  - FE: modal mới `modal-quotation-customer-extend` (số BG, hạn hiện tại, ngày mới, lý do); nút "Gia hạn" ở list Báo giá KH chỉ hiện khi `isAdmin && status && step>2`.
+- Chưa có màn xem lịch sử gia hạn (chỉ lưu bảng log).
+
 ## Phiên 2026-11-18 — BẢO MẬT ERP: ứng cứu sự cố + vá lỗ hổng + chống SQL injection — NewAPI ĐÃ COMMIT+PUSH `f14169f` (build 0 lỗi), CHỜ CHẠY SQL + REDEPLOY
 - **Bối cảnh:** sự cố 18/11 — IP 180.178.51.186 chiếm `thong.lv`/`lanh.tv` (mật khẩu yếu), khai thác lỗ hổng `resetpass` lên Admin, tạo `arxops`/`arxdraftd886`/`arxlow1`/`arxrst1`, ghi đè hàng loạt 952/963 mật khẩu (~01:31) qua SQL injection ở `SP_AttachFiles_GetAll`. Tokens:Key còn là chuỗi mẫu đoán được → có thể giả token Admin.
 - **Vá phân quyền (BE-only, cần redeploy):** `resetpass` +[ClaimRequirement(USER,UPDATE)] + chặn non-Admin reset tài khoản Admin; `changedpass` + rate-limit + chỉ đổi mật khẩu của chính mình; Garages changedpass chỉ đổi tài khoản IsExternal (ghi log lần bị chặn); UserController `/detail` +VIEW + ẩn hash; `assign-to-roles` +UPDATE.
