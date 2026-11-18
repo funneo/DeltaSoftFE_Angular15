@@ -159,7 +159,7 @@
                     </label>
                     <div class="col-sm-7">
                       <div class="input-group">
-                      <ng-select name="quotationId" [items]="listQuotation" bindLabel="quotationNo" bindValue="id"
+                      <ng-select name="quotationId" [items]="listQuotation" bindLabel="quotationNo" bindValue="id" appendTo="body"
                         [(ngModel)]="entity.quotationId" required placeholder="Chọn báo giá"  [clearable]="false" required [readonly]="flagXem" (change)="changedBaoGia($event)">
                       </ng-select>
 
