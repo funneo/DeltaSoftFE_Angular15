@@ -1,5 +1,14 @@
 # Pending / In-Progress Work
 
+## ▶ 2026-11-18 — BẢO MẬT: còn lại sau khi vá đợt đầu — NewAPI đã commit+push `f14169f`, chi tiết done.md + `NewAPI/docs/security/`
+- ⬜ **Chạy SQL hardening** `Security_UserRole_InlineSQL_to_SP_20261118.sql` (16 SP) + `Security_Fix_SP_AttachFiles_GetAll_20261118.sql` TRƯỚC → redeploy API → test E2E (đăng nhập, đổi/reset mật khẩu, gán/gỡ role, xem chi tiết user).
+- ⬜ **Chạy SQL ứng cứu (local, không commit)**: `Security_Incident` (khóa arx*), `Security_ResetDefaultPassword` (đổi mật khẩu chung bị lộ, trừ arx*).
+- ⬜ **Chuyển nốt 5 file inline SQL → SP** (để hạ quyền DB về EXEC-only): CountryRepository (SELECT Country), FeeCodeRepository (SELECT FeeCodes), Dgas3AdditionalFeeSyncService, Dgas3DispatchOrderSyncService, Dgas3FclSyncService. Rồi mới soạn .sql revoke db_owner/datareader/writer/ddladmin + GRANT EXECUTE ON SCHEMA::dbo cho `delta.erp`.
+- ⬜ **Xoay secret còn lại**: DB password, Api-Key, AWS, FCM; cập nhật Tokens:Key ở `PublishNet9/appsettings.json`; restart cả 2 API; chặn IP 180.178.51.186.
+- ⬜ **Đợt 1 còn lại**: FallbackPolicy + khóa ~19 controller mở (danh sách trong plan doc).
+- ❓ Đợt 2–3 (token 2 lớp + security stamp RAM, [IpAllowlist], trigger chặn ghi đè hàng loạt Users, lockout theo username, ép đổi mật khẩu lần đầu, 2FA Admin/IT, cảnh báo realtime) — chờ anh duyệt thứ tự.
+- ❓ Chờ anh xác nhận: IP 14.232.219.199 (login Admin từ 30/10) là người nội bộ hay kẻ tấn công thứ 2? Có ai chủ động reset hàng loạt mật khẩu không? Danh sách IP văn phòng+VPN? Chỗ lưu secret?
+
 ## ★★ MỐC 2026-10-14 — anh xác nhận ĐÃ CHẠY SQL + DEPLOY HẾT các mục cũ (trước phiên 13/10)
 ⇒ Mọi dòng `⬜ chạy SQL` / `⬜ build/publish/deploy` ở các section 2026-10-02 → 2026-10-10 bên dưới (FCL v2 MỐC B + khóa lái xe, Export FCL TongKm, Chốt dầu bỏ chồng ngày + Source 7, Nhân viên Email cá nhân, dGas3 Đợt 2, Admin sửa phiếu cấp dầu đã xuất, F051 Thu chi Xưởng) coi như XONG. Verify read-only `sys.objects.modify_date`: `SP_DispatchOrderFCL_GetExport` 10/10 14:46, `SP_DriverFuelClosing_Update` 08/10 16:28, `SP_Employee_Create/Update` 05/10 15:58, `SP_DispatchOrderFCL_GetPerformance` 13/10 10:46. Còn lại ở các section đó: test E2E + các dòng ❓ chờ anh quyết.
 

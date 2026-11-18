@@ -1,5 +1,12 @@
 # Completed Features
 
+## Phiên 2026-11-18 — BẢO MẬT ERP: ứng cứu sự cố + vá lỗ hổng + chống SQL injection — NewAPI ĐÃ COMMIT+PUSH `f14169f` (build 0 lỗi), CHỜ CHẠY SQL + REDEPLOY
+- **Bối cảnh:** sự cố 18/11 — IP 180.178.51.186 chiếm `thong.lv`/`lanh.tv` (mật khẩu yếu), khai thác lỗ hổng `resetpass` lên Admin, tạo `arxops`/`arxdraftd886`/`arxlow1`/`arxrst1`, ghi đè hàng loạt 952/963 mật khẩu (~01:31) qua SQL injection ở `SP_AttachFiles_GetAll`. Tokens:Key còn là chuỗi mẫu đoán được → có thể giả token Admin.
+- **Vá phân quyền (BE-only, cần redeploy):** `resetpass` +[ClaimRequirement(USER,UPDATE)] + chặn non-Admin reset tài khoản Admin; `changedpass` + rate-limit + chỉ đổi mật khẩu của chính mình; Garages changedpass chỉ đổi tài khoản IsExternal (ghi log lần bị chặn); UserController `/detail` +VIEW + ẩn hash; `assign-to-roles` +UPDATE.
+- **Chống SQL injection:** UserRepository + RoleRepository bỏ toàn bộ inline SQL (Users/Roles/UserRoles/UserHandlingGroup) → 16 SP tham số hóa mới song song (`SP_sys_User_*`, `SP_sys_Role_*`); vá `SP_AttachFiles_GetAll` (bỏ dynamic SQL). Chuẩn bị hạ quyền `delta.erp` về EXEC-only.
+- **Khác:** .gitignore appsettings.json + appsettings.example.json (`c3b51cb`); đổi Tokens:Key sang chuỗi ngẫu nhiên, đồng bộ DraftAPI. Kế hoạch + SQL ứng cứu (Security_Incident, Security_ResetDefaultPassword) GIỮ LOCAL (không commit — chứa hash mật khẩu mặc định + tên tài khoản kẻ tấn công). Chi tiết: `NewAPI/docs/security/Ke-hoach-bao-mat-ERP-20261118.md`.
+- **CHỜ ANH:** (1) chạy `Security_UserRole_InlineSQL_to_SP` + `Security_Fix_SP_AttachFiles` TRƯỚC → redeploy API → test E2E; (2) chạy `Security_Incident` + `Security_ResetDefaultPassword` (local); (3) chuyển nốt 5 file còn lại (CountryRepository, FeeCodeRepository, 3 service Dgas3) rồi mới hạ quyền DB; (4) xoay các secret còn lại (DB pass, ApiKeys, AWS, FCM), cập nhật token key ở PublishNet9, chặn IP 180.178.51.186.
+
 ## Phiên 2026-11-16 — LCL/CBT: chốt máy phát CBT — chỉ tài liệu (CHƯA SQL / CHƯA code)
 - Anh chốt: điều vận nhập máy phát CBT, sửa mọi thông tin tới trước Duyệt B1; lái xe thắc mắc → Zalo, điều vận nhập lại; không nút Đúng/Báo sai, không chặn B1, không lưu trao đổi.
 - Rà CBT cũ (`DispatchOrderCBT`, 82 lệnh): 52 lệnh nhập `GeneratorHours` (105–146h, định mức 3,5/4), `StartPluggingInTime` 2, `UnpluggingTime` 0 ⇒ nhập SỐ GIỜ, dùng nguyên section máy phát FCL v2 + điền sẵn định mức theo 40/45ft.
