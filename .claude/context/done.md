@@ -1,5 +1,12 @@
 # Completed Features
 
+## Phiên 2026-11-19 → 11-23 — LCL/CBT nền (Loại vận chuyển Job + công việc + loại điểm giao nhận V2) + vé giấy FeeId 0 + rà bảo mật sau 18/11 + điều tra ngày Debit — FE + NewAPI ĐÃ COMMIT+PUSH 23/11, CHỜ DEPLOY BE+FE CÙNG LÚC
+- **Loại vận chuyển:** Job dùng lại `Shipment.ShippingType` (0 FCL/1 LCL/2 CBT; dịch vụ 1171 khóa cứng CBT). Công việc `ShippingTask.TaskType` (1 FCL/2 LCL/3 CBT, 0/NULL cũ = FCL) bắt buộc, lấy theo Job + khóa; công việc cũ giữ FCL. Hằng số `TransportTypeConstants`.
+- **Loại điểm giao nhận:** `ShippingTask.PickupLocationType/DeliveryLocationType` (1 KH locations, 2 cảng; NULL = luật cũ theo 1174). SQL `Migration_ShippingTask_LocationType_V2_20261120.sql` ĐÃ CHẠY 22/11 (EXCEPT 0/0, 46.424 dòng). BE 5 hàm repo gọi SP V2. FE ô điểm gộp, FCL v2 `addToRoute` ưu tiên loại đã lưu, Copy lấy từ chi tiết.
+- **Vé giấy FeeId 0:** NewAPI `4f3e11e` + SQL đã chạy (xem todo).
+- **Bảo mật sau 18/11 (chỉ đọc):** không thấy dấu hiệu bị chiếm lại (IP 180.178.51.186 vắng, arx* đã xóa, Admin chỉ Admin/cuongnv/bac.vu, không ghi đè mật khẩu hàng loạt, SP_AttachFiles đã vá). Chờ anh xác nhận IP 14.232.219.199 + bac.vu; 139 tài khoản còn chung 1 mật khẩu.
+- **Ngày Debit (chỉ điều tra):** xem mục ❓ 23/11 trong todo.
+
 ## Phiên 2026-11-18 (chiều) — Báo giá KH: dropdown bị che + Gia hạn báo giá (chỉ Admin) — FE+BE ĐÃ COMMIT+PUSH (tsc/build 0 lỗi), CHỜ CHẠY SQL + DEPLOY
 - **Tra lỗi "không thấy HN2611233" ở Lô hàng (duoc.tran, CN VT):** không phải lỗi dữ liệu — `SP_QuotationCustomer_GetAll` KHÔNG lọc chi nhánh, chỉ lọc `Deleted=0, Status>=1, Step>2, IsFinish=0, Type IN(0,1), CustomerId`; HN2611233 (khách 576) có trong 26 dòng trả về, nằm cuối list → dropdown bị khung modal che. Sửa FE `modal-shipment` ng-select báo giá `appendTo="body"`.
 - **HN2610222 (Id 2677):** khách 589, hạn 20→31/10/2026, `IsFinish=1` (bấm "Kết thúc" = `SP_QuotationCustomer_Accept` KeyWord='Finish'). Không có job tự hết hạn; FDate KHÔNG ảnh hưởng dropdown, chỉ IsFinish. Không có SP gia hạn báo giá KH (chỉ `SP_CanonQuotationSubcontractors_Extend` cho NTP Canon).

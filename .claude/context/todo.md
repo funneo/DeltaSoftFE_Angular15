@@ -28,6 +28,17 @@
 - Hiện không có lưu vết (chi tiết done.md). Hướng nếu làm: bảng log mới song song (cũ → mới theo trường + định khoản, ghi người/giờ xóa), không đụng `SP_Accounts_Update`; bàn bằng lời trước.
 - Lệch quyền: API Accounts dùng `THU_*` cho cả phiếu chi, FE phiếu chi gate `CHI_*`.
 
+## ❓ 2026-11-23 — Debit Note: "Cập nhật hóa đơn" kéo Ngày doanh thu lô tháng trước sang tháng sau — CHỈ MỚI ĐIỀU TRA (đọc DB), chờ anh chốt hướng
+- Sự việc: tối 22/11 `hoai.hoang` (ACC) bấm "Cập nhật hóa đơn" 11 lần (19h01–21h04, 11 số HĐ, Ngày HĐ 22/11) → 1.795 debit Step 0 của DK0500025 + DK0500007 đổi Ngày doanh thu sang 22/11; 946 debit T10 ≈ 2.469 tr. Không phải hack.
+- Ánh xạ FE ↔ DB: "Ngày lập" = `RefDate`, **"Ngày doanh thu" = `DebitDate`** (báo cáo tính tháng theo cột này), **"Ngày vận hành" = `AccountingDate`** (tên cột gây hiểu nhầm), "Ngày hóa đơn" = `InvoiceDate` (chuỗi). `DebitNoteDetail` không có ngày riêng (chỉ InvoiceDate chuỗi, WorkflowId trống) → chi tiết theo header.
+- Màn `modal-debit-note-update-invoice` bắt buộc 2 ô: Ngày hóa đơn + **Ngày doanh thu** (`_ngayHT`, gửi tên `accountingDate`) → `UpdateDebtInvoice` → `SP_DebitNotes_UpdateInvoice` ghi vào `DebitDate` (đúng nhãn, chỉ tên biến nhầm). Ngày vận hành không bị đụng → còn nguyên ngày gốc; log `DebitDateChangegLogs` Type 1 có OldDate. Quyền `DEBITNOTES_UPDATE`, không khóa kỳ; bộ lọc `Step<2`.
+- Câu hỏi nghiệp vụ cho anh: Ngày doanh thu có được khác tháng Ngày vận hành không? Misa đối chiếu theo ngày nào? Nếu không → bỏ/khóa ô Ngày doanh thu ở màn Cập nhật hóa đơn (SP mới song song) + khóa kỳ; khôi phục bằng file .sql (`DebitDate` ← `AccountingDate`/OldDate, có sao lưu). Phạm vi khôi phục chưa chốt.
+
+## ✅ 2026-11-20 — Vé giấy lệnh xe nhà không hiện Mã phí (FeeId = 0) — SQL ĐÃ CHẠY, BE ĐÃ COMMIT `4f3e11e` (push 23/11), CHỜ deploy API
+- Gốc giả định: app lái xe gửi thiếu `feeId` → 0 (web gán 659 = CP02043). Anh đã chạy `Migration_DispatchOrderTicket_FixFeeId0_20261120.sql` (bảng sao lưu `Bak_DispatchOrderTicket_FeeId0_20261120`).
+- BE: `DispatchOrderTicketController` Create + Update gọi `NormalizeTicket` (FeeId<=0 → 659, Vat null → 0). CẦN deploy API.
+- ⏸ 22/11 anh bảo BỎ QUA phần còn lại. ⚠ Nguyên nhân CHƯA chứng minh: vé 3051 (TotalCost 0) không thể qua SP _Create; đường Update/SetFinish chưa chặn.
+
 ## ⏭ 2026-11-07 — Lệnh LCL + CBT dựa trên FCL v2 — CHỐT Ý TƯỞNG (docx), CHƯA thiết kế SQL / CHƯA code
 Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 16/11: +Số chì LCL, +Lịch sử cập nhật, +giao diện tab theo loại, +phân quyền B1/B2 theo loại, +Loại vận chuyển ở Job/công việc, +máy phát CBT) + kế hoạch `docs/lcl-cbt/Ke-hoach-trien-khai-LCL-CBT.docx` (bản 16/11, sửa trực tiếp XML; script build docx-js ở scratchpad phiên, không lưu repo).
 - Đã chốt:
@@ -42,6 +53,11 @@ Tài liệu: `docs/lcl-cbt/So-sanh-lenh-van-chuyen-FCL-LCL-CBT.docx` (bản 16/1
 - [x] 10/11 anh chốt: Công việc = list chung + nhãn màu; Thực hiện việc + Lệnh = TAB riêng theo loại theo quyền (không dựa Nhóm thực hiện); thêm Function LCL, CBT; B1 = quyền ACCEPT theo loại; B2 = quyền CLOSING theo loại + `Tbl_FclClosingScope` thêm Loại lệnh; Loại vận chuyển ở Job (không bắt buộc) + công việc (bắt buộc, KHÓA theo Job, dùng lại `ShippingTask.TaskType`: 0/NULL = cũ chưa phân loại coi là FCL, 1=FCL, 2=LCL, 3=CBT; sửa cùng đợt 3 chỗ FE cũ hiểu 0=FCL/1=LCL). Còn chờ: tên cột Job, cột Loại lệnh mới trên lệnh.
 - [x] 16/11 chốt câu cuối (sai giờ máy phát → Zalo, điều vận nhập lại). 2 docx cập nhật bản 16/11: bỏ Q3 + mục 3.5 "Xác nhận giờ máy phát", 4.2 chỉ còn hiện giờ máy phát (chỉ xem); docx so sánh mục 8 không còn câu chờ.
 - [ ] Sau đó: trình thiết kế phần nền (SQL) cho anh duyệt → pilot LCL → CBT → app lái xe.
+- [x] 19/11 FE (tsc + ng build sạch, CHƯA commit/deploy): Loại vận chuyển ở Job = dùng lại `Shipment.ShippingType` (0 FCL/1 LCL/+2 CBT, CBT khóa cứng khi dịch vụ 1171, bắt buộc SE/SI như cũ); công việc `modal-shipping-task-cs` ô Loại vận chuyển bắt buộc, lấy theo Job + khóa, mở mọi loại hình Job, ẩn/hiện/đổi tên theo mục 3 docx, xóa giá trị trường ẩn khi lưu; sửa 0=FCL/1=LCL ở list CS, modal opman, modal view. Hằng số `shared/constants/transport-type.constants.ts`. Không cần SQL/BE. ✅ 23/11 ĐÃ COMMIT+PUSH (FE + NewAPI), CHƯA deploy.
+- [x] Loại điểm giao nhận (MỌI loại kể cả FCL): SQL `Migration_ShippingTask_LocationType_V2_20261120.sql` anh ĐÃ CHẠY 22/11 (0/0 lệch, 46.424 công việc). BE: model +2 thuộc tính, 5 hàm `ShippingTaskRepository` gọi SP V2 (build 0 lỗi). FE: ô điểm gộp trong `modal-shipping-task-cs`, FCL v2 `addToRoute` ưu tiên loại điểm đã lưu, Copy ở list CS lấy loại điểm từ chi tiết (tsc + ng build sạch). ✅ 23/11 ĐÃ COMMIT+PUSH, CHƯA deploy, CHƯA chạy thử.
+- [ ] Còn chờ anh chốt: tách form công việc theo loại (FCL về form gốc?) + tab theo loại ở list công việc CS chỉ Admin thấy để test. ⚠ Deploy BE + FE CÙNG LÚC (FE cũ gửi ngược loại điểm cũ khi đổi Job SE↔khác).
+- [ ] Sau 1–2 tuần: file điền 2 cột cho công việc cũ theo 1174 + DROP 6 SP cũ.
+- [ ] Test: tạo Job CBT → khóa CBT; công việc chọn Job đó → tự CBT + khóa; Job chưa có loại → bắt chọn; mở công việc cũ (0/NULL) → hiện FCL; FCL form không đổi.
 
 ## ▶ 2026-11-03 — FCL v2: tab Chi phí, đổi Số lượng không còn nhân Tổng (FE-only, tsc 0 lỗi) — ✅ commit+push, ✅ ĐÃ BUILD+DEPLOY 2026-11-07
 - Chốt: "Số tiền" = thành tiền, Tổng = Số tiền + VAT (khớp app lái xe/`modal-execute-fcl`); `changeQuantity` gọi `changeCost`. Modal FCL cũ KHÔNG sửa.
