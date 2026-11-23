@@ -82,17 +82,22 @@
                     </label>
                     <div class="col-sm-9">
                       <ng-select name="shipmentType" [items]="listShipmentType" bindLabel="categoryName" bindValue="id"
-                        [(ngModel)]="entity.shipmentType" placeholder="Loại hình" [required]="entity.jobType==0">
+                        [(ngModel)]="entity.shipmentType" placeholder="Loại hình" [required]="entity.jobType==0"
+                        (change)="changedShipmentType()">
                       </ng-select>
                     </div>
                   </div>
-                  <div class="form-group" *ngIf=" entity.shipmentType == 1174 || entity.shipmentType==1175">
-                    <label class="col-sm-3 control-label"> Loại hàng:
-                      <span class="error">*</span>
+                  <!-- Loại vận chuyển (cột sẵn có Shipment.ShippingType: 0 FCL / 1 LCL / 2 CBT).
+                       Bắt buộc với SE/SI như cũ; dịch vụ Cross Border Trucking khóa cứng CBT. -->
+                  <div class="form-group" *ngIf="entity.jobType==0">
+                    <label class="col-sm-3 control-label"> Loại vận chuyển
+                      <span class="error" *ngIf="entity.shipmentType == 1174 || entity.shipmentType==1175">*</span>
                     </label>
                     <div class="col-sm-3">
-                      <ng-select name="shippingType" [items]="listShippingType" bindLabel="text" bindValue="id"
-                        [(ngModel)]="entity.shippingType" placeholder="Loại hàng" [required]="entity.jobType==0 && (entity.shipmentType == 1174 || entity.shipmentType==1175)">
+                      <ng-select name="shippingType" [items]="shippingTypeItems" bindLabel="text" bindValue="id"
+                        [(ngModel)]="entity.shippingType" placeholder="Loại vận chuyển"
+                        [readonly]="flagXem || entity.shipmentType == 1171"
+                        [required]="entity.jobType==0 && (entity.shipmentType == 1174 || entity.shipmentType==1175)">
                       </ng-select>
                     </div>
                   </div>

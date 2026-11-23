@@ -9,6 +9,7 @@ import { BsModalRef, BsModalService, ModalDirective } from 'ngx-bootstrap/modal'
 import { Subscription } from 'rxjs';
 import * as moment from 'moment';
 import { FormatContstants } from '@app/shared/constants/format.constants';
+import { TransportTypeConstants } from '@app/shared/constants/transport-type.constants';
 import { ModalAttachfileComponent } from '../../systems/modal-attachfile/modal-attachfile.component';
 import { Attachfiles } from '@app/shared/models/attachfiles.models';
 import { QuotationCustomerService } from '@app/shared/services/sales-marketing/quotation-customer.service';
@@ -49,7 +50,25 @@ export class ModalShipmentComponent implements OnInit {
   listContTypes:OtherCategories[];
   listJobPrices = [{ id: 0, text: 'Theo hợp đồng' }, { id: 1, text: 'Theo báo giá' }];
   _typePrice = 0;
-  listShippingType = [{id:0,text:'FCL'},{id:1,text:'LCL'}]
+  /** CBT chỉ dành cho dịch vụ Cross Border Trucking (khóa cứng); dịch vụ khác chọn FCL/LCL. */
+  private readonly _listShippingTypeCbt = TransportTypeConstants.JOB_TYPES.filter(x => x.id === TransportTypeConstants.JOB_CBT);
+  private readonly _listShippingTypeOther = TransportTypeConstants.JOB_TYPES.filter(x => x.id !== TransportTypeConstants.JOB_CBT);
+  /** Trả mảng CỐ ĐỊNH (không filter trong getter) để ng-select không nạp lại danh sách mỗi lần change detection. */
+  get shippingTypeItems() {
+    return this.entity?.shipmentType == TransportTypeConstants.SHIPMENT_TYPE_CBT
+      ? this._listShippingTypeCbt : this._listShippingTypeOther;
+  }
+  /** Đổi dịch vụ: Cross Border Trucking → CBT; rời Cross Border Trucking → bỏ CBT. */
+  changedShipmentType() {
+    this._normalizeShippingType();
+  }
+  private _normalizeShippingType() {
+    if (!this.entity) return;
+    if (this.entity.shipmentType == TransportTypeConstants.SHIPMENT_TYPE_CBT)
+      this.entity.shippingType = TransportTypeConstants.JOB_CBT;
+    else if (this.entity.shippingType === TransportTypeConstants.JOB_CBT)
+      this.entity.shippingType = null;
+  }
    _cdsDate: string;
   ngayToKhaiOptions = this._utilityService.dateTimeOptionDays(
     new Date(),
@@ -280,6 +299,7 @@ export class ModalShipmentComponent implements OnInit {
     this.shipmentService.getDetail(id).subscribe((res: ResponseValue<Shipment>) => {
       if (res.code == '200' || res.code == '201') {
         this.entity = res.data;
+        this._normalizeShippingType();
         this.listChinhanhthamgia = [];
         this.entity.shipmentBranches?.forEach(x => {
           this.listChinhanhthamgia.push(x.branchId);
@@ -394,6 +414,7 @@ export class ModalShipmentComponent implements OnInit {
       try { p = JSON.parse(payload || '{}'); } catch { p = {}; }
     }
     this.entity = p || {};
+    this._normalizeShippingType();
     this._draftId = draftId;
     this._isDraftView = true;
     this._isDraftEdit = false;
@@ -476,6 +497,7 @@ export class ModalShipmentComponent implements OnInit {
     this.entity.shipmentContSeals = this.listConts?.filter(_ => _.contType != null && _.contType != '');
     this.entity.shipmentPackages = this.listPakages?.filter(_ => _.packageCode != null && _.packageCode != '');
     this.entity.shipmentServiceDetails = this.listDichVuSoHoa?.filter(z => z.serviceId);
+    this._normalizeShippingType();
 
     this.flagSave = true;
     this.draftService.updateDraft({
@@ -528,6 +550,7 @@ export class ModalShipmentComponent implements OnInit {
     this.entity.shipmentContSeals = this.listConts?.filter(_ => _.contType != null && _.contType != '');
     this.entity.shipmentPackages = this.listPakages?.filter(_ => _.packageCode != null && _.packageCode != '');
     this.entity.shipmentServiceDetails = this.listDichVuSoHoa?.filter(z => z.serviceId);
+    this._normalizeShippingType();
     this.entity.id = undefined;        // ép tạo mới
     this.entity.jobStaff = this.userName;
   }
@@ -601,6 +624,7 @@ export class ModalShipmentComponent implements OnInit {
       this.entity.shipmentContSeals=this.listConts?.filter(_=>_.contType!=null && _.contType!='');
       this.entity.shipmentPackages=this.listPakages?.filter(_=>_.packageCode!=null && _.packageCode!='');
       this.entity.shipmentServiceDetails=this.listDichVuSoHoa?.filter(z=>z.serviceId);
+      this._normalizeShippingType();
       //Kiểm tra nếu là hàng sea import và fcl mà chưa có thông tin của container thì ko cho tạo job
       if(this.entity.shipmentType==1175 && this.entity.shippingType==0){
         if(this.entity.shipmentContSeals?.length<1){
@@ -693,6 +717,7 @@ export class ModalShipmentComponent implements OnInit {
           this.entity.shipmentContSeals=this.listConts?.filter(_=>_.contType!=null && _.contType!='');
           this.entity.shipmentPackages=this.listPakages?.filter(_=>_.packageCode!=null && _.packageCode!='');
           this.entity.shipmentServiceDetails=this.listDichVuSoHoa?.filter(z=>z.serviceId);
+          this._normalizeShippingType();
           if (this.entity.id == undefined) {
             this.entity.jobStaff=this.userName;
             this.shipmentService.add(this.entity).subscribe((res: ResponseValue<any>) => {
