@@ -61,84 +61,80 @@
                   bindValue="id" [disabled]="flagXem " [(ngModel)]="entity.handlingGroupId">
                 </ng-select>
               </div>
+              <!-- Loại vận chuyển: bắt buộc; Job có loại thì lấy theo Job + khóa -->
+              <label class="col-sm-2 control-label">Loại vận chuyển
+                <span class="error">*</span>
+              </label>
+              <div class="col-sm-4">
+                <ng-select [items]="listTaskType" name="taskType" required bindLabel="text" bindValue="id"
+                  [disabled]="flagXem || lockTaskType" [(ngModel)]="entity.taskType" [clearable]="false"
+                  placeholder="FCL / LCL / CBT" [title]="lockTaskType ? 'Lấy theo Loại vận chuyển của Job' : ''">
+                </ng-select>
+              </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">Nơi nhận hàng<span class="error">*</span></label>
-              <div class="col-sm-10" *ngIf="isEport">
-                <ng-select name="pickupLocationExportId" [items]="listLocations" bindLabel="address" bindValue="id"
-                  [(ngModel)]="entity.pickupLocationId" (change)="changepickupLocationExport($event)"
-                  [required]="isEport">
-                </ng-select>
-              </div>
-              <div class="col-sm-10" *ngIf="!isEport">
-                <ng-select name="pickupLocationImportId" [items]="listPorts" bindLabel="name" bindValue="id"
-                  [(ngModel)]="entity.pickupLocationId" (change)="changepickupLocationImport($event)"
-                  [required]="!isEport">
+              <div class="col-sm-10">
+                <ng-select name="pickupLocationKey" [items]="locationItems" bindLabel="name" bindValue="key"
+                  groupBy="group" [(ngModel)]="pickupKey" (change)="changePickupLocation($event)" required>
                 </ng-select>
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">Nơi giao hàng<span class="error">*</span></label>
-              <div class="col-sm-10" *ngIf="isEport">
-                <ng-select name="deliveryLocationExportId" [items]="listPorts" bindLabel="name" bindValue="id"
-                  [(ngModel)]="entity.deliveryLocationId" (change)="changedeliveryLocationExport($event)"
-                  [required]="isEport">
-                </ng-select>
-              </div>
-              <div class="col-sm-10" *ngIf="!isEport">
-                <ng-select name="deliveryLocationImportId" [items]="listLocations" bindLabel="address" bindValue="id"
-                  [(ngModel)]="entity.deliveryLocationId" (change)="changedeliveryLocationImport($event)"
-                  [required]="!isEport">
+              <div class="col-sm-10">
+                <ng-select name="deliveryLocationKey" [items]="locationItems" bindLabel="name" bindValue="key"
+                  groupBy="group" [(ngModel)]="deliveryKey" (change)="changeDeliveryLocation($event)" required>
                 </ng-select>
               </div>
             </div>
             <div class="form-group">
               <label class="col-sm-2 control-label">T/g KH yêu cầu
-                <span class="error">*</span>
+                <span class="error" *ngIf="!isCBT">*</span>
               </label>
               <div class="col-sm-4">
                 <input name="pickupTime" type="text" daterangepicker [options]="ngaybatdauOption"
                   [(ngModel)]="entity.pickupTime" class="form-control" (selected)="selectedpickupTime($event)"
                   (hideDaterangepicker)="closedpickupTime($event)" autocomplete="off" [disabled]="flagXem">
               </div>
-              <label class="col-sm-2 control-label" *ngIf="!isEport"> T/g trả cont rỗng <span
+              <label class="col-sm-2 control-label" *ngIf="isFCL && !isEport"> T/g trả cont rỗng <span
                   class="error">*</span></label>
-              <div class="col-sm-4" *ngIf="!isEport">
+              <div class="col-sm-4" *ngIf="isFCL && !isEport">
                 <input name="detentionTime" type="text" daterangepicker [options]="ngaybatdauOption"
-                  [required]="!isEport" [(ngModel)]="entity.detentionTime" class="form-control"
+                  [required]="isFCL && !isEport" [(ngModel)]="entity.detentionTime" class="form-control"
                   (selected)="selecteddetentionTime($event)" (hideDaterangepicker)="closeddetentionTime($event)"
                   autocomplete="off" [disabled]="flagXem">
               </div>
-              <label class="col-sm-2 control-label" *ngIf="isEport">T/g Cut-off <span class="error">*</span></label>
-              <div class="col-sm-4" *ngIf="isEport">
+              <label class="col-sm-2 control-label" *ngIf="showCutOff">T/g Cut-off <span class="error" *ngIf="isFCL">*</span></label>
+              <div class="col-sm-4" *ngIf="showCutOff">
                 <input name="cutOffTime" type="text" daterangepicker [options]="ngayhoanthanhOption"
-                  [required]="isEport" [(ngModel)]="entity.cutOffTime" class="form-control"
+                  [required]="isFCL && isEport" [(ngModel)]="entity.cutOffTime" class="form-control"
                   (selected)="selectedcutOffTime($event)" (hideDaterangepicker)="closedcutOffTime($event)"
                   autocomplete="off" [disabled]="flagXem">
               </div>
             </div>
             <div class="form-group">
-              <label class="col-sm-2 control-label">T/g pick-up cont tại Cảng <span class="error">*</span></label>
-              <div class="col-sm-4">
+              <label class="col-sm-2 control-label" *ngIf="!isCBT">{{ isLCL ? 'T/g lấy hàng tại Cảng/Sân bay' : 'T/g pick-up cont tại Cảng' }} <span class="error">*</span></label>
+              <div class="col-sm-4" *ngIf="!isCBT">
                 <input name="demurageTime" type="text" daterangepicker [options]="ngayhoanthanhOption"
                   [(ngModel)]="entity.demurageTime" class="form-control"
                   (selected)="selectedcontainerStoragePeriod($event)"
                   (hideDaterangepicker)="closedcontainerStoragePeriod($event)" autocomplete="off" [disabled]="flagXem">
               </div>
 
-              <label class="col-sm-2 control-label">Mã tham chiếu <span class="error">*</span> </label>
+              <label class="col-sm-2 control-label" [class.col-sm-offset-6]="isCBT">Mã tham chiếu <span class="error">*</span> </label>
               <div class="col-sm-4">
                 <input name="referCode" type="text" [(ngModel)]="entity.referCode" class="form-control" required
                   [disabled]="flagXem">
               </div>
             </div>
             <div class="form-group">
-              <label class="col-sm-2 control-label">Booking</label>
-              <div class="col-sm-4">
+              <label class="col-sm-2 control-label" *ngIf="isFCL">Booking</label>
+              <div class="col-sm-4" *ngIf="isFCL">
                 <input name="billBooking" type="text" [(ngModel)]="entity.billBooking" class="form-control"
                   [disabled]="flagXem">
               </div>
-              <label class="col-sm-2 control-label"> Lượng hàng
+              <label class="col-sm-2 control-label" [class.col-sm-offset-6]="!isFCL"> Lượng hàng
               </label>
               <div class="col-sm-4 text-right">
                 <input class="form-control so-luong" [(ngModel)]="entity.weight" name="weight" [readonly]="flagXem"
@@ -146,20 +142,20 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="col-sm-2 control-label">Ops làm lệnh</label>
-              <div class="col-sm-4">
+              <label class="col-sm-2 control-label" *ngIf="!isCBT">Ops làm lệnh</label>
+              <div class="col-sm-4" *ngIf="!isCBT">
                 <ng-select name="nhanvien" [items]="listEmployee" bindLabel="employeeFullName" bindValue="id"
                   [(ngModel)]="entity.operatorId">
                 </ng-select>
               </div>
-              <label class="col-sm-2 control-label">Size kiện hàng</label>
+              <label class="col-sm-2 control-label" [class.col-sm-offset-6]="isCBT">Size kiện hàng</label>
               <div class="col-sm-4">
                 <input class="form-control" [(ngModel)]="entity.dimension" type="text" name="dimension" />
               </div>
             </div>
             <div class="form-group">
-              <label class="col-sm-2 control-label">Số Cont</label>
-              <div class="col-sm-4">
+              <label class="col-sm-2 control-label" *ngIf="!isLCL">Số Cont</label>
+              <div class="col-sm-4" *ngIf="!isLCL">
                 <div class="input-group" style="width: 100%;">
                   <input name="containerNumberAccordingToPlan" type="text" [(ngModel)]="entity.containerNumber"
                     class="form-control" [disabled]="flagXem" />
@@ -170,48 +166,48 @@
                   </span>
                 </div>
               </div>
-              <label class="col-sm-2 control-label">Số chì</label>
+              <label class="col-sm-2 control-label" [class.col-sm-offset-6]="isLCL">Số chì</label>
               <div class="col-sm-4">
                 <input name="sealNumberAccordingToPlan" type="text" [(ngModel)]="entity.sealNumber" class="form-control"
                   [disabled]="flagXem" />
               </div>
             </div>
-            <div class="form-group">
-              <label class="col-sm-2 control-label" *ngIf="entity.taskType==0 || entity.taskType==null">Loại
+            <div class="form-group" *ngIf="!isLCL">
+              <label class="col-sm-2 control-label">Loại
                 Container</label>
               <div class="col-sm-2">
                 <ng-select [items]="listContTypes" name="listContTypes" bindLabel="categoryName"
                   bindValue="categoryCode" [disabled]="flagXem" [(ngModel)]="entity.contType">
                 </ng-select>
               </div>
-              <label class="col-sm-2 control-label">Loại lệnh nâng</label>
-              <div class="col-sm-2">
+              <label class="col-sm-2 control-label" *ngIf="isFCL">Loại lệnh nâng</label>
+              <div class="col-sm-2" *ngIf="isFCL">
                 <ng-select [items]="listTypeOfLiffingOrder" name="typeOfLiffingOrder" bindLabel="value" bindValue="id"
                   [disabled]="flagXem" [(ngModel)]="entity.typeOfLiffingOrder">
                 </ng-select>
               </div>
-              <label class="col-sm-2 control-label">Loại lệnh hạ</label>
-              <div class="col-sm-2">
+              <label class="col-sm-2 control-label" *ngIf="isFCL">Loại lệnh hạ</label>
+              <div class="col-sm-2" *ngIf="isFCL">
                 <ng-select [items]="listTypeOfLiffingOrder" name="typeOfLiftOffOrder" bindLabel="value" bindValue="id"
                   [disabled]="flagXem" [(ngModel)]="entity.typeOfLiftOffOrder">
                 </ng-select>
               </div>
             </div>
-            <div class="form-group">
-              <label class="col-sm-2 control-label">Hãng tàu</label>
-              <div class="col-sm-4">
+            <div class="form-group" *ngIf="!isCBT">
+              <label class="col-sm-2 control-label" *ngIf="isFCL">Hãng tàu</label>
+              <div class="col-sm-4" *ngIf="isFCL">
                 <ng-select [items]="listShipBrand" name="shipBrand" bindLabel="categoryName" bindValue="id"
                   [disabled]="flagXem" [(ngModel)]="entity.shipBrand">
                 </ng-select>
               </div>
-              <label class="col-sm-2 control-label">Kho CFS</label>
+              <label class="col-sm-2 control-label" [class.col-sm-offset-6]="!isFCL">Kho CFS</label>
               <div class="col-sm-4">
                 <ng-select [items]="listPorts" name="cFSWarehouse" bindLabel="name" bindValue="id" [disabled]="flagXem"
                   [(ngModel)]="entity.cfsWarehouse">
                 </ng-select>
               </div>
             </div>
-            <div class="form-group">
+            <div class="form-group" *ngIf="isFCL">
               <label class="col-sm-2 control-label">Cảng/bãi nâng</label>
               <div class="col-sm-4">
                 <ng-select [items]="listPorts" name="portOfLiffting" bindLabel="name" bindValue="id"
@@ -238,21 +234,21 @@
                   name="receiverInformation" />
               </div>
             </div>
-            <div class="form-group">
+            <div class="form-group" *ngIf="isFCL">
               <label class="col-sm-2 control-label">T/t xuất HĐ nâng hạ Cont</label>
               <div class="col-sm-10">
                 <input class="form-control" [(ngModel)]="entity.informationOnContainerLiffInvoice" type="text"
                   name="informationOnContainerLiffInvoice" />
               </div>
             </div>
-            <div class="form-group">
+            <div class="form-group" *ngIf="isFCL">
               <label class="col-sm-2 control-label">T/t xuất HĐ ngoài</label>
               <div class="col-sm-10">
                 <input class="form-control" [(ngModel)]="entity.externalInformationOnContainerLiffInvoice" type="text"
                   name="externalInformationOnContainerLiffInvoice" />
               </div>
             </div>
-            <div class="form-group">
+            <div class="form-group" *ngIf="isFCL">
               <label class="col-sm-2 control-label">T/t xuất HĐ phụ phí khác</label>
               <div class="col-sm-10">
                 <input class="form-control" [(ngModel)]="entity.informationOfSurchargeInvoice" type="text"

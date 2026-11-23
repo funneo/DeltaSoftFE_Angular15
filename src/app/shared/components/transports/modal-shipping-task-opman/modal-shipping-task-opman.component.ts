@@ -3,6 +3,7 @@ import { Component, EventEmitter, OnInit, Output, ViewChild } from '@angular/cor
 import { NgForm } from '@angular/forms';
 import { MessageContstants } from '@app/shared/constants';
 import { FormatContstants } from '@app/shared/constants/format.constants';
+import { TransportTypeConstants } from '@app/shared/constants/transport-type.constants';
 import { Customer, Employee, Handlinggroup, OtherCategories, Profile, ResponseValue, Shipment } from '@app/shared/models';
 import { Attachfiles } from '@app/shared/models/attachfiles.models';
 import { TransportCategory } from '@app/shared/models/danhmuc/transport-category.model';
@@ -34,7 +35,9 @@ export class ModalShippingTaskOpmanComponent implements OnInit {
   public checked?: boolean = false;
   public viewAttackFiles?: boolean = false;
   listTypeOfLiffingOrder:any[]=[{id:0,value:'Điện tử'},{id:1,value:'Giấy'}];
-  listType:any[]=[{id:0,value:'FCL'},{id:1,value:'LCL'}];
+  listType = TransportTypeConstants.TASK_TYPES;
+  /** 0/NULL (công việc cũ) hiển thị FCL. */
+  get taskTypeValue(): number { return TransportTypeConstants.normalize(this.entity?.taskType); }
   listShipmentType: OtherCategories[];
   listContTypes: OtherCategories[];
   listImportExports: OtherCategories[];

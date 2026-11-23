@@ -120,10 +120,10 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="col-sm-2 control-label"> Loại hàng</label>
+              <label class="col-sm-2 control-label"> Loại vận chuyển</label>
               <div class="col-sm-2">
-                <ng-select name="taskType" [items]="listType" bindLabel="value" bindValue="id" disabled
-                  [(ngModel)]="entity.taskType" >
+                <ng-select name="taskType" [items]="listType" bindLabel="text" bindValue="id" disabled
+                  [ngModel]="taskTypeValue">
                 </ng-select>
               </div>
               <label class="col-sm-4 control-label">Số Bill/Bookinng</label>
@@ -168,13 +168,13 @@
               </div>
             </div>
             <div class="form-group">
-              <label class="col-sm-2 control-label" *ngIf="entity.taskType==1"> Lượng hàng
+              <label class="col-sm-2 control-label" *ngIf="entity.taskType==2"> Lượng hàng
               </label>
-              <div class="col-sm-4 text-right" *ngIf="entity.taskType==1">
+              <div class="col-sm-4 text-right" *ngIf="entity.taskType==2">
                 <input class="form-control so-luong" [(ngModel)]="entity.weight"  name="weight" [readonly]="flagXem"/>
               </div>
-              <label class="col-sm-2 control-label" *ngIf="entity.taskType==0 || entity.taskType==null">Loại Container</label>
-              <div class="col-sm-4" *ngIf="entity.taskType==0 || entity.taskType==null">
+              <label class="col-sm-2 control-label" *ngIf="entity.taskType!=2">Loại Container</label>
+              <div class="col-sm-4" *ngIf="entity.taskType!=2">
                 <ng-select [items]="listContTypes" name="listContTypes" bindLabel="categoryName" bindValue="id"
                   [disabled]="flagXem" [(ngModel)]="entity.contType">
                 </ng-select>

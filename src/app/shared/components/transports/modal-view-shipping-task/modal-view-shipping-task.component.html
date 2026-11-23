@@ -118,8 +118,8 @@
             </div>
             
             <div class="form-group">
-              <label class="col-sm-2 control-label" *ngIf="entity.taskType==0 || entity.taskType==null">Loại Container</label>
-              <div class="col-sm-2">
+              <label class="col-sm-2 control-label" *ngIf="entity.taskType!=2">Loại Container</label>
+              <div class="col-sm-2" *ngIf="entity.taskType!=2">
                 <span class="form-control">{{entity.contType}}</span>
               </div>
               <label class="col-sm-2 control-label">Loại lệnh nâng</label>

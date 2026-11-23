@@ -7,6 +7,7 @@ import { ModalWorkflowComponent } from "@app/shared/components/workflows/modal-w
 import { MessageContstants } from "@app/shared/constants";
 import { FormatContstants } from "@app/shared/constants/format.constants";
 import { listContants } from "@app/shared/constants/list-type.constants";
+import { TransportTypeConstants } from "@app/shared/constants/transport-type.constants";
 import {
   Branch,
   Customer,
@@ -180,6 +181,8 @@ export class ShippingTaskCsComponent implements OnInit {
           .filter(d => d.draftType === 'ShippingTask')
           .map(d => this.mapDraftToRow(d));
         this.listWorkflow = [...draftRows, ...erpItems];
+        // Tên Loại vận chuyển để hiển thị + lọc cột (0/NULL = cũ, hiện FCL)
+        this.listWorkflow.forEach((x: any) => x.taskTypeName = TransportTypeConstants.nameOf(x.taskType));
         this.spinner.hide("spinner1");
         this.filterData();
       } else {
@@ -342,10 +345,19 @@ export class ShippingTaskCsComponent implements OnInit {
     copy.status = 0;
     copy.id = undefined;
     copy.containerNumber = "";
-    this.viewModal = true;
-    setTimeout(() => {
-      this.modalAddEdit.add(copy, false);
-    }, 50);
+    // SP danh sách CS không trả loại điểm → lấy từ chi tiết, để bản sao không bị suy sai theo luật cũ
+    this.service.getDetail(item.id.toString()).subscribe((res: ResponseValue<ShippingTask>) => {
+      if (res?.code != "200" && res?.code != "201") {
+        this.notificationService.printErrorMessage(MessageContstants.SYSTEM_ERROR_MSG);
+        return;
+      }
+      copy.pickupLocationType = res.data?.pickupLocationType;
+      copy.deliveryLocationType = res.data?.deliveryLocationType;
+      this.viewModal = true;
+      setTimeout(() => {
+        this.modalAddEdit.add(copy, false);
+      }, 50);
+    });
   }
   huyviec(item: ShippingTask): void {
     if(item.refNo?.length > 0)return;

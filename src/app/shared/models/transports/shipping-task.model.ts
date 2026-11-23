@@ -22,9 +22,13 @@ export interface ShippingTask {
     pickupTime?: string;
     deliveryTime?: string;
     pickupLocationId?: number;
+    /** 1 = Location KH (CustomerLocations), 2 = Cảng/bãi/CFS (Ports) */
+    pickupLocationType?: number;
     pickupLatitude?: number;
     pickupLongitude?: number;
     deliveryLocationId?: number;
+    /** 1 = Location KH (CustomerLocations), 2 = Cảng/bãi/CFS (Ports) */
+    deliveryLocationType?: number;
     deliveryLatitude?: number;
     deliveryLongitude?: number;
     pickupLocation?: string;

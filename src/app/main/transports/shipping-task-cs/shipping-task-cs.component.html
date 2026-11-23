@@ -109,7 +109,7 @@
             <th><input type="text" class="form-control" [(ngModel)]="filterColumns.handlingGroupName" (keyup)="filterData()" /></th>
             <th><input type="text" class="form-control" [(ngModel)]="filterColumns.referCode" (keyup)="filterData()" /></th>
             <th><input type="text" class="form-control" [(ngModel)]="filterColumns.shipmentType" (keyup)="filterData()" /></th>
-            <th><input type="text" class="form-control" [(ngModel)]="filterColumns.taskType" (keyup)="filterData()" /></th>
+            <th><input type="text" class="form-control" [(ngModel)]="filterColumns.taskTypeName" (keyup)="filterData()" /></th>
             <th><input type="text" class="form-control" [(ngModel)]="filterColumns.contTypeName" (keyup)="filterData()" /></th>
             <th><input type="text" class="form-control" [(ngModel)]="filterColumns.containerNumber" (keyup)="filterData()" /></th>
             <th><input type="text" class="form-control" [(ngModel)]="filterColumns.createdByName" (keyup)="filterData()" /></th>
@@ -158,7 +158,7 @@
               <span>{{item.referCode}}</span>
             </td>
             <td>{{item.shipmentType?.toString()|List:listShipmentType}}</td>
-            <td>{{item.taskType==0?'FCL':'LCL'}}</td>
+            <td>{{item.taskTypeName}}</td>
             <td>{{item.contTypeName}}</td>
             <td>{{item.containerNumber}}</td>
             <td>{{item.createdByName +' - '+ item.createdByTel}}</td>

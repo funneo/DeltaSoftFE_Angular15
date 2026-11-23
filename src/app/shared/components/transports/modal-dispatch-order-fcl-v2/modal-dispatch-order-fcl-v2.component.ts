@@ -2465,7 +2465,10 @@ export class ModalDispatchOrderFclV2Component implements OnInit, OnDestroy {
     // đúng logic bên modal-shipping-task-cs — KHÔNG được hardcode 1, vì Ports/CustomerLocations là 2 bảng
     // Id độc lập (trùng số rất phổ biến), gắn sai type khiến guard "trùng điểm cuối" so nhầm 2 điểm khác nhau.
     const isEport = task.shipmentType === 1174;
-    const locationType = type === 'pickup' ? (isEport ? 1 : 2) : (isEport ? 2 : 1);
+    // 2026-11-22: ưu tiên loại điểm đã lưu trên công việc (SP V2); chưa có mới suy theo isEport.
+    const locationType = type === 'pickup'
+      ? (task.pickupLocationType ?? (isEport ? 1 : 2))
+      : (task.deliveryLocationType ?? (isEport ? 2 : 1));
     if (this._isSameAsLastLocation(locationId, locationType)) {
       this.notificationService.printErrorMessage('Điểm này đang là điểm cuối lộ trình — không thể thêm liền kề chính nó.');
       return;

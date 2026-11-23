@@ -6,7 +6,8 @@ import { ModalDirective } from 'ngx-bootstrap/modal';
 import { Subscription } from 'rxjs';
 import { ModalAttachfileComponent } from '../../systems/modal-attachfile/modal-attachfile.component';
 import { ModalShipmentViewSearchComponent } from '../../shipments/modal-shipment-view-search/modal-shipment-view-search.component';
-import { AuthService, CustomerService, EmployeeService, HandlinggroupService, NotificationService, OtherCategoriesService, UtilityService } from '@app/shared/services';
+import { AuthService, CustomerService, EmployeeService, HandlinggroupService, NotificationService, OtherCategoriesService, ShipmentService, UtilityService } from '@app/shared/services';
+import { TransportTypeConstants } from '@app/shared/constants/transport-type.constants';
 import { ShippingTaskService } from '@app/shared/services/transports/shipping-task.service';
 import { HttpParams } from '@angular/common/http';
 import { MessageContstants } from '@app/shared/constants';
@@ -39,7 +40,16 @@ export class ModalShippingTaskCsComponent implements OnInit {
   public checked?: boolean = false;
   public viewAttackFiles?: boolean = false;
   listTypeOfLiffingOrder: any[] = [{ id: 0, value: 'Điện tử' }, { id: 1, value: 'Giấy' }];
-  listType: any[] = [{ id: 0, value: 'FCL' }, { id: 1, value: 'LCL' }];
+  /** Loại vận chuyển: 1 FCL / 2 LCL / 3 CBT (bắt buộc). */
+  listTaskType = TransportTypeConstants.TASK_TYPES;
+  /** Job đã có Loại vận chuyển → công việc lấy theo Job và khóa. */
+  lockTaskType = false;
+  get isLCL(): boolean { return this.entity?.taskType === TransportTypeConstants.LCL; }
+  get isCBT(): boolean { return this.entity?.taskType === TransportTypeConstants.CBT; }
+  /** FCL hoặc chưa chọn (form giữ nguyên như hiện nay). */
+  get isFCL(): boolean { return !this.isLCL && !this.isCBT; }
+  /** Cut-off: FCL chỉ hàng xuất (như cũ); LCL luôn hiện (không phân biệt xuất/nhập); CBT ẩn. */
+  get showCutOff(): boolean { return this.isLCL || (this.isFCL && this.isEport); }
   listShipmentType: OtherCategories[];
   listContTypes: OtherCategories[];
   listImportExports: OtherCategories[];
@@ -113,6 +123,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
     , private _employeeService: EmployeeService
     , private _customerLocationService: CustomerLocationsService
     , private _portsService: PortsService
+    , private _shipmentService: ShipmentService
   ) { }
 
   ngOnInit(): void {
@@ -155,6 +166,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
       if (res.code == '200' || res.code == '201') {
         this.listPorts = res.data;
       } else this.listPorts = [];
+      this._rebuildLocationItems();
     });
   }
 
@@ -163,6 +175,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
       if (res.code == '200' || res.code == '201') {
         this.listLocations = res.data
       } else this.listLocations = [];
+      this._rebuildLocationItems();
     });
   }
 
@@ -194,6 +207,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
     this._isDraftView = false;
     this.entity = item;
     this.entity.status = 0;
+    this.lockTaskType = false;
     if (!flag) {
       this.customerId = item.customerId;
       this.customerCode = item.customerCode;
@@ -204,9 +218,15 @@ export class ModalShippingTaskCsComponent implements OnInit {
       this.dateFields.forEach(({ field, optionField }) => {
         this._utilityService.formatAndSetDateTime(this.entity, field, optionField);
       });
+      this.entity.taskType = TransportTypeConstants.normalize(this.entity.taskType);
+      this._applyJobTransportType(this.entity.shipmentId);
     } else {
       this.entity.jobToughness = 3
+      this.listLocations = [];
+      this.isEport = false;
+      this.entity.taskType = null;   // CS bắt buộc chọn (hoặc lấy theo Job khi chọn JobId)
     }
+    this._initLocationKeys();
     this.flagNew = true;
     this.flagXem = false;
     this.flagSave = false;
@@ -227,6 +247,12 @@ export class ModalShippingTaskCsComponent implements OnInit {
         this.checked = this.entity.status > 0;
         //Nếu lập lệnh VC rồi thì ko cho sửa nữa
         if (this.entity.refNo?.length > 0) this.flagXem = true;
+        this._initLocationKeys();
+        // Công việc cũ (0/NULL) GIỮ FCL, không tự đổi theo Job: đổi sang LCL/CBT sẽ xóa Số cont, Loại cont… khi lưu.
+        const chuaPhanLoai = !this.entity.taskType;
+        this.entity.taskType = TransportTypeConstants.normalize(this.entity.taskType);
+        this.lockTaskType = false;
+        if (!this.flagXem && !chuaPhanLoai) this._applyJobTransportType(this.entity.shipmentId);
         this.dateFields.forEach(({ field, optionField }) => {
           this._utilityService.formatAndSetDateTime(this.entity, field, optionField);
         });
@@ -253,6 +279,9 @@ export class ModalShippingTaskCsComponent implements OnInit {
     this.customerCode = this.entity.customerCode;
     this.customerName = this.entity.customerName;
     this.isEport = this.entity.shipmentType == 1174;
+    this.lockTaskType = false;
+    if (!this.entity.taskType) this.entity.taskType = null;   // nháp chưa có loại → CS bắt buộc chọn khi duyệt lẻ
+    if (!silent) this._applyJobTransportType(this.entity.shipmentId);
     this.checked = this.entity.status > 0; // "Chuyển việc cho Điều vận" — nháp mặc định chưa giao
     // ⚠ KHÔNG dùng formatAndSetDateTime (parse EN MM/DD) — payload nháp là VN DD/MM/YYYY HH:mm:ss.
     // Parse khoan dung, GIỮ chuỗi VN (đúng định dạng CreateAsync ParseExact) + dựng option picker.
@@ -260,6 +289,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
     this.flagNew = false;
     this.flagXem = false;   // cho sửa
     this.flagSave = false;
+    this._initLocationKeys();
     if (!silent) {
       this._ensureDraftCustomer();
       if (this.customerId) this.loadLocations(this.customerId);
@@ -270,6 +300,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
   /** Duyệt nháp KHÔNG confirm/toast — trả Observable cho DUYỆT HÀNG LOẠT. Bulk luôn status=0 (chưa giao Điều vận). */
   approveDraftSilent() {
     this.entity.status = this.checked ? 1 : 0;
+    this._clearHiddenFields();
     return this.service.addFromDraft(this.entity, this._draftId, this.entity.jobId);
   }
 
@@ -333,6 +364,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
         return;
       }
       this.entity.status = this.checked ? 1 : 0;
+      this._clearHiddenFields();
       this.flagSave = true;
       //Nếu là tạo mới công việc thì id chưa khởi tạo
       if (this.entity.id == undefined) {
@@ -380,6 +412,7 @@ export class ModalShippingTaskCsComponent implements OnInit {
       }
       this.flagSave = true;
       this.entity.status = this.checked ? 1 : 0;
+      this._clearHiddenFields();
       //Nếu là tạo mới công việc thì id chưa khởi tạo
       if (this.entity.id == undefined) {
         this.entity.branchId = Number.parseInt(this.userLoged.branchId);
@@ -416,6 +449,8 @@ export class ModalShippingTaskCsComponent implements OnInit {
             this.entity.jobToughness = null;
             this.entity.estimatedStartTime = null;
             this.entity.estimatedFinishTime = null;
+            this.entity.taskType = null;
+            this.lockTaskType = false;
             this.customerCode = null
             this.flagNew = true;
             this.flagSave = false;
@@ -431,17 +466,46 @@ export class ModalShippingTaskCsComponent implements OnInit {
     }
   }
 
-  changepickupLocationExport(event: CustomerLocations) {
-    this.entity.pickupLocation = event?.address;
+  // ===== Điểm nhận/giao: 1 ô chọn gộp Cảng/bãi/CFS + Location KH (mọi loại, không đảo theo xuất/nhập) =====
+  /** Id của Ports và CustomerLocations trùng số nhau → khóa chọn = "<loại>-<id>". */
+  locationItems: { key: string, id: number, type: number, name: string, group: string }[] = [];
+  pickupKey: string = null;
+  deliveryKey: string = null;
+
+  changePickupLocation(item: any) {
+    this.entity.pickupLocationId = item?.id;
+    this.entity.pickupLocationType = item?.type;
+    this.entity.pickupLocation = item?.name;
   }
-  changepickupLocationImport(event: Ports) {
-    this.entity.pickupLocation = event.name;
+  changeDeliveryLocation(item: any) {
+    this.entity.deliveryLocationId = item?.id;
+    this.entity.deliveryLocationType = item?.type;
+    this.entity.deliveryLocation = item?.name;
   }
-  changedeliveryLocationImport(event: CustomerLocations) {
-    this.entity.deliveryLocation = event?.address;
+
+  /** Công việc/nháp chưa lưu loại điểm → suy theo luật cũ (SE: nhận = Location KH, giao = Cảng), rồi dựng khóa chọn. */
+  private _initLocationKeys() {
+    const e = this.entity;
+    if (e?.pickupLocationId && !e.pickupLocationType) e.pickupLocationType = this.isEport ? 1 : 2;
+    if (e?.deliveryLocationId && !e.deliveryLocationType) e.deliveryLocationType = this.isEport ? 2 : 1;
+    this.pickupKey = e?.pickupLocationId ? `${e.pickupLocationType}-${e.pickupLocationId}` : null;
+    this.deliveryKey = e?.deliveryLocationId ? `${e.deliveryLocationType}-${e.deliveryLocationId}` : null;
+    this._rebuildLocationItems();
   }
-  changedeliveryLocationExport(event: Ports) {
-    this.entity.deliveryLocation = event.name;
+
+  private _rebuildLocationItems() {
+    const PORT = 'Cảng/bãi/CFS', LOC = 'Địa điểm KH';
+    const items = [
+      ...(this.listPorts || []).map(p => ({ key: `2-${p.id}`, id: p.id, type: 2, name: p.name, group: PORT })),
+      ...(this.listLocations || []).map(l => ({ key: `1-${l.id}`, id: l.id, type: 1, name: l.address, group: LOC }))
+    ];
+    // Điểm đang lưu không còn trong danh mục (khóa/chưa duyệt) → vẫn hiện tên đã lưu
+    const keep = (key: string, id: number, type: number, name: string) => {
+      if (key && !items.some(x => x.key === key)) items.push({ key, id, type, name, group: type === 2 ? PORT : LOC });
+    };
+    keep(this.pickupKey, this.entity?.pickupLocationId, this.entity?.pickupLocationType, this.entity?.pickupLocation);
+    keep(this.deliveryKey, this.entity?.deliveryLocationId, this.entity?.deliveryLocationType, this.entity?.deliveryLocation);
+    this.locationItems = items;
   }
   attack() {
     this.viewAttackFiles = true;
@@ -541,6 +605,10 @@ export class ModalShippingTaskCsComponent implements OnInit {
     this.entity.shipmentType = null;
     this.entity.shipmentId = null;
     this.entity.billBooking = null;
+    this.lockTaskType = false;   // bỏ Job → mở khóa Loại vận chuyển
+    // Đổi KH → bỏ điểm thuộc KH cũ (Cảng/bãi/CFS dùng chung thì giữ)
+    if (this.entity.pickupLocationType === 1) { this.pickupKey = null; this.changePickupLocation(null); }
+    if (this.entity.deliveryLocationType === 1) { this.deliveryKey = null; this.changeDeliveryLocation(null); }
     this.loadLocations(this.customerId);
     this.entity.informationOfSurchargeInvoice = event?.informationOfSurchargeInvoice;
     this.entity.informationOnContainerLiffInvoice = event?.informationOnContainerLiffInvoice;
@@ -562,9 +630,50 @@ export class ModalShippingTaskCsComponent implements OnInit {
     }
   }
 
-  changedTaskType(event: any) {
-    if (event?.id == 0) this.entity.weight = null
-    else this.entity.contType = null;
+  /**
+   * Loại vận chuyển của Job (Shipment.ShippingType) → TaskType. Job có loại: lấy theo + khóa.
+   * Job chưa có loại: mở khóa, giữ lựa chọn hiện tại của CS. (Picker JobId không trả ShippingType → đọc chi tiết Job.)
+   */
+  private _applyJobTransportType(shipmentId?: number) {
+    if (!shipmentId) { this.lockTaskType = false; return; }
+    this._shipmentService.getDetail(shipmentId.toString()).subscribe((res: ResponseValue<Shipment>) => {
+      if (this.entity?.shipmentId !== shipmentId) return;   // đã đổi Job trong lúc chờ
+      const jobTaskType = (res.code == '200' || res.code == '201')
+        ? TransportTypeConstants.fromJobType(res.data?.shippingType) : null;
+      if (jobTaskType) {
+        this.entity.taskType = jobTaskType;
+        this.lockTaskType = true;
+      } else {
+        this.lockTaskType = false;
+      }
+    });
+  }
+
+  /** Trước khi lưu: xóa giá trị các trường bị ẩn theo loại (không lưu dữ liệu rác). */
+  private _clearHiddenFields() {
+    const e = this.entity;
+    if (!e || this.isFCL) return;
+    // Ẩn ở cả LCL và CBT
+    e.detentionTime = null;
+    e.typeOfLiffingOrder = null;
+    e.typeOfLiftOffOrder = null;
+    e.shipBrand = null;
+    e.portOfLiffting = null;
+    e.portOfLiftOff = null;
+    e.billBooking = null;
+    e.informationOnContainerLiffInvoice = null;
+    e.externalInformationOnContainerLiffInvoice = null;
+    e.informationOfSurchargeInvoice = null;
+    if (this.isLCL) {
+      e.containerNumber = null;
+      e.contType = null;
+    }
+    if (this.isCBT) {
+      e.cutOffTime = null;
+      e.demurageTime = null;
+      e.cfsWarehouse = null;
+      e.operatorId = undefined;   // BE là int không null → bỏ khỏi payload thay vì gửi null
+    }
   }
 
   selectedContNo(event: ShipmentContSeal) {
@@ -576,20 +685,16 @@ export class ModalShippingTaskCsComponent implements OnInit {
     if (index) this.entity.contType = index.categoryCode;
   }
   saveSuccessJobId(event: Shipment) {
+    // 19/11/2026: mở cho MỌI loại hình Job (trước chỉ SE, SI, DS). FCL vẫn xét xuất/nhập theo SE (1174).
     this.shipmentSelected = event;
-    const allowedShipmentTypes = [1174, 1175, 1177, 46];
-    if (allowedShipmentTypes.includes(this.shipmentSelected.shipmentType)) {
-      this.entity.jobId = event.jobId;
-      this.entity.weight = event.weight?.toString();
-      this.entity.shipmentType = event.shipmentType;
-      this.entity.shipmentId = event.id;
-      this.entity.billBooking = event.bookingNo;
-      this.isEport = this.shipmentSelected.shipmentType == 1174;
-    }
-    else {
-      this.shipmentSelected = null;
-      this.notificationService.printAlert(MessageContstants.TITLE_INFO, "Loại hình Job không phải là SE,SI,DS, kiểm tra lại!");
-    }
+    this.entity.jobId = event.jobId;
+    this.entity.weight = event.weight?.toString();
+    this.entity.shipmentType = event.shipmentType;
+    this.entity.shipmentId = event.id;
+    this.entity.billBooking = event.bookingNo;
+    this.isEport = this.shipmentSelected.shipmentType == 1174;
+    this.lockTaskType = false;
+    this._applyJobTransportType(event.id);
   }
 
   getJobId() {
