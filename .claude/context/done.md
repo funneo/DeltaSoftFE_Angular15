@@ -1,5 +1,15 @@
 # Completed Features
 
+## Phiên 2026-11-27 (4) — Phân tích tích hợp Maersk cho IKEA (GPS visibility) — CHỈ PHÂN TÍCH, không code/SQL
+- Bối cảnh: luồng thư "/DELTA/ GPS visibility: VN for Ikea" (26/11). IKEA cần GPS + biển số + mốc đến/rời depot/kho KH trên Project44 + Transporeon; Maersk trung gian qua TMS. Khóa khớp = **FRO (Freight Order No.)**.
+- Đã đọc tài liệu Maersk Developer Portal (bản HTML lưu trên Desktop) + `IKEA_Requirements for P44_EN 27.Nov.26.pdf`:
+  - **Update API v2** (`https://api-stage.maersk.com/lsc/transport-document`): `/v1/updateTransportOrder` (Accept/Reject, `truckLicensePlate`/`trailerLicensePlate`, cont/seal, lái xe, file, phí) + `/v1/reportEvent` (GPS mỗi 10 phút, đến/rời kho, trễ, chờ, POD). Header `Consumer-Key` + OAuth2; giới hạn 10k lần/giờ, 3k lần/phút. Không dùng các endpoint không có `/v1` (sắp ngừng).
+  - **Dispatch Webhook v2**: Maersk `POST /booking` vào URL HTTPS của Delta; Delta tự chọn xác thực; bắt buộc health endpoint; timeout 1 phút; gửi ít nhất một lần ⇒ phải xử lý idempotent; có twinning. Xin truy cập qua supplierorderapi@maersk.com.
+  - **Ack v2**: `POST /lsc/in/carrier-bookings/acknowledgements`, chỉ dùng khi xử lý bất đồng bộ (xác nhận kỹ thuật; nhận/từ chối nghiệp vụ đi qua Update API).
+  - 4 option của IKEA/Maersk: (1) Delta đẩy qua Maersk API; (2) Delta dựng API theo FRO để Maersk kéo; (3) API theo biển số + nhập tay Supplier Connect (lộ cả đội xe); (4) lên thẳng Project44.
+- **Chốt: Option 1** — Delta chỉ gửi đi, không mở cổng, bỏ được bước nhập biển số trên Supplier Connect. Ý tưởng chi tiết + câu hỏi chờ anh: xem todo.md.
+- Công cụ: đã cài Poppler (winget `oschwartz10612.Poppler`, có `pdftotext`/`pdftoppm`) để đọc PDF trực tiếp.
+
 ## Phiên 2026-11-27 (3) — dGas3 contract v1.3: API start/complete gửi Innvie lúc Nhận lệnh / Chốt lệnh + khóa API cũ từ golive — NewAPI ĐÃ COMMIT+PUSH `19dbf34` (build 0 lỗi), KHÔNG SQL, CHỜ DEPLOY + đổi config prod
 Bối cảnh: cutover Quản lý dầu sang dGas3 lúc 13:00 28/11/2026; Innvie gửi `docs/delta-erp-transport-orders-api-v1.3.docx` với 2 API mới. Anh chốt: CHỈ viết 2 API + cắm vào chỗ đổi trạng thái, không SQL/bảng/màn mới; số lít đổi sau nhận lệnh là việc của Innvie; `fuelAdvanceEligible` luôn true.
 - `Dgas3ApiClient`: `StartTransportOrderAsync` (POST `/api/dispatch/v1/integrations/delta-erp/transport-orders`) + `CompleteTransportOrderAsync` (POST `.../transport-orders/{code}/complete`, body chỉ `completedAtUtc`); gộp `PostAsync<T>`; BỎ header `X-Tenant-Id`.

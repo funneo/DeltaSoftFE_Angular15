@@ -1,5 +1,13 @@
 # Pending / In-Progress Work
 
+## ▶ 2026-11-27 — Tích hợp Maersk (IKEA GPS visibility) — CHỌN OPTION 1, ý tưởng đã trình, CHƯA SQL/CODE — chi tiết done.md + memory `project_maersk_supplier_api_integration`
+Ý tưởng: lệnh FCL v2 có nút "Maersk" để nhập FRO (lưu ở bảng riêng, KHÔNG sửa SP lưu FCL) → job nền đặt trong GpsAPI quét khoảng 1–2 phút một lần: (A) có FRO + xe ⇒ `updateTransportOrder` gửi Accept + biển đầu kéo/mooc; (B) đổi xe ⇒ gửi lại; (C) lệnh ở status 2 ⇒ `reportEvent` gửi GPS mỗi 10 phút, dừng ở status ≥3. Mốc đến/rời kho Maersk tự suy ra từ GPS (anh xác nhận), giai đoạn 1 không gửi. Có nhật ký gửi, retry, trạng thái hiện trên lệnh.
+- ❓ Chờ anh chốt 4 điểm: (1) 1 lệnh ↔ 1 FRO hay có twinning 2 FRO; (2) KHÔNG gửi thông tin lái xe (em đề xuất); (3) đặt job trong GpsAPI; (4) ai đăng ký Maersk Developer Portal bằng email công ty (lấy Consumer Key + Authorisation Guide).
+- ⬜ Xin file OpenAPI json của 3 API + payload mẫu (`/booking`, Ack, enum `eventTrigger/eventStatus/locationFunction`) — bản lưu HTML trên Desktop thiếu phần Models.
+- ⬜ Họp Maersk (Thương hẹn): hỏi mã chặng (leg) gắn vào GPS lấy ở đâu, hạn gửi biển số qua API có còn là trước 2 giờ không, lịch test preprod.
+- ⬜ Sau khi chốt: trình thiết kế SQL (bảng FRO theo lệnh + outbox/log + SP hẹp cho `gps_app`) → duyệt → code.
+- ⏭ Giai đoạn 2: webhook `POST /booking` + health endpoint + Ack (`/lsc/in/carrier-bookings/acknowledgements`) để tự điền FRO — là endpoint nhận dữ liệu từ ngoài vào đầu tiên ⇒ cần Cloudflare/WAF trước.
+
 ## ▶ 2026-11-27 — dGas3 v1.3 start/complete + khóa API cũ — ✅ NewAPI COMMIT+PUSH `19dbf34`, chi tiết done.md
 1. ⬜ Tắt API → publish/deploy TRƯỚC 13:00 28/11. Config server: `Dgas3BaseUrl=https://api-delta.innvie.vn` (KHÔNG kèm `/api`) + `Dgas3ApiKey` production; `Dgas3TenantId` bỏ.
 2. ⬜ Test: nhận + chốt 1 lệnh FCL v2 và 1 lệnh cũ → xem `Tbl_FuelDgas3Outbound`.
