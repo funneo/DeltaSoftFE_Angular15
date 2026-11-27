@@ -1,5 +1,12 @@
 # Completed Features
 
+## Phiên 2026-11-27 (3) — dGas3 contract v1.3: API start/complete gửi Innvie lúc Nhận lệnh / Chốt lệnh + khóa API cũ từ golive — NewAPI ĐÃ COMMIT+PUSH `19dbf34` (build 0 lỗi), KHÔNG SQL, CHỜ DEPLOY + đổi config prod
+Bối cảnh: cutover Quản lý dầu sang dGas3 lúc 13:00 28/11/2026; Innvie gửi `docs/delta-erp-transport-orders-api-v1.3.docx` với 2 API mới. Anh chốt: CHỈ viết 2 API + cắm vào chỗ đổi trạng thái, không SQL/bảng/màn mới; số lít đổi sau nhận lệnh là việc của Innvie; `fuelAdvanceEligible` luôn true.
+- `Dgas3ApiClient`: `StartTransportOrderAsync` (POST `/api/dispatch/v1/integrations/delta-erp/transport-orders`) + `CompleteTransportOrderAsync` (POST `.../transport-orders/{code}/complete`, body chỉ `completedAtUtc`); gộp `PostAsync<T>`; BỎ header `X-Tenant-Id`.
+- `Dgas3TransportOrderFlow` (mới): start-nếu-chưa (`SentStatus!=1`) + complete (key `<IdempotencyKey>-complete`), 404 → start rồi complete lại. Lỗi ghi `Tbl_FuelDgas3Outbound` tiền tố "Start:"/"Complete:". Quy ước: cột `CompletedAtUtc` của dòng = GIỜ START.
+- Hook: DispatchOrder `UpdateState` Status=2 → start, 8/11 → complete; FCL `ChangeStatus` NhanLenh → start, ChotLenh + `UpdateState` 6 → complete. Lỗi nuốt, không chặn nhận/chốt. Giờ nhận: FCL từ `Tbl_DispatchOrderFCLStatusLog` (ActionType=1); DO lúc nhận = GETDATE(), gửi bù lúc chốt = CreatedDate.
+- API cũ `transport-order-completions` TẠM KHÓA từ 13:00 28/11/2026 giờ VN (chặn trong `SendTransportOrderCompletionAsync`) → phiếu Bổ sung chi phí + Resend/TestSend ngừng gửi (anh: làm sau).
+
 ## Phiên 2026-11-27 (2) — DraftAPI `advanceSupplier`: danh sách Tạm ứng Nhà cung cấp cho KSNB — DraftAPI + NewAPI ĐÃ COMMIT+PUSH (build 0 lỗi), CHỜ DEPLOY + TEST
 - Lý do: kế toán HCM tải tay file Export màn F021 mỗi ngày; điểm chặn chuẩn hoá skill phiếu thu chi trước 30/11.
 - DraftAPI `POST /api/draftReport/advanceSupplier` → chuyển tiếp ERP `/api/advance/getpaging` (`ADVANCE_VIEW`, `SP_Advances_GetPaging`) với `item.isTransfer=true`, `acceptStep = step ?? 2`, lấy hết dòng; body `DraftAdvancePaymentRequest` có sẵn (`branchId`, `fromDate/toDate` yyyyMMdd, `employeeId`, `step`). Giữ khuôn POST + branchId số như 25 API KSNB khác (không theo ví dụ GET `branch=HCM` trong yêu cầu — anh đồng ý).

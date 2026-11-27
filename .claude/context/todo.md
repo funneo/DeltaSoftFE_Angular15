@@ -1,5 +1,10 @@
 # Pending / In-Progress Work
 
+## ▶ 2026-11-27 — dGas3 v1.3 start/complete + khóa API cũ — ✅ NewAPI COMMIT+PUSH `19dbf34`, chi tiết done.md
+1. ⬜ Tắt API → publish/deploy TRƯỚC 13:00 28/11. Config server: `Dgas3BaseUrl=https://api-delta.innvie.vn` (KHÔNG kèm `/api`) + `Dgas3ApiKey` production; `Dgas3TenantId` bỏ.
+2. ⬜ Test: nhận + chốt 1 lệnh FCL v2 và 1 lệnh cũ → xem `Tbl_FuelDgas3Outbound`.
+3. ⬜ (Làm sau) Phiếu Bổ sung chi phí chuyển sang start+complete — hiện bị chặn từ golive. Nút Resend/TestSend F047 cũng đang dùng API cũ.
+
 ## ▶ 2026-11-27 — DraftAPI `advanceSupplier` (Tạm ứng NCC cho KSNB) + ERP `AdvancesViewModel.SupplierCode` — ✅ ĐÃ COMMIT+PUSH, chi tiết done.md
 - ⬜ Tắt API → build → deploy **cả ERP API** (trường `supplierCode`) **và DraftAPI** (endpoint mới).
 - ⬜ Thêm tay `"advanceSupplier": [ 4, 5, 6, 7, 8 ]` vào `Draft:ReportAccess` trong `appsettings.json` trên server DraftAPI (file gitignore).
