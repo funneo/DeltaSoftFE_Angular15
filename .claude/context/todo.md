@@ -1,5 +1,11 @@
 # Pending / In-Progress Work
 
+## ▶ 2026-11-27 — DraftAPI `advanceSupplier` (Tạm ứng NCC cho KSNB) + ERP `AdvancesViewModel.SupplierCode` — ✅ ĐÃ COMMIT+PUSH, chi tiết done.md
+- ⬜ Tắt API → build → deploy **cả ERP API** (trường `supplierCode`) **và DraftAPI** (endpoint mới).
+- ⬜ Thêm tay `"advanceSupplier": [ 4, 5, 6, 7, 8 ]` vào `Draft:ReportAccess` trong `appsettings.json` trên server DraftAPI (file gitignore).
+- ⬜ Test SG (branchId 5) 01–27/11: số dòng + tổng tiền khớp nút Export F021. Lệch → kiểm `SP_Advances_GetPaging` lọc `@UserId`/nhóm tạm ứng → gán phạm vi cho tài khoản KSNB trên ERP (không sửa code). Mốc KSNB: 30/11.
+- ⚠ DraftAPI còn thay đổi CHƯA COMMIT từ phiên trước (không thuộc phiên này): endpoint `dispatchOrderExport` (lệnh cũ xe tải) + mở `dispatchOrder*` cho CN 4–9 + `BaoCao-KeToan-API.md` mục "Chọn đúng endpoint vận tải" — chờ anh xác nhận để commit riêng.
+
 ## ▶ 2026-11-27 — Lô hàng: mọi dropdown `appendTo="body"` (FE-only) — ✅ ĐÃ COMMIT+PUSH, chi tiết done.md
 - ⬜ `ng build` + deploy FE (đi cùng đợt deploy BE+FE 23/11); test: mở Lô hàng, xổ Loại dịch vụ ở dòng cuối bảng dịch vụ → không bị khung modal che.
 

@@ -1,5 +1,11 @@
 # Completed Features
 
+## Phiên 2026-11-27 (2) — DraftAPI `advanceSupplier`: danh sách Tạm ứng Nhà cung cấp cho KSNB — DraftAPI + NewAPI ĐÃ COMMIT+PUSH (build 0 lỗi), CHỜ DEPLOY + TEST
+- Lý do: kế toán HCM tải tay file Export màn F021 mỗi ngày; điểm chặn chuẩn hoá skill phiếu thu chi trước 30/11.
+- DraftAPI `POST /api/draftReport/advanceSupplier` → chuyển tiếp ERP `/api/advance/getpaging` (`ADVANCE_VIEW`, `SP_Advances_GetPaging`) với `item.isTransfer=true`, `acceptStep = step ?? 2`, lấy hết dòng; body `DraftAdvancePaymentRequest` có sẵn (`branchId`, `fromDate/toDate` yyyyMMdd, `employeeId`, `step`). Giữ khuôn POST + branchId số như 25 API KSNB khác (không theo ví dụ GET `branch=HCM` trong yêu cầu — anh đồng ý).
+- ERP: `AdvancesViewModel` thêm `SupplierCode` — SP đã trả `k.SupplierCode` nhưng VM thiếu nên Dapper bỏ. Chỉ thêm trường JSON, không đổi SP/logic. Mã NV không thêm (giữ `employeeId`/`employeeName`).
+- Tài liệu `DraftAPI/docs/BaoCao-KSNB-API.md` mục 7.7 (26 endpoint); `appsettings.example.json` thêm `advanceSupplier` vào ReportAccess.
+
 ## Phiên 2026-11-27 — Lô hàng (`modal-shipment`): mọi ng-select `appendTo="body"` — FE-only, ĐÃ COMMIT+PUSH, CHỜ `ng build` + deploy
 - Tiếp nối fix dropdown Báo giá 18/11: thêm `appendTo="body"` cho 14 ng-select còn thiếu (Đơn vị, Chi nhánh, Loại Job, Job giá, Loại hình, Loại vận chuyển, Hợp đồng, Xuất/Nhập, Tiền tệ + bảng dịch vụ: Loại dịch vụ, Chi nhánh, Phí, ĐVT, Loại tiền tệ) → 17/17 ô không còn bị khung modal che. Chỉ sửa HTML, không đụng TS.
 
