@@ -23,7 +23,7 @@
                       <span class="error">*</span>
                     </label>
                     <div class="col-sm-9">
-                      <ng-select name="donvi" [items]="listBranch" bindLabel="branchName" bindValue="id"
+                      <ng-select appendTo="body" name="donvi" [items]="listBranch" bindLabel="branchName" bindValue="id"
                         [(ngModel)]="entity.branchId" required placeholder="Chọn chi nhánh" [readonly]="true">
                       </ng-select>
                     </div>
@@ -53,7 +53,7 @@
                       <span class="error">*</span>
                     </label>
                     <div class="col-sm-9">
-                      <ng-select name="chinhanhs" [items]="listBranch" bindLabel="branchCode" bindValue="id"
+                      <ng-select appendTo="body" name="chinhanhs" [items]="listBranch" bindLabel="branchCode" bindValue="id"
                         [(ngModel)]="listChinhanhthamgia" required placeholder="Chọn chi nhánh tham gia"
                         [multiple]="true" [clearable]="false">
                       </ng-select>
@@ -64,12 +64,12 @@
                       <span class="error">*</span>
                     </label>
                     <div class="col-sm-4">
-                      <ng-select name="jobtype" [items]="listJobTypes" bindLabel="text" bindValue="id"
+                      <ng-select appendTo="body" name="jobtype" [items]="listJobTypes" bindLabel="text" bindValue="id"
                         [(ngModel)]="entity.jobType" placeholder="Loại Job..."  [clearable]="false"  [readonly]="flagXem" required>
                       </ng-select>
                     </div>
                     <div *ngIf="entity?.jobType==0" class="col-sm-5">
-                      <ng-select name="jobprice" [items]="listJobPrices" bindLabel="text" bindValue="id"
+                      <ng-select appendTo="body" name="jobprice" [items]="listJobPrices" bindLabel="text" bindValue="id"
                         [(ngModel)]="_typePrice" required placeholder="Tham chiếu giá theo..."  [clearable]="false" [readonly]="flagXem"
                         required>
                       </ng-select>
@@ -81,7 +81,7 @@
                       <span class="error">*</span>
                     </label>
                     <div class="col-sm-9">
-                      <ng-select name="shipmentType" [items]="listShipmentType" bindLabel="categoryName" bindValue="id"
+                      <ng-select appendTo="body" name="shipmentType" [items]="listShipmentType" bindLabel="categoryName" bindValue="id"
                         [(ngModel)]="entity.shipmentType" placeholder="Loại hình" [required]="entity.jobType==0"
                         (change)="changedShipmentType()">
                       </ng-select>
@@ -94,7 +94,7 @@
                       <span class="error" *ngIf="entity.shipmentType == 1174 || entity.shipmentType==1175">*</span>
                     </label>
                     <div class="col-sm-3">
-                      <ng-select name="shippingType" [items]="shippingTypeItems" bindLabel="text" bindValue="id"
+                      <ng-select appendTo="body" name="shippingType" [items]="shippingTypeItems" bindLabel="text" bindValue="id"
                         [(ngModel)]="entity.shippingType" placeholder="Loại vận chuyển"
                         [readonly]="flagXem || entity.shipmentType == 1171"
                         [required]="entity.jobType==0 && (entity.shipmentType == 1174 || entity.shipmentType==1175)">
@@ -148,7 +148,7 @@
                     </label>
                     <div class="col-sm-7">
                       <div class="input-group">
-                      <ng-select name="contractId" [items]="listContract" bindLabel="contractNo" bindValue="id"
+                      <ng-select appendTo="body" name="contractId" [items]="listContract" bindLabel="contractNo" bindValue="id"
                         [(ngModel)]="entity.contractId" required placeholder="Chọn hợp đồng" [clearable]="false" required [readonly]="flagXem">
                       </ng-select>
 
@@ -233,7 +233,7 @@
                   <label class="col-sm-2 control-label"> Hàng xuất/nhập
                   </label>
                   <div class="col-sm-4">
-                    <ng-select name="exim" [items]="listImportExports" bindLabel="categoryName" bindValue="id"
+                    <ng-select appendTo="body" name="exim" [items]="listImportExports" bindLabel="categoryName" bindValue="id"
                       [(ngModel)]="entity.importExport" placeholder="Hàng xuất/nhập">
                     </ng-select>
                   </div>
@@ -241,7 +241,7 @@
                   <!-- <label class="col-sm-2 control-label"> Loại hình
                   </label>
                   <div class="col-sm-4">
-                    <ng-select name="currency" [items]="listShipmentType" bindLabel="categoryName" bindValue="id"
+                    <ng-select appendTo="body" name="currency" [items]="listShipmentType" bindLabel="categoryName" bindValue="id"
                       [(ngModel)]="entity.shipmentType" placeholder="Loại hình">
                     </ng-select>
                   </div> -->
@@ -478,19 +478,19 @@
                         </label>
                       </td>
                       <td  class="column-ten">
-                        <ng-select name="loaidv{{item.tempId}}" [items]="listLoaiDichVus" bindLabel="categoryName" bindValue="id"
+                        <ng-select appendTo="body" name="loaidv{{item.tempId}}" [items]="listLoaiDichVus" bindLabel="categoryName" bindValue="id"
                           [(ngModel)]="item.serviceId" placeholder="Chọn loại dịch vụ..." [readonly]="true" [clearable]="false">
                         </ng-select>
                       </td>
 
                       <!-- <td  class="column-ten">
-                        <ng-select name="chinhanh{{item.tempId}}" [items]="listBranch" bindLabel="branchName" bindValue="id"
+                        <ng-select appendTo="body" name="chinhanh{{item.tempId}}" [items]="listBranch" bindLabel="branchName" bindValue="id"
                           [(ngModel)]="item.branchId" placeholder="Chọn chi nhánh..." [readonly]="flagXem">
                         </ng-select>
                       </td> -->
 
                       <!-- <td  class="column-ten">
-                        <ng-select name="feeid{{item.tempId}}" [items]="listFees" bindLabel="feeName" bindValue="id"
+                        <ng-select appendTo="body" name="feeid{{item.tempId}}" [items]="listFees" bindLabel="feeName" bindValue="id"
                           [(ngModel)]="item.feeId" placeholder="Chọn phí..." [readonly]="flagXem" (blur)="inputTen(i)">
                         </ng-select>
                       </td> -->
@@ -506,7 +506,7 @@
                       </td>
 
                       <td >
-                        <ng-select name="dvt{{item.tempId}}" [items]="listDVTs" bindLabel="categoryName" bindValue="categoryCode"
+                        <ng-select appendTo="body" name="dvt{{item.tempId}}" [items]="listDVTs" bindLabel="categoryName" bindValue="categoryCode"
                           [(ngModel)]="item.unit" placeholder="Chọn đơn vị tính..." [readonly]="true" [clearable]="false">
                         </ng-select>
                       </td>
@@ -516,7 +516,7 @@
                           [mask]="maskNumber" />
                       </td>
                       <!-- <td >
-                        <ng-select name="loaitiente{{item.tempId}}" [items]="listTienTes" bindLabel="categoryName" bindValue="categoryCode"
+                        <ng-select appendTo="body" name="loaitiente{{item.tempId}}" [items]="listTienTes" bindLabel="categoryName" bindValue="categoryCode"
                           [(ngModel)]="item.currency" placeholder="Chọn loại tiền tệ..." [readonly]="flagXem">
                         </ng-select>
                       </td> -->
