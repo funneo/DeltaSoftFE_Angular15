@@ -1,5 +1,8 @@
 # Pending / In-Progress Work
 
+## ▶ 2026-11-27 — Lô hàng: mọi dropdown `appendTo="body"` (FE-only) — ✅ ĐÃ COMMIT+PUSH, chi tiết done.md
+- ⬜ `ng build` + deploy FE (đi cùng đợt deploy BE+FE 23/11); test: mở Lô hàng, xổ Loại dịch vụ ở dòng cuối bảng dịch vụ → không bị khung modal che.
+
 ## ▶ 2026-11-18 — Báo giá KH: Gia hạn (chỉ Admin) + dropdown báo giá Lô hàng appendTo body — FE+BE ĐÃ COMMIT+PUSH, chi tiết done.md
 - ⬜ Chạy `NewAPI/migrations/Migration_QuotationCustomer_Extend_20261118.sql` (delta.erp) — ⚠ TRƯỚC khi deploy BE.
 - ⬜ Tắt API → build → deploy BE; `ng build` FE → deploy.

@@ -1,5 +1,8 @@
 # Completed Features
 
+## Phiên 2026-11-27 — Lô hàng (`modal-shipment`): mọi ng-select `appendTo="body"` — FE-only, ĐÃ COMMIT+PUSH, CHỜ `ng build` + deploy
+- Tiếp nối fix dropdown Báo giá 18/11: thêm `appendTo="body"` cho 14 ng-select còn thiếu (Đơn vị, Chi nhánh, Loại Job, Job giá, Loại hình, Loại vận chuyển, Hợp đồng, Xuất/Nhập, Tiền tệ + bảng dịch vụ: Loại dịch vụ, Chi nhánh, Phí, ĐVT, Loại tiền tệ) → 17/17 ô không còn bị khung modal che. Chỉ sửa HTML, không đụng TS.
+
 ## Phiên 2026-11-19 → 11-23 — LCL/CBT nền (Loại vận chuyển Job + công việc + loại điểm giao nhận V2) + vé giấy FeeId 0 + rà bảo mật sau 18/11 + điều tra ngày Debit — FE + NewAPI ĐÃ COMMIT+PUSH 23/11, CHỜ DEPLOY BE+FE CÙNG LÚC
 - **Loại vận chuyển:** Job dùng lại `Shipment.ShippingType` (0 FCL/1 LCL/2 CBT; dịch vụ 1171 khóa cứng CBT). Công việc `ShippingTask.TaskType` (1 FCL/2 LCL/3 CBT, 0/NULL cũ = FCL) bắt buộc, lấy theo Job + khóa; công việc cũ giữ FCL. Hằng số `TransportTypeConstants`.
 - **Loại điểm giao nhận:** `ShippingTask.PickupLocationType/DeliveryLocationType` (1 KH locations, 2 cảng; NULL = luật cũ theo 1174). SQL `Migration_ShippingTask_LocationType_V2_20261120.sql` ĐÃ CHẠY 22/11 (EXCEPT 0/0, 46.424 dòng). BE 5 hàm repo gọi SP V2. FE ô điểm gộp, FCL v2 `addToRoute` ưu tiên loại đã lưu, Copy lấy từ chi tiết.
